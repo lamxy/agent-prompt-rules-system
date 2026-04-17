@@ -345,7 +345,7 @@ Claude Code 官方建议使用 `.claude/settings.json` 中的 `permissions.deny`
 本仓库的结构设计参考了 Claude Code 官方文档中关于：
 
 - `CLAUDE.md`
-- 项目级共享��置
+- 项目级共享设置
 - `.claude/settings.json`
 - 配置优先级
 - 安全权限控制

@@ -58,7 +58,7 @@
 ### 修改 `CLAUDE.md` 前
 请优先判断：
 
-- 这是否属于高频、稳定、���杠杆规则？
+- 这是否属于高频、稳定、高杠杆规则？
 - 这是否应该放到 `.claude/rules/task/`？
 - 这是否应该放到 `.claude/rules/templates/`？
 - 这是否应该放到 `.claude/rules/preferences/`？
