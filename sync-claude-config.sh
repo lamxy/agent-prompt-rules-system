@@ -51,7 +51,7 @@ print_json_manual_message() {
   dest_file="$1"
   MANUAL_JSON_COUNT=$((MANUAL_JSON_COUNT + 1))
   printf '[MANUAL-JSON] %s\n' "$dest_file"
-  printf '  Existing .json file was skipped for overwrite/append.\n'
+  printf '  Existing .json file was skipped during overwrite/append.\n'
   printf '  Please merge manually following official requirements and valid JSON structure.\n'
 }
 
