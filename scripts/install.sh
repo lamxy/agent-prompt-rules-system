@@ -4,7 +4,7 @@ set -eu
 usage() {
   cat <<'USAGE'
 Usage:
-  sh sync-claude-config.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask>
+  sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask>
 
 Options:
   -l  Target level:
@@ -139,7 +139,7 @@ case "$MODE" in
 esac
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-SOURCE_DIR="$SCRIPT_DIR/.claude"
+SOURCE_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)/.claude"
 
 if [ ! -d "$SOURCE_DIR" ]; then
   printf 'Error: source directory not found: %s\n' "$SOURCE_DIR" >&2
