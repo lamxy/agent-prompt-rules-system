@@ -16,6 +16,8 @@ Options:
       overwrite  Overwrite target file
       append     Append source content to target file
       ask        Ask interactively for each existing file
+      Note: existing .json files are skipped when overwrite/append is selected
+            and must be merged manually to keep valid JSON structure.
   -h  Show this help message
 USAGE
 }
@@ -32,6 +34,25 @@ expand_path() {
       printf '%s\n' "$1"
       ;;
   esac
+}
+
+is_json_file() {
+  case "$1" in
+    *.json)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+print_json_manual_message() {
+  dest_file="$1"
+  MANUAL_JSON_COUNT=$((MANUAL_JSON_COUNT + 1))
+  printf '[MANUAL-JSON] %s\n' "$dest_file"
+  printf '  Existing .json file was skipped during overwrite/append.\n'
+  printf '  Please merge manually following official requirements and valid JSON structure.\n'
 }
 
 prompt_existing_file_action() {
@@ -63,6 +84,7 @@ prompt_existing_file_action() {
 LEVEL=""
 TARGET_PATH=""
 MODE=""
+MANUAL_JSON_COUNT=0
 
 while getopts "l:p:m:h" opt; do
   case "$opt" in
@@ -152,10 +174,18 @@ while IFS= read -r src_file; do
 
   case "$current_mode" in
     overwrite)
+      if is_json_file "$dest_file"; then
+        print_json_manual_message "$dest_file"
+        continue
+      fi
       cp "$src_file" "$dest_file"
       printf '[OVERWRITE] %s\n' "$dest_file"
       ;;
     append)
+      if is_json_file "$dest_file"; then
+        print_json_manual_message "$dest_file"
+        continue
+      fi
       if [ -s "$dest_file" ] && [ "$(tail -c 1 "$dest_file" | wc -l)" -eq 0 ]; then
         printf '\n' >> "$dest_file"
       fi
@@ -172,4 +202,8 @@ while IFS= read -r src_file; do
   esac
 done < "$TMP_FILE_LIST"
 
-printf 'Sync complete.\n'
+if [ "$MANUAL_JSON_COUNT" -gt 0 ]; then
+  printf 'Sync complete with warnings: %s existing .json file(s) require manual merge.\n' "$MANUAL_JSON_COUNT"
+else
+  printf 'Sync complete.\n'
+fi
