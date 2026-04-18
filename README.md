@@ -182,6 +182,7 @@ sh ./sync-claude-config.sh -l <user|project|local> [-p <target_path>] -m <overwr
 - `-l`：目标级别。`user` 级别固定同步到 `~/.claude`（忽略 `-p`）；`project`/`local` 级别必须提供 `-p` 且目录必须已存在。
 - `-p`：目标 `.claude` 目录路径（仅 `project`/`local` 生效）。
 - `-m`：文件已存在时的同步方式：`overwrite`（覆盖）、`append`（追加）、`ask`（逐文件交互确认）。
+  - 例外：对已存在的 `.json` 文件，不执行覆盖或追加；脚本会提示跳过，请按官方要求和 JSON 结构手动处理。
 
 示例：
 
