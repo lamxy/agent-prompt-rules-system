@@ -128,7 +128,11 @@ if [ "$LEVEL" = "user" ] && [ ! -d "$TARGET_DIR" ]; then
   mkdir -p "$TARGET_DIR"
 fi
 
-find "$SOURCE_DIR" -type f | while IFS= read -r src_file; do
+TMP_FILE_LIST="$(mktemp)"
+trap 'rm -f "$TMP_FILE_LIST"' EXIT HUP INT TERM
+find "$SOURCE_DIR" -type f > "$TMP_FILE_LIST"
+
+while IFS= read -r src_file; do
   relative_path="${src_file#"$SOURCE_DIR"/}"
   dest_file="$TARGET_DIR/$relative_path"
   dest_dir="$(dirname "$dest_file")"
@@ -152,7 +156,7 @@ find "$SOURCE_DIR" -type f | while IFS= read -r src_file; do
       printf '[OVERWRITE] %s\n' "$dest_file"
       ;;
     append)
-      if [ -s "$dest_file" ]; then
+      if [ -s "$dest_file" ] && [ "$(tail -c 1 "$dest_file" | wc -l)" -eq 0 ]; then
         printf '\n' >> "$dest_file"
       fi
       cat "$src_file" >> "$dest_file"
@@ -166,6 +170,6 @@ find "$SOURCE_DIR" -type f | while IFS= read -r src_file; do
       exit 1
       ;;
   esac
-done
+done < "$TMP_FILE_LIST"
 
 printf 'Sync complete.\n'
