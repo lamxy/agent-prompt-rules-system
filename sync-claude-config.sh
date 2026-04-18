@@ -49,6 +49,7 @@ is_json_file() {
 
 print_json_manual_message() {
   dest_file="$1"
+  MANUAL_JSON_COUNT=$((MANUAL_JSON_COUNT + 1))
   printf '[MANUAL-JSON] %s\n' "$dest_file"
   printf '  Existing .json file was skipped for overwrite/append.\n'
   printf '  Please merge manually following official requirements and valid JSON structure.\n'
@@ -83,6 +84,7 @@ prompt_existing_file_action() {
 LEVEL=""
 TARGET_PATH=""
 MODE=""
+MANUAL_JSON_COUNT=0
 
 while getopts "l:p:m:h" opt; do
   case "$opt" in
@@ -200,4 +202,8 @@ while IFS= read -r src_file; do
   esac
 done < "$TMP_FILE_LIST"
 
-printf 'Sync complete.\n'
+if [ "$MANUAL_JSON_COUNT" -gt 0 ]; then
+  printf 'Sync complete with warnings: %s existing .json file(s) require manual merge.\n' "$MANUAL_JSON_COUNT"
+else
+  printf 'Sync complete.\n'
+fi
