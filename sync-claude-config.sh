@@ -16,7 +16,7 @@ Options:
       overwrite  Overwrite target file
       append     Append source content to target file
       ask        Ask interactively for each existing file
-      Note: existing .json files are always skipped for overwrite/append
+      Note: existing .json files are skipped when overwrite/append is selected
             and must be merged manually to keep valid JSON structure.
   -h  Show this help message
 USAGE
@@ -158,13 +158,6 @@ while IFS= read -r src_file; do
     continue
   fi
 
-  if is_json_file "$dest_file"; then
-    printf '[MANUAL-JSON] %s\n' "$dest_file"
-    printf '  Existing .json file was skipped for overwrite/append.\n'
-    printf '  Please merge manually following official requirements and valid JSON structure.\n'
-    continue
-  fi
-
   current_mode="$MODE"
   if [ "$MODE" = "ask" ]; then
     current_mode="$(prompt_existing_file_action "$dest_file")"
@@ -172,10 +165,22 @@ while IFS= read -r src_file; do
 
   case "$current_mode" in
     overwrite)
+      if is_json_file "$dest_file"; then
+        printf '[MANUAL-JSON] %s\n' "$dest_file"
+        printf '  Existing .json file was skipped for overwrite/append.\n'
+        printf '  Please merge manually following official requirements and valid JSON structure.\n'
+        continue
+      fi
       cp "$src_file" "$dest_file"
       printf '[OVERWRITE] %s\n' "$dest_file"
       ;;
     append)
+      if is_json_file "$dest_file"; then
+        printf '[MANUAL-JSON] %s\n' "$dest_file"
+        printf '  Existing .json file was skipped for overwrite/append.\n'
+        printf '  Please merge manually following official requirements and valid JSON structure.\n'
+        continue
+      fi
       if [ -s "$dest_file" ] && [ "$(tail -c 1 "$dest_file" | wc -l)" -eq 0 ]; then
         printf '\n' >> "$dest_file"
       fi
