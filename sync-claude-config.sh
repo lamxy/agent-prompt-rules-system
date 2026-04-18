@@ -47,6 +47,13 @@ is_json_file() {
   esac
 }
 
+print_json_manual_message() {
+  dest_file="$1"
+  printf '[MANUAL-JSON] %s\n' "$dest_file"
+  printf '  Existing .json file was skipped for overwrite/append.\n'
+  printf '  Please merge manually following official requirements and valid JSON structure.\n'
+}
+
 prompt_existing_file_action() {
   target_file="$1"
   while true; do
@@ -166,9 +173,7 @@ while IFS= read -r src_file; do
   case "$current_mode" in
     overwrite)
       if is_json_file "$dest_file"; then
-        printf '[MANUAL-JSON] %s\n' "$dest_file"
-        printf '  Existing .json file was skipped for overwrite/append.\n'
-        printf '  Please merge manually following official requirements and valid JSON structure.\n'
+        print_json_manual_message "$dest_file"
         continue
       fi
       cp "$src_file" "$dest_file"
@@ -176,9 +181,7 @@ while IFS= read -r src_file; do
       ;;
     append)
       if is_json_file "$dest_file"; then
-        printf '[MANUAL-JSON] %s\n' "$dest_file"
-        printf '  Existing .json file was skipped for overwrite/append.\n'
-        printf '  Please merge manually following official requirements and valid JSON structure.\n'
+        print_json_manual_message "$dest_file"
         continue
       fi
       if [ -s "$dest_file" ] && [ "$(tail -c 1 "$dest_file" | wc -l)" -eq 0 ]; then
