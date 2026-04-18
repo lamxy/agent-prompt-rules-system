@@ -156,7 +156,7 @@ while IFS= read -r src_file; do
       printf '[OVERWRITE] %s\n' "$dest_file"
       ;;
     append)
-      if [ -s "$dest_file" ] && [ "$(tail -c 1 "$dest_file" | wc -l)" -eq 0 ]; then
+      if [ -s "$dest_file" ] && [ "$(tail -c 1 "$dest_file" | wc -l)" -eq 1 ]; then
         printf '\n' >> "$dest_file"
       fi
       cat "$src_file" >> "$dest_file"
