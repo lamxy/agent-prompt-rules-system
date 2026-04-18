@@ -170,6 +170,32 @@ Claude Code Quickstart 说明了 CLI 的安装、登录和项目目录内启动�
 - 希望把提示词与规则纳入 Git 管理
 - 希望逐步演进，而不是在单仓库中临时堆规则
 
+### 方式三：使用脚本同步 `.claude` 配置
+仓库根目录提供了 `sync-claude-config.sh`，用于将当前仓库 `.claude/` 目录下的配置文件同步到目标配置目录。
+
+```sh
+sh ./sync-claude-config.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask>
+```
+
+参数说明：
+
+- `-l`：目标级别。`user` 级别固定同步到 `~/.claude`（忽略 `-p`）；`project`/`local` 级别必须提供 `-p` 且目录必须已存在。
+- `-p`：目标 `.claude` 目录路径（仅 `project`/`local` 生效）。
+- `-m`：文件已存在时的同步方式：`overwrite`（覆盖）、`append`（追加）、`ask`（逐文件交互确认）。
+
+示例：
+
+```sh
+# 同步到用户级 ~/.claude，已存在文件覆盖
+sh ./sync-claude-config.sh -l user -m overwrite
+
+# 同步到项目级目录，已存在文件追加
+sh ./sync-claude-config.sh -l project -p /path/to/project/.claude -m append
+
+# 同步到本地级目录，已存在文件交互确认
+sh ./sync-claude-config.sh -l local -p /path/to/local/.claude -m ask
+```
+
 ---
 
 ## 当前推荐目录结构
