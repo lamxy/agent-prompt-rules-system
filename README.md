@@ -2,7 +2,7 @@
 
 <p align="center">
   一套面向 <strong>Claude Code</strong> 的可扩展主代理规则系统：<br />
-  <strong>低 token、高质量、按需加载、适合工具调用与子代理协作。</strong>
+  <strong>低 token、高质量、按需加载、适合工具调用、派发任务、与子代理/代理团队协作。</strong>
 </p>
 
 <p align="center">
@@ -75,7 +75,8 @@ Claude Code 官方文档说明，`CLAUDE.md` 用于在启动时向 Claude Code �
 - `.claude/settings.json`：项目共享设置
 - `.claude/rules/`：外部极简规约与模板
 
-Claude Code 官方文档也说明了项目级 `.claude/settings.json` 与 `CLAUDE.md` 的职责划分，以及设置优先级模型。([docs.claude.com](https://docs.claude.com/en/docs/claude-code/settings?utm_source=openai))
+Claude Code 官方文档说明，项目共享设置适合提交到源码管理；而 `.claude/settings.local.json` 适合个人偏好与本地实验，不应作为团队共享配置。([docs.claude.com](https://docs.claude.com/en/docs/claude-code/settings?utm_source=openai))  
+Claude Code 也提供了清晰的配置作用域与优先级模型，包括用户级、项目级和本地项目级设置。([code.claude.com](https://code.claude.com/docs/en/configuration?utm_source=openai))
 
 ### 面向真实 Agent 工作流
 不仅适合普通问答，也适合：
@@ -94,6 +95,52 @@ Claude Code 官方文档也说明了项目级 `.claude/settings.json` 与 `CLAUD
 - PR 审阅
 - 历史追踪
 - 多仓库复用
+
+---
+
+## 规则运行闭环
+
+这套规则系统的目标不是一次性加载全部规则，而是采用**渐进式、可回退**的加载方式。
+
+默认运行顺序如下：
+
+1. 主系统最小规则常驻
+2. 先识别任务场景
+3. 先加载场景极简规约
+4. 必要时才展开完整规约
+5. 必要时才加载模板
+6. 输出前先压缩结果
+7. 必要时才向用户披露规约命中
+8. 复杂阶段结束后退回极简状态
+
+这意味着本仓库的重点不是“规则越多越好”，而是：
+
+- 默认最小
+- 按需展开
+- 结果压缩
+- 复杂完成后回收上下文复杂度
+
+---
+
+## 当前状态
+
+当前项目仍处于 **极简规则阶段**，重点在：
+
+- 优化常驻层
+- 优化场景极简规约
+- 优化基础模板
+- 进行真实使用中的体验验证
+- 进行审计与稳定性验证
+
+当前阶段暂不依赖以下能力作为运行前提：
+
+- 完整规约层的系统化展开
+- 规则触发决策树
+- 规则展开开关条件
+- 规约披露风格层
+- 独立的规则加载协议文件驱动
+
+这些内容是未来演进方向，而不是当前阶段的硬依赖。
 
 ---
 
@@ -125,7 +172,9 @@ Claude Code Quickstart 说明了 CLI 的安装、登录和项目目录内启动�
 
 ---
 
-## 推荐目录结构
+## 当前推荐目录结构
+
+当前仓库建议使用的结构，以**极简规则阶段**为主：
 
 ```text
 .
@@ -164,6 +213,64 @@ Claude Code Quickstart 说明了 CLI 的安装、登录和项目目录内启动�
 
 ---
 
+## 目标架构（演进方向）
+
+本项目的目标闭环结构如下。
+
+### 常驻层
+- `CLAUDE.md`
+
+### 场景极简层
+```text
+task/
+  general-task-rule-min.md
+  design-first-rule-min.md
+  loop-cron-rule-min.md
+  sub-agent-rule-min.md
+  agent-team-rule-min.md
+  tool-call-rule-min.md
+  ...
+```
+
+### 场景完整层
+```text
+task/
+  general-task-rule.md
+  design-first-rule.md
+  loop-cron-rule.md
+  sub-agent-rule.md
+  agent-team-rule.md
+  tool-call-rule.md
+  ...
+```
+
+### 模板层
+```text
+templates/
+  loop-report-template.md
+  tool-result-summary-template.md
+  team-leader-output-template.md
+  team-agent-output-template.md
+  multi-agent-summary-template.md
+  sub-agent-output-template.md
+  ...
+```
+
+### 决策层
+- `rule-trigger-decision-tree.md`
+- `rule-expansion-decision-tree.md`
+- `rule-expansion-switch-conditions.md`
+
+### 披露层
+- `rule-disclosure-style-guide.md`
+
+### 串联协议
+- `rule-loading-protocol.md`
+
+需要说明的是：以上结构描述的是**目标演进方向**，并不代表当前仓库已完整实现所有层级。
+
+---
+
 ## 设计原则
 
 ### 1. 默认最小
@@ -189,7 +296,10 @@ Claude Code Quickstart 说明了 CLI 的安装、登录和项目目录内启动�
 - 多工具或多代理结果需要归并
 - 高频重复任务需要统一格式
 
-### 5. 不让规则系统本身成为成本源
+### 5. 复杂完成后回退
+复杂阶段结束后，应尽量退回极简状态，避免把临时展开的复杂规则长期常驻。
+
+### 6. 不让规则系统本身成为成本源
 不要因为“规则很多”而导致：
 
 - token 变大
@@ -219,7 +329,7 @@ Claude Code Quickstart 说明了 CLI 的安装、登录和项目目录内启动�
 - 环境相关配置
 - 共享项目级设置
 
-Claude Code 官方文档明确区分了这两类文件的职责，并说明了设置优先级：命令行参数、本地项目设置、共享项目设置、用户设置等会按优先级叠加。([docs.claude.com](https://docs.claude.com/en/docs/claude-code/settings?utm_source=openai))
+Claude Code 官方文档明确区分了这两类文件的职责，并说明了设置优先级：命令行参数、本地项目设置、共享项目设置、用户设置等会按优先级叠加。([docs.claude.com](https://docs.claude.com/en/docs/claude-code/settings?utm_source=openai); [code.claude.com](https://code.claude.com/docs/en/configuration?utm_source=openai))
 
 ---
 
@@ -271,11 +381,13 @@ Claude Code 官方建议使用 `.claude/settings.json` 中的 `permissions.deny`
 - 保持 `CLAUDE.md` 稳定
 - 先补最常用的 1~3 个外部规约
 - 对高频场景再补模板
+- 先在极简阶段完成体验与审计
 - 不要一开始就把所有想法写满
 
 ### 不建议做的事
 - 把 `CLAUDE.md` 写成一个巨大的万能系统提示词
 - 一次性创建所有规约文件
+- 在极简阶段提前引入过多完整层和决策层
 - 用大量低频细节污染主文件
 - 让模板长期常驻
 - 让规则系统比业务任务更复杂
@@ -292,26 +404,59 @@ Claude Code 官方建议使用 `.claude/settings.json` 中的 `permissions.deny`
 不强依赖。  
 如果当前环境支持按需加载，就按需加载；如果不支持，这些外部文件仍然可以作为仓库内可维护的分层规范参考。
 
-### 3. 是否适合多个仓库复用？
+### 3. 为什么 README 中提到完整规约层、决策层、披露层和串联协议，但当前仓库并未全部落地？
+因为当前项目仍处于**极简规则阶段**。  
+现阶段重点是先验证极简层是否足够稳定、是否便于审计、是否能在真实使用中形成高杠杆收益；更复杂的层级属于未来演进方向，而不是当前运行前提。
+
+### 4. 是否适合多个仓库复用？
 适合。  
 这也是本仓库的重要目标之一：让规则可以被版本化、迁移和复用。
 
-### 4. 是否适合团队协作？
+### 5. 是否适合团队协作？
 适合，但建议保持主文件克制，把团队细节下沉到更小的规约文件中。
+
+---
+
+## 演进依据
+
+本项目不会为了“体系完整”而提前引入全部层级。  
+后续是否扩展完整规约、决策层、披露层和串联协议，将主要依据以下信号逐步推进：
+
+- 真实使用中的高频痛点
+- 审计验证结果
+- 失败与重试模式
+- 输出稳定性是否提升
+- 上下文成本是否可控
+- 是否确实带来高杠杆收益
+
+换句话说，本项目更重视：
+
+- 实用性
+- 稳定性
+- 可回退性
+- 长期可维护性
+
+而不是规则数量本身。
 
 ---
 
 ## Roadmap
 
-当前建议的演进顺序：
-
+### 当前阶段
 - [x] 建立主 `CLAUDE.md`
 - [x] 建立项目级 `settings.json`
 - [x] 定义基础分层结构
 - [x] 补充子代理偏好与多代理汇总模板
-- [ ] 补充常用 task 规约
+- [x] 以极简规则阶段为主进行体验与审计验证
+
+### 下一阶段
+- [ ] 补充更完整的 task 规约
+- [ ] 验证完整规约层的按需展开策略
 - [ ] 补充工具调用摘要模板
 - [ ] 补充更细的个人 / 仓库偏好文件
+- [ ] 引入决策层与展开条件
+- [ ] 引入披露层与串联协议
+- [ ] 验证复杂阶段结束后的“退回极简”机制
 - [ ] 形成更稳定的多仓库复用方式
 
 ---
@@ -350,4 +495,4 @@ Claude Code 官方建议使用 `.claude/settings.json` 中的 `permissions.deny`
 - 配置优先级
 - 安全权限控制
 
-等机制的说明。([docs.claude.com](https://docs.claude.com/en/docs/claude-code/settings?utm_source=openai))
+等机制的说明。([docs.claude.com](https://docs.claude.com/en/docs/claude-code/settings?utm_source=openai); [code.claude.com](https://code.claude.com/docs/en/configuration?utm_source=openai))
