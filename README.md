@@ -171,10 +171,10 @@ Claude Code Quickstart 说明了 CLI 的安装、登录和项目目录内启动�
 - 希望逐步演进，而不是在单仓库中临时堆规则
 
 ### 方式三：使用脚本同步 `.claude` 配置
-仓库根目录提供了 `sync-claude-config.sh`，用于将当前仓库 `.claude/` 目录下的配置文件同步到目标配置目录。
+仓库 `scripts/` 目录提供了 `install.sh`，用于将当前仓库 `.claude/` 目录下的配置文件同步到目标配置目录。
 
 ```sh
-sh ./sync-claude-config.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask>
+sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask>
 ```
 
 参数说明：
@@ -188,13 +188,13 @@ sh ./sync-claude-config.sh -l <user|project|local> [-p <target_path>] -m <overwr
 
 ```sh
 # 同步到用户级 ~/.claude，已存在文件覆盖
-sh ./sync-claude-config.sh -l user -m overwrite
+sh ./scripts/install.sh -l user -m overwrite
 
 # 同步到项目级目录，已存在文件追加
-sh ./sync-claude-config.sh -l project -p /path/to/project/.claude -m append
+sh ./scripts/install.sh -l project -p /path/to/project/.claude -m append
 
 # 同步到本地级目录，已存在文件交互确认
-sh ./sync-claude-config.sh -l local -p /path/to/local/.claude -m ask
+sh ./scripts/install.sh -l local -p /path/to/local/.claude -m ask
 ```
 
 ---
@@ -209,6 +209,8 @@ sh ./sync-claude-config.sh -l local -p /path/to/local/.claude -m ask
 ├── LICENSE
 ├── CONTRIBUTING.md
 ├── CLAUDE.md
+├── scripts/
+│   └── install.sh
 └── .claude/
     ├── settings.json
     └── rules/
