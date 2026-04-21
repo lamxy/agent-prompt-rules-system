@@ -229,6 +229,7 @@ sh ./scripts/install.sh -l local -p /path/to/local/.claude -m ask
         │   ├── multi-agent-summary-template.md
         │   └── sub-agent-output-template.md
         └── preferences/
+            ├── source-verification-min.md
             ├── tech-stack-preference-min.md
             ├── code-style-preference-min.md
             ├── personal-preference-min.md
