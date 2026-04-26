@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "enabledPlugins": {
+    "plugin-dev@claude-code-plugins": true,
+    "agent-sdk-dev@claude-code-plugins": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "slack@claude-plugins-official": false,
+    "atlassian@claude-plugins-official": false,
+    "notion@claude-plugins-official": false
+  },
+  "extraKnownMarketplaces": {
+    "claude-code-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-code"
+      }
+    }
+  }
+}

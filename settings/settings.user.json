@@ -1,0 +1,16 @@
+{
+	"$schema": "https://json.schemastore.org/claude-code-settings.json",
+	"enabledPlugins": {
+		"github@claude-plugins-official": true,
+		"typescript-lsp@claude-plugins-official": true,
+		"andrej-karpathy-skills@karpathy-skills": true
+	},
+	"extraKnownMarketplaces": {
+		"karpathy-skills": {
+			"source": {
+				"source": "github",
+				"repo": "forrestchang/andrej-karpathy-skills"
+			}
+		}
+	}
+}

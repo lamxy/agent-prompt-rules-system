@@ -153,6 +153,12 @@ Claude Code 也提供了清晰的配置作用域与优先级模型，包括用�
 - `.claude/settings.json`
 - 你实际需要的 `.claude/rules/` 文件
 
+其中 `.claude/settings.json` 在本仓库中主要定位为一份“全栈基础工具权限基线”：
+
+- 提供通用的工具权限与安全边界
+- 在子代理高频工具调用场景下，平衡审批效率与安全要求
+- 作为项目级共享的基础配置，便于团队统一行为
+
 然后在项目目录中运行 Claude Code 即可。
 
 Claude Code Quickstart 说明了 CLI 的安装、登录和项目目录内启动方式。([code.claude.com](https://code.claude.com/docs/en/quickstart?utm_source=openai))
@@ -170,31 +176,85 @@ Claude Code Quickstart 说明了 CLI 的安装、登录和项目目录内启动�
 - 希望把提示词与规则纳入 Git 管理
 - 希望逐步演进，而不是在单仓库中临时堆规则
 
-### 方式三：使用脚本同步 `.claude` 配置
-仓库 `scripts/` 目录提供了 `install.sh`，用于将当前仓库 `.claude/` 目录下的配置文件同步到目标配置目录。
+### 方式三：使用脚本同步与管理配置
+
+本仓库重点是提示词规约体系；settings 模板用于辅助常见开发场景下的插件分类与组合。
+
+#### 3.1 优先：同步整个 `.claude` 目录（规约与基础配置）
+
+使用 `scripts/install.sh` 同步完整 `.claude` 目录（规则、命令、基础 settings 等）：
 
 ```sh
 sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask>
 ```
 
-参数说明：
+关于 `.claude/settings.json` 的处理建议：
 
-- `-l`：目标级别。`user` 级别固定同步到 `~/.claude`（忽略 `-p`）；`project`/`local` 级别必须提供 `-p` 且目录必须已存在。
-- `-p`：目标 `.claude` 目录路径（仅 `project`/`local` 生效）。
-- `-m`：文件已存在时的同步方式：`overwrite`（覆盖）、`append`（追加）、`ask`（逐文件交互确认）。
-  - 例外：对已存在的 `.json` 文件，不执行覆盖或追加；脚本会提示跳过，请按官方要求和 JSON 结构手动处理。
+- 目标目录不存在 `settings.json` 时：脚本会直接复制基础配置
+- 目标目录已存在 `settings.json` 时：应由用户决策并手动处理（避免 JSON 自动拼接导致结构或语义风险）
+
+#### 3.2 再按需：安装场景化 settings 模板（插件分类方案）
+
+Claude Code settings 推荐按作用域分层管理：
+
+- `user`：用户级，全局个人默认（`~/.claude/settings.json`）
+- `project`：项目级，团队共享（`.claude/settings.json`）
+- `local`：本地级，当前仓库个人覆盖（`.claude/settings.local.json`，不提交）
+
+优先级：`local > project > user`。
+
+使用 `scripts/install-settings.sh` 按级别和场景安装模板：
+
+```sh
+sh ./scripts/install-settings.sh -l <user|project|local> [-s <scenario>] [--src <source_settings_json>] -m <overwrite|merge|ask> [-p <target_dir>]
+```
+
+参数说明（简版）：
+
+- `-l`：级别（`user|project|local`）
+- `-s`：场景名（未使用 `--src` 时从 `settings/` 下自动解析模板）
+- `--src`：自定义源 settings 文件，提供后会忽略 `-s`
+- `-m`：操作方式（`overwrite|merge|ask`）
+- `-p/--dst`：目标目录；`user` 默认 `~/.claude`，`project/local` 必填
+
+当前可用场景名：
+
+- `user`：`productivity`（不传 `-s` 时默认回退到 `settings.user.json`）
+- `project`：`frontend-dev`、`backend-dev`、`fullstack-dev`、`product-collab`、`release-ops`
+- `local`：`frontend-dev`、`backend-dev`、`experimental`
+
+场景基线定位（用于二次扩展）：
+
+- `user/productivity`：个人跨项目通用协作基线，强调代码托管、任务协同与基础提交流程。
+- `project/frontend-dev`：前端研发链路基线，覆盖设计协作、TypeScript 代码智能、评审与部署联动。
+- `project/backend-dev`：后端研发链路基线，覆盖服务侧语言智能、可观测性与后端平台集成。
+- `project/fullstack-dev`：前后端混合项目基线，适用于需要跨端协同和统一评审流的仓库。
+- `project/product-collab`：产品/设计/研发协同基线，强调需求、文档、设计稿和代码协作闭环。
+- `project/release-ops`：发布与运维基线，强调变更交付、监控告警、发布平台与沟通通道。
+- `local/frontend-dev`、`local/backend-dev`：个人在当前仓库内的技术偏好覆盖层，用于按岗位快速收敛插件组合。
+- `local/experimental`：个人实验层，用于临时验证新插件或新组合，不影响团队共享基线。
+
+扩展建议（推荐）：
+
+- 先以 `project` 场景作为团队稳定基线，再用 `local` 做个人覆盖，避免团队配置频繁抖动。
+- 新增外部集成插件时，优先确认其 marketplace 来源，并在模板中同步维护 `extraKnownMarketplaces`。
+- 语言类 LSP 插件按仓库技术栈最小化启用，避免无关插件增加资源开销与噪音。
+- 新增场景时，建议复制最接近的现有模板并重命名为 `settings.<level>-<scenario>.json`，再按需增减插件。
 
 示例：
 
 ```sh
-# 同步到用户级 ~/.claude，已存在文件覆盖
-sh ./scripts/install.sh -l user -m overwrite
+# 用户级默认模板（自动回退到 settings/settings.user.json）
+sh ./scripts/install-settings.sh -l user -m overwrite
 
-# 同步到项目级目录，已存在文件追加
-sh ./scripts/install.sh -l project -p /path/to/project/.claude -m append
+# 项目级前端开发场景
+sh ./scripts/install-settings.sh -l project -s frontend-dev -m overwrite -p /path/to/project/.claude
 
-# 同步到本地级目录，已存在文件交互确认
-sh ./scripts/install.sh -l local -p /path/to/local/.claude -m ask
+# 本地级实验场景，融合到现有 settings.local.json
+sh ./scripts/install-settings.sh -l local -s experimental -m merge -p /path/to/project/.claude
+
+# 使用自定义源文件
+sh ./scripts/install-settings.sh -l project --src /path/to/settings.project-team.json -m ask -p /path/to/project/.claude
 ```
 
 ---
@@ -208,11 +268,19 @@ sh ./scripts/install.sh -l local -p /path/to/local/.claude -m ask
 ├── README.md
 ├── LICENSE
 ├── CONTRIBUTING.md
-├── CLAUDE.md
 ├── scripts/
-│   └── install.sh
+│   ├── install.sh
+│   └── install-settings.sh
+├── settings/
+│   ├── settings.user.json
+│   ├── settings.project-xxx.json
+│   ├── settings.local.json
+│   └── ...
 └── .claude/
+    ├── CLAUDE.md
+    ├── RTK.md
     ├── settings.json
+    ├── commands/
     └── rules/
         ├── task/
         │   ├── general-task-rule-min.md

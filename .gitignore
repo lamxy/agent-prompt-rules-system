@@ -30,3 +30,6 @@ __pycache__/
 tmp/
 temp/
 .cache/
+
+# smoke test
+.tmp-install-settings-smoke-38420/

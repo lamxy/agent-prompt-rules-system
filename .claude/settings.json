@@ -132,6 +132,8 @@
       "Bash(xcrun simctl list)"
     ],
     "deny": [
+      "Bash(env)",
+      "Bash(exec *)",
       "Bash(rm -rf *)",
       "Bash(rm -fr *)",
       "Bash(rm -r *)",
@@ -345,25 +347,21 @@
     ],
     "defaultMode": "acceptEdits"
   },
+  "model": "haiku",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook claude"
+          }
+        ]
+      }
+    ]
+  },
   "enabledPlugins": {
-    "frontend-design@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
-    "chrome-devtools-mcp@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
-    "github@claude-plugins-official": true,
-    "playwright@claude-plugins-official": true,
-    "skill-creator@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "greptile@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "code-review@claude-plugins-official": true,
-    "feature-dev@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
-    "ralph-loop@claude-plugins-official": true,
-    "pyright-lsp@claude-plugins-official": false,
-    "security-guidance@claude-plugins-official": true,
     "andrej-karpathy-skills@karpathy-skills": true
   },
   "extraKnownMarketplaces": {
@@ -388,17 +386,59 @@
   },
   "alwaysThinkingEnabled": false,
   "effortLevel": "medium",
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "rtk hook claude"
-          }
-        ]
-      }
-    ]
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "autoAllowBashIfSandboxed": true,
+    "filesystem": {
+      "denyRead": [
+        "~/.docker",
+        "~/.bashrc",
+        "~/.zshrc",
+        "~/.profile",
+        "~/.bash_profile",
+        "~/.zprofile",
+        "~/.bash_history",
+        "~/.zsh_history",
+        "~/",
+        "~"
+      ],
+      "allowRead": [
+        ".",
+        "~/.local/bin",
+        "~/.gitconfig",
+        "~/.npmrc",
+        "~/.config/pip",
+        "~/.cargo",
+        "~/.rustup",
+        "~/.ssh/config",
+        "~/.kube/config",
+        "~/.nvm",
+        "~/.config/pypoetry",
+        "~/.kube/config"
+      ],
+      "allowWrite": [
+        "/tmp",
+        "~/.cache",
+        "~/.npm",
+        "~/.pnpm-store",
+        "~/.kube",
+        "~/.cargo",
+        "~/.rustup",
+        "~/.bun",
+        "~/.yarn",
+        "~/.cache/pip",
+        "~/.local/share/virtualenvs",
+        "~/go/pkg",
+        "~/go/bin",
+        "~/.kube"
+      ]
+    },
+    "network": {
+      "allowedDomains": [],
+      "deniedDomains": ["gist.github.com"]
+    },
+    "excludedCommands": ["docker *"]
   }
 }
