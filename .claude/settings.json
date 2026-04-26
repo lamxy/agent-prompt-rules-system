@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
       "Bash(pwd)",
@@ -362,7 +363,18 @@
     ]
   },
   "enabledPlugins": {
-    "andrej-karpathy-skills@karpathy-skills": true
+    "github@claude-plugins-official": true,
+    "andrej-karpathy-skills@karpathy-skills": true,
+    "remember@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true,
+    "playground@claude-plugins-official": true,
+    "optibot@claude-plugins-official": true,
+    "commit-commands@claude-code-plugins": true,
+    "context7@claude-code-plugins": true,
+    "ralph-loop@claude-code-plugins": true,
+    "session-report@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -384,14 +396,32 @@
       }
     }
   },
-  "alwaysThinkingEnabled": false,
-  "effortLevel": "medium",
   "sandbox": {
     "enabled": true,
     "failIfUnavailable": true,
-    "allowUnsandboxedCommands": false,
     "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": false,
+    "network": {
+      "allowedDomains": [],
+      "deniedDomains": ["gist.github.com"]
+    },
     "filesystem": {
+      "allowWrite": [
+        "/tmp",
+        "~/.cache",
+        "~/.npm",
+        "~/.pnpm-store",
+        "~/.kube",
+        "~/.cargo",
+        "~/.rustup",
+        "~/.bun",
+        "~/.yarn",
+        "~/.cache/pip",
+        "~/.local/share/virtualenvs",
+        "~/go/pkg",
+        "~/go/bin",
+        "~/.kube"
+      ],
       "denyRead": [
         "~/.docker",
         "~/.bashrc",
@@ -417,28 +447,12 @@
         "~/.nvm",
         "~/.config/pypoetry",
         "~/.kube/config"
-      ],
-      "allowWrite": [
-        "/tmp",
-        "~/.cache",
-        "~/.npm",
-        "~/.pnpm-store",
-        "~/.kube",
-        "~/.cargo",
-        "~/.rustup",
-        "~/.bun",
-        "~/.yarn",
-        "~/.cache/pip",
-        "~/.local/share/virtualenvs",
-        "~/go/pkg",
-        "~/go/bin",
-        "~/.kube"
       ]
     },
-    "network": {
-      "allowedDomains": [],
-      "deniedDomains": ["gist.github.com"]
-    },
     "excludedCommands": ["docker *"]
-  }
+  },
+  "alwaysThinkingEnabled": false,
+  "effortLevel": "medium",
+  "pluginConfigs": {},
+  "skippedPlugins": []
 }

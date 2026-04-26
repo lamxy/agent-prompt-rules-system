@@ -1,10 +1,29 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "enabledPlugins": {
-    "pyright-lsp@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": true,
-    "sentry@claude-plugins-official": true,
-    "figma@claude-plugins-official": false,
-    "typescript-lsp@claude-plugins-official": false
-  }
+    "$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "enabledPlugins": {
+        "gopls-lsp@claude-plugins-official": false,
+        "sentry@claude-plugins-official": true,
+        "security-guidance@claude-plugins-official": true,
+        "typescript-lsp@claude-plugins-official": false
+    },
+  	"extraKnownMarketplaces": {
+		"claude-plugins-official": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/claude-plugins-official"
+            }
+        },
+        "claude-code-plugins": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/claude-code"
+            }
+        },
+        "karpathy-skills": {
+            "source": {
+                "source": "github",
+                "repo": "forrestchang/andrej-karpathy-skills"
+            }
+        }
+	}
 }

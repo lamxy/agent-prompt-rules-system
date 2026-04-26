@@ -1,19 +1,39 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "enabledPlugins": {
-    "github@claude-plugins-official": true,
-    "atlassian@claude-plugins-official": true,
-    "linear@claude-plugins-official": true,
-    "notion@claude-plugins-official": true,
-    "slack@claude-plugins-official": true,
-    "commit-commands@claude-code-plugins": true
-  },
-  "extraKnownMarketplaces": {
-    "claude-code-plugins": {
-      "source": {
-        "source": "github",
-        "repo": "anthropics/claude-code"
-      }
-    }
-  }
+    "$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "enabledPlugins": {
+        "github@claude-plugins-official": true,
+        "andrej-karpathy-skills@karpathy-skills": true,
+		"remember@claude-plugins-official": true,
+        "superpowers@claude-plugins-official": true,
+        "claude-code-setup@claude-plugins-official": true,
+        "greptile@claude-plugins-official": true,
+        "hookify@claude-plugins-official": true,
+        "playground@claude-plugins-official": true,
+        "sourcegraph@claude-plugins-official": true,
+        "optibot@claude-plugins-official": true,
+        "commit-commands@claude-code-plugins": true,
+        "context7@claude-code-plugins": true,
+        "ralph-loop@claude-code-plugins": true,
+        "session-report@claude-plugins-official": true
+    },
+	"extraKnownMarketplaces": {
+		"claude-plugins-official": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/claude-plugins-official"
+            }
+        },
+        "claude-code-plugins": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/claude-code"
+            }
+        },
+        "karpathy-skills": {
+            "source": {
+                "source": "github",
+                "repo": "forrestchang/andrej-karpathy-skills"
+            }
+        }
+	}
 }

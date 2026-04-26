@@ -1,22 +1,29 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "enabledPlugins": {
-    "github@claude-plugins-official": true,
-    "gitlab@claude-plugins-official": true,
-    "slack@claude-plugins-official": true,
-    "sentry@claude-plugins-official": true,
-    "vercel@claude-plugins-official": true,
-    "firebase@claude-plugins-official": true,
-    "supabase@claude-plugins-official": true,
-    "commit-commands@claude-code-plugins": true,
-    "pr-review-toolkit@claude-code-plugins": true
-  },
-  "extraKnownMarketplaces": {
-    "claude-code-plugins": {
-      "source": {
-        "source": "github",
-        "repo": "anthropics/claude-code"
-      }
-    }
-  }
+    "$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "enabledPlugins": {
+        "slack@claude-plugins-official": true,
+        "security-guidance@claude-plugins-official": true,
+        "commit-commands@claude-code-plugins": true,
+        "pr-review-toolkit@claude-code-plugins": true
+    },
+	"extraKnownMarketplaces": {
+		"claude-plugins-official": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/claude-plugins-official"
+            }
+        },
+        "claude-code-plugins": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/claude-code"
+            }
+        },
+        "karpathy-skills": {
+            "source": {
+                "source": "github",
+                "repo": "forrestchang/andrej-karpathy-skills"
+            }
+        }
+	}
 }

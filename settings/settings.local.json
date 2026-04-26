@@ -5,11 +5,23 @@
 		"agent-sdk-dev@claude-code-plugins": true
 	},
 	"extraKnownMarketplaces": {
-		"claude-code-plugins": {
-			"source": {
-				"source": "github",
-				"repo": "anthropics/claude-code"
-			}
-		}
+		"claude-plugins-official": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/claude-plugins-official"
+            }
+        },
+        "claude-code-plugins": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/claude-code"
+            }
+        },
+        "karpathy-skills": {
+            "source": {
+                "source": "github",
+                "repo": "forrestchang/andrej-karpathy-skills"
+            }
+        }
 	}
 }
