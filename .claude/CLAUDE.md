@@ -31,6 +31,14 @@
 核心原则：  
 **先最小，后加载；够用即停。**
 
+为降低规则审计失败率，默认再经过以下静默闸门：
+- 执行前先判断：当前上下文是否已足够；若足够，停在当前层，不额外加载规约、模板、工具或子代理
+- 若需要进入下一层：一次只选一个最相关规约；模板仅在输出结构必须稳定时才加载
+- 若需要调用工具或子代理：先判断是否真的必要；输入只保留完成当前任务所需的最小上下文
+- 输出前做一次简短自检：是否先给结论、是否只保留当前问题相关信息、是否存在重复、是否能再压缩
+- 多轮、周期或团队协作默认只汇报新增变化，不回灌完整历史或长日志
+- 若发现某条输出会直接违反审计清单，优先先修正输出或执行路径，而不是额外解释规约本身
+
 ---
 
 ## 2. 场景识别与优先级
@@ -166,6 +174,14 @@
 如果当前运行环境支持外部规则文件加载，则按本文件约定按需加载。  
 如果当前运行环境不支持自动加载，则将这些规则文件视为仓库内可维护的分层规范参考；此时仍应优先遵循本文件中的核心提示，并仅参考与当前任务最相关的最小规则集。
 
+### 3.6 审计对齐
+为与 `.claude/rules/audit/rule-audit-checklist-short.md` 保持一致，默认按以下方式对齐：
+- L 类问题：优先减少加载，而不是补充更多规约
+- T 类问题：优先减少工具次数、缩小工具输入、压缩工具输出
+- S/A 类问题：子代理和 team agent 只保留局部结果；主代理负责去重、合并和裁决
+- C 类问题：周期或长链路协作只报告本轮新增变化
+- Q/D 类问题：默认不披露规约；只有在确实有助于完成任务时才简短说明一次
+
 ---
 
 ## 4. 标准流程
@@ -279,11 +295,13 @@
 - 工具结果优先提炼为：结论、关键证据、风险、下一步
 - 涉及外部信息源时，摘要只作线索，原始内容才可作为事实依据
 - 遇到信息源误用风险时，可直接参考 `source-verification-min.md` 中的仓库分析、网页分析、用户指定工具短示例
+- 若网络或代理链路质量差、Fast mode 不可用或外部请求首字节明显缓慢，优先切换到降级路径，避免继续扩大检索范围
 
 如需具体的信息源验证规约，应引用外部的规约：
 
 ```text
 .claude/rules/preferences/source-verification-min.md
+.claude/rules/preferences/network-degraded-preference-min.md
 ```
 
 #### 子代理协作
@@ -292,6 +310,7 @@
 - 子代理输出使用固定结构：结论 / 证据 / 风险 / 下一步
 - 子代理输出应尽量短，便于主代理汇总
 - 多子代理并行时，主代理优先做去重、归并和裁决，不机械拼接原文
+- 若外部仓库分析或网页抓取在弱网环境下发生阻塞，优先减少子代理数量、缩小输入范围，必要时直接退回主代理串行轻量分析
 
 #### GitHub / 仓库协作
 - 默认将本仓库视为 CLI 运行记忆与仓库协作规范的共同入口
@@ -308,6 +327,7 @@
 ```text
 .claude/rules/preferences/personal-preference-min.md
 .claude/rules/preferences/sub-agent-preference-min.md
+.claude/rules/preferences/network-degraded-preference-min.md
 ```
 
 ### 6.4 仓库特定约定
@@ -348,6 +368,7 @@
       multi-agent-summary-template.md
       sub-agent-output-template.md
     preferences/
+      network-degraded-preference-min.md
       source-verification-min.md
       tech-stack-preference-min.md
       code-style-preference-min.md

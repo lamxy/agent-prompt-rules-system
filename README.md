@@ -221,7 +221,7 @@ sh ./scripts/install-settings.sh -l <user|project|local> [-s <scenario>] [--src 
 
 - `user`：`productivity`（不传 `-s` 时默认回退到 `settings.user.json`）
 - `project`：`frontend-dev`、`backend-dev`、`fullstack-dev`、`product-collab`、`release-ops`
-- `local`：`frontend-dev`、`backend-dev`、`experimental`
+- `local`：`frontend-dev`、`backend-dev`、`experimental`、`low-connectivity`
 
 场景基线定位（用于二次扩展）：
 
@@ -233,6 +233,17 @@ sh ./scripts/install-settings.sh -l <user|project|local> [-s <scenario>] [--src 
 - `project/release-ops`：发布与运维基线，强调变更交付、监控告警、发布平台与沟通通道。
 - `local/frontend-dev`、`local/backend-dev`：个人在当前仓库内的技术偏好覆盖层，用于按岗位快速收敛插件组合。
 - `local/experimental`：个人实验层，用于临时验证新插件或新组合，不影响团队共享基线。
+- `local/low-connectivity`：个人弱网或代理不稳定覆盖层，用于减少 hook 与插件噪音，优先保障主流程完成。
+
+命令补充：
+
+- `.claude/commands/auditrules.md`：对当前轮执行路径和输出做最小审计。
+- `.claude/commands/analyze-github-repo.md`：对复杂 GitHub 仓库执行轻量探测、预算判断和超预算升级。
+
+审计辅助：
+
+- `.claude/rules/audit/audit-failure-examples-min.md`：收录高频审计失败样例，便于快速对照 `L3 / S3 / S4 / 超预算未升级` 等问题。
+- `.claude/rules/templates/audit-report-template.md`：提供审计结果落盘的最小 Markdown 结构。
 
 扩展建议（推荐）：
 
@@ -240,6 +251,7 @@ sh ./scripts/install-settings.sh -l <user|project|local> [-s <scenario>] [--src 
 - 新增外部集成插件时，优先确认其 marketplace 来源，并在模板中同步维护 `extraKnownMarketplaces`。
 - 语言类 LSP 插件按仓库技术栈最小化启用，避免无关插件增加资源开销与噪音。
 - 新增场景时，建议复制最接近的现有模板并重命名为 `settings.<level>-<scenario>.json`，再按需增减插件。
+- 若代理链路较差、Fast mode 经常不可用，优先使用低连通性模板，减少 hook 与插件噪音对主流程的干扰。
 
 示例：
 
@@ -252,6 +264,9 @@ sh ./scripts/install-settings.sh -l project -s frontend-dev -m overwrite -p /pat
 
 # 本地级实验场景，融合到现有 settings.local.json
 sh ./scripts/install-settings.sh -l local -s experimental -m merge -p /path/to/project/.claude
+
+# 本地级弱网 / 代理不稳定场景
+sh ./scripts/install-settings.sh -l local -s low-connectivity -m merge -p /path/to/project/.claude
 
 # 使用自定义源文件
 sh ./scripts/install-settings.sh -l project --src /path/to/settings.project-team.json -m ask -p /path/to/project/.claude
@@ -281,7 +296,12 @@ sh ./scripts/install-settings.sh -l project --src /path/to/settings.project-team
     ├── RTK.md
     ├── settings.json
     ├── commands/
+  │   ├── auditrules.md
+  │   └── analyze-github-repo.md
     └── rules/
+      ├── audit/
+      │   ├── rule-audit-checklist-short.md
+      │   └── audit-failure-examples-min.md
         ├── task/
         │   ├── general-task-rule-min.md
         │   ├── design-first-rule-min.md
@@ -290,6 +310,7 @@ sh ./scripts/install-settings.sh -l project --src /path/to/settings.project-team
         │   ├── agent-team-rule-min.md
         │   └── tool-call-rule-min.md
         ├── templates/
+        │   ├── audit-report-template.md
         │   ├── loop-report-template.md
         │   ├── tool-result-summary-template.md
         │   ├── team-leader-output-template.md
@@ -297,6 +318,7 @@ sh ./scripts/install-settings.sh -l project --src /path/to/settings.project-team
         │   ├── multi-agent-summary-template.md
         │   └── sub-agent-output-template.md
         └── preferences/
+          ├── network-degraded-preference-min.md
             ├── source-verification-min.md
             ├── tech-stack-preference-min.md
             ├── code-style-preference-min.md
