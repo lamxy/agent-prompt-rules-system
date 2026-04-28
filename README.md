@@ -319,10 +319,7 @@ sh ./scripts/install-settings.sh -l project --src /path/to/settings.project-team
     ├── RTK.md
     ├── settings.json
     ├── audit-reports/
-    │   ├── 2026-04-28-hook-baseline-matrix-draft.md
-    │   ├── 2026-04-28-hook-phase1-execution.md
-    │   ├── 2026-04-28-hook-phase2-3-execution.md
-    │   └── 2026-04-28-hook-phase4-execution.md
+    │   ├── <xxxx-xx-xx>-<xxx>.md
     ├── commands/
     │   ├── auditrules.md
     │   └── analyze-github-repo.md
