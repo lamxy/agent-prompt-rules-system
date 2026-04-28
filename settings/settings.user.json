@@ -1,5 +1,71 @@
 {
 	"$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "hooks": {
+        "PreToolUse": [
+            {
+                "matcher": "Bash",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "rtk hook claude"
+                    },
+                    {
+                        "type": "prompt",
+                        "timeout": 20,
+                        "prompt": "You are a narrow semantic safety check for Bash PreToolUse. Default to allow. Only when the command clearly indicates high-risk intent, return ask for confirmation (not deny). High-risk examples: production/destructive infrastructure actions (terraform apply/destroy, kubectl apply/delete, helm install/upgrade/uninstall), remote mutation (git push), broad deletion outside obvious temp paths, database destructive operations, or privileged escalation intent. If high-risk, return JSON exactly: {\"hookSpecificOutput\":{\"permissionDecision\":\"ask\"},\"systemMessage\":\"High-risk Bash intent detected: request explicit confirmation.\"}. Otherwise return JSON exactly: {\"hookSpecificOutput\":{\"permissionDecision\":\"allow\"}}. Keep decisions conservative and avoid false positives."
+                    }
+                ]
+            }
+        ],
+        "Stop": [
+            {
+                "matcher": "*",
+                "hooks": [
+                    {
+                        "type": "prompt",
+                        "timeout": 20,
+                        "prompt": "You are a strict-but-minimal completion gate for the main agent. Approve by default. Block only when both are true: (1) the current turn performed meaningful work (tool use, edits, or analysis output), and (2) the latest assistant output does not clearly include both a concrete result and a concrete next step. If blocking, return JSON exactly: {\"decision\":\"block\",\"reason\":\"Missing completion summary: include result and next step.\"}. Otherwise return JSON exactly: {\"decision\":\"approve\"}. If uncertain, approve."
+                    }
+                ]
+            }
+        ],
+        "SubagentStop": [
+            {
+                "matcher": "*",
+                "hooks": [
+                    {
+                        "type": "prompt",
+                        "timeout": 20,
+                        "prompt": "You are a minimal completion gate for subagents. Approve by default. Block only when the subagent final output is clearly missing required minimal fields for this repository's template: state, delta, evidence, risk, next, ask. Accept close synonyms if semantics are present. If blocking, return JSON exactly: {\"decision\":\"block\",\"reason\":\"Subagent output missing minimal required fields: state/delta/evidence/risk/next/ask.\"}. Otherwise return JSON exactly: {\"decision\":\"approve\"}. If uncertain, approve."
+                    }
+                ]
+            }
+        ],
+        "PostToolUse": [
+            {
+                "matcher": "*",
+                "hooks": [
+                    {
+                        "type": "prompt",
+                        "timeout": 15,
+                        "prompt": "You are a non-blocking noise triage hook. Never block. Detect only high-confidence non-blocking noise patterns such as PostToolUse evaluator warnings, plugin log-write failures, or missing remember directory. If detected, return JSON exactly: {\"systemMessage\":\"[noise-info] Non-blocking hook/plugin noise detected; continue main flow.\"}. If not detected, return JSON exactly: {}."
+                    }
+                ]
+            }
+        ],
+        "PreCompact": [
+            {
+                "matcher": "*",
+                "hooks": [
+                    {
+                        "type": "prompt",
+                        "timeout": 15,
+                        "prompt": "Before compaction, preserve only minimal verified state. Never block. Generate at most three short lines in systemMessage with this exact key style: keep.result=<...>; keep.risk=<low|medium|high|unknown>; keep.next=<...>. Include only if clearly supported by the latest verified context. If insufficient evidence, return JSON exactly: {}."
+                    }
+                ]
+            }
+        ]
+    },
 	"enabledPlugins": {
         "github@claude-plugins-official": true,
         "andrej-karpathy-skills@karpathy-skills": true,

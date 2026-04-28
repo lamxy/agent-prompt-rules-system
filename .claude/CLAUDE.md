@@ -27,6 +27,7 @@
 - 默认优先输出：结论、变化、风险、下一步
 - 需要调用工具时，优先选择最直接、最少步骤、最小上下文传递的方式完成任务
 - 不让规则、模板或历史摘要本身成为上下文膨胀来源
+- 提示词规约是软约束；当需要稳定执行边界时，优先通过 hook、权限与沙箱形成可执行硬约束
 
 核心原则：  
 **先最小，后加载；够用即停。**
@@ -132,6 +133,25 @@
 - 若无需工具即可可靠完成，不加载工具调用相关规约
 - 工具调用能力不能替代主场景判断、单问题澄清或原始来源验证
 
+### 3.2.2 Hook 执行约束能力
+Hook 不作为主场景处理，而是跨场景的“执行闸门”能力，用于把关键软约束转为可执行约束。
+
+执行规则：
+- 仅在需要稳定执行边界、降低协作偏航风险时启用；不要将 hook 作为默认重型流程。
+- 采用最小启用策略：先高杠杆节点，再逐步扩展；不要一次性覆盖全部事件。
+- 先保证主流程可完成；除明确高风险或明确缺失外，不阻塞。
+- hook 结果必须与弱网降级策略协同：先区分阻塞错误与日志噪音，避免误判失败。
+
+默认启用顺序：
+1. `Stop` / `SubagentStop`：最小完成性门禁（防止提前结束）
+2. `PostToolUse`：非阻塞噪音分级（降低误重试）
+3. `PreCompact`：最小关键事实保全（减少压缩丢关键信息）
+4. `PreToolUse`：窄范围高风险语义 `ask`（默认放行，谨慎拦截）
+
+边界规则：
+- 主状态机由提示词链路控制；hook 仅在生命周期节点执行 gate / verify / preserve。
+- 不在 hook 中构建复杂规则编排状态机。
+
 ### 3.3 第三层：输出模板
 输出模板是可选层，用于稳定输出格式、减少噪音、提升可合并性，不默认常驻。
 
@@ -229,6 +249,7 @@
 | 普通分析任务 | 核心提示 → `general-task-rule-min.md` |
 | 设计类任务 | 核心提示 → `design-first-rule-min.md` |
 | 需要证据支持的任务 | 核心提示 → 选择主场景规约 → 充分性判断 / 单问题澄清 → 按需叠加 `tool-call-rule-min.md` → 涉及外部信息源时叠加 `source-verification-min.md` → 必要时 `tool-result-summary-template.md` |
+| 需要稳定执行边界的任务 | 核心提示 → 选择主场景规约 → 按需叠加最小 hook 闸门（优先 `Stop/SubagentStop`）→ 通过审计后再逐步扩展到 `PostToolUse/PreCompact/PreToolUse` |
 | 子代理任务 | 核心提示 → `sub-agent-rule-min.md` → 必要时 `multi-agent-summary-template.md` |
 | 代理团队任务 | 核心提示 → `agent-team-rule-min.md` → 必要时 `team-leader-output-template.md` 或 `team-agent-output-template.md` |
 | 周期性任务 | 核心提示 → `loop-cron-rule-min.md` → 必要时 `loop-report-template.md` |
@@ -311,6 +332,13 @@
 - 子代理输出应尽量短，便于主代理汇总
 - 多子代理并行时，主代理优先做去重、归并和裁决，不机械拼接原文
 - 若外部仓库分析或网页抓取在弱网环境下发生阻塞，优先减少子代理数量、缩小输入范围，必要时直接退回主代理串行轻量分析
+- 子代理完成性优先通过 `SubagentStop` 最小门禁兜底，避免把长报告或缺字段输出直接回灌主线程
+
+#### Hook 与执行边界
+- Hook 是执行约束层，不替代主场景判断与提示词分层加载。
+- `Stop/SubagentStop` 可用于最小完成性校验；`PostToolUse` 优先做噪音分级；`PreCompact` 仅保全最小关键事实；`PreToolUse` 采用窄范围高风险 `ask`。
+- 默认采用“可通过优先”的保守策略：不确定时避免阻塞，减少误伤主流程。
+- Hook 修改应分阶段推进并留有回退开关，配合审计报告评估副作用。
 
 #### GitHub / 仓库协作
 - 默认将本仓库视为 CLI 运行记忆与仓库协作规范的共同入口
@@ -352,15 +380,27 @@
 
 ```text
 .claude/
+  audit-reports/
+    <xxxx-xx-xx>-<xxx>.md
+  commands/
+    auditrules.md
+    analyze-github-repo.md
   rules/
+    audit/
+      audit-failure-examples-min.md
+      rule-audit-checklist-short.md
     task/
       general-task-rule-min.md
       design-first-rule-min.md
       loop-cron-rule-min.md
       sub-agent-rule-min.md
       agent-team-rule-min.md
+      subagent-cost-rule-min.md
+      subagent-input-rule-min.md
       tool-call-rule-min.md
     templates/
+      audit-report-template.md
+      dispatch-template.md
       loop-report-template.md
       tool-result-summary-template.md
       team-leader-output-template.md
@@ -370,12 +410,6 @@
     preferences/
       network-degraded-preference-min.md
       source-verification-min.md
-      tech-stack-preference-min.md
-      code-style-preference-min.md
-      personal-preference-min.md
-      sub-agent-preference-min.md
-      repo-convention-min.md
-      github-workflow-min.md
 ```
 
 如果后续引入更完整的规约、决策树或运行时编排文件，应优先通过新增外部规则文件实现，而不是直接膨胀本文件。

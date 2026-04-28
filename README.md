@@ -88,6 +88,13 @@ Claude Code 也提供了清晰的配置作用域与优先级模型，包括用�
 - GitHub 协作
 - 代码实现与仓库分析
 
+并且支持将“软规则”与“硬约束”组合使用：
+
+- 软规则：`CLAUDE.md` + 极简场景规约 + 输出模板
+- 硬约束：`hooks` + `permissions` + `sandbox`
+
+建议采用渐进式落地：先最小门禁，再逐步扩展，避免一次性引入过多拦截造成协作阻塞。
+
 ### 对开源协作友好
 规则文件可以和代码一起版本化管理，便于：
 
@@ -141,6 +148,12 @@ Claude Code 也提供了清晰的配置作用域与优先级模型，包括用�
 - 独立的规则加载协议文件驱动
 
 这些内容是未来演进方向，而不是当前阶段的硬依赖。
+
+补充（真实协作场景迭代）：
+
+- 已补充主代理 / 子代理 / 代理团队在真实协作中的最小完成性与汇总约束。
+- 已建立 hook 分阶段执行路径（优先完成性门禁与非阻塞噪音治理）。
+- 保持“提示词主控 + hook 护栏”的结构，不把复杂状态机迁移到 hook 层。
 
 ---
 
@@ -287,45 +300,58 @@ sh ./scripts/install-settings.sh -l project --src /path/to/settings.project-team
 │   ├── install.sh
 │   └── install-settings.sh
 ├── settings/
+│   ├── settings.user-productivity.json
 │   ├── settings.user.json
+│   ├── settings.project-frontend-dev.json
+│   ├── settings.project-backend-dev.json
+│   ├── settings.project-fullstack-dev.json
+│   ├── settings.project-product-collab.json
+│   ├── settings.project-release-ops.json
 │   ├── settings.project-xxx.json
+│   ├── settings.local-frontend-dev.json
+│   ├── settings.local-backend-dev.json
+│   ├── settings.local-experimental.json
+│   ├── settings.local-low-connectivity.json
 │   ├── settings.local.json
 │   └── ...
 └── .claude/
     ├── CLAUDE.md
     ├── RTK.md
     ├── settings.json
+    ├── audit-reports/
+    │   ├── 2026-04-28-hook-baseline-matrix-draft.md
+    │   ├── 2026-04-28-hook-phase1-execution.md
+    │   ├── 2026-04-28-hook-phase2-3-execution.md
+    │   └── 2026-04-28-hook-phase4-execution.md
     ├── commands/
-  │   ├── auditrules.md
-  │   └── analyze-github-repo.md
+    │   ├── auditrules.md
+    │   └── analyze-github-repo.md
     └── rules/
-      ├── audit/
-      │   ├── rule-audit-checklist-short.md
-      │   └── audit-failure-examples-min.md
-        ├── task/
-        │   ├── general-task-rule-min.md
-        │   ├── design-first-rule-min.md
-        │   ├── loop-cron-rule-min.md
-        │   ├── sub-agent-rule-min.md
-        │   ├── agent-team-rule-min.md
-        │   └── tool-call-rule-min.md
-        ├── templates/
-        │   ├── audit-report-template.md
-        │   ├── loop-report-template.md
-        │   ├── tool-result-summary-template.md
-        │   ├── team-leader-output-template.md
-        │   ├── team-agent-output-template.md
-        │   ├── multi-agent-summary-template.md
-        │   └── sub-agent-output-template.md
-        └── preferences/
-          ├── network-degraded-preference-min.md
-            ├── source-verification-min.md
-            ├── tech-stack-preference-min.md
-            ├── code-style-preference-min.md
-            ├── personal-preference-min.md
-            ├── sub-agent-preference-min.md
-            ├── repo-convention-min.md
-            └── github-workflow-min.md
+    ├── audit/
+    │   ├── rule-audit-checklist-short.md
+    │   └── audit-failure-examples-min.md
+    ├── task/
+    │   ├── general-task-rule-min.md
+    │   ├── design-first-rule-min.md
+    │   ├── loop-cron-rule-min.md
+    │   ├── sub-agent-rule-min.md
+    │   ├── agent-team-rule-min.md
+    │   ├── subagent-cost-rule-min.md
+    │   ├── subagent-input-rule-min.md
+    │   └── tool-call-rule-min.md
+    ├── templates/
+    │   ├── audit-report-template.md
+    │   ├── dispatch-template.md
+    │   ├── loop-report-template.md
+    │   ├── tool-result-summary-template.md
+    │   ├── team-leader-output-template.md
+    │   ├── team-agent-output-template.md
+    │   ├── multi-agent-summary-template.md
+    │   └── sub-agent-output-template.md
+    └── preferences/
+      ├── network-degraded-preference-min.md
+      ├── source-verification-min.md
+      └── README.md
 ```
 
 > 注意：不是所有文件都需要一开始就存在。  
@@ -449,6 +475,15 @@ templates/
 - 环境相关配置
 - 共享项目级设置
 
+在协作强化场景下，建议将 `.claude/settings.json` 作为“执行约束层”承载：
+
+- `Stop` / `SubagentStop`：最小完成性门禁
+- `PostToolUse`：非阻塞噪音分级
+- `PreCompact`：最小关键事实保全
+- `PreToolUse`：窄范围高风险 `ask`
+
+默认策略：先保障主流程完成，再逐步提高约束强度。
+
 Claude Code 官方文档明确区分了这两类文件的职责，并说明了设置优先级：命令行参数、本地项目设置、共享项目设置、用户设置等会按优先级叠加。([docs.claude.com](https://docs.claude.com/en/docs/claude-code/settings?utm_source=openai); [code.claude.com](https://code.claude.com/docs/en/configuration?utm_source=openai))
 
 ---
@@ -568,6 +603,8 @@ Claude Code 官方建议使用 `.claude/settings.json` 中的 `permissions.deny`
 - [x] 定义基础分层结构
 - [x] 补充子代理偏好与多代理汇总模板
 - [x] 以极简规则阶段为主进行体验与审计验证
+- [x] 补充真实协作场景下主代理 / 子代理 / 代理团队约束
+- [x] 建立分阶段 hook 执行约束（完成性门禁、噪音治理、压缩保全、高风险 ask）
 
 ### 下一阶段
 - [ ] 补充更完整的 task 规约
