@@ -32,4 +32,11 @@ temp/
 .cache/
 
 # smoke test
-.tmp-install-settings-smoke-38420/
+.tmp/
+
+# long claude.md
+.claude/CLAUDE-long.md
+
+# audit reporter
+.claude/audit-reports/*
+!.claude/audit-reports/.gitkeep

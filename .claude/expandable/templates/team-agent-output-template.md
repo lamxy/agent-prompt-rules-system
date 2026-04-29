@@ -9,7 +9,7 @@ delta=<本次新增结果>
 evidence=<关键证据>
 artifact=<复杂结果文件路径；无则留空>
 risk=<low|medium|high>
-next=<建议下一步>
+next=<建议下一步；无则留空>
 ask=<需要 leader 确认时填写，否则留空>
 ```
 

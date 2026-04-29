@@ -1,3 +1,7 @@
+---
+allowed-tools: Read, Grep, Glob, Edit, Write, Bash
+description: 按审计清单审计规则及模板加载是否符合预期
+---
 
 ## 审计机制
 
@@ -8,10 +12,10 @@
 
 ### 执行方式
 通过子代理执行。子代理加载审计清单：
-- `cat .claude/rules/audit/rule-audit-checklist-short.md`
+- `cat .claude/expandable/audit/rule-audit-checklist-short.md`
 
 若需要快速比对高频失败模式，可同时参考：
-- `.claude/rules/audit/audit-failure-examples-min.md`
+- `.claude/expandable/audit/audit-failure-examples-min.md`
 
 主代理构造审计输入摘要，连同清单一起传给子代理。
 
@@ -38,7 +42,7 @@
 - 触发审计后，主代理应将本次审计结果保存为 Markdown 文档。
 - 建议路径：`.claude/audit-reports/<yyyy-mm-dd>-<task-or-session>-audit.md`
 - 文档至少包含：任务摘要、审计输入摘要、审计结果、问题项、建议、生成时间。
-- 默认可参考：`.claude/rules/templates/audit-report-template.md`
+- 默认可参考：`.claude/expandable/templates/audit-report-template.md`
 - 若本轮无问题，也应写入文档，并标记“审计结果: 通过”。
 - 保存完成后，主代理必须在回传中明确上报该 Markdown 文档路径，便于后续追溯。
 

@@ -8,7 +8,7 @@ state=<success|partial|failed|blocked>
 delta=<本轮新增变化，尽量短>
 evidence=<关键证据，尽量短>
 risk=<low|medium|high>
-next=<下一步动作>
+next=<下一步动作；如无则留空>
 ask=<需要确认时填写，否则留空>
 ```
 

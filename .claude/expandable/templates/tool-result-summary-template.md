@@ -7,7 +7,7 @@
 result=<结论>
 evidence=<关键证据>
 risk=<low|medium|high>
-next=<下一步>
+next=<下一步；如无则留空>
 ```
 
 ## 使用规则

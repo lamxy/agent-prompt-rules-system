@@ -17,5 +17,5 @@ state=<success|partial|failed|blocked>
 delta=<本轮新增变化>
 evidence=<关键证据>
 risk=<low|medium|high>
-next=<下一步>
+next=<下一步，如没有留空>
 ask=<需要确认时填写，否则留空>

@@ -73,7 +73,8 @@ Claude Code 官方文档说明，`CLAUDE.md` 用于在启动时向 Claude Code �
 
 - `CLAUDE.md`：主记忆文件
 - `.claude/settings.json`：项目共享设置
-- `.claude/rules/`：外部极简规约与模板
+- `.claude/rules/`：外部极简规约（task/preference）
+- `.claude/expandable/`：模板与审计文档（默认不作为常驻规则加载）
 
 Claude Code 官方文档说明，项目共享设置适合提交到源码管理；而 `.claude/settings.local.json` 适合个人偏好与本地实验，不应作为团队共享配置。([docs.claude.com](https://docs.claude.com/en/docs/claude-code/settings?utm_source=openai))  
 Claude Code 也提供了清晰的配置作用域与优先级模型，包括用户级、项目级和本地项目级设置。([code.claude.com](https://code.claude.com/docs/en/configuration?utm_source=openai))
@@ -126,6 +127,28 @@ Claude Code 也提供了清晰的配置作用域与优先级模型，包括用�
 - 按需展开
 - 结果压缩
 - 复杂完成后回收上下文复杂度
+
+---
+
+## 主提示词瘦身约定（运行时最小化）
+
+为减少 Claude Code 会话启动时的上下文占用，仓库采用“运行时最小主提示词 + 文档层维护说明”分层：
+
+- `.claude/CLAUDE.md` 仅保留高频、高杠杆、直接影响执行路径的规则。
+- 仓库背景、演进说明、目录建议、维护清单等迁移到 `README.md` 和外部规则文件。
+- 仅供维护者参考但不应进入模型上下文的内容，优先写为 `CLAUDE.md` 中的 HTML 注释块。
+
+执行口径：
+
+- 先最小，后加载，够用即停。
+- 若规则细节可外置，不扩张主提示词。
+- 新增偏好优先落到 `.claude/rules/preferences/`，新增流程模板优先落到 `.claude/expandable/templates/`。
+
+收益：
+
+- 降低启动 token 消耗。
+- 减少多轮会话中的规则噪音与冲突概率。
+- 让主提示词保持稳定，便于长期维护与审计。
 
 ---
 
@@ -255,8 +278,8 @@ sh ./scripts/install-settings.sh -l <user|project|local> [-s <scenario>] [--src 
 
 审计辅助：
 
-- `.claude/rules/audit/audit-failure-examples-min.md`：收录高频审计失败样例，便于快速对照 `L3 / S3 / S4 / 超预算未升级` 等问题。
-- `.claude/rules/templates/audit-report-template.md`：提供审计结果落盘的最小 Markdown 结构。
+- `.claude/expandable/audit/audit-failure-examples-min.md`：收录高频审计失败样例，便于快速对照 `L3 / S3 / S4 / 超预算未升级` 等问题。
+- `.claude/expandable/templates/audit-report-template.md`：提供审计结果落盘的最小 Markdown 结构。
 
 扩展建议（推荐）：
 
@@ -323,32 +346,34 @@ sh ./scripts/install-settings.sh -l project --src /path/to/settings.project-team
     ├── commands/
     │   ├── auditrules.md
     │   └── analyze-github-repo.md
-    └── rules/
-    ├── audit/
-    │   ├── rule-audit-checklist-short.md
-    │   └── audit-failure-examples-min.md
-    ├── task/
-    │   ├── general-task-rule-min.md
-    │   ├── design-first-rule-min.md
-    │   ├── loop-cron-rule-min.md
-    │   ├── sub-agent-rule-min.md
-    │   ├── agent-team-rule-min.md
-    │   ├── subagent-cost-rule-min.md
-    │   ├── subagent-input-rule-min.md
-    │   └── tool-call-rule-min.md
-    ├── templates/
-    │   ├── audit-report-template.md
-    │   ├── dispatch-template.md
-    │   ├── loop-report-template.md
-    │   ├── tool-result-summary-template.md
-    │   ├── team-leader-output-template.md
-    │   ├── team-agent-output-template.md
-    │   ├── multi-agent-summary-template.md
-    │   └── sub-agent-output-template.md
-    └── preferences/
-      ├── network-degraded-preference-min.md
-      ├── source-verification-min.md
-      └── README.md
+    ├── rules/
+    │   ├── task/
+    │   │   ├── general-task-rule-min.md
+    │   │   ├── design-first-rule-min.md
+    │   │   ├── loop-cron-rule-min.md
+    │   │   ├── sub-agent-rule-min.md
+    │   │   ├── agent-team-rule-min.md
+    │   │   ├── subagent-cost-rule-min.md
+    │   │   ├── subagent-input-rule-min.md
+    │   │   └── tool-call-rule-min.md
+    │   ├── preferences/
+    │   │   ├── network-degraded-preference-min.md
+    │   │   └── source-verification-min.md
+    │   ├── audit/       # compatibility stubs
+    │   └── templates/   # compatibility stubs
+    └── docs/
+      ├── audit/
+      │   ├── rule-audit-checklist-short.md
+      │   └── audit-failure-examples-min.md
+      └── templates/
+        ├── audit-report-template.md
+        ├── dispatch-template.md
+        ├── loop-report-template.md
+        ├── tool-result-summary-template.md
+        ├── team-leader-output-template.md
+        ├── team-agent-output-template.md
+        ├── multi-agent-summary-template.md
+        └── sub-agent-output-template.md
 ```
 
 > 注意：不是所有文件都需要一开始就存在。  
@@ -389,7 +414,7 @@ task/
 
 ### 模板层
 ```text
-templates/
+expandable/templates/
   loop-report-template.md
   tool-result-summary-template.md
   team-leader-output-template.md
