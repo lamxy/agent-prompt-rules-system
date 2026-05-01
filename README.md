@@ -133,7 +133,7 @@ Claude Code 也提供了清晰的配置作用域与优先级模型，包括用�
 对应到仓库维护上，就是：
 
 - `.claude/CLAUDE.md` 只保留高频、高杠杆的常驻规则
-- 规则细节尽量外置到 `.claude/rules/`
+- 规则细节尽量外置到 `.claude/rules/`、`.claude/expandable/`
 - 模板只在需要稳定输出结构时启用
 - 复杂阶段结束后回收上下文复杂度
 
@@ -340,12 +340,14 @@ sh ./scripts/install-settings.sh -l project --src /path/to/settings.project-team
     │   ├── preferences/
     │   │   ├── network-degraded-preference-min.md
     │   │   └── source-verification-min.md
-    │   ├── audit/       # compatibility stubs
-    │   └── templates/   # compatibility stubs
-    └── docs/
+    └── expandable/
       ├── audit/
       │   ├── rule-audit-checklist-short.md
       │   └── audit-failure-examples-min.md
+      ├── preferences/
+      │   └── ...
+      ├── specs/
+      │   └── ...
       └── templates/
         ├── audit-report-template.md
         ├── dispatch-template.md
