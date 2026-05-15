@@ -1,5 +1,8 @@
 # 派发模板使用规则
 
+> **每次派发子代理时，必须在 prompt 末尾追加 `dispatch-footer.md` 的输出约束内容。**
+> 路径：`.claude/expandable/templates/dispatch-footer.md`
+
 ## 判断规则（决策树）
 - 第一步：是否低上下文场景（高频重复 / token紧张 / 快速协作）
 	- 是：优先“低上下文极简示例”
@@ -42,7 +45,7 @@ summary_format=<多代理汇总格式；单代理可留空>
 [dispatch]
 task=请独立完成当前任务并返回最小结果
 cmd=仅使用给定输入范围，不扩展目标
-cmd=简单结果直接返回；复杂结果先落盘再回传摘要与artifact
+cmd=简单结果（≤150行且≤3000字符）直接返回；复杂结果先落盘再回传摘要与artifact
 cmd=遇到权限或审批限制立即上报并等待
 cmd=阻塞超过20-30分钟时返回已完成证据并标记partial或blocked
 context=输入文件: <file_a>, <file_b>
@@ -129,7 +132,7 @@ ask=<需要人工确认时填写，否则留空>
 ```text
 [dispatch]
 task=独立完成当前任务
-cmd=仅处理指定范围；简单直返，复杂落盘并回传artifact
+cmd=仅处理指定范围；简单直返（≤150行且≤3000字符），复杂落盘并回传artifact
 cmd=遇审批立即上报；阻塞20-30分钟返回partial或blocked
 context=<file_a>, <file_b>
 contract=按[agent]字段回传；禁止完整推理与长日志
