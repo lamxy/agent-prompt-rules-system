@@ -384,7 +384,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/subagent_stop_gate.py"
+            "command": "python3 .claude/hooks/subagent_stop_gate.py"
           }
         ]
       }
