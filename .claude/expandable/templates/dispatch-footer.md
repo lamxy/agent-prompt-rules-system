@@ -6,9 +6,9 @@
 
 ## 输出约束（强制）
 
-- **≤150行 且 总字符 ≤3000**：直接回传结果
+- **≤150行 且 总字符 ≤3000**：使用下方回传格式，`artifact` 留空，`delta` 填写结果摘要
 - **超出任一阈值**：必须先将完整内容写入文件，仅回传以下内容：
-  - 摘要（≤10行）
+  - 摘要（≤10行，填入 `delta`）
   - 文件绝对路径（`artifact=<path>`）
   - 风险与下一步
 - **禁止**将原始长内容直接返回给主代理
@@ -19,7 +19,7 @@
 ```
 [agent] role=<sub-agent>
 state=<success|partial|failed|blocked>
-delta=<本次新增结果，≤5行>
+delta=<本次新增结果，≤10行>
 evidence=<关键证据，≤3条>
 artifact=<文件绝对路径；无则留空>
 risk=<low|medium|high>
