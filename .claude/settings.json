@@ -389,17 +389,6 @@
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 -c \"\nimport json, sys, os\ntry:\n    data = json.load(sys.stdin)\n    path = data.get('tool_input', {}).get('file_path', '')\n    artifacts_dir = os.path.expanduser('~/.claude/artifacts/')\n    if path.startswith(artifacts_dir) or (path.startswith('/tmp/') and path.endswith(('.md', '.txt', '.json'))):\n        print(json.dumps({'hookSpecificOutput': {'hookEventName': 'PostToolUse', 'additionalContext': 'ARTIFACT-READ-CHECK: 你刚读取了子代理 artifact 文件。请先声明处理意图再继续：若为「转交」（文档/报告/代码等最终产物，用户直接消费）→ 立即停止，直接告知用户文件路径，禁止复述内容；若为「加工」（分析/对比/裁决/翻译等需要主代理处理）→ 继续，不受限制。意图不明确时默认「转交」。'}}))\nexcept:\n    pass\n\" 2>/dev/null || true"
-          }
-        ]
-      }
-    ],
     "PreCompact": [
       {
         "matcher": "*",
