@@ -2,37 +2,77 @@
 """Minimal command hook for SubagentStop.
 
 Behavior:
-- Block when required fields are clearly missing.
-- Block when output appears to contain long, uncompressed reasoning.
-- Approve + warning when external API calls seem > 3 or network timeout is detected.
+- Block when output exceeds size limits (>3000 unique chars OR >50 lines).
+  Rationale: oversized output must be saved to file and only a summary+path
+  returned to the main agent. Field-format checking is intentionally removed
+  to avoid conflicts with commands that use their own fixed output formats
+  (e.g. /auditrules).
 - Otherwise approve.
 
-This is a heuristic draft designed for low-latency operation.
+This is a size-only gate designed for low-latency, format-agnostic operation.
 """
 
 from __future__ import annotations
 
 import json
-import re
+import os
 import sys
-from typing import Iterable
+from datetime import datetime
 
 
-LONG_TEXT_EXEMPT_LINE_THRESHOLD = 30
-LONG_TEXT_EXEMPT_ZH_UNIQUE_THRESHOLD = 180
+SIZE_BLOCK_UNIQUE_CHARS = 3000
+SIZE_BLOCK_LINE_COUNT = 50
 
 
-def _contains_any(text: str, keys: Iterable[str]) -> bool:
-    return any(k in text for k in keys)
+def _debug_log(stdin_raw: str, output: dict) -> None:
+    """Append a structured debug entry to file specified by SUBAGENT_STOP_DEBUG_LOG.
+
+    Each entry contains a timestamp, the raw stdin received, and the JSON output emitted.
+    No-op when the env var is unset or empty.
+    """
+    log_path = os.getenv("SUBAGENT_STOP_DEBUG_LOG", "")
+    if not log_path:
+        return
+    try:
+        ts = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        entry = (
+            f"\n--- [{ts}] subagent_stop_gate ---\n"
+            f"[stdin]\n{stdin_raw}\n"
+            f"[output]\n{json.dumps(output, ensure_ascii=False)}\n"
+        )
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(entry)
+    except Exception:
+        pass  # debug logging must never affect main flow
 
 
-def _emit(payload: dict) -> None:
-    # Use compact JSON to stay close to exact-output contract.
+def _emit(payload: dict, stdin_raw: str = "") -> None:
+    _debug_log(stdin_raw, payload)
     print(json.dumps(payload, ensure_ascii=True, separators=(",", ":")))
 
 
-def _is_long_text_exempt(raw: str) -> bool:
-    """Exempt direct long-form reports from strict field/reasoning blocks.
+def _normalize_stdin_for_checks(raw: str) -> str:
+    """SubagentStop stdin is typically JSON; fallback to raw text if parsing fails."""
+    if not raw.strip():
+        return ""
+    try:
+        payload = json.loads(raw)
+    except Exception:
+        return raw
+
+    if isinstance(payload, dict):
+        for key in ("last_assistant_message", "output", "result", "text", "content", "response", "message"):
+            v = payload.get(key)
+            if isinstance(v, str) and v.strip():
+                return v
+        return json.dumps(payload, ensure_ascii=False)
+    if isinstance(payload, list):
+        return json.dumps(payload, ensure_ascii=False)
+    return str(payload)
+
+
+def _placeholder(raw: str) -> bool:
+    """Placeholder to satisfy import; kept for structural parity.
 
     Exemption rule:
     - More than 30 lines, OR
@@ -42,82 +82,31 @@ def _is_long_text_exempt(raw: str) -> bool:
         return False
 
     line_count = raw.count("\n") + 1
-    # Count unique CJK ideographs as the Chinese-content scale signal.
-    unique_zh_chars = len(set(re.findall(r"[\u3400-\u4dbf\u4e00-\u9fff]", raw)))
-
-    # "Equivalent scale" for Chinese prose: enough unique Han characters.
-    return (
-        line_count > LONG_TEXT_EXEMPT_LINE_THRESHOLD
-        or unique_zh_chars >= LONG_TEXT_EXEMPT_ZH_UNIQUE_THRESHOLD
-    )
+    return line_count > SIZE_BLOCK_LINE_COUNT  # unused placeholder
 
 
 def main() -> int:
     try:
-        raw = sys.stdin.read() or ""
-        t = raw.lower()
-        long_text_exempt = _is_long_text_exempt(raw)
+        stdin_raw = sys.stdin.read() or ""
+        raw = _normalize_stdin_for_checks(stdin_raw)
 
-        # Required minimal fields (allow close synonyms)
-        required = {
-            "state": ["state", "status"],
-            "delta": ["delta", "change", "updates"],
-            "evidence": ["evidence", "proof", "source"],
-            "risk": ["risk", "severity"],
-            "next": ["next", "next step", "action"],
-            "ask": ["ask", "question", "needs confirmation"],
-        }
-        missing = [name for name, keys in required.items() if not _contains_any(t, keys)]
-        if missing and not long_text_exempt:
+        # Size gate: block if output exceeds limits.
+        # Subagent must save oversized content to a file and return only
+        # a short summary + artifact path.
+        unique_char_count = len(set(raw))
+        line_count = raw.count("\n") + 1
+
+        if unique_char_count > SIZE_BLOCK_UNIQUE_CHARS or line_count > SIZE_BLOCK_LINE_COUNT:
             _emit({
                 "decision": "block",
-                "reason": "Subagent output missing minimal required fields: state/delta/evidence/risk/next/ask.",
-            })
+                "reason": (
+                    f"Subagent output too large (unique chars={unique_char_count}, lines={line_count}). "
+                    "Save full content to a file and return only a short summary + artifact path."
+                ),
+            }, stdin_raw)
             return 0
 
-        # Heuristic uncompressed reasoning detector
-        reasoning_markers = [
-            "step-by-step",
-            "chain of thought",
-            "reasoning:",
-            "let's think",
-            "thought process",
-        ]
-        long_output = len(raw) > 3500 or raw.count("\n") > 80
-        if long_output and _contains_any(t, reasoning_markers) and not long_text_exempt:
-            _emit({
-                "decision": "block",
-                "reason": "Subagent output contains uncompressed reasoning; provide a short structured summary.",
-            })
-            return 0
-
-        warnings = []
-
-        # External API call heuristic
-        api_hits = len(re.findall(r"\b(webfetch\(|mcp__|https?://|api call|external api)\b", t))
-        if api_hits > 3:
-            warnings.append("external API calls > 3")
-
-        # Network timeout heuristic
-        timeout_markers = [
-            "timeout",
-            "timed out",
-            "network timeout",
-            "etimedout",
-            "connection reset",
-            "econn",
-        ]
-        if _contains_any(t, timeout_markers):
-            warnings.append("external network timeout detected")
-
-        if warnings:
-            _emit({
-                "decision": "approve",
-                "systemMessage": "[subagent-warning] " + "; ".join(warnings),
-            })
-            return 0
-
-        _emit({"decision": "approve"})
+        _emit({"decision": "approve"}, stdin_raw)
         return 0
     except Exception:
         # Fail-open for latency and robustness

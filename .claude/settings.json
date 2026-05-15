@@ -384,7 +384,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/subagent_stop_gate.py"
+            "command": "python .claude/hooks/subagent_stop_gate.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "timeout": 15,
+            "prompt": "Before compaction, preserve only minimal verified state. Never block. Generate at most three short lines in systemMessage with this exact key style: keep.result=<...>; keep.risk=<low|medium|high|unknown>; keep.next=<...>. Include only if clearly supported by the latest verified context. If insufficient evidence, return JSON exactly: {}."
           }
         ]
       }

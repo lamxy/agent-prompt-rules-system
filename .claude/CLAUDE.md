@@ -76,7 +76,7 @@ Maintainer notes:
 - 通用任务 → `general-task-rule-min.md`
 - 设计类任务 → `design-first-rule-min.md`
 - 周期性任务 → `loop-cron-rule-min.md`
-- 子代理协作 → `sub-agent-rule-min.md` / `subagent-cost-rule-min.md` / `subagent-input-rule-min.md`
+- 子代理协作 → `sub-agent-rule-min.md` / `subagent-cost-rule-min.md`（代码开发场景补充）
 - 代理团队协作 → `agent-team-rule-min.md`
 - 工具调用补充 → `tool-call-rule-min.md`
 
@@ -144,7 +144,6 @@ Maintainer notes:
 - 不让规则系统本身成为上下文膨胀来源
 - 主代理派发子代理时，必须附带最小规约摘要（2-4行）与输出字段要求
 - 子代理回传必须按约定模板字段输出；缺字段视为不合规；阻塞场景必须上报风险与下一步
-- 子代理直出中长文（>30行）可豁免字段拦截，但仍保留风险告警与阻塞上报约束
 - 禁止读取 settings.json、settings.local.json 及 .claude/ 下系统配置文件，除非任务明确涉及权限配置、hook 设置或环境诊断
 
 @RTK.md
