@@ -16,7 +16,7 @@
 - 主代理派发子代理时，必须附带“子代理极简规约摘要 + 输出模板字段要求”，并明确要求子代理按字段规范回传。
 - 子代理仅接收最小必要输入，仅输出局部结果、关键证据、风险与建议；不传完整历史、不重复已知背景。
 - 多子代理输出尽量统一格式，汇总时先结论，再给共识、冲突、风险、下一步。
-- 子代理输出必须使用 `sub-agent-output-template.md` 的固定结构，建议不超过 10 行。
+- 子代理输出必须使用 `expandable/templates/sub-agent-output-template.md` 的固定结构。
 - 子代理禁止输出完整表格、代码块、完整日志或长段背景复述。
 - 子代理输出超过 150 行或总字符超过 3000 时，钩子将强制 block，必须落盘后回传摘要与路径。
 - 若单个子代理可独立完成任务，优先由该子代理端到端执行；最终决策与对外结论仍由主代理裁决。
@@ -29,25 +29,7 @@
 - 若子代理 `blocked`、明显卡住或长时间无结果，主代理应基于部分结果继续推进，不等待全部完成；阻塞达到 20-30 分钟时应快速评估中断、替换快速评估子代理或请求用户审批。
 - 多子代理协作仍由主代理主控协调；每个子代理均遵循本规约的结果分流与阻塞上报机制。
 
-单子代理推荐格式：
-[agent] role=<sub-agent>
-state=<success|partial|failed|blocked>
-delta=<本次新增结果>
-evidence=<关键证据>
-artifact=<复杂结果文件路径；无则留空>
-risk=<low|medium|high>
-next=<下一步建议；无则留空>
-ask=<需要确认时填写，否则留空>
-
-多子代理汇总推荐格式：
-[summary]
-decision=<结论>
-common=<共识>
-conflict=<冲突点，如无则留空>
-artifacts=<需要复核的结果文件路径列表；无则留空>
-risk=<low|medium|high>
-next=<下一步；无则留空>
-ask=<需要人工决策时填写，否则留空>
-
-## 派发与上报格式
-参见 `.claude/rules/templates/dispatch-template.md`。
+## 输出格式
+- 单子代理：参见 `expandable/templates/sub-agent-output-template.md`
+- 多子代理汇总：参见 `expandable/templates/multi-agent-summary-template.md`
+- 派发格式：参见 `expandable/templates/dispatch-template.md`

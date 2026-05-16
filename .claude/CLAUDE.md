@@ -8,7 +8,8 @@ Maintainer notes:
 - 本文件只承载行为准则（how to behave），不承载加载逻辑或维护说明。
 - 目录结构、演进背景、维护建议已迁移到 README。
 - rules/ 下规则文件在 Claude 启动时自动进入上下文；expandable/ 仅在需要时按引用使用。
-- 需要新增偏好时，优先在 .claude/rules/preferences/ 新增外部文件，不扩张本文件。
+    - 包括不限于按需扩展的偏好、风格、规约等
+- 需要新增偏好时，优先在 .claude/rules/preferences/ 新增外部文件，按需扩展的偏好，优先放 expandable/preferences，不扩张本文件。
 -->
 
 ---
@@ -36,7 +37,7 @@ Maintainer notes:
 - 工具/子代理仅在必要时启用，输入只保留完成当前任务所需的最小上下文
 - 多轮、周期或团队协作默认只汇报新增变化，不回灌完整历史或长日志
 - 输出前做一次简短自检：是否先给结论、是否存在重复、是否能再压缩
-- 若发现输出违反核心准则，优先修正输出或执行路径，不额外解释规约本身
+- 若发现输出违反核心原则，优先修正输出或执行路径，不额外解释规约本身
 
 ---
 
@@ -46,8 +47,8 @@ Maintainer notes:
 
 | 主场景 | 触发特征 |
 |---|---|
-| 通用任务 | 一般问答、分析、总结、方案、代码解释、文档整理、普通多轮协作 |
-| 设计类任务 | 设计、方案、brainstorm、架构、规划；匹配 skill 时按技能规约执行，否则按照先 Q&A 再输出原则 |
+| 通用任务 | 一般问答、分析、总结、建议、一般方案、关键证据、事实核查、代码解释、文档整理、普通多轮协作 |
+| 设计类任务 | 设计、方案、brainstorm、架构、规划；匹配 skill 时按skill规约执行，否则按照先 Q&A 再输出的原则 |
 | 周期性任务 | loop、/loop、cron、定时执行、后台巡检、重复上报 |
 | 子代理协作 | 单子代理、多子代理拆分、并行执行、汇总、裁决 |
 | 代理团队协作 | team leader 协调多个 team agent、角色分工、团队规划/执行/复核 |
@@ -85,12 +86,12 @@ Maintainer notes:
 - 信息源验证 → `source-verification-min.md`
 
 输出模板（需要时按路径引用）：
-- 周期性任务上报 → `loop-report-template.md`
-- 工具结果摘要 → `tool-result-summary-template.md`
-- team leader 汇总 → `team-leader-output-template.md`
-- team agent 上报 → `team-agent-output-template.md`
-- 多子代理汇总 → `multi-agent-summary-template.md`
-- 单子代理输出 → `sub-agent-output-template.md`
+- 周期性任务上报 → `expandable/templates/loop-report-template.md`
+- 工具结果摘要 → `expandable/templates/tool-result-summary-template.md`
+- team leader 汇总 → `expandable/templates/team-leader-output-template.md`
+- team agent 上报 → `expandable/templates/team-agent-output-template.md`
+- 多子代理汇总 → `expandable/templates/multi-agent-summary-template.md`
+- 单子代理输出 → `expandable/templates/sub-agent-output-template.md`
 
 模板使用条件（任一满足即可）：
 - 输出结构需要稳定。

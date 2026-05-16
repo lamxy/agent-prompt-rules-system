@@ -16,9 +16,5 @@
 - 外部网络质量差或首字节缓慢时，降级轻量探测，避免并行扩大外部请求；非阻塞 hook 日志视为噪音，不触发重复调用。
 - 若某次外部工具调用已足以形成可用结论，优先带着不完美证据结束，而不是为了完整性继续扩张调用。
 
-推荐格式：
-[tool-summary]
-result=<结论>
-evidence=<关键证据>
-risk=<low|medium|high>
-next=<下一步>
+## 输出格式
+参见 `expandable/templates/tool-result-summary-template.md`
