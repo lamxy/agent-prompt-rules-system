@@ -29,6 +29,14 @@
 - 若子代理 `blocked`、明显卡住或长时间无结果，主代理应基于部分结果继续推进，不等待全部完成；阻塞达到 20-30 分钟时应快速评估中断、替换快速评估子代理或请求用户审批。
 - 多子代理协作仍由主代理主控协调；每个子代理均遵循本规约的结果分流与阻塞上报机制。
 
+## 回传校验（主代理必须执行）
+
+收到子代理回传后，先校验是否包含约定必填字段（STATUS、ARTIFACT 或等价字段）：
+- 字段完整且路径正确 → 进入汇总/转交流程。
+- 字段缺失或为叙述性文字 → 调用 SendMessage 工具（to=agentId）追加纠正，不重新派发新 Agent 实例。
+- artifact 路径不符合约定 → SendMessage 要求子代理重写到正确路径。
+- 连续 2 次 SendMessage 仍不合规 → 主代理直接上报用户并提供决策建议，停止派发。
+
 ## 输出格式
 - 单子代理：参见 `expandable/templates/sub-agent-output-template.md`
 - 多子代理汇总：参见 `expandable/templates/multi-agent-summary-template.md`
