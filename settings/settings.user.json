@@ -1,5 +1,14 @@
 {
 	"$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "includeGitInstructions": false,
+    "env": {
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
+        "DISABLE_TELEMETRY": "1",
+        "DISABLE_ERROR_REPORTING": "1",
+        "ENABLE_TOOL_SEARCH": "true"
+    },
+    "model": "anthropic/claude-sonnet-4-6",
     "hooks": {
         "PreToolUse": [
             {
@@ -12,26 +21,14 @@
                 ]
             }
         ],
-        "Stop": [
+        "SubagentStop": [
             {
                 "matcher": "*",
                 "hooks": [
                     {
-                        "type": "prompt",
-                        "timeout": 15,
-                        "prompt": "You are a strict-but-minimal completion gate for the main agent. Approve by default. Block only when both are true: (1) the current turn performed meaningful work (tool use, edits, or analysis output), and (2) the latest assistant output does not clearly include both a concrete result and a concrete next step. If blocking, return JSON exactly: {\"decision\":\"block\",\"reason\":\"Missing completion summary: include result and next step.\"}. Otherwise return JSON exactly: {\"decision\":\"approve\"}. If uncertain, approve."
+                        "type": "command",
+                        "command": "sh -c 'python3 -u ~/.claude/hooks/subagent_stop_gate.py 2>/tmp/subagent_hook_err.log || printf \"{\\\"decision\\\":\\\"approve\\\",\\\"reason\\\":\\\"hook skipped: python3 unavailable or crashed, see /tmp/subagent_hook_err.log\\\"}\"'"
                     }
-                ]
-            }
-        ],
-        "SubagentStop": [
-            {
-                    "matcher": "*",
-                    "hooks": [
-                    {
-                    "type": "command",
-                    "command": "python .claude/hooks/subagent_stop_gate.py"
-                }
                 ]
             }
         ],

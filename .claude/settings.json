@@ -361,11 +361,15 @@
     ],
     "defaultMode": "acceptEdits"
   },
+  "includeGitInstructions": false,
   "env": {
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_ERROR_REPORTING": "1",
     "ENABLE_TOOL_SEARCH": "true"
   },
-  "model": "sonnet",
+  "model": "anthropic/claude-sonnet-4-6",
   "hooks": {
     "PreToolUse": [
       {
