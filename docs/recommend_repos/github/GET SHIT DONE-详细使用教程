@@ -1,0 +1,683 @@
+
+
+> 仓库：[https://github.com/gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done)  
+> npm 包名：`get-shit-done-cc`  
+> 当前版本：1.50.0-canary.0（截至教程编写时）  
+> 许可证：MIT
+
+---
+
+## 目录
+
+1. [项目简介](https://file+.vscode-resource.vscode-cdn.net/Users/zz/workspace/macbook/.claude/artifacts/get-shit-done-tutorial.md#1-%E9%A1%B9%E7%9B%AE%E7%AE%80%E4%BB%8B)
+2. [安装](https://file+.vscode-resource.vscode-cdn.net/Users/zz/workspace/macbook/.claude/artifacts/get-shit-done-tutorial.md#2-%E5%AE%89%E8%A3%85)
+3. [核心概念](https://file+.vscode-resource.vscode-cdn.net/Users/zz/workspace/macbook/.claude/artifacts/get-shit-done-tutorial.md#3-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5)
+4. [快速开始示例](https://file+.vscode-resource.vscode-cdn.net/Users/zz/workspace/macbook/.claude/artifacts/get-shit-done-tutorial.md#4-%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B%E7%A4%BA%E4%BE%8B)
+5. [进阶示例](https://file+.vscode-resource.vscode-cdn.net/Users/zz/workspace/macbook/.claude/artifacts/get-shit-done-tutorial.md#5-%E8%BF%9B%E9%98%B6%E7%A4%BA%E4%BE%8B)
+6. [常见问题与注意事项](https://file+.vscode-resource.vscode-cdn.net/Users/zz/workspace/macbook/.claude/artifacts/get-shit-done-tutorial.md#6-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E4%B8%8E%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9)
+
+---
+
+## 1. 项目简介
+
+**GET SHIT DONE（GSD）** 是一套面向 AI 编程工具的轻量级元提示（meta-prompting）、上下文工程与规格驱动开发系统，由独立开发者 TÂCHES 创作。
+
+### 解决的核心问题：Context Rot
+
+随着 AI 工具（如 Claude Code）的会话上下文窗口被逐渐填满，输出质量会出现可预见的退化，即 **context rot（上下文腐化）**。GSD 通过以下机制对抗这一问题：
+
+- 将繁重工作分发到**独立子代理**，每个子代理拥有全新的 200k token 上下文
+- 维护结构化**跨会话状态文件**（`PROJECT.md`、`REQUIREMENTS.md`、`ROADMAP.md`、`STATE.md`）
+- 主上下文窗口始终保持在 30–40% 以内
+
+### 支持的运行时
+
+GSD 支持 15 种以上 AI 编程工具运行时，包括：
+
+|分类|工具|
+|---|---|
+|主要支持|Claude Code、OpenCode、Gemini CLI、Kilo|
+|扩展支持|Codex、Copilot、Cursor、Windsurf|
+|新增支持|Antigravity、Augment、Trae、CodeBuddy、Cline|
+
+### 定位
+
+GSD 不是为 50 人工程团队设计的企业级工具。它专为**独立开发者和小团队**服务——复杂性被封装在系统内部，用户只需运行几个命令。
+
+---
+
+## 2. 安装
+
+### 前置要求
+
+- Node.js >= 22.0.0（来自 `package.json` 的 `engines` 字段）
+- 至少一个受支持的 AI 编程工具运行时（如 Claude Code）
+
+### 交互式安装（推荐新用户）
+
+```bash
+npx get-shit-done-cc@latest
+```
+
+安装器会交互式提示：
+
+1. 选择目标运行时（Claude Code、Gemini CLI、Codex 等，或全部）
+2. 选择安装位置：全局（`--global`，对所有项目生效）或本地（`--local`，仅当前项目）
+
+安装完成后，**重启你的运行时**让命令生效。
+
+### 非交互式安装（适合 Docker / CI / 脚本）
+
+```bash
+# Claude Code 全局安装
+npx get-shit-done-cc --claude --global
+
+# Claude Code 本地安装（当前项目）
+npx get-shit-done-cc --claude --local
+
+# Gemini CLI 全局安装
+npx get-shit-done-cc --gemini --global
+
+# Codex 全局安装
+npx get-shit-done-cc --codex --global
+
+# 所有运行时一次性安装
+npx get-shit-done-cc --all --global
+```
+
+### 安装 Profile（按需最小化安装）
+
+通过 `--profile` 参数控制安装的技能集合，减少不必要的 token 开销：
+
+```bash
+# 仅安装 6 个核心循环技能（冷启动开销从 ~12k token 降至 ~700 token）
+npx get-shit-done-cc --claude --global --profile=core
+# --minimal 是 --profile=core 的别名
+npx get-shit-done-cc --claude --global --minimal
+
+# 核心 + 阶段管理技能
+npx get-shit-done-cc --claude --global --profile=standard
+
+# 多 profile 组合
+npx get-shit-done-cc --claude --global --profile=core,audit
+```
+
+### 容器 / Docker 环境特别说明
+
+若路径展开存在问题，安装前需设置 `CLAUDE_CONFIG_DIR`：
+
+```bash
+CLAUDE_CONFIG_DIR=/home/youruser/.claude npx get-shit-done-cc --global
+```
+
+### 验证安装
+
+安装后在运行时中执行：
+
+```
+/gsd-help
+```
+
+若命令可用，则安装成功。
+
+### 推荐运行方式（Claude Code）
+
+GSD 设计为无摩擦自动化，官方推荐以跳过权限确认模式运行 Claude Code：
+
+```bash
+claude --dangerously-skip-permissions
+```
+
+若不想使用该 flag，可在项目的 `.claude/settings.json` 中细粒度配置权限：
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(date:*)",
+      "Bash(echo:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)"
+    ]
+  }
+}
+```
+
+### 更新
+
+GSD 迭代较快，建议定期更新（安装器是幂等的，可安全重复运行）：
+
+```bash
+npx get-shit-done-cc@latest
+```
+
+### 卸载
+
+```bash
+npx get-shit-done-cc --claude --global --uninstall
+npx get-shit-done-cc --claude --local --uninstall
+```
+
+---
+
+## 3. 核心概念
+
+### 3.1 六步主循环
+
+GSD 的核心工作流由六个命令组成，每个命令负责一件事：
+
+|步骤|命令|作用|
+|---|---|---|
+|1|`/gsd-new-project`|提问 → 研究 → 需求梳理 → 路线图|
+|2|`/gsd-discuss-phase [N]`|收集阶段实现决策，填充灰区|
+|3|`/gsd-plan-phase [N]`|研究 + 规划 + 验证，循环直到通过|
+|4|`/gsd-execute-phase <N>`|按并行 wave 执行计划|
+|5|`/gsd-verify-work [N]`|人工验收测试|
+|6|`/gsd-ship [N]`|从已验证的工作创建 PR|
+
+### 3.2 命令语法差异
+
+不同运行时的命令前缀不同，但底层是同一个技能文件：
+
+|运行时|语法形式|示例|
+|---|---|---|
+|Claude Code / Copilot / OpenCode / Kilo / Cursor / Windsurf 等|连字符形式|`/gsd-plan-phase 1`|
+|Gemini CLI|冒号形式|`/gsd:plan-phase 1`|
+|Codex|美元符形式|`$gsd-plan-phase 1`|
+
+安装器会在安装时自动将命令文件写入对应运行时的目录，用户无需手动区分。
+
+### 3.3 状态文件体系
+
+GSD 的跨会话记忆依赖一套结构化文件，存放在项目的 `.planning/` 目录中：
+
+|文件|作用|
+|---|---|
+|`PROJECT.md`|项目愿景，每次会话加载|
+|`REQUIREMENTS.md`|v1/v2 功能范围，带阶段追踪|
+|`ROADMAP.md`|阶段路线图，记录进度|
+|`STATE.md`|当前位置、决策与阻塞项，跨会话记忆|
+|`{N}-CONTEXT.md`|每个阶段的讨论决策输出，喂给研究和规划代理|
+|`{N}-{M}-PLAN.md`|原子化执行计划，使用 XML 结构|
+|`{N}-VERIFICATION.md`|执行后验证报告|
+|`{N}-UAT.md`|用户验收测试记录|
+
+### 3.4 Wave 并行执行模型
+
+`/gsd-execute-phase` 将计划按依赖关系分组为"wave"，同一 wave 内并行、不同 wave 顺序执行：
+
+```
+WAVE 1 (并行)              WAVE 2 (并行)          WAVE 3
+┌─────────┐ ┌─────────┐    ┌─────────┐ ┌─────────┐    ┌─────────┐
+│ Plan 01 │ │ Plan 02 │ →  │ Plan 03 │ │ Plan 04 │ →  │ Plan 05 │
+│ User    │ │ Product │    │ Orders  │ │ Cart    │    │ Checkout│
+│ Model   │ │ Model   │    │ API     │ │ API     │    │ UI      │
+└─────────┘ └─────────┘    └─────────┘ └─────────┘    └─────────┘
+```
+
+每个执行代理拥有独立的全新 200k token 上下文，互不干扰。
+
+### 3.5 XML 计划格式
+
+GSD 为 Claude 生成结构化 XML 计划，指令精确且内嵌验证步骤：
+
+```xml
+<task type="auto">
+  <name>Create login endpoint</name>
+  <files>src/app/api/auth/login/route.ts</files>
+  <action>
+    Use jose for JWT (not jsonwebtoken - CommonJS issues).
+    Validate credentials against users table.
+    Return httpOnly cookie on success.
+  </action>
+  <verify>curl -X POST localhost:3000/api/auth/login returns 200 + Set-Cookie</verify>
+  <done>Valid credentials return cookie, invalid return 401</done>
+</task>
+```
+
+### 3.6 模型 Profile
+
+GSD 支持三种预设模型档，控制各代理（规划/执行/验证）使用的 Claude 模型版本：
+
+|Profile|规划|执行|验证|
+|---|---|---|---|
+|`quality`|Opus|Opus|Sonnet|
+|`balanced`（默认）|Opus|Sonnet|Sonnet|
+|`budget`|Sonnet|Sonnet|Haiku|
+|`inherit`|跟随运行时|跟随运行时|跟随运行时|
+
+切换方式：
+
+```
+/gsd-config --profile budget
+```
+
+### 3.7 命名空间元技能（v1.40+）
+
+为降低启动 token 成本，v1.40 引入了 6 个命名空间路由器（约 120 token，vs 平铺 86 个技能的 ~2150 token）：
+
+|命名空间命令|路由到|
+|---|---|
+|`/gsd-workflow`|阶段管道（discuss / plan / execute / verify）|
+|`/gsd-project`|项目生命周期（里程碑、审计、汇总）|
+|`/gsd-quality`|质量门控（代码审查、调试、安全审计）|
+|`/gsd-context`|代码库智能（映射、graphify、文档）|
+|`/gsd-manage`|管理（配置、工作区、工作流、更新）|
+|`/gsd-ideate`|探索与捕捉（探索、草图、spec、capture）|
+
+### 3.8 配置文件
+
+项目配置存放在 `.planning/config.json`，可通过 `/gsd-settings` 管理。核心配置项：
+
+|配置项|可选值|默认|说明|
+|---|---|---|---|
+|`mode`|`interactive` / `yolo`|`interactive`|是否自动批准每步操作|
+|`granularity`|`coarse` / `standard` / `fine`|`standard`|阶段粒度|
+|`workflow.research`|boolean|`true`|规划前是否调研领域知识|
+|`workflow.plan_check`|boolean|`true`|执行前验证计划可行性|
+|`workflow.verifier`|boolean|`true`|执行后确认交付项是否落地|
+|`parallelization.enabled`|boolean|`true`|是否并行执行独立计划|
+|`git.branching_strategy`|`none` / `phase` / `milestone`|`none`|Git 分支策略|
+
+---
+
+## 4. 快速开始示例
+
+### 示例一：全新项目从零启动
+
+以下是一个全流程快速演示，来源于 README.md 和 README.zh-CN.md。
+
+**步骤 1：安装 GSD**
+
+```bash
+npx get-shit-done-cc@latest
+# 交互式选择：Claude Code，全局安装
+```
+
+**步骤 2：启动 Claude Code（跳过权限确认）**
+
+```bash
+claude --dangerously-skip-permissions
+```
+
+**步骤 3：初始化新项目**
+
+```
+/gsd-new-project
+```
+
+系统会：
+
+1. 通过问答充分理解你的项目（目标、约束、技术偏好）
+2. 并行启动研究代理调研相关领域知识
+3. 梳理出 v1 / v2 功能需求范围
+4. 生成分阶段路线图
+
+你审核并批准路线图后即可开始构建。生成文件：`PROJECT.md`、`REQUIREMENTS.md`、`ROADMAP.md`、`STATE.md`。
+
+**步骤 4：讨论第一阶段（可选但推荐）**
+
+```
+/gsd-discuss-phase 1
+```
+
+系统会识别该阶段的灰区，逐一与你确认实现决策（例如：布局偏好、API 设计、错误处理方式）。生成 `1-CONTEXT.md`，直接喂给下一步的研究和规划代理。
+
+**步骤 5：规划第一阶段**
+
+```
+/gsd-plan-phase 1
+```
+
+系统自动完成：研究 → 生成原子化计划（XML 格式）→ 验证计划是否可达成阶段目标，循环直到通过。
+
+**步骤 6：执行第一阶段**
+
+```
+/gsd-execute-phase 1
+```
+
+系统启动并行 wave 执行，每个执行代理独占全新上下文。每项任务完成后自动生成独立 git commit：
+
+```bash
+abc123f feat(01-02): add email confirmation flow
+def456g feat(01-02): implement password hashing
+hij789k feat(01-02): create registration endpoint
+```
+
+**步骤 7：验证工作成果**
+
+```
+/gsd-verify-work 1
+```
+
+系统提取可测试的交付项，逐条引导你手动验收。若有失败项，自动生成诊断修复计划。
+
+**步骤 8：创建 PR**
+
+```
+/gsd-ship 1
+```
+
+从已验证的阶段工作自动创建 PR，并生成 PR 描述。
+
+---
+
+### 示例二：对现有代码库启动 GSD（Brownfield）
+
+**首先分析现有代码库：**
+
+```
+/gsd-map-codebase
+```
+
+系统并行启动多个代理，分析技术栈、架构、代码约定和潜在风险点。之后再运行 `/gsd-new-project` 时，系统会理解现有代码，提问会聚焦于新增部分。
+
+```
+/gsd-new-project
+```
+
+---
+
+## 5. 进阶示例
+
+### 示例三：使用快速模式处理临时任务
+
+来源：README.zh-CN.md 中「快速模式」章节。
+
+对于不需要完整规划周期的临时任务，使用 `/gsd-quick`：
+
+```
+/gsd-quick
+```
+
+系统提示：
+
+```
+> What do you want to do? "Add dark mode toggle to settings"
+```
+
+系统会自动完成规划和执行，状态独立存放在 `.planning/quick/001-add-dark-mode-toggle/`，不与 phase 数据混淆。
+
+**进阶参数组合：**
+
+```
+# 执行前先讨论灰区
+/gsd-quick --discuss
+
+# 执行前先调研实现方案
+/gsd-quick --research
+
+# 启用计划检查 + 执行后验证
+/gsd-quick --full
+
+# 组合使用：讨论 + 研究 + 完整质量保障
+/gsd-quick --discuss --research --full
+```
+
+生成文件：`.planning/quick/001-xxx/PLAN.md`、`SUMMARY.md`
+
+---
+
+### 示例四：多阶段里程碑完整循环
+
+来源：README.zh-CN.md 中「重复 → 发布 → 完成 → 下一个里程碑」章节。
+
+```bash
+# 第一阶段完整循环
+/gsd-discuss-phase 1
+/gsd-plan-phase 1
+/gsd-execute-phase 1
+/gsd-verify-work 1
+/gsd-ship 1
+
+# 第二阶段
+/gsd-discuss-phase 2
+/gsd-plan-phase 2
+/gsd-execute-phase 2
+/gsd-verify-work 2
+/gsd-ship 2
+
+# 里程碑完成：归档 + 打 tag
+/gsd-complete-milestone
+
+# 开启下一版本
+/gsd-new-milestone
+```
+
+**自动推进（让 GSD 判断下一步）：**
+
+```
+/gsd-progress --next
+```
+
+系统自动检测当前状态并执行最合适的下一个工作流步骤。
+
+---
+
+### 示例五：工作流代理配置与模型 Profile 调整
+
+**切换到预算模式降低 token 消耗：**
+
+```
+/gsd-config --profile budget
+```
+
+**单次命令级别覆盖（跳过研究代理节省时间）：**
+
+```
+/gsd-plan-phase 2 --skip-research
+/gsd-plan-phase 2 --skip-verify
+```
+
+**批量讨论模式（一次回答多个问题）：**
+
+```
+/gsd-discuss-phase 1 --batch
+```
+
+**查看当前项目进度：**
+
+```
+/gsd-progress
+/gsd-stats
+```
+
+---
+
+### 示例六：Git 分支策略配置
+
+在 `.planning/config.json` 中配置：
+
+```json
+{
+  "git": {
+    "branching_strategy": "phase",
+    "phase_branch_template": "gsd/phase-{phase}-{slug}"
+  }
+}
+```
+
+- `none`：直接提交到当前分支（默认）
+- `phase`：每个阶段独立分支，阶段完成后合并
+- `milestone`：整个里程碑一个分支，里程碑完成后合并
+
+---
+
+### 示例七：可选结构性代码审查（fallow）
+
+在 `.planning/config.json` 中开启：
+
+```json
+{
+  "code_quality": {
+    "fallow": {
+      "enabled": true
+    }
+  }
+}
+```
+
+需要额外安装依赖（来源：README.md 配置章节）：
+
+```bash
+npm install -D fallow@^2.70.0
+# 或通过 Rust 工具链全局安装
+cargo install fallow
+```
+
+开启后，`/gsd-code-review` 会在审查前增加结构性 fallow 预扫描，结果写入 `.planning/phases/<phase>/FALLOW.json` 并在 `REVIEW.md` 中展示。
+
+**注意**：fallow Rust 二进制的 JSON schema 必须符合 v2.70+ 协议，旧版本可能产生静默零发现输出（来源：README.md）。
+
+---
+
+## 6. 常见问题与注意事项
+
+### 6.1 安装后命令不出现
+
+**现象**：安装完成后在运行时中找不到 `/gsd-*` 命令。
+
+**原因**：运行时需要重启才能加载新安装的技能/命令文件。
+
+**处理方式**：
+
+- 完全退出并重启你的运行时（Claude Code、Cursor 等）
+- 验证文件是否存在：
+    - Claude Code 全局：`~/.claude/commands/gsd/` 或 `~/.claude/skills/gsd-*/SKILL.md`
+    - Codex 全局：`~/.codex/skills/gsd-*/SKILL.md`
+    - 本地安装：`./.claude/commands/gsd/`
+- 若文件不存在，重新执行安装命令（安装器是幂等的）
+
+---
+
+### 6.2 Codex CLI 版本兼容限制
+
+**现象**：Codex 用户出现重复的 `gsd-*` 命令条目（同一命令出现两次）。
+
+**原因**：来源于 README.md 故障排查章节。Codex CLI 0.130.0 移除了 extra-skill-roots 发现机制（通过 [openai/codex#21485](https://github.com/openai/codex/pull/21485)）。该版本以后，Codex 从标准根路径（包含 `~/.codex/skills/<name>/SKILL.md`）发现技能。旧版 CLI 可能同时从 extra-roots 和标准路径各发现一次，造成重复。
+
+**处理方式**：升级 Codex CLI 至 0.130.0 或以上版本（最低支持版本）；安装后重启 Codex。若暂时无法升级，接受重复条目不影响功能使用。
+
+---
+
+### 6.3 敏感文件（secrets）安全风险
+
+**现象 / 限制**：GSD 的代码库映射命令（`/gsd-map-codebase` 等）会读取项目文件来理解架构，存在意外读取包含密钥文件的风险。
+
+**原因**：GSD 内建了防止将 secrets 提交到 git 的保护机制，但读取层面没有自动拦截。
+
+**推荐处理方式**：在 `.claude/settings.json` 中将敏感文件加入 deny list（来源：README.zh-CN.md 安全章节）：
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/secrets/*)",
+      "Read(**/*credential*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)"
+    ]
+  }
+}
+```
+
+---
+
+### 6.4 `npm audit` 存在已知安全告警
+
+**现象**：`npm audit` 报告 1 个高危 + 5 个中等风险依赖告警。
+
+**原因**：来源于 QUICK-WINS-CONFIRMED-BUGS.md（Issue #3588）。这些告警为传递依赖，路径为 `@anthropic-ai/claude-agent-sdk`，为已确认 bug，截至文档编写时尚未完全修复，可能需要依赖覆盖（overrides）处理。
+
+**处理方式**：关注 [Issue #3588](https://github.com/gsd-build/get-shit-done/issues/3588) 的修复进展；生产环境使用前评估风险；如有必要可在 `package.json` 中配置 `overrides` 临时缓解。
+
+---
+
+### 6.5 `/gsd-update` 更新日志跳版本问题
+
+**现象**：使用 `/gsd-update` 时，更新日志只展示了最新版本的变更，跳过了中间版本的说明。
+
+**原因**：来源于 QUICK-WINS-CONFIRMED-BUGS.md（Issue #3496）。`/gsd:update` 的 changelog 提取逻辑存在已确认 bug，在跨多个版本更新时会漏掉中间版本的变更记录。
+
+**处理方式**：跨版本升级后，手动查阅 [CHANGELOG.md](https://github.com/gsd-build/get-shit-done/blob/main/CHANGELOG.md) 或 `docs/RELEASE-v*.md` 系列文件了解完整变更历史；关注该 issue 的修复状态。
+
+---
+
+### 6.6 在容器 / Docker 中波浪线路径展开失败
+
+**现象**：在 Docker 容器内运行安装命令时，文件被写入错误路径或安装失败。
+
+**原因**：容器环境中 `~` 波浪线展开行为与宿主机不同，可能导致 GSD 安装到错误目录。
+
+**处理方式**：安装前明确设置 `CLAUDE_CONFIG_DIR` 环境变量（来源：README.md 故障排查章节）：
+
+```bash
+CLAUDE_CONFIG_DIR=/home/youruser/.claude npx get-shit-done-cc --global
+```
+
+---
+
+### 6.7 fallow 可选依赖版本约束
+
+**现象**：开启 fallow 结构性审查后，审查结果为零发现，但项目实际存在问题。
+
+**原因**：来源于 README.md 配置章节。fallow Rust 二进制（通过 `cargo install fallow` 安装）的 JSON 输出 schema 必须符合 v2.70+ 协议。旧版本 fallow 会产生**静默的零发现输出**，不报错但结果不可信。
+
+**处理方式**：
+
+- npm 用户确保使用 `fallow@^2.70.0`（`package.json` 中声明为可选依赖）
+- Rust/Cargo 用户确认 `cargo install fallow` 安装的版本 >= 2.70.0
+- 可通过 `fallow --version` 验证当前版本
+
+---
+
+## 附录：完整命令速查表
+
+### 核心工作流
+
+|命令|作用|
+|---|---|
+|`/gsd-new-project`|提问 → 研究 → 需求 → 路线图|
+|`/gsd-discuss-phase [N]`|收集阶段实现决策|
+|`/gsd-plan-phase [N]`|研究 + 规划 + 验证|
+|`/gsd-execute-phase <N>`|并行 wave 执行计划|
+|`/gsd-verify-work [N]`|人工验收测试|
+|`/gsd-ship [N]`|创建 PR|
+|`/gsd-progress --next`|自动推进到下一步|
+|`/gsd-complete-milestone`|归档里程碑并打 tag|
+|`/gsd-new-milestone`|开启下一版本|
+
+### 快捷与辅助命令
+
+|命令|作用|
+|---|---|
+|`/gsd-quick [--discuss] [--research] [--full]`|临时任务快速执行|
+|`/gsd-map-codebase`|分析现有代码库（brownfield 启动前）|
+|`/gsd-settings`|配置模型 profile 和工作流代理|
+|`/gsd-config --profile <profile>`|切换模型 profile|
+|`/gsd-progress`|查看当前位置和下一步|
+|`/gsd-stats`|项目统计信息|
+|`/gsd-health [--repair]`|校验并修复 `.planning/` 目录|
+|`/gsd-debug [desc]`|系统化调试|
+|`/gsd-update`|更新 GSD|
+|`/gsd-help`|显示全部命令|
+
+### 会话管理
+
+|命令|作用|
+|---|---|
+|`/gsd-pause-work`|创建交接上下文（写入 HANDOFF.json）|
+|`/gsd-resume-work`|从上一次会话恢复|
+
+---
+
+_本教程基于仓库 gsd-build/get-shit-done 原始文件编写，包括 README.md、README.zh-CN.md、package.json、docs/USER-GUIDE.md、docs/COMMANDS.md 及 QUICK-WINS-CONFIRMED-BUGS.md。_

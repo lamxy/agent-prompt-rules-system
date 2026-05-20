@@ -1,0 +1,319 @@
+
+
+> 版本：v2.3.3 | 来源：[https://github.com/tirth8205/code-review-graph](https://github.com/tirth8205/code-review-graph)
+
+---
+
+## 一、项目简介
+
+code-review-graph 是一个为 AI 编程工具提供**持久化增量代码知识图谱**的 MCP（Model Context Protocol）服务器。它将代码库解析为结构化图谱，存储在本地 SQLite 数据库中，让 AI 助手能够理解代码结构、调用关系和变更影响，从而提供更精准的代码审查建议。
+
+**核心能力：**
+
+- 将代码库解析为节点（File、Class、Function、Type、Test）和边（CALLS、IMPORTS_FROM、INHERITS、IMPLEMENTS、CONTAINS、TESTED_BY、DEPENDS_ON、REFERENCES）
+- 支持增量更新，只重新解析变更文件
+- 提供变更影响分析（detect-changes），输出风险评分
+- 生成交互式 HTML 可视化图谱
+- 生成 Markdown Wiki 文档
+- 支持多仓库守护进程管理
+
+**支持的 AI 编程平台：** Claude Code、Cursor、Windsurf、Codex、Gemini CLI、Qwen、Kiro、Qoder、GitHub Copilot、OpenCode 等。
+
+---
+
+## 二、安装
+
+### 系统要求
+
+- Python 3.10 或更高版本
+- Git（`update` 和 `detect-changes` 命令需要）
+
+### 通过 pip 安装
+
+```bash
+pip install code-review-graph
+```
+
+### 通过 uv 安装（推荐）
+
+```bash
+uv tool install code-review-graph
+```
+
+### 验证安装
+
+```bash
+code-review-graph --version
+# 输出示例：code-review-graph 2.3.3
+```
+
+---
+
+## 三、核心概念
+
+### 图谱结构
+
+知识图谱由两类元素构成：
+
+**节点类型（Node kinds）：**
+
+|类型|说明|
+|---|---|
+|`File`|源文件|
+|`Class`|类定义|
+|`Function`|函数/方法|
+|`Type`|类型定义|
+|`Test`|测试节点|
+
+**边类型（Edge kinds）：**
+
+|类型|说明|
+|---|---|
+|`CALLS`|函数调用关系|
+|`IMPORTS_FROM`|模块导入关系|
+|`INHERITS`|类继承关系|
+|`IMPLEMENTS`|接口实现关系|
+|`CONTAINS`|包含关系（文件包含类/函数）|
+|`TESTED_BY`|被测试关系|
+|`DEPENDS_ON`|依赖关系|
+|`REFERENCES`|引用关系|
+
+### 数据存储
+
+图谱数据存储在项目根目录下的 `.code-review-graph/` 目录中（SQLite 数据库）。该目录会被自动添加到 `.gitignore`。
+
+### MCP 服务器模式
+
+`serve`（或 `mcp`）命令启动 MCP 服务器，AI 工具通过 stdio 或 HTTP 协议与之通信，查询图谱数据。
+
+---
+
+## 四、快速开始
+
+### 示例一：初始化并构建图谱（最常用工作流）
+
+```bash
+# 进入你的项目目录
+cd /path/to/your/project
+
+# 第一步：安装 MCP 配置（自动检测已安装的 AI 平台）
+code-review-graph install
+
+# 第二步：构建完整知识图谱（首次使用）
+code-review-graph build
+
+# 第三步：查看图谱统计信息
+code-review-graph status
+```
+
+`install` 命令会：
+
+- 自动检测本机已安装的 AI 编程平台（Claude Code、Cursor 等）
+- 写入对应平台的 MCP 配置文件
+- 生成平台专属 skill 文件
+- 安装 git pre-commit hook（自动触发增量更新）
+- 将 `.code-review-graph/` 加入 `.gitignore`
+
+`build` 完成后，重启你的 AI 编程工具即可让其感知图谱。
+
+---
+
+### 示例二：增量更新与变更影响分析
+
+```bash
+# 修改了一些代码后，只更新变更的文件（对比 HEAD~1）
+code-review-graph update
+
+# 对比指定 commit 进行增量更新
+code-review-graph update --base main
+
+# 分析当前变更的影响范围（输出风险评分和受影响节点）
+code-review-graph detect-changes
+
+# 只看简要摘要
+code-review-graph detect-changes --brief
+
+# 对比指定基准分析变更
+code-review-graph detect-changes --base origin/main
+```
+
+`detect-changes` 会输出 JSON 格式的变更影响报告，包含受影响的函数、类、文件及风险评分，帮助 AI 工具聚焦高风险区域进行代码审查。
+
+---
+
+## 五、进阶用法
+
+### 示例三：生成可视化图谱
+
+```bash
+# 生成交互式 HTML 图谱（默认 auto 模式）
+code-review-graph visualize
+
+# 指定渲染模式
+code-review-graph visualize --mode full        # 完整图谱
+code-review-graph visualize --mode community   # 按社区聚类
+code-review-graph visualize --mode file        # 按文件聚合
+
+# 生成后直接在本地 HTTP 服务器预览（localhost:8765）
+code-review-graph visualize --serve
+
+# 导出为其他格式
+code-review-graph visualize --format graphml   # Neo4j/Gephi 兼容
+code-review-graph visualize --format cypher    # Neo4j Cypher 脚本
+code-review-graph visualize --format obsidian  # Obsidian Vault
+code-review-graph visualize --format svg       # SVG 矢量图
+```
+
+### 示例四：生成 Wiki 文档
+
+```bash
+# 根据图谱社区结构自动生成 Markdown Wiki
+code-review-graph wiki
+
+# 强制重新生成所有页面（即使内容未变）
+code-review-graph wiki --force
+```
+
+Wiki 文件输出到 `.code-review-graph/wiki/` 目录。
+
+### 示例五：文件监听模式
+
+```bash
+# 启动文件监听，代码变更时自动触发增量更新
+code-review-graph watch
+```
+
+### 示例六：MCP 服务器（供 AI 工具直接调用）
+
+```bash
+# 启动 stdio 模式 MCP 服务器（AI 工具默认使用此模式）
+code-review-graph serve
+
+# 启动 HTTP 模式（默认 127.0.0.1:5555）
+code-review-graph serve --http
+
+# 指定端口和地址
+code-review-graph serve --http --host 0.0.0.0 --port 8080
+
+# 启动时同时开启文件监听
+code-review-graph serve --auto-watch
+
+# 只暴露指定工具（减少 token 消耗）
+code-review-graph serve --tools query_graph_tool,semantic_search_nodes_tool
+```
+
+### 示例七：多仓库管理
+
+```bash
+# 注册仓库到全局注册表
+code-review-graph register /path/to/repo-a --alias backend
+code-review-graph register /path/to/repo-b --alias frontend
+
+# 查看已注册的仓库
+code-review-graph repos
+
+# 取消注册
+code-review-graph unregister backend
+
+# 启动多仓库守护进程（后台监听所有注册仓库）
+code-review-graph daemon start
+
+# 查看守护进程状态
+code-review-graph daemon status
+
+# 查看指定仓库的守护进程日志
+code-review-graph daemon logs --repo backend
+
+# 实时跟踪日志
+code-review-graph daemon logs -f
+
+# 停止守护进程
+code-review-graph daemon stop
+```
+
+### 示例八：针对特定平台安装
+
+```bash
+# 只为 Claude Code 安装
+code-review-graph install --platform claude-code
+
+# 只为 Cursor 安装
+code-review-graph install --platform cursor
+
+# 预览安装内容（不实际写入文件）
+code-review-graph install --dry-run
+
+# 跳过注入 CLAUDE.md / AGENTS.md 等指令文件
+code-review-graph install --no-instructions
+
+# 自动确认所有提示（适合 CI 环境）
+code-review-graph install --yes
+```
+
+支持的平台值：`codex`、`claude`、`claude-code`、`cursor`、`windsurf`、`zed`、`continue`、`opencode`、`antigravity`、`gemini-cli`、`qwen`、`kiro`、`qoder`、`copilot`、`copilot-cli`、`all`
+
+### 示例九：构建选项控制
+
+```bash
+# 完整构建，跳过流/社区检测（只做签名 + FTS 索引）
+code-review-graph build --skip-flows
+
+# 完整构建，跳过所有后处理（只做原始解析）
+code-review-graph build --skip-postprocess
+
+# 将图谱数据库存储到外部目录（适合网络共享盘）
+code-review-graph build --data-dir /mnt/shared/graph-data
+
+# 手动触发后处理（流检测、社区检测、FTS 索引）
+code-review-graph postprocess
+
+# 跳过特定后处理步骤
+code-review-graph postprocess --no-flows
+code-review-graph postprocess --no-communities
+code-review-graph postprocess --no-fts
+```
+
+---
+
+## 六、常见问题与注意事项
+
+**Q：`update` 和 `detect-changes` 报错说不在 git 仓库中？** 这两个命令依赖 git diff 来确定变更文件。确保项目已执行 `git init`，或改用 `build` 做全量构建。
+
+**Q：首次 `install` 后 AI 工具没有感知到图谱？** 需要重启 AI 编程工具（Claude Code、Cursor 等）以加载新的 MCP 配置。
+
+**Q：`install` 时提示"No platforms detected"？** 工具通过检测本机配置目录（如 `~/.cursor`、`~/.claude` 等）来判断已安装平台。如果检测失败，可用 `--platform` 手动指定目标平台。
+
+**Q：如何在 CI 环境中使用？** 使用 `--yes` 跳过交互确认，使用 `--no-instructions` 跳过指令文件注入：
+
+```bash
+code-review-graph install --yes --no-instructions --platform claude-code
+code-review-graph build --skip-flows
+```
+
+**Q：图谱数据库在哪里？** 默认在项目根目录的 `.code-review-graph/` 下。可用 `--data-dir` 指定外部路径。
+
+**Q：如何只暴露部分 MCP 工具以节省 token？** 启动服务器时用 `--tools` 参数指定工具名列表，或设置环境变量 `CRG_TOOLS`：
+
+```bash
+export CRG_TOOLS=query_graph_tool,semantic_search_nodes_tool
+code-review-graph serve
+```
+
+**Q：Python 版本不满足要求怎么办？** 需要 Python 3.10+。推荐使用 `pyenv` 或 `uv` 管理 Python 版本：
+
+```bash
+uv python install 3.12
+uv tool install code-review-graph
+```
+
+---
+
+## 七、典型工作流总结
+
+```
+首次使用：install → build → 重启 AI 工具
+日常开发：修改代码 → update（或 git commit 触发 hook 自动更新）
+代码审查：detect-changes → AI 工具读取图谱 → 精准审查
+可视化探索：visualize --serve → 浏览器查看
+多仓库场景：register → daemon start → 统一监听
+```

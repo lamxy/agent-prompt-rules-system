@@ -1,0 +1,563 @@
+# gstack 详细使用教程
+
+用 AI 实现一人当二十人团队
+
+  
+> 基于 garrytan/gstack v1.15.0.0  
+> 作者：Garry Tan（YC 总裁）的个人 AI 出货基础设施
+---
+
+## 一、这是什么？
+
+gstack 不是框架，不是库，不是模板集合。它是一套**嵌入在斜杠命令里的完整软件工程流程**。
+
+Garry Tan 用它从 2013 年到 2026 年实现了 810 倍的个人出货效率提升。每一个 `/skill` 命令背后都是一个专家角色（CEO、工程总监、设计师、QA 工程师、安全官），知道什么时候发言、检查什么、如何传递给下一个角色。
+
+**核心思路**：把软件工程的最佳实践流程固化成 AI 可执行的提示词模板，让一个人能以团队的方式交付。
+
+---
+## 二、快速上手（30 秒安装）
+
+```bash
+
+# 全局安装（推荐）
+
+git clone --single-branch --depth 1 \
+
+  https://github.com/garrytan/gstack.git \
+
+  ~/.claude/skills/gstack
+
+  
+
+cd ~/.claude/skills/gstack && ./setup
+
+```
+
+`./setup` 会自动完成：
+
+1. 安装 Bun（如果没有）
+2. 编译 `browse`（Playwright 无头浏览器 CLI）和 `design` 二进制
+3. 下载 Playwright Chromium
+4. 从模板生成所有 `SKILL.md` 文件
+5. 将 skills 软链到 `~/.claude/skills/`
+6. 运行版本迁移脚本（升级场景）
+
+安装完成后，在任意 Claude Code 会话中输入 `/` 就能看到所有 gstack 技能。
+
+---
+## 三、仓库结构一览
+
+```
+gstack/
+├── skills/          # 43 个斜杠命令（核心）
+│   ├── office-hours/        # 头脑风暴
+│   ├── plan-ceo-review/     # 策略评审
+│   ├── plan-eng-review/     # 架构评审
+│   ├── review/              # PR 代码评审
+│   ├── qa/                  # 真实浏览器 QA
+│   ├── ship/                # 出货
+│   ├── land-and-deploy/     # 合并+部署+金丝雀
+│   └── ...
+├── browse/          # 无头浏览器 CLI（QA 和测试的核心工具）
+│   └── dist/browse  # 编译好的 Bun 二进制（58MB）
+├── design/          # 设计资产生成器（GPT Image API 包装）
+├── scripts/
+│   └── gen-skill-docs.ts  # .tmpl → SKILL.md 生成器
+├── hosts/           # 多平台配置（Claude/Codex/Cursor/Factory）
+├── bin/             # 60+ 辅助 CLI 工具
+├── test/            # 三级测试体系
+├── conductor.json   # Conductor 工作空间配置
+├── CLAUDE.md        # 41KB 开发者手册（贡献者必读）
+├── README.md        # 38KB 用户手册
+└── setup            # 40KB 安装编排脚本
+
+```
+
+---
+## 四、完整工程流程：从想法到上线
+
+gstack 的流程分为 7 个阶段，每个阶段有对应的斜杠命令：
+```
+
+想法 → 规划 → 设计 → 构建 → 评审 → 测试 → 出货 → 复盘
+
+```
+### 阶段 1：想法 — `/office-hours`
+
+模拟 YC Office Hours 头脑风暴。提出 6 个强制性问题：
+
+- 谁会为此付钱，为什么现在？
+- 如果成功，它看起来像什么？
+- 你害怕竞争对手做什么？
+- 什么是你不愿意做但竞争对手可能会做的事？
+- 你面临的最大技术风险是什么？
+- 如果你有 10 倍的资源，你会如何不同地构建这个？
+
+输出：一份结构化设计文档（Design Doc），驱动后续所有阶段。
+```
+
+/office-hours
+
+> 我想构建一个帮助工程师管理技术债务的工具
+
+```
+
+### 阶段 2：规划评审
+
+gstack 提供 4 个专家视角的评审命令：
+
+| 命令                    | 角色     | 主要检查                   |
+| --------------------- | ------ | ---------------------- |
+| `/plan-ceo-review`    | CEO/策略 | 范围对不对？值不值得做？           |
+| `/plan-eng-review`    | 工程总监   | 架构、数据流、边界条件            |
+| `/plan-design-review` | 设计师    | 0-10 评分（信息架构/视觉/可及性）   |
+| `/plan-devex-review`  | DX 工程师 | 开发者体验审计                |
+| `/autoplan`           | 流水线    | 自动串联 CEO→设计→工程，只浮现口味决策 |
+
+
+**CEO 评审的 4 种模式：**
+- **Expansion**：机会大，全速推进
+- **Selective**：砍功能，保核心
+- **Hold**：等待市场信号
+- **Reduction**：降低范围，验证假设
+  
+```
+
+/plan-ceo-review
+> [粘贴你的 Design Doc 或功能描述]
+
+```
+### 阶段 3：设计
+
+```
+
+/design-consultation   # 从零创建设计系统
+
+/design-shotgun        # 生成 4-6 个视觉变体（AI 速画 mockup）
+
+/design-html           # 把 mockup 转成生产级 HTML（30KB，零依赖）
+
+```
+
+`/design-shotgun` 会生成多个视觉方向供选择，像快速原型工厂。  
+`/design-html` 使用 Pretext 布局引擎，输出可直接上生产的代码。
+
+### 阶段 4：构建
+
+标准 Claude Code 实现阶段。没有专属命令——你自己写代码，然后用以下工具辅助：
+
+```
+
+/careful    # 执行危险命令前发出警告（rm -rf / DROP TABLE / force-push）
+
+/freeze     # 限制编辑范围在单个目录
+
+/guard      # /careful + /freeze 组合
+
+```
+
+`/careful` 在你不小心要执行破坏性操作时会拦截并询问确认。
+
+### 阶段 5：评审
+
+这是 gstack 最重磅的阶段。`/review` 是整个工具集中最复杂的技能（78KB SKILL.md），它会派遣一支专家子代理团队：
+
+**`/review` 检查清单（部分）：**
+- SQL 注入 / 参数化查询
+- 竞态条件
+- LLM 信任边界（提示词注入风险）
+- 权限检查遗漏
+- 测试覆盖率
+- 文档过时
+- 响应式布局
+- 性能回归
+
+**专家子代理分工：**
+- `security` — 安全漏洞（OWASP + STRIDE）
+- `testing` — 自动生成回归测试
+- `documentation` — 文档过时检查
+- `design` — 响应式/视觉/布局
+- `performance` — 优化建议
+```
+
+/review           # 完整 PR 评审
+
+/cso              # 独立安全审计（首席安全官视角）
+
+/codex            # OpenAI 独立评审（跨模型第二意见）
+
+/design-review    # 设计审计 + 自动修复
+
+```
+
+`/codex` 特别有价值：它用 OpenAI 模型对你的 Claude 实现做对抗性分析，发现盲点。
+### 阶段 6：测试
+
+**核心工具：`/browse` 和 `$B`**
+
+gstack 的测试能力建立在一个持久化无头浏览器上（Playwright 驱动的 Chromium）。每个命令约 100ms，状态（cookies、标签页、登录会话）跨命令持久化。
+
+```bash
+
+# $B 是 browse 命令的别名，直接在 Claude Code 会话中使用
+
+$B goto https://your-app.com     # 导航
+
+$B snapshot -i                   # 截图并列出可交互元素（带引用编号）
+
+$B click @e3                     # 点击第 3 个元素
+
+$B fill @e4 "your text"         # 填写表单
+
+$B is visible ".success-modal"  # 断言状态
+
+$B snapshot -D                  # Diff：显示操作前后变化
+
+$B responsive /tmp/layout       # 响应式测试（移动/平板/桌面）
+
+$B css ".btn" color             # 检查 CSS 属性
+
+```
+
+**`/qa` 命令：**
+
+最强大的 QA 技能。它会：
+1. 打开真实浏览器测试你的应用
+2. 发现 Bug 并自动修复（原子提交）
+3. 自动生成回归测试
+4. 测试响应式布局
+```
+
+/qa              # QA + 自动修复 + 回归测试
+
+/qa-only         # 只报告问题，不修改代码
+
+/benchmark       # 性能回归检测
+
+```
+
+**处理 CAPTCHA/MFA：**
+
+当遇到验证码或多因素认证时，gstack 会自动切换到有头 Chrome，等用户手动完成后，无缝恢复自动化流程。
+### 阶段 7：出货
+
+```
+
+/ship              # 测试同步 + 覆盖率审计 + push + 开 PR
+
+/land-and-deploy   # 合并 → 部署 → 金丝雀监控
+
+/document-release  # 自动更新所有过时文档
+
+/canary            # 部署后持续监控（控制台错误/性能/页面失败）
+
+```
+
+**`/canary` 工作方式：**
+循环监控生产环境，检测：
+- 浏览器控制台错误
+- 性能退化
+- 页面加载失败
+  
+发现问题时立即报警并关联到具体提交。
+### 阶段 8：复盘
+
+```
+
+/retro    # 团队周复盘，带人员分解 + 出货连击统计
+
+/learn    # 管理跨会话的经验教训
+
+```
+
+`/learn` 让 gstack 有了记忆：你遇到的坑、做出的决策、学到的东西，都可以保存并在未来会话中自动检索。
+
+---
+## 五、技能模板系统：工作原理
+
+Skills 不是普通 Markdown 文件。它们是**带特殊占位符的提示词模板**，在安装时由生成器展开。
+
+**模板格式（`.tmpl` 文件）：**
+```markdown
+---
+name: office-hours
+preamble-tier: 3          # 上下文丰富程度（1=轻量 / 4=重量级）
+description: |
+  YC Office Hours — 头脑风暴助手
+allowed-tools:
+  - Bash
+  - Read
+  - AskUserQuestion
+triggers:
+  - brainstorm this
+  - office hours
+---
+{{PREAMBLE}}              # 写作风格 + 术语表 + 决策框架
+{{GBRAIN_CONTEXT_LOAD}}   # 加载知识库上下文
+...技能内容...
+{{LEARNINGS_SEARCH}}      # 搜索已有经验教训
+```
+
+**Resolver 模块**（`scripts/resolvers/`）：
+- `preamble.ts` — 写作风格（V1 详细 / V0 简洁）、术语、决策框架
+- `gbrain.ts` — GBrain 知识库集成
+- `learnings.ts` — 跨会话经验搜索
+- `design.ts` — 设计专项上下文
+- `review.ts` — 评审专家派遣配置
+
+**重要规则：不要直接编辑生成的 `SKILL.md`。** 永远编辑 `.tmpl` 源文件，然后重新生成：
+
+```bash
+
+bun run gen:skill-docs    # 重新生成所有 SKILL.md
+
+```
+
+---
+## 六、知识库：GBrain 持久记忆
+
+GBrain 是 gstack 的跨会话持久知识库，支持：
+
+- Supabase（云端，团队共享）
+- PGLite（本地，个人）
+- 自动配置
+
+```bash
+
+/setup-gbrain    # 初始化知识库（一次性）
+
+/learn           # 保存经验教训到 GBrain
+
+                 # 自动在相关技能中检索
+
+```
+
+
+技能模板中的 `{{GBRAIN_CONTEXT_LOAD}}` 和 `{{LEARNINGS_SEARCH}}` 会在每次执行时自动拉取相关记忆注入上下文。
+
+---
+## 七、团队协作模式
+
+### 单人团队
+
+默认安装，所有技能本地运行。
+
+### 多人团队
+```bash
+# 在你的项目仓库中
+cd ~/.claude/skills/gstack && ./setup --team
+~/.claude/skills/gstack/bin/gstack-team-init required
+
+git add .claude/ CLAUDE.md
+
+git commit -m "require gstack for AI-assisted work"
+
+git push
+```
+
+
+**效果：**
+- 团队成员克隆仓库后，gstack 在每次 Claude Code 会话开始时自动更新
+- 更新频率：每小时最多一次
+- 网络故障时静默跳过（不阻断工作）
+### Conductor 并行冲刺
+
+gstack 最强的用法：用 Conductor 同时运行 10-15 个 Claude Code 会话（每个分支一个），实现：
+```
+
+会话 1: think → /office-hours → /plan-ceo-review
+会话 2: build → 实现功能 A
+会话 3: build → 实现功能 B
+会话 4: review → /review → /qa
+...
+```
+
+每个会话相互独立，共享 gstack 技能，通过主分支同步协作成果。
+
+---
+
+## 八、多平台支持
+
+gstack 支持多个 AI 编程平台，不锁定 Claude Code：
+
+| 平台 | 支持状态 |
+|------|---------|
+| Claude Code | 主要平台，全功能 |
+| OpenAI Codex CLI | 完整技能生成（Codex 格式） |
+| Cursor | 通过 OpenCode |
+| Factory Droid | 支持 |
+| Kiro | 支持 |
+| GBrain | 持久知识模组 |
+
+
+不同平台的技能文件通过 host 配置生成：
+
+```bash
+
+bun run gen:skill-docs --host codex    # 生成 Codex 格式
+bun run gen:skill-docs --host factory  # 生成 Factory 格式
+
+```
+
+---
+## 九、三级测试体系
+
+gstack 本身的质量保障也是一流的：
+
+| 级别 | 类型 | 触发 | 成本 |
+|------|------|------|------|
+| 门控级（CI 阻断合并） | 静态验证 + E2E | 每次 PR | ~$2-3/次 |
+| 周期级（周度 cron） | LLM 评判 + 跨模型 | 定期 | 较高 |
+| 免费级（pre-commit） | 解析验证 + 快照 | 每次提交 | 0 |
+
+```bash
+
+bun test                  # 免费测试（<2 秒）
+bun run test:evals        # 付费 evals（~$4/次）
+bun run skill:check       # 技能健康仪表盘
+bun run slop              # AI 代码质量扫描
+
+```
+
+---
+## 十、常见坑与注意事项
+
+### 坑 1：不要 `git add -A`
+
+browse/dist/ 和 design/dist/ 是编译好的二进制，理应在 `.gitignore` 中。但由于历史遗留问题可能没有被完全排除。
+
+**正确做法：** 始终用 `git add file1 file2`，明确指定文件。
+### 坑 2：Windows 需要同时装 Bun 和 Node.js
+
+Bun 在 Windows 上有 pipe bug（oven-sh/bun#4253），browse 服务器会自动回退到 Node.js。如果 Node.js 不存在，setup 会报神秘错误。
+
+**解决：** Windows 用户确保同时安装 Bun 和 Node.js。
+
+### 坑 3：macOS Apple Silicon 代码签名
+
+Bun 编译的二进制在 Apple Silicon 上有签名问题，会被 SIGKILL（退出码 137）。
+
+**解决：** `./setup` 会自动处理，重新签名。如果二进制运行失败，重新运行 `./setup`。
+
+### 坑 4：不要编辑生成的 SKILL.md
+
+Merge conflicts 永远不要在 `SKILL.md` 上解决。
+
+**正确做法：** 在 `.tmpl` 源文件解决冲突 → `bun run gen:skill-docs` 重新生成。
+
+### 坑 5：`/review` 依赖 `review/checklist.md`
+
+如果这个文件不存在，`/review` 直接退出。
+
+**解决：** 确保安装完整，不要手动删除 checklist 文件。
+### 坑 6：Playwright Chromium 需要单独下载
+
+`bun install` 不会自动下载 Chromium。
+
+**解决：** 通过 `./setup` 安装（会自动执行 `bunx playwright install chromium`）。
+### 坑 7：不要直接用 MCP 浏览器工具
+
+CLAUDE.md 明确禁止：**不要使用 `mcp__claude-in-chrome__*` 工具**。
+
+**正确做法：** 始终通过 `/browse` 技能或 `$B` 命令进行浏览器交互。
+
+### 坑 8：ETHOS.md 和 Garry 的声音
+
+如果你是贡献者：永远不要接受对 `ETHOS.md` 的外部修改，不要移除推广内容，不要把 Garry 的写作风格改成"中立"风格。
+
+---
+
+## 十一、开发者工作流（贡献指南摘要）
+
+如果你想基于 gstack 二次开发或贡献：
+
+```bash
+
+# 开发模式（不编译二进制）
+
+bun run dev browse goto https://example.com
+
+# 监听模式（文件变更自动重新生成）
+bun run dev:skill office-hours
+
+# 健康检查
+bun run skill:check
+
+# 代码质量扫描
+bun run slop           # 全量扫描
+bun run slop:diff      # 仅扫描变更文件
+
+```
+
+**提交规范：**
+- 逻辑变更分开提交（bisect 原则）
+- rename/move 单独提交
+- 模板文件和生成文件分开提交
+- 测试基础设施和测试内容分开提交
+
+---
+## 十二、推荐使用路径
+
+### 个人项目起步
+```
+
+1. /office-hours          — 想清楚要做什么
+2. /plan-ceo-review       — 确认范围值得做
+3. /plan-eng-review       — 确认架构合理
+4. 实现功能               — 正常 Claude Code 协作
+5. /review                — PR 前全面评审
+6. /qa                    — 真实浏览器验证
+7. /ship                  — 推送并开 PR
+8. /land-and-deploy       — 合并 + 部署 + 监控
+
+```
+
+### 快速迭代（已有项目）
+
+```
+
+1. 实现功能
+
+2. /design-review         — 设计快速检查
+
+3. /qa                    — 浏览器验证
+
+4. /ship                  — 出货
+
+```
+
+### 高风险功能（安全/架构）
+
+```
+
+1. /plan-eng-review       — 架构评审
+
+2. 实现功能
+
+3. /review                — 完整 PR 评审
+
+4. /cso                   — 安全审计
+
+5. /codex                 — OpenAI 第二意见
+
+6. /qa                    — 浏览器验证
+
+7. /ship → /land-and-deploy
+
+8. /canary                — 持续监控
+
+```
+
+  
+---
+## 结语
+
+
+gstack 的核心理念是：**把最佳工程实践编码成 AI 可执行的流程**。它不是一套工具，而是一套方法论——每个斜杠命令都是某个专家角色在某个阶段应该做的事的完整规范。
+
+一人用好 gstack，可以以团队的方式思考、评审、测试和出货。这不是魔法，是流程的力量。
+
+---
+
+*教程基于 garrytan/gstack v1.15.0.0，2026-04-28*

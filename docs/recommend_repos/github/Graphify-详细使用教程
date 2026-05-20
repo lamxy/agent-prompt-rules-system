@@ -1,0 +1,522 @@
+
+
+> 基于仓库 [https://github.com/safishamsi/graphify（版本](https://github.com/safishamsi/graphify%EF%BC%88%E7%89%88%E6%9C%AC) 0.8.12，PyPI 包名 `graphifyy`） 原始文件来源：README.md、ARCHITECTURE.md、pyproject.toml、graphify/**init**.py
+
+---
+
+## 1. 项目简介
+
+Graphify 是一个 AI 编码助手技能（skill），核心功能是将整个项目目录——包括代码、文档、PDF、图片、视频——映射为一个可查询的**知识图谱**（knowledge graph）。
+
+### 核心定位
+
+在 AI 编码助手（Claude Code、Codex、Cursor、Gemini CLI 等）中输入 `/graphify .`，工具会扫描当前目录并生成三个输出文件：
+
+```
+graphify-out/
+├── graph.html       # 可在浏览器中交互浏览的可视化图谱（点击节点、过滤、搜索）
+├── GRAPH_REPORT.md  # 摘要报告：关键概念、意外连接、建议问题
+└── graph.json       # 完整图谱数据，可随时查询，无需重新读取文件
+```
+
+### 主要特性
+
+- **代码本地解析**：通过 tree-sitter 对 31 种语言进行 AST 解析，代码不离开本机
+- **多格式支持**：代码、Markdown、PDF、Office 文档、图片、视频、YouTube 链接
+- **知识图谱查询**：支持自然语言查询、路径查找、节点解释
+- **多平台集成**：支持 Claude Code、Codex、OpenCode、Cursor、Gemini CLI、GitHub Copilot CLI、Aider、VS Code、Kiro 等
+- **MCP 服务**：可作为 MCP stdio 服务暴露给 AI 助手进行结构化访问
+- **PR 看板**：与 GitHub PR 集成，支持 CI 状态、影响分析、智能分诊
+- **无遥测**：无使用追踪、无分析数据上报
+
+### 技术架构
+
+提取流水线：
+
+```
+detect() → extract() → build_graph() → cluster() → analyze() → report() → export()
+```
+
+每个阶段对应独立模块，通过 Python dict 和 NetworkX 图传递数据，无共享状态，副作用仅限于 `graphify-out/` 目录。
+
+---
+
+## 2. 安装
+
+### 前置条件
+
+| 依赖       | 最低版本  | 检查命令               | 安装                                                 |
+| -------- | ----- | ------------------ | -------------------------------------------------- |
+| Python   | 3.10+ | `python --version` | [python.org](https://www.python.org/downloads/)    |
+| uv（推荐）   | 任意    | `uv --version`     | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| pipx（备选） | 任意    | `pipx --version`   | `pip install pipx`                                 |
+
+**macOS（Homebrew）：**
+
+```bash
+brew install python@3.12 uv
+```
+
+**Windows：**
+
+```powershell
+winget install astral-sh.uv
+```
+
+**Ubuntu/Debian：**
+
+```bash
+sudo apt install python3.12 python3-pip pipx
+# 或安装 uv：
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### 安装主包
+
+> 注意：PyPI 包名为 `graphifyy`（双 y），CLI 命令仍为 `graphify`。
+
+```bash
+# 推荐方式（uv 自动配置 PATH）：
+uv tool install graphifyy
+
+# 备选方式：
+pipx install graphifyy
+pip install graphifyy
+```
+
+### 注册到 AI 助手
+
+安装完主包后，执行以下命令将技能注册到你的 AI 助手：
+
+```bash
+graphify install
+```
+
+完成后，在 AI 助手中输入 `/graphify .` 即可使用。
+
+> PowerShell 注意：使用 `graphify .` 而非 `/graphify .`，因为 PowerShell 中前缀斜杠是路径分隔符。
+
+### 按平台安装
+
+|平台|安装命令|
+|---|---|
+|Claude Code (Linux/Mac)|`graphify install`|
+|Claude Code (Windows)|`graphify install --platform windows`|
+|Codex|`graphify install --platform codex`|
+|Cursor|`graphify cursor install`|
+|Gemini CLI|`graphify install --platform gemini`|
+|GitHub Copilot CLI|`graphify install --platform copilot`|
+|VS Code Copilot Chat|`graphify vscode install`|
+|Aider|`graphify install --platform aider`|
+|Kiro IDE/CLI|`graphify kiro install`|
+
+### 可选功能扩展
+
+按需安装，不强制全部安装：
+
+| 扩展包       | 功能                               | 安装命令                               |
+| --------- | -------------------------------- | ---------------------------------- |
+| `pdf`     | PDF 提取                           | `pip install "graphifyy[pdf]"`     |
+| `office`  | .docx 和 .xlsx 支持                 | `pip install "graphifyy[office]"`  |
+| `video`   | 视频/音频转录（faster-whisper + yt-dlp） | `pip install "graphifyy[video]"`   |
+| `mcp`     | MCP stdio 服务                     | `pip install "graphifyy[mcp]"`     |
+| `neo4j`   | Neo4j 推送支持                       | `pip install "graphifyy[neo4j]"`   |
+| `ollama`  | Ollama 本地推理                      | `pip install "graphifyy[ollama]"`  |
+| `openai`  | OpenAI / 兼容 API                  | `pip install "graphifyy[openai]"`  |
+| `gemini`  | Google Gemini API                | `pip install "graphifyy[gemini]"`  |
+| `bedrock` | AWS Bedrock（IAM 认证，无需 API key）   | `pip install "graphifyy[bedrock]"` |
+| `leiden`  | Leiden 社区检测（Python < 3.13）       | `pip install "graphifyy[leiden]"`  |
+| `sql`     | SQL schema 提取                    | `pip install "graphifyy[sql]"`     |
+| `all`     | 以上全部                             | `pip install "graphifyy[all]"`     |
+
+### `graphify: command not found` 解决方法
+
+如果安装后找不到命令：
+
+- macOS：将 `~/Library/Python/3.x/bin` 加入 `~/.zshrc` 的 PATH
+- Linux：将 `~/.local/bin` 加入 `~/.bashrc` 的 PATH
+- 或使用 `uv tool install graphifyy` / `pipx install graphifyy`，两者都会自动配置 PATH
+
+---
+
+## 3. 核心概念
+
+### 3.1 知识图谱结构
+
+Graphify 将代码库转为一个**有向/无向图**（通过 NetworkX 管理），图中的每个节点和边均携带结构化信息。
+
+**节点（Node）** 的基本结构：
+
+```json
+{
+  "id": "unique_string",
+  "label": "human name",
+  "source_file": "path/to/file.py",
+  "source_location": "L42"
+}
+```
+
+**边（Edge）** 的基本结构：
+
+```json
+{
+  "source": "id_a",
+  "target": "id_b",
+  "relation": "calls|imports|uses|...",
+  "confidence": "EXTRACTED|INFERRED|AMBIGUOUS"
+}
+```
+
+### 3.2 置信度标签
+
+|标签|含义|
+|---|---|
+|`EXTRACTED`|关系明确存在于源码中（如 import 语句、直接调用）|
+|`INFERRED`|合理推断的关系（如调用图的二次遍历、上下文共现）|
+|`AMBIGUOUS`|不确定的关系，在 GRAPH_REPORT.md 中标注供人工审阅|
+
+### 3.3 提取流水线各模块职责
+
+|模块|核心函数|输入 → 输出|
+|---|---|---|
+|`detect.py`|`collect_files(root)`|目录 → 过滤后的文件路径列表|
+|`extract.py`|`extract(path)`|文件路径 → `{nodes, edges}` 字典|
+|`build.py`|`build_graph(extractions)`|提取字典列表 → NetworkX 图|
+|`cluster.py`|`cluster(G)`|图 → 每个节点附带 `community` 属性的图|
+|`analyze.py`|`analyze(G)`|图 → 分析字典（God 节点、意外连接、建议问题）|
+|`report.py`|`render_report(G, analysis)`|图 + 分析 → GRAPH_REPORT.md 字符串|
+|`export.py`|`export(G, out_dir, ...)`|图 → Obsidian vault、graph.json、graph.html、graph.svg|
+|`cache.py`|`check_semantic_cache / save_semantic_cache`|文件 → (已缓存, 未缓存) 分组|
+|`serve.py`|`start_server(graph_path)`|图文件路径 → MCP stdio 服务|
+
+### 3.4 报告内容说明
+
+生成的 `GRAPH_REPORT.md` 包含：
+
+- **God 节点**：图中连接度最高的概念，项目中的核心枢纽
+- **意外连接**：不同文件/模块中意外相关的概念，按意外程度排序
+- **"为什么"注释**：内联注释（`# NOTE:`、`# WHY:`、`# HACK:`）、文档字符串和设计理念被提取为独立节点
+- **建议问题**：图谱最擅长回答的 4-5 个问题
+- **置信度标签**：每个推断关系都标注 `EXTRACTED`、`INFERRED` 或 `AMBIGUOUS`
+
+### 3.5 支持的文件类型
+
+|类型|扩展名|
+|---|---|
+|代码（31 种语言）|`.py .ts .js .jsx .tsx .go .rs .java .c .cpp .rb .cs .kt .scala .php .swift .lua .zig .sql` 等|
+|文档|`.md .mdx .html .txt .rst .yaml .yml`|
+|Office|`.docx .xlsx`（需 `graphifyy[office]`）|
+|PDF|`.pdf`（需 `graphifyy[pdf]`）|
+|图片|`.png .jpg .webp .gif`|
+|视频/音频|`.mp4 .mov .mp3 .wav` 等（需 `graphifyy[video]`）|
+
+代码通过 tree-sitter 进行本地 AST 解析，**不发送任何代码到外部**。文档、PDF、图片通过 AI 助手的模型 API 进行语义提取。
+
+### 3.6 忽略文件
+
+在项目根目录创建 `.graphifyignore`，语法与 `.gitignore` 相同（支持 `!` 取反）：
+
+```
+# .graphifyignore
+node_modules/
+dist/
+*.generated.py
+
+# 只索引 src/ 目录，忽略其他
+*
+!src/
+!src/**
+```
+
+---
+
+## 4. 快速开始示例
+
+### 示例一：在 AI 助手中构建并查询图谱
+
+这是最常见的用法，在 Claude Code、Codex 等 AI 助手中输入技能命令：
+
+```
+/graphify .
+```
+
+执行后，`graphify-out/` 目录下会生成三个文件：
+
+- `graph.html` — 浏览器可视化
+- `GRAPH_REPORT.md` — 高亮摘要
+- `graph.json` — 完整图数据
+
+在同一 AI 助手会话中，可直接使用查询命令：
+
+```
+/graphify query "什么连接了认证模块和数据库？"
+/graphify path "UserService" "DatabasePool"
+/graphify explain "RateLimiter"
+```
+
+### 示例二：命令行独立使用（headless 提取）
+
+无需 IDE，直接从终端提取，适合 CI 环境：
+
+```bash
+# 设置 API Key（选一个即可）
+export ANTHROPIC_API_KEY=sk-ant-xxx
+
+# 提取当前目录并生成图谱
+graphify extract . --backend claude
+
+# 查询图谱
+graphify query "show the auth flow"
+
+# 查找两个节点之间的路径
+graphify query "what connects DigestAuth to Response?" --graph graphify-out/graph.json
+```
+
+生成架构调用流图（Mermaid HTML）：
+
+```bash
+graphify export callflow-html
+```
+
+---
+
+## 5. 进阶示例
+
+### 5.1 增量更新与强制重建
+
+```bash
+# 只重新提取有变化的文件（推荐日常使用）
+/graphify ./docs --update
+
+# 只重跑聚类，不重新提取（速度快，无 API 消耗）
+/graphify . --cluster-only
+
+# 调整社区粒度（值越大社区越多越细）
+/graphify . --cluster-only --resolution 1.5
+
+# 强制重建（如重构后节点数减少时使用）
+graphify extract . --force
+```
+
+### 5.2 使用 MCP 服务暴露图谱
+
+将图谱作为 MCP stdio 服务运行，让 AI 助手通过结构化工具调用访问：
+
+```bash
+# 启动 MCP 服务
+python -m graphify.serve graphify-out/graph.json
+
+# 在 Kimi Code 中注册：
+kimi mcp add --transport stdio graphify -- python -m graphify.serve graphify-out/graph.json
+```
+
+MCP 服务暴露的工具：`query_graph`、`get_node`、`get_neighbors`、`shortest_path`、`list_prs`、`get_pr_impact`、`triage_prs`。
+
+> WSL/Linux 注意：Ubuntu 默认使用 `python3`，建议用 venv 避免冲突：
+> 
+> ```bash
+> python3 -m venv .venv && .venv/bin/pip install "graphifyy[mcp]"
+> ```
+
+### 5.3 使用本地 Ollama 后端（无需 API Key）
+
+```bash
+# 默认自动连接 http://localhost:11434
+graphify extract ./docs --backend ollama
+
+# 限制 KV-cache 窗口（VRAM 不足时）
+GRAPHIFY_OLLAMA_NUM_CTX=8192 graphify extract ./docs --backend ollama --token-budget 4000
+
+# 每个 chunk 处理完后卸载模型（节省显存）
+GRAPHIFY_OLLAMA_KEEP_ALIVE=0 graphify extract ./docs --backend ollama
+```
+
+### 5.4 添加外部资源（论文/视频）
+
+```bash
+# 抓取 ArXiv 论文并加入图谱
+/graphify add https://arxiv.org/abs/1706.03762
+
+# 转录 YouTube 视频并加入图谱（需安装 graphifyy[video]）
+/graphify add <youtube-url>
+```
+
+### 5.5 PR 看板与影响分析
+
+```bash
+# 查看所有 PR 的 CI 状态、审阅状态、图谱影响
+graphify prs
+
+# 深入分析单个 PR（如 #42）
+graphify prs 42
+
+# AI 优先级排序（自动检测后端）
+graphify prs --triage
+
+# 检测共享社区的 PR（合并顺序风险）
+graphify prs --conflicts
+```
+
+### 5.6 团队协作设置
+
+推荐将 `graphify-out/` 提交到 git，团队成员无需重新提取即可使用图谱。
+
+**推荐的 `.gitignore` 补充：**
+
+```
+graphify-out/manifest.json    # 基于 mtime，git clone 后会失效
+graphify-out/cost.json        # 本地专用
+# graphify-out/cache/         # 可选：提交缓存加快速度，或跳过以减小仓库体积
+```
+
+**安装 git hook 实现自动重建：**
+
+```bash
+# 每次 git commit 后自动重建（仅 AST，无 API 消耗）
+# 同时设置 git merge driver，避免两人同时提交时 graph.json 产生冲突标记
+graphify hook install
+```
+
+### 5.7 导出到其他格式
+
+```bash
+# 生成 Obsidian Vault
+/graphify ./raw --obsidian
+
+# 生成可被 Agent 爬取的 Markdown Wiki
+/graphify ./raw --wiki
+
+# 导出 SVG（需 graphifyy[svg]）
+/graphify ./raw --svg
+
+# 导出 GraphML（供 Gephi / yEd 使用）
+/graphify ./raw --graphml
+
+# 导出 Neo4j Cypher 脚本
+/graphify ./raw --neo4j
+
+# 直接推送到 Neo4j 实例
+/graphify ./raw --neo4j-push bolt://localhost:7687
+```
+
+### 5.8 合并多个图谱
+
+```bash
+# 合并两个独立项目的图谱
+graphify merge-graphs a.json b.json --out merged.json
+
+# 注册到全局跨项目图谱
+graphify extract . --global --as myrepo
+graphify global list    # 查看所有已注册项目
+```
+
+---
+
+## 6. 常见问题与注意事项
+
+### 6.1 macOS 上测试集存在 Fortran 文件大小写冲突
+
+**现象**：在 macOS（HFS+/APFS，大小写不敏感文件系统）上运行完整测试集时，`tests/fixtures/sample.f90` 和 `tests/fixtures/sample.F90` 两个 fixture 文件会发生碰撞，导致测试失败。
+
+**背景**：README.md 明确记载：测试集同时覆盖 Fortran 的两种扩展名（小写 `.f90` 和大写 `.F90`），而 macOS 默认文件系统不区分大小写。
+
+**推荐处理方式**：在 Linux 系统或 Docker 容器内运行完整测试套件。日常开发可通过 `pytest tests/ -q -k "python"` 等过滤器跳过 Fortran 相关测试。
+
+---
+
+### 6.2 `--update` 或重建后图谱节点数减少时无法覆盖
+
+**现象**：执行 `--update` 或重新提取后，`graph.json` 中的节点数少于上一次，图谱提示跳过覆盖。
+
+**背景**：Graphify 默认在新图节点数少于旧图时拒绝覆盖，防止意外删除有效数据。重构操作（删除文件、重命名模块）会触发此行为。旧节点残留时，还可能出现"幽灵副本"（ghost duplicates）——同一实体有多个 ID 不同的节点。
+
+**推荐处理方式**：
+
+```bash
+# 强制重建，覆盖旧图（即使节点数更少）
+graphify extract . --force
+# 或设置环境变量：
+GRAPHIFY_FORCE=1 graphify extract .
+
+# 清理幽灵副本，启用 LLM 仲裁去重（消耗额外 API）
+graphify extract . --force --dedup-llm
+```
+
+---
+
+### 6.3 Leiden 社区检测仅支持 Python < 3.13
+
+**现象**：安装 `graphifyy[leiden]` 时报错，或在 Python 3.13+ 环境中依赖项 `graspologic` 无法安装。
+
+**背景**：`pyproject.toml` 中明确约束：`graspologic; python_version < '3.13'`，即 Leiden 算法依赖的 `graspologic` 包目前不支持 Python 3.13 及以上版本。
+
+**推荐处理方式**：使用 Python 3.10–3.12 环境安装 Leiden 支持。Python 3.13+ 环境下可使用默认的 Louvain 聚类（`networkx` 内置，无此限制），不安装 `leiden` 扩展即可。
+
+---
+
+### 6.4 技能版本不匹配警告
+
+**现象**：AI 助手中提示技能文件版本与已安装的 `graphifyy` 版本不一致，命令行为可能不符合预期。
+
+**背景**：`graphify install` 会将技能文件（`skill.md` 等）写入 AI 助手的配置目录。只更新 Python 包但未重新执行 `install` 时，两者版本会脱节。README 中明确记载了此问题及修复方式。
+
+**推荐处理方式**：
+
+```bash
+uv tool upgrade graphifyy
+graphify install   # 覆盖写入最新技能文件
+```
+
+---
+
+### 6.5 图谱 HTML 文件过大无法在浏览器打开
+
+**现象**：打开 `graph.html` 时浏览器卡顿或崩溃，通常发生在节点数超过 5000 的大型项目。
+
+**背景**：README 中明确记载：`graph.html` 将所有节点和边内联渲染，大型项目（> 5000 节点）文件体积过大，超出浏览器 DOM 承载上限。
+
+**推荐处理方式**：
+
+```bash
+# 跳过 HTML 生成，直接使用 JSON 查询
+graphify cluster-only ./my-project --no-viz
+graphify query "..."
+
+# 或在构建时跳过可视化
+/graphify . --no-viz
+```
+
+---
+
+### 6.6 Ollama 显存不足 / 上下文窗口溢出
+
+**现象**：使用 `--backend ollama` 提取时报错"out of VRAM"或"context window exceeded"。
+
+**背景**：KV-cache 窗口默认自动调整大小，但可能对显存较小的 GPU 过大。README 中明确记载了通过环境变量手动覆盖的方式。
+
+**推荐处理方式**：
+
+```bash
+GRAPHIFY_OLLAMA_NUM_CTX=8192 graphify extract ./docs --backend ollama --token-budget 4000
+```
+
+---
+
+### 6.7 headless/CI 模式环境变量汇总
+
+通过 `/graphify` 技能在 IDE 中运行时，模型 API 由 IDE 会话提供，**无需额外 API Key**。只有在 `graphify extract`（headless 模式）下才需要配置以下环境变量：
+
+|环境变量|用途|使用场景|
+|---|---|---|
+|`ANTHROPIC_API_KEY`|Claude 后端|`--backend claude`|
+|`GEMINI_API_KEY` 或 `GOOGLE_API_KEY`|Google Gemini 后端|`--backend gemini`|
+|`OPENAI_API_KEY`|OpenAI 或兼容 API|`--backend openai`|
+|`OLLAMA_BASE_URL`|Ollama 本地推理地址|`--backend ollama`（默认 `http://localhost:11434`）|
+|`GRAPHIFY_MAX_WORKERS`|AST 并行线程数|可选，也可用 `--max-workers`|
+|`GRAPHIFY_MAX_OUTPUT_TOKENS`|提高输出上限（密集语料库）|可选，如 `32768`|
+|`GRAPHIFY_API_TIMEOUT`|HTTP 超时秒数（默认 600）|可选，本地慢模型时调大|
+|`GRAPHIFY_FORCE`|强制覆盖图谱|可选，等同 `--force`|
+
+---
+
+_教程基于仓库原始文件生成，所有命令、参数、架构描述均有 README.md、ARCHITECTURE.md 或 pyproject.toml 原文支撑。未在原始文件中找到明确说明的内容已省略。_

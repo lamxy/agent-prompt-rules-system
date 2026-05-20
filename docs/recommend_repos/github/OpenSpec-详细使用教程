@@ -1,0 +1,788 @@
+
+[SDD 面向人工智能编码助手的规范驱动开发](https://github.com/Fission-AI/OpenSpec)
+
+> AI 原生、规格驱动的开发框架——让 AI 编码助手在动手实现之前先与你对齐需求。
+
+---
+
+## 目录
+
+1. [项目介绍](https://vscode-remote+wsl-002bubuntu-002d24-002e04.vscode-resource.vscode-cdn.net/home/tesla/workspace/justtest/openspec-tutorial.md#1-%E9%A1%B9%E7%9B%AE%E4%BB%8B%E7%BB%8D)
+2. [安装与初始化](https://vscode-remote+wsl-002bubuntu-002d24-002e04.vscode-resource.vscode-cdn.net/home/tesla/workspace/justtest/openspec-tutorial.md#2-%E5%AE%89%E8%A3%85%E4%B8%8E%E5%88%9D%E5%A7%8B%E5%8C%96)
+3. [核心概念](https://vscode-remote+wsl-002bubuntu-002d24-002e04.vscode-resource.vscode-cdn.net/home/tesla/workspace/justtest/openspec-tutorial.md#3-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5)
+4. [基础工作流程（Core Profile）](https://vscode-remote+wsl-002bubuntu-002d24-002e04.vscode-resource.vscode-cdn.net/home/tesla/workspace/justtest/openspec-tutorial.md#4-%E5%9F%BA%E7%A1%80%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8Bcore-profile)
+5. [扩展工作流程（Expanded Profile）](https://vscode-remote+wsl-002bubuntu-002d24-002e04.vscode-resource.vscode-cdn.net/home/tesla/workspace/justtest/openspec-tutorial.md#5-%E6%89%A9%E5%B1%95%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8Bexpanded-profile)
+6. [配置说明](https://vscode-remote+wsl-002bubuntu-002d24-002e04.vscode-resource.vscode-cdn.net/home/tesla/workspace/justtest/openspec-tutorial.md#6-%E9%85%8D%E7%BD%AE%E8%AF%B4%E6%98%8E)
+7. [完整示例](https://vscode-remote+wsl-002bubuntu-002d24-002e04.vscode-resource.vscode-cdn.net/home/tesla/workspace/justtest/openspec-tutorial.md#7-%E5%AE%8C%E6%95%B4%E7%A4%BA%E4%BE%8B)
+8. [常用命令速查](https://vscode-remote+wsl-002bubuntu-002d24-002e04.vscode-resource.vscode-cdn.net/home/tesla/workspace/justtest/openspec-tutorial.md#8-%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E9%80%9F%E6%9F%A5)
+9. [最佳实践](https://vscode-remote+wsl-002bubuntu-002d24-002e04.vscode-resource.vscode-cdn.net/home/tesla/workspace/justtest/openspec-tutorial.md#9-%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5)
+
+---
+
+## 1. 项目介绍
+
+### OpenSpec 是什么
+
+OpenSpec 是一个 **AI 原生的规格驱动开发框架**。它的核心理念是：在 AI 编码助手开始写代码之前，先让团队与 AI 就需求、边界和实现方案达成一致。
+
+传统开发流程中，开发者往往直接把模糊的需求丢给 AI 助手，AI 就开始生成代码——这导致：
+
+- 生成的代码偏离真实需求
+- 多次迭代才能纠偏，消耗大量 token
+- 团队成员之间对变更内容缺乏共识
+- 代码审查时难以追溯变更背后的设计决策
+
+OpenSpec 通过引入"规格文件（Spec）"这一中间层解决上述问题。所有变更先以结构化文档描述清楚，AI 确认理解后再进入实现阶段。
+
+### 为什么使用 OpenSpec
+
+|痛点|OpenSpec 的解决方式|
+|---|---|
+|AI 输出与需求偏差大|先用规格文件对齐，再实现|
+|变更缺乏可追溯性|每个变更对应一个独立的 change 文件夹|
+|并行开发容易冲突|每个 change 隔离，支持并行工作流|
+|重构/API 变更风险高|通过 delta spec 明确标注 ADDED/MODIFIED/REMOVED|
+|团队协作上下文丢失|specs 目录作为持久化的"唯一真相来源"|
+
+### 支持的 AI 编码助手
+
+OpenSpec 与主流 AI 编码工具无缝集成：
+
+- **Claude Code**（Anthropic）
+- **Cursor**
+- **Windsurf**
+- **GitHub Copilot**
+- 任何支持自定义斜杠命令或提示词的工具
+
+---
+
+## 2. 安装与初始化
+
+### 前置条件
+
+- Node.js 16+
+- npm 或 yarn
+- 一个已有的代码仓库（或新建目录）
+
+### 全局安装
+
+```bash
+npm install -g @fission-ai/openspec@latest
+```
+
+验证安装成功：
+
+```bash
+openspec --version
+```
+
+### 在项目中初始化
+
+进入你的项目根目录，运行：
+
+```bash
+openspec init
+```
+
+初始化向导会询问一些问题，例如：
+
+- 选择工作流配置文件（core 或 expanded）
+- 选择你使用的 AI 编码助手
+
+初始化完成后，项目根目录下会生成以下结构：
+
+```
+your-project/
+├── openspec/
+│   ├── config.yaml          # OpenSpec 配置文件
+│   ├── specs/               # 规格文件目录（唯一真相来源）
+│   │   └── .gitkeep
+│   └── changes/             # 活跃变更目录（每个变更一个子文件夹）
+│       └── .gitkeep
+└── ...（你原有的项目文件）
+```
+
+### 将 openspec 目录纳入版本控制
+
+```bash
+git add openspec/
+git commit -m "chore: initialize OpenSpec"
+```
+
+`openspec/specs/` 目录是团队共享的真相来源，必须提交到版本控制。`openspec/changes/` 目录可根据团队习惯决定是否提交（建议提交，以便追溯）。
+
+---
+
+## 3. 核心概念
+
+### 3.1 Specs（规格文件）
+
+`openspec/specs/` 是整个项目的**规格真相来源**。每个文件描述系统中某一模块、功能或接口的当前状态。
+
+规格文件是**稳定态**——它反映已实现且已验证的系统设计。
+
+示例规格文件 `openspec/specs/user-auth.md`：
+
+```markdown
+# 用户认证模块规格
+
+## 概述
+提供用户注册、登录、登出及 JWT token 刷新能力。
+
+## 接口
+
+### POST /api/auth/register
+- 请求体：{ email, password, username }
+- 成功响应：201，返回 { userId, token }
+- 失败响应：400（参数校验失败）、409（邮箱已存在）
+
+### POST /api/auth/login
+- 请求体：{ email, password }
+- 成功响应：200，返回 { token, refreshToken }
+- 失败响应：401（凭证错误）
+
+## 数据模型
+- User: { id, email, username, passwordHash, createdAt }
+- Token 有效期：15 分钟（access）、7 天（refresh）
+```
+
+### 3.2 Changes（变更目录）
+
+`openspec/changes/` 存放**活跃中的变更**。每个变更对应一个独立子文件夹，命名通常包含变更 ID 或描述：
+
+```
+openspec/changes/
+├── add-oauth-login/
+│   ├── delta-spec.md    # 描述本次变更的 delta 规格
+│   └── artifacts/       # 相关产出物（可选）
+└── fix-token-expiry/
+    └── delta-spec.md
+```
+
+变更目录的生命周期：**提议 → 应用 → 验证 → 归档**。
+
+### 3.3 Delta Specs（增量规格）
+
+Delta Spec 是 OpenSpec 最核心的概念之一。它不描述系统的全貌，只描述**本次变更引入的差异**，使用三个明确的标注：
+
+|标注|含义|
+|---|---|
+|`ADDED`|新增的内容|
+|`MODIFIED`|修改的已有内容|
+|`REMOVED`|删除的内容|
+
+示例 delta spec：
+
+```markdown
+# Delta Spec: 新增 OAuth 登录
+
+## ADDED
+
+### POST /api/auth/oauth/google
+- 请求体：{ code, redirectUri }
+- 成功响应：200，返回 { token, refreshToken, isNewUser }
+- 失败响应：400（code 无效）、502（Google 服务不可用）
+
+### User 模型新增字段
+- oauthProvider: string | null
+- oauthId: string | null
+
+## MODIFIED
+
+### POST /api/auth/register
+- 新增可选字段：{ oauthProvider, oauthId }
+- 密码字段改为可选（OAuth 注册时不需要密码）
+```
+
+### 3.4 Artifacts（产出物）
+
+Artifacts 是变更过程中产生的附属文件，例如：
+
+- 架构图
+- 测试用例列表
+- 数据库迁移脚本模板
+- API 合同草稿
+
+它们存放在对应变更目录的 `artifacts/` 子目录中。
+
+### 3.5 工作流配置文件（Profiles）
+
+OpenSpec 提供两种内置工作流：
+
+- **Core Profile**：轻量版，适合小团队或个人项目，命令更少
+- **Expanded Profile**：完整版，包含更细粒度的步骤，适合团队协作和复杂变更
+
+---
+
+## 4. 基础工作流程（Core Profile）
+
+Core Profile 的四步核心命令：
+
+```
+/opsx:propose → /opsx:apply → /opsx:sync → /opsx:archive
+```
+
+### 第一步：/opsx:propose
+
+**作用**：向 AI 助手提议一个变更，AI 会生成对应的 delta spec 草稿。
+
+在你的 AI 编码助手中输入：
+
+```
+/opsx:propose 新增用户头像上传功能，支持 JPG/PNG，最大 2MB，存储到 S3
+```
+
+AI 会：
+
+1. 分析现有 specs（特别是相关模块）
+2. 生成一个 delta spec 草稿
+3. 在 `openspec/changes/` 下创建对应目录和文件
+
+你检查 AI 生成的 delta spec，确认它准确描述了你的意图。如有偏差，直接修改文件或继续与 AI 对话修正。
+
+### 第二步：/opsx:apply
+
+**作用**：确认 delta spec 无误后，让 AI 按照规格开始实现代码。
+
+```
+/opsx:apply add-avatar-upload
+```
+
+AI 会：
+
+1. 读取指定变更的 delta spec
+2. 严格按规格实现代码
+3. 不会超出 delta spec 描述的范围
+
+### 第三步：/opsx:sync
+
+**作用**：实现完成并验证后，将 delta spec 的内容合并回 `openspec/specs/` 中的基础规格文件。
+
+```
+/opsx:sync add-avatar-upload
+```
+
+这一步确保 specs 目录始终反映系统的最新状态。
+
+### 第四步：/opsx:archive
+
+**作用**：将已完成的变更目录从 `changes/` 归档，清理工作空间。
+
+```
+/opsx:archive add-avatar-upload
+```
+
+归档后，`openspec/changes/add-avatar-upload/` 会被移动到归档位置（通常是 `openspec/archive/`）。
+
+---
+
+## 5. 扩展工作流程（Expanded Profile）
+
+Expanded Profile 提供更细粒度的控制，适合复杂变更或团队协作场景：
+
+```
+/opsx:new → /opsx:continue → /opsx:apply → /opsx:verify → /opsx:archive
+```
+
+### /opsx:new
+
+启动一个新的变更，进入交互式对话，AI 会主动提问以澄清需求边界：
+
+```
+/opsx:new
+```
+
+AI 会问你：
+
+- 这个变更的目标是什么？
+- 影响哪些模块？
+- 有没有不在范围内的内容需要明确排除？
+
+对话结束后，AI 生成一个更完整的 delta spec 草稿。
+
+### /opsx:continue
+
+用于在多轮对话中继续完善某个变更的规格，适合需要多次讨论的复杂需求：
+
+```
+/opsx:continue add-payment-integration
+```
+
+### /opsx:apply
+
+与 Core Profile 相同，按规格实现代码。
+
+### /opsx:verify
+
+实现完成后，让 AI 对照 delta spec 验证实现的完整性和正确性：
+
+```
+/opsx:verify add-payment-integration
+```
+
+AI 会：
+
+1. 逐条检查 delta spec 中的 ADDED/MODIFIED/REMOVED 是否都已实现
+2. 报告缺失或偏差的部分
+3. 给出验证结论
+
+### /opsx:archive
+
+与 Core Profile 相同，归档已完成的变更。
+
+---
+
+## 6. 配置说明
+
+`openspec/config.yaml` 是 OpenSpec 的主配置文件。以下是常用配置项说明：
+
+```yaml
+# openspec/config.yaml
+
+# 工作流配置文件：core 或 expanded
+profile: expanded
+
+# AI 编码助手类型
+assistant: claude-code  # 可选：cursor, windsurf, copilot
+
+# specs 目录路径（相对于项目根目录）
+specs_dir: openspec/specs
+
+# changes 目录路径
+changes_dir: openspec/changes
+
+# 归档目录路径
+archive_dir: openspec/archive
+
+# delta spec 模板配置
+delta_spec:
+  # 是否要求每个 delta spec 必须包含测试用例描述
+  require_test_cases: true
+  # 是否要求标注受影响的文件路径
+  require_affected_files: false
+
+# 变更命名规范（kebab-case 推荐）
+change_naming: kebab-case
+
+# 是否在 apply 前强制要求人工确认 delta spec
+require_confirmation_before_apply: true
+```
+
+### 配置项详解
+
+|配置项|类型|默认值|说明|
+|---|---|---|---|
+|`profile`|string|`core`|工作流配置文件，`core` 或 `expanded`|
+|`assistant`|string|`claude-code`|使用的 AI 助手类型|
+|`specs_dir`|string|`openspec/specs`|规格文件目录|
+|`changes_dir`|string|`openspec/changes`|活跃变更目录|
+|`archive_dir`|string|`openspec/archive`|归档目录|
+|`delta_spec.require_test_cases`|boolean|`false`|是否强制要求测试用例描述|
+|`require_confirmation_before_apply`|boolean|`true`|apply 前是否需要确认|
+
+---
+
+## 7. 完整示例
+
+### 示例 1：新增功能——用户通知系统
+
+**场景**：为一个博客平台新增邮件通知功能，当有人评论用户的文章时发送通知邮件。
+
+**第一步**：提议变更
+
+```
+/opsx:propose 新增邮件通知功能：当文章收到新评论时，自动向文章作者发送邮件通知。使用 SendGrid 发送，支持用户在个人设置中关闭此通知。
+```
+
+AI 生成 `openspec/changes/add-comment-notification/delta-spec.md`：
+
+```markdown
+# Delta Spec: 新增评论邮件通知
+
+## ADDED
+
+### 通知触发逻辑
+- 当 POST /api/comments 成功创建评论后，异步触发通知
+- 检查文章作者的通知偏好，若未关闭则发送邮件
+
+### POST /api/notifications/preferences（新接口）
+- 请求体：{ emailOnComment: boolean }
+- 成功响应：200，返回更新后的偏好设置
+- 需要认证（Bearer token）
+
+### GET /api/notifications/preferences（新接口）
+- 成功响应：200，返回 { emailOnComment: boolean }
+- 需要认证
+
+### NotificationPreference 数据模型
+- userId: string
+- emailOnComment: boolean（默认 true）
+- updatedAt: Date
+
+## MODIFIED
+
+### POST /api/comments
+- 成功创建评论后，新增异步副作用：触发邮件通知流程
+- 主流程不等待邮件发送结果（fire-and-forget）
+
+### User 数据模型
+- 新增关联：notificationPreference（一对一）
+
+## 技术约束
+- 邮件服务：SendGrid
+- 邮件发送为异步，失败不影响评论创建
+- 邮件模板存放在 src/templates/email/
+```
+
+**第二步**：确认后应用
+
+```
+/opsx:apply add-comment-notification
+```
+
+**第三步**：同步规格
+
+```
+/opsx:sync add-comment-notification
+```
+
+**第四步**：归档
+
+```
+/opsx:archive add-comment-notification
+```
+
+---
+
+### 示例 2：Bug 修复——Token 过期处理问题
+
+**场景**：线上发现刷新 token 时如果并发请求会产生竞态条件，导致用户被强制登出。
+
+**使用 Core Profile**：
+
+```
+/opsx:propose 修复 token 刷新竞态条件问题：当多个并发请求同时触发 token 刷新时，只允许第一个请求真正刷新 token，其余请求等待并复用刷新结果。
+```
+
+生成的 delta spec：
+
+```markdown
+# Delta Spec: 修复 Token 刷新竞态条件
+
+## MODIFIED
+
+### POST /api/auth/refresh
+- 引入刷新锁机制：同一用户同时只允许一个刷新请求执行
+- 后续并发请求等待锁释放后，复用已刷新的 token
+- 锁超时时间：5 秒（超时后允许重新尝试）
+- 错误响应新增：503（刷新服务暂时不可用，锁等待超时）
+
+### TokenService（内部服务）
+- 新增方法：acquireRefreshLock(userId) → boolean
+- 新增方法：releaseRefreshLock(userId)
+- 新增方法：getPendingRefreshedToken(userId) → Token | null
+- 锁存储使用 Redis，key 格式：token_refresh_lock:{userId}
+
+## 技术约束
+- 不改变对外 API 接口签名
+- 锁实现依赖 Redis（项目已有 Redis 实例）
+```
+
+```
+/opsx:apply fix-token-refresh-race
+/opsx:sync fix-token-refresh-race
+/opsx:archive fix-token-refresh-race
+```
+
+---
+
+### 示例 3：并行变更——两个团队同时开发
+
+**场景**：A 团队负责新增支付功能，B 团队同时在重构用户模块。两个变更并行进行。
+
+**A 团队**：
+
+```
+/opsx:propose 集成 Stripe 支付：支持信用卡付款，新增订单支付状态管理
+```
+
+生成 `openspec/changes/add-stripe-payment/delta-spec.md`
+
+**B 团队**（同时进行）：
+
+```
+/opsx:propose 重构用户模块：将 User 表拆分为 UserProfile 和 UserCredential 两张表，提升查询性能
+```
+
+生成 `openspec/changes/refactor-user-module/delta-spec.md`
+
+两个变更在各自独立的目录中并行推进，互不干扰。当 B 团队的重构影响到用户数据模型时，A 团队在 apply 之前可以查看 B 团队的 delta spec，提前发现潜在冲突：
+
+```markdown
+# B 团队 delta spec 中的关键变更（片段）
+
+## MODIFIED
+
+### User 数据模型（拆分）
+- 原 User 表字段迁移到 UserCredential：{ email, passwordHash, oauthProvider, oauthId }
+- 原 User 表剩余字段保留在 UserProfile：{ id, username, avatarUrl, bio }
+- 两表通过 userId 关联
+```
+
+A 团队看到这个变更后，可以更新自己的 delta spec，确保支付功能引用正确的表：
+
+```markdown
+# A 团队 delta spec 更新（片段）
+
+## ADDED
+
+### Payment 数据模型
+- userId: string（关联 UserProfile.id，而非原 User.id）
+```
+
+---
+
+### 示例 4：代码重构——API 响应格式统一
+
+**场景**：项目历史遗留了不一致的 API 响应格式，需要统一为标准结构。
+
+**使用 Expanded Profile**，先用 `/opsx:new` 深入讨论范围：
+
+```
+/opsx:new
+```
+
+AI 开始提问：
+
+> Q: 目前有哪几种不一致的响应格式？ A: 有的接口返回 `{ data: ... }`，有的直接返回对象，有的错误用 `{ message }` 有的用 `{ error }`
+
+> Q: 统一目标格式是什么？ A: 成功统一为 `{ success: true, data: ... }`，失败统一为 `{ success: false, error: { code, message } }`
+
+> Q: 这次重构是否包含所有接口，还是只覆盖部分模块？ A: 只覆盖 /api/users 和 /api/posts 两个模块，其他模块后续再做
+
+生成 delta spec：
+
+````markdown
+# Delta Spec: 统一 API 响应格式（users + posts 模块）
+
+## MODIFIED
+
+### 标准成功响应格式
+所有 /api/users 和 /api/posts 下的接口成功响应统一为：
+```json
+{
+  "success": true,
+  "data": { ... }
+}
+````
+
+### 标准错误响应格式
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "人类可读的错误描述"
+  }
+}
+```
+
+### 受影响接口列表
+
+- GET /api/users/:id
+- POST /api/users
+- PUT /api/users/:id
+- DELETE /api/users/:id
+- GET /api/posts
+- GET /api/posts/:id
+- POST /api/posts
+- PUT /api/posts/:id
+
+## 范围排除
+
+- /api/auth 系列接口不在本次重构范围内
+- /api/comments 接口不在本次重构范围内
+
+/opsx:apply refactor-api-response-format /opsx:verify refactor-api-response-format
+
+```
+
+verify 步骤会逐一检查上述接口是否都已按新格式改造。
+
+```
+
+/opsx:archive refactor-api-response-format
+
+```
+
+---
+
+### 示例 5：API 变更——废弃旧版接口
+
+**场景**：v1 的 `/api/search` 接口需要被 v2 替代，需要在一段时间内保持向后兼容。
+
+```
+
+/opsx:new
+
+````
+
+经过对话，生成 delta spec：
+
+```markdown
+# Delta Spec: 搜索接口 v2 迁移
+
+## ADDED
+
+### GET /api/v2/search（新接口）
+- 查询参数：q（搜索词）、type（article|user|tag）、page、pageSize
+- 响应：{ success: true, data: { results: [], total, page, pageSize } }
+- 支持全文搜索，使用 Elasticsearch
+
+## MODIFIED
+
+### GET /api/search（原 v1 接口）
+- 状态：已废弃（Deprecated），计划在 2026-Q3 下线
+- 响应头新增：Deprecation: true
+- 响应头新增：Sunset: Sat, 01 Aug 2026 00:00:00 GMT
+- 响应头新增：Link: </api/v2/search>; rel="successor-version"
+- 功能行为不变，仅新增废弃响应头
+
+## REMOVED
+
+（无，v1 接口本次不删除，仅标记废弃）
+
+## 迁移指南
+- 客户端应在 2026-Q3 前将 /api/search 替换为 /api/v2/search
+- v2 接口的 type 参数替代了 v1 的 filter 参数，映射关系：
+  - filter=article → type=article
+  - filter=user → type=user
+  - filter=tag（v1 不支持）→ type=tag（v2 新增）
+````
+
+```
+/opsx:apply add-search-v2
+/opsx:verify add-search-v2
+/opsx:sync add-search-v2
+/opsx:archive add-search-v2
+```
+
+---
+
+## 8. 常用命令速查
+
+### Core Profile 命令
+
+|命令|说明|
+|---|---|
+|`openspec init`|在当前项目初始化 OpenSpec|
+|`/opsx:propose <描述>`|提议一个新变更，AI 生成 delta spec 草稿|
+|`/opsx:apply <变更名>`|按 delta spec 实现代码|
+|`/opsx:sync <变更名>`|将 delta spec 合并回基础 specs|
+|`/opsx:archive <变更名>`|归档已完成的变更|
+
+### Expanded Profile 命令
+
+|命令|说明|
+|---|---|
+|`/opsx:new`|交互式启动新变更，AI 主动提问澄清需求|
+|`/opsx:continue <变更名>`|继续完善某个变更的规格|
+|`/opsx:apply <变更名>`|按 delta spec 实现代码|
+|`/opsx:verify <变更名>`|验证实现是否与 delta spec 一致|
+|`/opsx:archive <变更名>`|归档已完成的变更|
+
+### CLI 命令
+
+|命令|说明|
+|---|---|
+|`openspec init`|初始化项目|
+|`openspec --version`|查看版本号|
+|`openspec list`|列出所有活跃变更|
+
+---
+
+## 9. 最佳实践
+
+### 9.1 一个变更，一个目录
+
+每个 change 目录只对应一个独立的、有明确边界的变更。避免把多个不相关的修改塞进同一个 change 中，这会让 delta spec 变得模糊，也让 verify 步骤难以判断。
+
+**好的做法**：
+
+```
+openspec/changes/
+├── add-user-avatar/
+├── fix-login-redirect/
+└── update-email-template/
+```
+
+**避免的做法**：
+
+```
+openspec/changes/
+└── sprint-12-changes/    # 包含了本 sprint 所有不相关的修改
+```
+
+### 9.2 先写范围排除，再写范围内容
+
+在 delta spec 中，明确写出"本次变更不包含什么"与写出"包含什么"同样重要。范围排除可以防止 AI 在实现时过度发挥，也能让代码审查者快速理解变更边界。
+
+```markdown
+## 范围排除
+- 不修改数据库 schema（schema 变更在单独的迁移 change 中处理）
+- 不涉及移动端 API
+- 不包含前端实现，仅后端接口
+```
+
+### 9.3 specs 目录保持精炼
+
+`openspec/specs/` 中的文件应该是**精炼的、稳定的规格**，而不是实现细节的堆砌。好的规格文件关注：
+
+- 接口契约（输入、输出、错误码）
+- 数据模型（字段名、类型、约束）
+- 关键业务规则
+
+不需要在规格文件中记录：
+
+- 具体的函数名或类名
+- 内部算法实现
+- 框架相关的配置细节
+
+### 9.4 在 apply 之前仔细审查 delta spec
+
+`/opsx:apply` 是不可逆的开始——一旦 AI 开始实现，修改成本会变高。在执行 apply 之前，花几分钟检查 delta spec：
+
+- ADDED 的内容是否完整、准确？
+- MODIFIED 的变更是否与你的意图一致？
+- REMOVED 的内容是否真的需要删除？
+- 范围是否过大（需要拆分）？
+
+### 9.5 利用 verify 发现遗漏
+
+`/opsx:verify` 不仅是质量检查，更是一个对话机会。如果 verify 报告有遗漏，与 AI 讨论是因为 delta spec 描述不清晰，还是实现确实有缺失。有时候 verify 的发现会让你意识到 delta spec 本身需要调整。
+
+### 9.6 并行变更时主动检查依赖
+
+当多个 change 并行进行时，如果它们都涉及同一个数据模型或接口，在 apply 之前主动对比双方的 delta spec，提前发现冲突，避免实现阶段的合并冲突。
+
+### 9.7 将 openspec 目录纳入 PR 流程
+
+在代码审查时，审查者应该先读 delta spec，再看代码实现。delta spec 提供了"为什么这样改"的上下文，让代码审查更高效。建议在 PR 描述模板中加入：
+
+```markdown
+## 相关 OpenSpec 变更
+- 变更名：add-user-avatar
+- Delta Spec：openspec/changes/add-user-avatar/delta-spec.md
+```
+
+### 9.8 定期同步和归档
+
+不要让 `openspec/changes/` 堆积大量已完成但未归档的变更。建议在每次功能上线后及时执行 sync + archive，保持 changes 目录整洁，specs 目录始终反映最新状态。
+
+---
+
+## 参考链接
+
+- GitHub 仓库：[https://github.com/Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec)
+- npm 包：[@fission-ai/openspec](https://www.npmjs.com/package/@fission-ai/openspec)
