@@ -68,22 +68,28 @@ Maintainer notes:
 <!--
 加载机制说明（维护者参考）：
 - rules/ 下所有文件在启动时自动进入上下文，无需主动触发。
+- expandable/task/ 和 expandable/preferences/ 文件不自动加载，命中对应场景时按需读取。
 - expandable/templates/ 文件不自动加载，按需引用路径即可。
-- expandable/preferences/ 存放项目/团队特定详细偏好（技术栈、编码风格等），不自动加载，按需引用。
 - 若需要某规则仅在特定路径下生效，可在该文件添加 paths frontmatter。
 -->
 
-场景规约：
+场景规约（始终加载）：
 - 通用任务 → `general-task-rule-min.md`
 - 设计类任务 → `design-first-rule-min.md`
-- 周期性任务 → `loop-cron-rule-min.md`
-- 子代理协作 → `sub-agent-rule-min.md` / `subagent-cost-rule-min.md`（代码开发场景补充）
-- 代理团队协作 → `agent-team-rule-min.md`
+- 子代理协作 → `sub-agent-rule-min.md`
 - 工具调用补充 → `tool-call-rule-min.md`
 
-偏好规约：
+场景规约（按需加载，命中时读取对应文件）：
+- 周期性任务 → `.claude/expandable/task/loop-cron-rule-min.md`（触发词：loop/cron/定时/巡检）
+- 子代理成本控制 → `.claude/expandable/task/subagent-cost-rule-min.md`（代码开发场景派发实现/审查子代理时）
+- 代理团队协作 → `.claude/expandable/task/agent-team-rule-min.md`（触发词：team leader/team agent/团队分工）
+
+偏好规约（始终加载）：
 - 弱网降级 → `network-degraded-preference-min.md`
 - 信息源验证 → `source-verification-min.md`
+
+偏好规约（按需加载）：
+- 搜索工具选择 → `.claude/expandable/preferences/env-tools-min.md`（需要选择 rg/sg 等搜索工具时）
 
 输出模板（需要时按路径引用）：
 - 周期性任务上报 → `expandable/templates/loop-report-template.md`

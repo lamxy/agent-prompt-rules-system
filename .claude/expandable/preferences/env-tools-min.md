@@ -17,10 +17,12 @@
 ## Token 节省原则（必须遵守）
 
 - 先定位再读取：`rg -l "pattern"` 找到文件后再读内容，不直接 dump 全量结果
-- 限制输出行数：PowerShell 用 `| Select-Object -First 20`；WSL/Linux 用 `| head -n 20`
+- 限制输出行数（仅限 rg）：PowerShell 用 `| Select-Object -First 20`；WSL/Linux 用 `| head -n 20`；sg 不截断管道，结果过多时收紧 pattern 或加 `--files-with-matches`
 - 排除噪音：`rg --max-columns 120 --glob '!*.lock'`（根据项目类型按需扩展）
-- ast-grep 使用紧凑格式：`sg scan --pattern '...' --lang <lang> --format compact`
+- ast-grep 精确查询：`sg run --pattern '...' --lang <lang>`；仅查路径加 `--files-with-matches`；结构化输出加 `--json=compact`
 - 优先 `rg -c "pattern"` 做密度预判，再决定是否展开全量结果
+- rg 匹配含空白的多词结构时用 `\s+` 替代空格：`rg "type\s+IFoo\s+interface"`；需要忽略大小写时加 `-S`
+- 查接口实现优先从特征方法反查：`sg run --pattern 'func ($$$) MethodName() ReturnType { $$$ }' --lang go`，而非盲搜 struct 定义
 
 <!-- 维护者注：新增工具时，在工具选择表格追加行（含禁用列），并在 Token 节省原则下添加对应约束；
      若该工具独立规约条目超过 3 条，单独拆出 env-<toolname>-min.md，本文件保留一行引用。 -->
