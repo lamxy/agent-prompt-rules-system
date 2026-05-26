@@ -157,12 +157,23 @@
 使用 `scripts/install.sh` 将整个 `.claude` 目录（规则、命令、hooks、基础 settings 等）同步到用户级或项目级：
 
 ```sh
-sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask>
+sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask> [-e <file>] [-E <dir>]
 ```
 
 - `-l user`：同步到用户级默认路径 `~/.claude`（全局生效）
 - `-l project`：同步到指定项目的 .claude 目录（项目级共享）
 - `-l local`：同步到本地个人覆盖目录
+- `-e <pattern>`：排除指定文件名或 glob 模式，可重复使用
+- `-E <dir>`：排除指定目录（相对于 `.claude/` 根），可重复使用
+
+```sh
+# 同步到用户级，排除 audi_reports 目录和 CLAUDE.md 文件
+sh ./scripts/install.sh -l user -m overwrite -E audi_reports -e CLAUDE.md
+
+# 同步到项目级，排除 expandable 目录及所有 *-min.md 规约文件
+sh ./scripts/install.sh -l local -p /path/to/project/.claude -m overwrite \
+  -E expandable -e '*-min.md'
+```
 
 > `.json` 文件已存在时脚本自动跳过，需手动合并以保证 JSON 结构合法。
 

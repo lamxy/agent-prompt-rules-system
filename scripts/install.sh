@@ -4,7 +4,7 @@ set -eu
 usage() {
   cat <<'USAGE'
 Usage:
-  sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask>
+  sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask> [-e <file>] [-E <dir>]
 
 Options:
   -l  Target level:
@@ -18,6 +18,10 @@ Options:
       ask        Ask interactively for each existing file
       Note: existing .json files are skipped when overwrite/append is selected
             and must be merged manually to keep valid JSON structure.
+  -e  Exclude files matching the given filename or glob pattern (can be repeated)
+      Example: -e CLAUDE.md -e "*.local.json"
+  -E  Exclude directories relative to source .claude/ root (can be repeated)
+      Example: -E expandable -E "rules/preferences"
   -h  Show this help message
 USAGE
 }
@@ -84,13 +88,17 @@ prompt_existing_file_action() {
 LEVEL=""
 TARGET_PATH=""
 MODE=""
+EXCLUDE_FILES=""
+EXCLUDE_DIRS=""
 MANUAL_JSON_COUNT=0
 
-while getopts "l:p:m:h" opt; do
+while getopts "l:p:m:e:E:h" opt; do
   case "$opt" in
     l) LEVEL="$OPTARG" ;;
     p) TARGET_PATH="$OPTARG" ;;
     m) MODE="$OPTARG" ;;
+    e) EXCLUDE_FILES="${EXCLUDE_FILES:+$EXCLUDE_FILES }$OPTARG" ;;
+    E) EXCLUDE_DIRS="${EXCLUDE_DIRS:+$EXCLUDE_DIRS }$OPTARG" ;;
     h)
       usage
       exit 0
@@ -138,6 +146,28 @@ case "$MODE" in
     ;;
 esac
 
+# Returns 0 if the given file path should be excluded based on -e patterns.
+is_excluded_file() {
+  _fname="$(basename "$1")"
+  for _pattern in $EXCLUDE_FILES; do
+    case "$_fname" in
+      $_pattern) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+# Returns 0 if the given relative path falls under an excluded directory (-E).
+is_excluded_dir() {
+  _relpath="$1"
+  for _dir in $EXCLUDE_DIRS; do
+    case "$_relpath" in
+      "$_dir"|"$_dir"/*) return 0 ;;
+    esac
+  done
+  return 1
+}
+
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 SOURCE_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)/.claude"
 
@@ -156,6 +186,17 @@ find "$SOURCE_DIR" -type f > "$TMP_FILE_LIST"
 
 while IFS= read -r src_file; do
   relative_path="${src_file#"$SOURCE_DIR"/}"
+
+  if is_excluded_dir "$relative_path"; then
+    printf '[EXCLUDED-DIR] %s\n' "$relative_path"
+    continue
+  fi
+
+  if is_excluded_file "$src_file"; then
+    printf '[EXCLUDED-FILE] %s\n' "$relative_path"
+    continue
+  fi
+
   dest_file="$TARGET_DIR/$relative_path"
   dest_dir="$(dirname "$dest_file")"
 
