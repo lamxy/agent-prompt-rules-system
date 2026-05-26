@@ -61,6 +61,7 @@
 │   └── preferences/       # 偏好规约（弱网、信息源验证等）
 └── expandable/            # 按需展开的扩展内容（默认不常驻）
     ├── audit/             # 审计检查清单与失败样例
+    ├── task/              # 按需加载的低频场景规约（loop/cron、team、subagent-cost）
     ├── preferences/       # 可扩展的详细偏好与风格规范
     ├── specs/             # 完整规约层（极简规约的详细版，待逐步完善）
     └── templates/         # 高频结构化输出模板
@@ -289,10 +290,7 @@ sh ./scripts/install-claude-md.sh -f <FLAG> -t /path/to/project [-n CLAUDE.md] [
     │   ├── task/
     │   │   ├── general-task-rule-min.md
     │   │   ├── design-first-rule-min.md
-    │   │   ├── loop-cron-rule-min.md
     │   │   ├── sub-agent-rule-min.md
-    │   │   ├── agent-team-rule-min.md
-    │   │   ├── subagent-cost-rule-min.md
     │   │   └── tool-call-rule-min.md
     │   └── preferences/
     │       ├── network-degraded-preference-min.md
@@ -301,7 +299,12 @@ sh ./scripts/install-claude-md.sh -f <FLAG> -t /path/to/project [-n CLAUDE.md] [
         ├── audit/
         │   ├── rule-audit-checklist-short.md
         │   └── audit-failure-examples-min.md
+        ├── task/                # 按需加载的低频场景规约
+        │   ├── agent-team-rule-min.md
+        │   ├── loop-cron-rule-min.md
+        │   └── subagent-cost-rule-min.md
         ├── preferences/         # 详细偏好规范（按需引用）
+        │   └── env-tools-min.md
         ├── specs/               # 完整规约层（极简规约的详细版，待逐步完善）
         └── templates/
             ├── audit-report-template.md
@@ -330,10 +333,13 @@ sh ./scripts/install-claude-md.sh -f <FLAG> -t /path/to/project [-n CLAUDE.md] [
 rules/task/
   general-task-rule-min.md
   design-first-rule-min.md
-  loop-cron-rule-min.md
   sub-agent-rule-min.md
-  agent-team-rule-min.md
   tool-call-rule-min.md
+  ...
+expandable/task/
+  loop-cron-rule-min.md
+  agent-team-rule-min.md
+  subagent-cost-rule-min.md
   ...
 ```
 
