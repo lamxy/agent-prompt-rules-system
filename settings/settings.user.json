@@ -2,13 +2,16 @@
 	"$schema": "https://json.schemastore.org/claude-code-settings.json",
     "includeGitInstructions": false,
     "env": {
-        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4.6",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4.6",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4.6",
         "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
-        "DISABLE_TELEMETRY": "1",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
         "DISABLE_ERROR_REPORTING": "1",
+        "DISABLE_TELEMETRY": "1",
         "ENABLE_TOOL_SEARCH": "true"
     },
-    "model": "anthropic/claude-sonnet-4-6",
+    "model": "claude-sonnet-4-6",
     "hooks": {
         "PreToolUse": [
             {

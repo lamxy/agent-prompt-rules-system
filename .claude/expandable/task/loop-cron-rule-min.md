@@ -6,16 +6,11 @@
 - 只传变化，不传全史。
 - 主线只保留状态、摘要、风险、下一步。
 - 详细日志、diff、堆栈外置，不写主线。
-- 无变化时不扩写。
+- 无变化时 delta 只写"无变化"，不扩写。
 - 仅在成功、失败、阻塞、需要确认时上报。
 - 需要确认时，只问一个最小问题。
 - 上报尽量短、结构化、可扫描。
+- 单轮结果超出简单阈值（150 行或 3000 字符）时，落盘至 `.claude/artifacts/`，上报仅回传摘要与 artifact 路径。
 
-推荐格式：
-[loop] id=<run_id>
-state=<success|partial|failed|blocked>
-delta=<本轮新增变化>
-evidence=<关键证据>
-risk=<low|medium|high>
-next=<下一步，如没有留空>
-ask=<需要确认时填写，否则留空>
+## 输出格式
+周期上报必须使用 `expandable/templates/loop-report-template.md` 的 `[loop]` 结构。

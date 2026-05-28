@@ -47,7 +47,7 @@ Maintainer notes:
 
 | 主场景 | 触发特征 |
 |---|---|
-| 通用任务 | 一般问答、分析、总结、建议、一般方案、关键证据、事实核查、代码解释、文档整理、普通多轮协作 |
+| 通用任务（兜底） | 一般问答、分析、总结、建议、一般方案、关键证据、事实核查、代码解释、文档整理、普通多轮协作 |
 | 设计类任务 | 设计、方案、brainstorm、架构、规划；匹配 skill 时按skill规约执行，否则按照先 Q&A 再输出的原则 |
 | 周期性任务 | loop、/loop、cron、定时执行、后台巡检、重复上报 |
 | 子代理协作 | 单子代理、多子代理拆分、并行执行、汇总、裁决 |
@@ -71,25 +71,28 @@ Maintainer notes:
 - expandable/task/ 和 expandable/preferences/ 文件不自动加载，命中对应场景时按需读取。
 - expandable/templates/ 文件不自动加载，按需引用路径即可。
 - 若需要某规则仅在特定路径下生效，可在该文件添加 paths frontmatter。
+- Claude Code 中，本文件位于 `.claude/CLAUDE.md`，规约子目录在同级的 `rules/` 和 `expandable/` 下；迁移到其他客户端时，保持本文件与规约目录的相对位置不变即可。
 -->
 
+路径引用规则：下文文档路径均相对于本文件所在目录。
+
 场景规约（始终加载）：
-- 通用任务 → `general-task-rule-min.md`
-- 设计类任务 → `design-first-rule-min.md`
-- 子代理协作 → `sub-agent-rule-min.md`
-- 工具调用补充 → `tool-call-rule-min.md`
+- 通用任务（兜底） → `rules/task/general-task-rule-min.md`
+- 子代理协作 → `rules/task/sub-agent-rule-min.md`
+- 工具调用叠加 → `rules/task/tool-call-rule-min.md`（主场景确定后按需叠加；非独立主场景）
 
 场景规约（按需加载，命中时读取对应文件）：
-- 周期性任务 → `.claude/expandable/task/loop-cron-rule-min.md`（触发词：loop/cron/定时/巡检）
-- 子代理成本控制 → `.claude/expandable/task/subagent-cost-rule-min.md`（代码开发场景派发实现/审查子代理时）
-- 代理团队协作 → `.claude/expandable/task/agent-team-rule-min.md`（触发词：team leader/team agent/团队分工）
+- 设计类任务 → `expandable/task/design-first-rule-min.md`（设计/方案/brainstorm/架构/规划）
+- 周期性任务 → `expandable/task/loop-cron-rule-min.md`
+- 子代理成本控制 → `expandable/task/subagent-cost-rule-min.md`（代码开发场景派发子代理时）
+- 代理团队协作 → `expandable/task/agent-team-rule-min.md`
 
 偏好规约（始终加载）：
-- 弱网降级 → `network-degraded-preference-min.md`
-- 信息源验证 → `source-verification-min.md`
+- 弱网降级 → `rules/preferences/network-degraded-preference-min.md`
+- 信息源验证 → `rules/preferences/source-verification-min.md`
 
 偏好规约（按需加载）：
-- 搜索工具选择 → `.claude/expandable/preferences/env-tools-min.md`（需要选择 rg/sg 等搜索工具时）
+- 搜索工具选择 → `expandable/preferences/env-tools-min.md`（代码库文本/结构搜索时）
 
 输出模板（需要时按路径引用）：
 - 周期性任务上报 → `expandable/templates/loop-report-template.md`
@@ -111,37 +114,18 @@ Maintainer notes:
 
 ---
 
-## 4. 可选偏好
+## 4. 默认偏好
 
-以下偏好默认可生效；具体细则优先放外部规约，不膨胀本节。
+以下偏好默认生效；若与外部规约冲突，以对应规约为准。
 
 **技术与编码**
 - 优先采用成熟、主流、可维护的方案，与现有仓库技术栈保持一致
 - 无明确收益不引入重依赖、不做大规模抽象
 - 优先可读性与一致性，不追求炫技；命名清晰、语义明确，避免无意义缩写
 - 注释解释意图或约束，不重复代码表面含义
-- 具体技术栈/编码风格细则见 `expandable/preferences/`（按需引用）
+- 需要细化技术栈或编码风格约束时，读取 `expandable/preferences/` 对应文件
 
-**工具调用**
-- 工具调用前先做两个闸门：上下文是否足够；是否只差一个最关键澄清问题
-- 涉及外部信息源时，摘要只作线索，原始内容才可作为事实依据
-- 弱网或代理质量差时优先切换降级路径，不继续扩大检索范围
-- 问答、写作、模版等直接任务，上下文已足够时禁止启动工具或子代理；用户明确要求时除外
-
-**子代理协作**
-- 子代理默认只接收最小必要输入；模型由主代理按需指定，未指定时兜底低成本模型，阻塞或质量不足时升级
-- 子代理输出结构：结论 / 证据 / 风险 / 下一步（如有）
-- 多子代理并行时，主代理优先做去重、归并和裁决，不机械拼接原文
-- 继续原有子代理 = 调用 SendMessage 工具（to 字段填 agentId）；重新派发 = 新建 Agent()，新实例无前序上下文会重新执行所有步骤；默认优先 SendMessage，仅在子代理彻底卡死或任务边界完全变化时才新建
-
-**错误处理**
-- 遇到不确定或工具结果不足时，明确说明边界，不凭空补全
-- 遇到 403/region/模型限制时，优先建议切换路径，不机械重试
-- 发现上下文膨胀时，主动收缩为：目标、现状、变化、未决问题
-
-**事实与推断**
-- 对系统行为、运行机制的描述，必须有可验证来源（官方文档、工具输出、代码）支撑
-- 无证据时只能说"不确定，需要核查"；推测必须显式标注，禁止以"可能是"掩盖
+- 工具调用、信息源验证、弱网降级、子代理协作，以对应外部规约为准。
 
 ---
 
@@ -151,8 +135,7 @@ Maintainer notes:
 - 不在不需要结构化时强行结构化
 - 不让规则系统本身成为上下文膨胀来源
 - 主代理派发子代理时，必须附带最小规约摘要（2-4行）与输出字段要求
-- 子代理回传必须按约定模板字段输出；缺字段视为不合规；阻塞场景必须上报风险与下一步
-- 子代理回传不合规时，主代理必须用 SendMessage 工具追加纠正，不得重新派发新 Agent 实例；连续 2 次 SendMessage 仍不合规，则主代理需上报用户、提出决策建议，由用户确认
+- 子代理回传校验与纠正流程，见 `rules/task/sub-agent-rule-min.md` 回传校验章节；此处不重复。
 - 禁止读取 settings.json、settings.local.json 及 .claude/ 下系统配置文件，除非任务明确要求、或涉及权限配置、hook 设置或环境诊断
 
 @RTK.md
