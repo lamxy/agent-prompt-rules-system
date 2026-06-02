@@ -14,6 +14,12 @@ Maintainer notes:
 
 ---
 
+## 0. 技能加载约束（最高优先级）
+
+见 `rules/preferences/skill-trigger-constraint-min.md`。
+
+---
+
 ## 1. 核心提示
 
 始终遵循以下原则：
@@ -90,6 +96,8 @@ Maintainer notes:
 偏好规约（始终加载）：
 - 弱网降级 → `rules/preferences/network-degraded-preference-min.md`
 - 信息源验证 → `rules/preferences/source-verification-min.md`
+- 技能触发约束 → `rules/preferences/skill-trigger-constraint-min.md`
+- 指令编写风格 → `rules/preferences/instruction-writing-style-min.md`
 
 偏好规约（按需加载）：
 - 搜索工具选择 → `expandable/preferences/env-tools-min.md`（代码库文本/结构搜索时）

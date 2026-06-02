@@ -1,6 +1,6 @@
 # Claude MDs
 
-本目录存放按项目/场景分类的 CLAUDE 配置文件，命名格式为 `CLAUDE-<FLAG>.md`，其中 `<FLAG>` 为自定义标识（如 `project-frontend-dev`、`user-productivity`）。
+本目录存放按项目/场景分类的 CLAUDE 配置文件，命名格式为 `CLAUDE-<FLAG>.md`，其中 `<FLAG>` 为**自定义标识**（如 `project-frontend-dev`、`user-productivity`）。
 
 ## 目录结构
 

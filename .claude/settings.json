@@ -154,7 +154,6 @@
       "Bash(bash -c *)",
       "Bash(sh -c *)",
       "Bash(eval *)",
-      "Bash(git push *)",
       "Bash(git reset --hard *)",
       "Bash(git clean -fd *)",
       "Bash(git clean -fdx *)",
@@ -347,6 +346,7 @@
       "Bash(psql *)",
       "Bash(mongo *)",
       "Bash(redis-cli *)",
+      "Bash(git push *)",
       "Bash(git checkout -- *)",
       "Bash(git restore --staged *)",
       "Bash(git restore *)",
@@ -363,13 +363,20 @@
   },
   "includeGitInstructions": false,
   "env": {
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4.6",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4.6",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4.6",
     "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "0",
+    "DISABLE_AUTOUPDATER": "0",
+    "DISABLE_FEEDBACK_COMMAND": "1",
     "DISABLE_TELEMETRY": "1",
     "DISABLE_ERROR_REPORTING": "1",
-    "ENABLE_TOOL_SEARCH": "true"
+    "ENABLE_TOOL_SEARCH": "true",
+    "CLAUDE_CODE_NEW_INIT": "1",
+    "ENABLE_PROMPT_CACHING_1H": "1"
   },
-  "model": "anthropic/claude-sonnet-4-6",
+  "model": "claude-sonnet-4-6",
   "hooks": {
     "PreToolUse": [
       {
