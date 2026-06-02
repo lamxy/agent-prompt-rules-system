@@ -78,10 +78,12 @@
 
 | 目录 | 内容 | 安装脚本 |
 |------|------|---------|
-| `settings/` | 按作用域和场景分类的 settings 模板 | `install-settings.sh` |
-| `agents/` | 按场景分组的 agent 定义包（`agents-<FLAG>/`） | `install-agent-pkg.sh` |
-| `skills/` | 按场景分组的 skill 技能包（`skills-<FLAG>/`） | `install-skill-pkg.sh` |
-| `claude_mds/` | 按场景分类的 CLAUDE.md 配置文件（`CLAUDE-<FLAG>.md`） | `install-claude-md.sh` |
+| `settings/` | 按作用域和项目场景分类的 settings 模板 | `install-settings.sh` |
+| `agents/` | 按项目场景分组的 agent 定义包（`agents-<FLAG>/`） | `install-agent-pkg.sh` |
+| `skills/` | 按项目场景分组的 skill 技能包（`skills-<FLAG>/`） | `install-skill-pkg.sh` |
+| `claude_mds/` | 按项目场景分类的 CLAUDE.md 配置文件（`CLAUDE-<FLAG>.md`） | `install-claude-md.sh` |
+| `dot_mcp_jsons/` | 按项目场景分类的 .mcp.json 配置文件（`dot-mcp-json-<FLAG>.json`） | `install-dot-mcp.sh` |
+| `dot_claude_projects/` | 按项目场景分类的项目级指令模板目录（`.claude-<FLAG>/`，含 `.claude/`、`.mcp.json`、`CLAUDE.md`） | `install-claude-project.sh` |
 
 ### 三、`docs/` — 文档与教程目录
 
@@ -229,6 +231,22 @@ sh ./scripts/install-claude-md.sh -f <FLAG> -t /path/to/project [-n CLAUDE.md] [
 
 将 `claude_mds/CLAUDE-<FLAG>.md` 复制为目标项目的 CLAUDE.md（或 `AGENTS.md`、`GEMINI.md` 等）。
 
+#### 3.6 安装 .mcp.json 配置
+
+```sh
+sh ./scripts/install-dot-mcp.sh -f <FLAG> -t /path/to/project [-F]
+```
+
+将 `dot_mcp_jsons/dot-mcp-json-<FLAG>.json` 复制为目标项目的 `.mcp.json`。
+
+#### 3.7 安装项目级完整配置包
+
+```sh
+sh ./scripts/install-claude-project.sh -f <FLAG> -t /path/to/project [-F]
+```
+
+将 `dot_claude_projects/.claude-<FLAG>/` 下的 `.claude/`、`.mcp.json`、`CLAUDE.md` 一次性复制到目标项目根目录，适合快速初始化新项目。
+
 ---
 
 ## 完整目录结构
@@ -243,7 +261,9 @@ sh ./scripts/install-claude-md.sh -f <FLAG> -t /path/to/project [-n CLAUDE.md] [
 │   ├── install-settings.sh      # 安装场景化 settings 模板
 │   ├── install-agent-pkg.sh     # 安装 agent 包
 │   ├── install-skill-pkg.sh     # 安装 skill 包
-│   └── install-claude-md.sh     # 安装 CLAUDE.md 配置
+│   ├── install-claude-md.sh     # 安装 CLAUDE.md 配置
+│   ├── install-dot-mcp.sh       # 安装 .mcp.json 配置
+│   └── install-claude-project.sh # 安装项目级完整配置包
 ├── settings/                    # Settings 模板集合
 │   ├── settings.user.json
 │   ├── settings.user-productivity.json
@@ -265,6 +285,12 @@ sh ./scripts/install-claude-md.sh -f <FLAG> -t /path/to/project [-n CLAUDE.md] [
 │   └── ...
 ├── claude_mds/                  # CLAUDE.md 配置文件集合（按场景分类）
 │   ├── CLAUDE-<FLAG>.md
+│   └── ...
+├── dot_mcp_jsons/               # .mcp.json 配置文件集合（按场景分类）
+│   ├── dot-mcp-json-<FLAG>.json
+│   └── ...
+├── dot_claude_projects/         # 项目级指令模板目录集合（按场景分类）
+│   ├── .claude-<FLAG>/          # 每个包含 .claude/、.mcp.json、CLAUDE.md
 │   └── ...
 ├── docs/                        # 文档与教程目录
 │   ├── claude-memory-and-slimming-rationale.md
