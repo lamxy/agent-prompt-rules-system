@@ -1,0 +1,141 @@
+{
+	"$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "availableModels": [  # Claude Code 扩展可用的模型列表。该列表包含 GPT 和 Gemini 的多个版本，以及 haiku、opus 和 sonnet 的特定模型，来源包括 OpenAI、Google 和 Anthropic。
+        "gpt-5.3-codex",
+        "gpt-5.5",
+        "gpt-5.4",
+        "gpt-5.4-mini",
+        "gpt-image-2",
+        "gemini-3.1-pro-preview",
+        "gemini-3-pro-high",
+        "gemini-3-pro-preview",
+        "gemini-3.1-flash-image",
+        "gemini-3.1-pro-low",
+        "gemini-3-flash",
+        "gemini-3.1-pro-low",
+        "claude-sonnet-4-6",
+        "claude-opus-4-6-thinking",
+        "gemini-3-flash",
+        "claude-haiku-4.6",
+        "claude-opus-4.6",
+        "claude-sonnet-4.6",
+        "anthropic/claude-sonnet-4.6",
+        "google/gemini-3.1-flash-lite",
+        "google/gemini-3.1-pro-preview",
+        "google/gemini-3.1-flash-image-preview",
+        "google/gemini-3.1-flash-lite-preview",
+        "google/gemini-3.5-flash",
+        "openai/gpt-5.3-codex",
+        "openai/gpt-5.4-mini",
+        "openai/gpt-5.4",
+        "openai/gpt-5.5"
+    ],
+    "env": {
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "gemini-3-flash",  # 指定默认的Haiku模型为gemini-3-flash
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "gemini-3.1-pro-low", # 指定默认的Opus模型为gemini-3.1-pro-low
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "anthropic/claude-sonnet-4.6", # 指定默认的Sonnet模型为anthropic/claude-sonnet-4.6
+        "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",  # 禁用Claude Code的归属头部信息，提升缓存命中率
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "0", # 是否禁用非必要的网络流量，设置该参数，表示下述4项参数同时禁止，同时禁止自动更新cli版本。否则去除该参数
+        "DISABLE_AUTOUPDATER": "0", # 是否禁用自动更新功能，设置为"0"表示启用自动更新
+        "DISABLE_FEEDBACK_COMMAND": "1", # 是否禁用反馈命令，设置为"1"表示禁用用户提供反馈的命令
+        "DISABLE_TELEMETRY": "1", # 是否禁用遥测数据收集，设置为"1"表示禁用收集用户使用数据的功能
+        "DISABLE_ERROR_REPORTING": "1", # 是否禁用错误报告功能，设置为"1"表示禁用自动发送错误报告
+        "ENABLE_TOOL_SEARCH": "true", # 是否启用工具搜索功能，设置为"true"表示启用
+        "CLAUDE_CODE_NEW_INIT": "1", # 是否启用Claude Code的新初始化方式，设置为"1"表示启用
+        "ENABLE_PROMPT_CACHING_1H": "1" # 是否启用提示缓存功能，设置为"1"表示启用，缓存时间为1小时，默认5分钟
+    },
+    "includeGitInstructions": false, # 是否在生成的提示中包含Git相关的指令，设置为false表示不包含。关闭有助于提升缓存命中率，因为Git指令可能会导致提示的多样性增加，从而降低缓存的效果。
+	"enabledPlugins": { # 启用的插件列表，包含多个官方和社区插件，如GitHub、Remember、Superpowers等。每个插件都设置为true表示启用。
+		"github@claude-plugins-official": true,
+        "andrej-karpathy-skills@karpathy-skills": true,
+		"remember@claude-plugins-official": true,
+        "superpowers@claude-plugins-official": true,
+        "claude-code-setup@claude-plugins-official": true,
+        "hookify@claude-plugins-official": true,
+        "playground@claude-plugins-official": true,
+        "optibot@claude-plugins-official": true,
+        "commit-commands@claude-code-plugins": true,
+        "context7@claude-code-plugins": true,
+        "ralph-loop@claude-code-plugins": true,
+        "session-report@claude-plugins-official": true
+	},
+	"extraKnownMarketplaces": { # 额外已知的插件市场列表，包含官方和社区插件市场的信息，如来源和仓库地址。这些信息用于插件的安装和更新。
+		"claude-plugins-official": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/claude-plugins-official"
+            }
+        },
+        "claude-code-plugins": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/claude-code"
+            }
+        },
+        "karpathy-skills": {
+            "source": {
+                "source": "github",
+                "repo": "forrestchang/andrej-karpathy-skills"
+            }
+        }
+	},
+    "sandbox": {  # 沙箱配置，控制插件的执行环境和权限。启用沙箱后，插件的命令执行将受到限制，以提高安全性。配置包括网络访问、文件系统访问和命令排除等。默认开启，可以通过/sandbox指令手动关闭
+        "enabled": true,
+        "failIfUnavailable": true,
+        "autoAllowBashIfSandboxed": true,
+        "allowUnsandboxedCommands": false,
+        "network": {
+            "allowedDomains": ["*"],
+            "deniedDomains": ["gist.github.com"]
+        },
+        "filesystem": {
+            "allowWrite": [
+                "/tmp",
+                "~/.cache",
+                "~/.npm",
+                "~/.pnpm-store",
+                "~/.kube",
+                "~/.cargo",
+                "~/.rustup",
+                "~/.bun",
+                "~/.yarn",
+                "~/.cache/pip",
+                "~/.local/share/virtualenvs",
+                "~/go/pkg",
+                "~/go/bin",
+                "~/.kube"
+            ],
+            "denyRead": [
+                "~/.docker",
+                "~/.bashrc",
+                "~/.zshrc",
+                "~/.profile",
+                "~/.bash_profile",
+                "~/.zprofile",
+                "~/.bash_history",
+                "~/.zsh_history",
+                "~/",
+                "~"
+            ],
+            "allowRead": [
+                ".",
+                "~/.local/bin",
+                "~/.gitconfig",
+                "~/.npmrc",
+                "~/.config/pip",
+                "~/.cargo",
+                "~/.rustup",
+                "~/.ssh/config",
+                "~/.kube/config",
+                "~/.nvm",
+                "~/.config/pypoetry",
+                "~/.kube/config"
+            ]
+        },
+        "excludedCommands": ["docker *"]
+    },
+    "alwaysThinkingEnabled": false,
+    "effortLevel": "medium",
+    "pluginConfigs": {},
+    "skippedPlugins": []
+}

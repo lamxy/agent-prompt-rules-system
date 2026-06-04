@@ -3,7 +3,6 @@
     "includeGitInstructions": false,
     "env": {
         "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
-        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "0",
         "DISABLE_AUTOUPDATER": "0",
         "DISABLE_FEEDBACK_COMMAND": "1",
         "DISABLE_TELEMETRY": "1",
