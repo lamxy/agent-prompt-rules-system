@@ -17,6 +17,27 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 2. `scripts_for_install/install.*` 的实际内容 — 了解脚本支持的 flag 和排除的平台
 3. `.ost-refs/` 目录（如存在）
 
+## Clarification / Blocking
+
+如果执行本阶段所需信息无法从 `repo_readme_summary.md`、`scripts_for_install/install.*` 或 `.ost-refs/` 中可靠判断：
+
+1. 不要猜测关键行为
+2. 向 workflow 返回一个澄清问题
+3. 标明 blocked 字段：
+   - `stage`: `skill_for_setup`
+   - `reason`
+   - `question`
+   - `suggested_default`（如有）
+4. 等用户回答后再继续本阶段
+
+典型阻塞点：
+
+- Skill 覆盖范围无法确定，例如是否包含项目初始化、全局配置或卸载
+- 支持客户端列表无法从脚本和摘要中可靠确定
+- 主路径和兜底路径的边界不清楚
+- 安装完成后的用户提示无法从官方文档确认
+- Troubleshooting 内容缺少事实来源
+
 ## 设计原则：脚本优先 + 轻量兜底
 
 | 路径 | 触发条件 | 执行方式 |

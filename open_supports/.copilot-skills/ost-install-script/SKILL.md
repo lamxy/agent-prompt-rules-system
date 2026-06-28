@@ -17,6 +17,27 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 2. 该支持包的 `repo_readme_summary.md` — 确认平台要求和安装命令
 3. `.ost-refs/` 目录（如存在）— 了解本地路径约定
 
+## Clarification / Blocking
+
+如果执行本阶段所需信息无法从官方安装文档、`repo_readme_summary.md` 或 `.ost-refs/` 中可靠判断：
+
+1. 不要猜测关键行为
+2. 向 workflow 返回一个澄清问题
+3. 标明 blocked 字段：
+   - `stage`: `install_script`
+   - `reason`
+   - `question`
+   - `suggested_default`（如有）
+4. 等用户回答后再继续本阶段
+
+典型阻塞点：
+
+- 无法确定脚本语言应使用 sh、Node.js 还是 Python
+- 官方安装方式包含破坏性或高权限操作，无法判断是否适合一键脚本
+- 客户端接入命令、配置范围或默认 flag 无法可靠确定
+- 已有安装时的升级行为不明确
+- 验证命令无法确认工具可用
+
 ## 设计决策（编写前确认）
 
 | 决策点 | 默认值 | 说明 |

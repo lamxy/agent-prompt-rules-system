@@ -21,6 +21,26 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 
 > **下游说明**：`repo_readme_summary.md` 直接作为 `ost-install-script`（写安装脚本）和 `ost-skill-for-setup`（写安装技能）的参考输入。**Part 2 的准确性和完整性对这两个技能的产出质量有直接影响**，是本文档最重要的部分。
 
+## Clarification / Blocking
+
+如果执行本阶段所需信息无法从官方 README、官方文档或 `.ost-refs/` 中可靠判断：
+
+1. 不要猜测关键行为
+2. 向 workflow 返回一个澄清问题
+3. 标明 blocked 字段：
+   - `stage`: `repo_readme_summary`
+   - `reason`
+   - `question`
+   - `suggested_default`（如有）
+4. 等用户回答后再继续本阶段
+
+典型阻塞点：
+
+- 官方 README 与文档网站给出的安装命令冲突
+- 官方没有说明更新或验证命令，且无法从 CLI 文档可靠推出
+- `.ost-refs/` 指定了本地约定，但与官方默认流程冲突
+- 用户要求收录的平台或客户端超出官方支持范围
+
 ## 文件头格式
 
 ```markdown

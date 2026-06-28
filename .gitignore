@@ -41,3 +41,7 @@ temp/
 .claude/audit-reports/*
 !.claude/audit-reports/.gitkeep
 */.ost-refs
+
+# open_supports workflow runtime state
+open_supports/.ost-workflow-state/*.json
+!open_supports/.ost-workflow-state/README.md

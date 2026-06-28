@@ -17,6 +17,9 @@
 ```
 open_supports/
 ├── README-todo.md                  # 本文件：体系说明 + 待办事项
+├── workflow-plan.md                # workflow Skill 状态机与实施计划
+├── workflow-quickstart.md          # workflow Skill 快速使用教程
+├── .ost-workflow-state/            # workflow 运行时状态目录（JSON 状态默认不提交）
 ├── ost_{GithubName}_{RepoName}/    # 每个开源库一个支持包目录
 │   ├── .ost-refs/                  # （可选）手动引用文档，大模型操作前优先阅读
 │   ├── repo_readme_summary.md      # 仓库核心介绍（摘自官方 README）
@@ -113,7 +116,7 @@ open_supports/
 | 支持包目录 | 库名 | 脚本 | Skill | 状态 |
 |-----------|------|------|-------|------|
 | `ost_colbymchenry_codegraph` | [codegraph](https://github.com/colbymchenry/codegraph) | ⬜ 待填充 | ⬜ 待填充 | 🚧 进行中 |
-| `ost_open-gsd_gsd-core` | [gsd-core](https://github.com/open-gsd/gsd-core) | ⬜ 待填充 | ⬜ 待填充 | 🚧 进行中 |
+| `ost_open-gsd_gsd-core` | [gsd-core](https://github.com/open-gsd/gsd-core) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
 
 ---
 
@@ -121,13 +124,17 @@ open_supports/
 
 ### 体系层
 
+- [x] 新增 workflow Skill：串联 `ost-repo-readme-summary` → `ost-install-script` → `ost-skill-for-setup` → 可选测试安装验证；计划见 [`workflow-plan.md`](workflow-plan.md)
+- [x] 增加 `.ost-workflow-state/` 状态目录约定，用于 workflow Skill 的问题澄清、断点续传和恢复执行
+- [x] 为 3 个阶段 Skill 增加统一 `Clarification / Blocking` 协议：信息不足时不猜测，返回 blocked 信息并等待用户澄清
+- [x] workflow Skill 增加串行子代理执行策略、上下文节省约束和 `sh + jq` 状态脚本
 - [ ] `.copilot-skills/` 补充说明：明确哪类通用 Skill 应沉淀至此（如通用 MCP 注册、版本检测等），以及与各库 `skill_for_setup/` 的边界
 - [ ] 确认多客户端 Skill 的组织方式：单文件多客户端 vs 分文件
 
 ### 具体待办
 
+- [x] `ost_GithubName_RepoName_TEMPLATE`：修正 `repo_readme_sunmary.md` 文件名为 `repo_readme_summary.md`
 - [ ] `ost_GithubName_RepoName_TEMPLATE`：完善模板文件内容（当前均为空文件）
 - [ ] `ost_colbymchenry_codegraph`：填充 `repo_readme_summary.md`、`scripts_for_install/install.*`、`skill_for_setup/SKILL.md`
-- [ ] `ost_open-gsd_gsd-core`：补充目录内容（当前目录为空）
+- [x] `ost_open-gsd_gsd-core`：补充目录内容
 - [ ] `.copilot-skills/`：收录首批可复用的通用 Skill（在完成至少 1 个支持包后评估）
-
