@@ -40,4 +40,4 @@ temp/
 # audit reporter
 .claude/audit-reports/*
 !.claude/audit-reports/.gitkeep
-src/DESCRIPTION.md
+*/.ost-refs
