@@ -15,6 +15,7 @@ Usage:
   state.sh block OWNER/REPO STAGE REASON QUESTION [SUGGESTED_DEFAULT]
   state.sh answer OWNER/REPO ANSWER
   state.sh agent-run OWNER/REPO STAGE STATUS SUMMARY
+  state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]
   state.sh test-result OWNER/REPO RESULT COMMAND EXIT_CODE SUMMARY
   state.sh complete OWNER/REPO
 EOF
@@ -58,6 +59,13 @@ valid_stage() {
 valid_stage_status() {
   case "$1" in
     pending|in_progress|done|blocked|waiting_user|skipped|failed) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+valid_usage_examples_decision() {
+  case "$1" in
+    accepted|declined|not_applicable) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -234,6 +242,41 @@ cmd_agent_run() {
   ' --arg stage "$stage" --arg status "$status" --arg summary "$summary" --arg now "$now"
 }
 
+cmd_usage_examples() {
+  require_owner_repo "$1"
+  decision=$2
+  criteria=$3
+  result=${4:-}
+  has_result=false
+  [ "$#" -eq 4 ] && has_result=true
+  valid_usage_examples_decision "$decision" || die "usage examples decision must be accepted, declined, or not_applicable"
+  state_file=$(state_file_for "$1")
+  ensure_state_exists
+  now=$(now_utc)
+
+  case "$decision" in
+    accepted) stage_status=in_progress ;;
+    declined|not_applicable) stage_status=skipped ;;
+  esac
+
+  write_jq '
+    .usage_examples.offered = true
+    | .usage_examples.decision = $decision
+    | .usage_examples.matched_criteria = [$criteria]
+    | .usage_examples.result = (if $has_result == "true" then $result else null end)
+    | .stages.optional_usage_examples = $stage_status
+    | .current_stage = "optional_usage_examples"
+    | .workflow_status = "in_progress"
+    | .updated_at = $now
+  ' \
+    --arg decision "$decision" \
+    --arg criteria "$criteria" \
+    --arg result "$result" \
+    --arg has_result "$has_result" \
+    --arg stage_status "$stage_status" \
+    --arg now "$now"
+}
+
 cmd_test_result() {
   require_owner_repo "$1"
   result=$2
@@ -338,6 +381,10 @@ case "$cmd" in
   agent-run)
     [ "$#" -eq 4 ] || { usage >&2; exit 2; }
     cmd_agent_run "$1" "$2" "$3" "$4"
+    ;;
+  usage-examples)
+    [ "$#" -eq 3 ] || [ "$#" -eq 4 ] || { usage >&2; exit 2; }
+    cmd_usage_examples "$@"
     ;;
   test-result)
     [ "$#" -eq 5 ] || { usage >&2; exit 2; }

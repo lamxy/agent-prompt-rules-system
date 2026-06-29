@@ -140,6 +140,7 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh set-stage
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh block OWNER/REPO STAGE REASON QUESTION [SUGGESTED_DEFAULT]
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh answer OWNER/REPO ANSWER
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh agent-run OWNER/REPO STAGE STATUS SUMMARY
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh test-result OWNER/REPO RESULT COMMAND EXIT_CODE SUMMARY
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh complete OWNER/REPO
 ```
@@ -208,6 +209,12 @@ ost_{GithubName}_{RepoName}/skill_for_setup/ost_{GithubName}_{RepoName}_install/
 ```text
 检测到该支持包适合生成 usage_examples.md。是否要派发 ost-usage-examples 阶段子代理生成安装后的用法示例？
 回复“是”则生成，回复“否”则跳过并继续 optional_test_install。
+```
+
+主 workflow 在 checklist 判断或询问用户并做出决策后，必须使用状态脚本记录 `usage_examples.decision`、`usage_examples.matched_criteria` 和 `usage_examples.result`：
+
+```sh
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]
 ```
 
 用户拒绝：

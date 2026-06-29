@@ -64,7 +64,12 @@ assert_jq "$STATE_FILE" '.execution.agent_runs[-1].stage' 'install_script'
 assert_jq "$STATE_FILE" '.execution.agent_runs[-1].status' 'DONE'
 assert_jq "$STATE_FILE" '.execution.agent_runs[-1].summary' 'Created install.sh'
 
-run_state set-stage "$OWNER_REPO" optional_usage_examples in_progress
+run_state usage-examples "$OWNER_REPO" accepted "CLI, Agent integration" pending
+assert_jq "$STATE_FILE" '.usage_examples.offered' 'true'
+assert_jq "$STATE_FILE" '.usage_examples.decision' 'accepted'
+assert_jq "$STATE_FILE" '.usage_examples.matched_criteria[0]' 'CLI, Agent integration'
+assert_jq "$STATE_FILE" '.usage_examples.result' 'pending'
+assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'in_progress'
 assert_jq "$STATE_FILE" '.current_stage' 'optional_usage_examples'
 assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'in_progress'
 
@@ -90,7 +95,6 @@ assert_jq "$STATE_FILE" '.test_install.result' 'passed'
 run_state complete "$OWNER_REPO"
 assert_jq "$STATE_FILE" '.workflow_status' 'done'
 assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'done'
-assert_jq "$STATE_FILE" '.usage_examples.decision' 'pending'
 
 run_state show "$OWNER_REPO" >/dev/null
 
