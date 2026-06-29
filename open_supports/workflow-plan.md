@@ -1,6 +1,6 @@
 # open_supports Workflow Skill Plan
 
-> 本计划记录 `open_supports/` 工作流 Skill 的最小设计。目标是把三个阶段 Skill 串成完整流程，并支持问题澄清、断点续传和可选安装验证。
+> 本计划记录 `open_supports/` 工作流 Skill 的最小设计。目标是把核心阶段 Skill 和可选阶段串成完整流程，并支持问题澄清、断点续传、可选用法示例和可选安装验证。
 
 ## Goal
 
@@ -9,9 +9,10 @@
 1. `ost-repo-readme-summary`
 2. `ost-install-script`
 3. `ost-skill-for-setup`
-4. `optional_test_install`
+4. `optional_usage_examples`
+5. `optional_test_install`
 
-前三个阶段负责生成支持包文件；第四阶段在用户明确同意后测试运行安装脚本并验证安装是否成功。用户拒绝测试时，工作流直接标记完成。
+前三个阶段负责生成核心支持包文件；第四阶段只在 checklist 命中且用户同意时生成 `usage_examples.md`。用户拒绝或条件不足时跳过，不影响核心支持包完成。第五阶段在用户明确同意后测试运行安装脚本并验证安装是否成功；用户拒绝测试时，工作流直接标记完成。
 
 ## Scope
 
@@ -20,6 +21,7 @@
 - 工作流状态机
 - `.ost-workflow-state/` 状态目录约定
 - 三个阶段 Skill 的统一澄清协议
+- 可选 usage examples 阶段确认门
 - 可选测试安装确认门
 
 不包含：
@@ -65,9 +67,16 @@ open_supports/.ost-workflow-state/*.json
     "repo_readme_summary": "done",
     "install_script": "in_progress",
     "skill_for_setup": "pending",
+    "optional_usage_examples": "pending",
     "optional_test_install": "pending"
   },
   "clarifications": [],
+  "usage_examples": {
+    "offered": false,
+    "decision": "pending",
+    "matched_criteria": [],
+    "result": null
+  },
   "test_install": {
     "offered": false,
     "decision": "pending",
@@ -109,8 +118,11 @@ stateDiagram-v2
   LoadState --> DetectNextStage: state exists && runnable
 
   ResumeBlocked --> WaitingClarification: open clarification exists
+  ResumeBlocked --> WaitingUsageExamplesDecision: waiting usage examples decision
   ResumeBlocked --> WaitingTestDecision: waiting optional test decision
   WaitingClarification --> DetectNextStage: user answered
+  WaitingUsageExamplesDecision --> UsageExamples: user accepts
+  WaitingUsageExamplesDecision --> UsageExamplesSkipped: user declines
   WaitingTestDecision --> RunTestInstall: user accepts
   WaitingTestDecision --> Completed: user declines
 
@@ -119,7 +131,8 @@ stateDiagram-v2
   DetectNextStage --> RepoSummary: summary pending/in_progress
   DetectNextStage --> InstallScript: summary done && script pending/in_progress
   DetectNextStage --> SetupSkill: script done && setup skill pending/in_progress
-  DetectNextStage --> OfferTestInstall: setup skill done && test not decided
+  DetectNextStage --> OfferUsageExamples: setup skill done && usage examples not decided
+  DetectNextStage --> OfferTestInstall: usage examples done/skipped && test not decided
   DetectNextStage --> Completed: all required stages done && test skipped/passed
 
   RepoSummary --> ClarificationNeeded: missing required info
@@ -132,7 +145,14 @@ stateDiagram-v2
 
   SetupSkill --> ClarificationNeeded: missing skill scope/client wording
   SetupSkill --> SetupSkillDone: README.md + SKILL.md created/updated
-  SetupSkillDone --> OfferTestInstall
+  SetupSkillDone --> OfferUsageExamples
+
+  OfferUsageExamples --> UsageExamplesSkipped: checklist not matched or user declines
+  OfferUsageExamples --> UsageExamples: user accepts
+  UsageExamples --> ClarificationNeeded: missing usage example info
+  UsageExamples --> UsageExamplesDone: usage_examples.md created/updated
+  UsageExamplesSkipped --> OfferTestInstall
+  UsageExamplesDone --> OfferTestInstall
 
   OfferTestInstall --> WaitingTestDecision: ask user
   RunTestInstall --> TestPassed: script + verify commands pass
@@ -198,9 +218,47 @@ ost_{GithubName}_{RepoName}/skill_for_setup/ost_{GithubName}_{RepoName}_install/
 
 可以创建缺失目录，但不要自动覆盖已有文件。目标产物文件已存在时，进入对应阶段的更新或确认逻辑。
 
+## Optional Usage Examples
+
+`skill_for_setup` 完成后，workflow Skill 先按 checklist 判断是否建议生成 `usage_examples.md`。命中 2 项以上时询问用户；只有用户同意才执行 `optional_usage_examples` 阶段。用户拒绝或条件不足时，将 `optional_usage_examples` 标记为 `skipped`，记录 usage examples 决策，然后继续进入 `optional_test_install`。
+
+Checklist：
+
+- 官方文档包含 CLI 或可执行命令示例
+- 官方文档包含项目初始化流程
+- 支持包涉及配置文件或本地状态目录
+- 支持包涉及 Agent、MCP、IDE、Copilot、Claude 或 Codex 接入
+- 安装后存在常见工作流或后续操作
+- 官方文档提供多个用法场景
+- `.ost-refs/` 中存在本地约定、项目约定或推荐实践
+
+命中 2 项或以上时，workflow Skill 询问：
+
+```text
+检测到该支持包适合生成 usage_examples.md。是否要派发 ost-usage-examples 阶段子代理生成安装后的用法示例？
+回复“是”则生成，回复“否”则跳过并继续 optional_test_install。
+```
+
+用户同意时：
+
+- 将 `optional_usage_examples` 标记为 `in_progress`
+- 记录 `usage_examples.offered` 为 `true`
+- 记录 `usage_examples.decision` 为 `accepted`
+- 记录命中的 `usage_examples.matched_criteria`
+- 派发 `ost-usage-examples` 阶段子代理生成或更新 `usage_examples.md`
+- 完成后记录 `usage_examples.result` 为 `generated`，并将 `optional_usage_examples` 标记为 `done`
+
+用户拒绝或 checklist 命中不足时：
+
+- 将 `optional_usage_examples` 标记为 `skipped`
+- 用户拒绝时记录 `usage_examples.decision` 为 `declined`
+- 条件不足时记录 `usage_examples.decision` 为 `not_applicable`
+- 将 `usage_examples.result` 记录为 `skipped`
+- 继续进入 `optional_test_install`
+
 ## Optional Test Install
 
-三个产出阶段完成后，workflow Skill 必须询问：
+三个核心产出阶段完成，且 `optional_usage_examples` 完成或跳过后，workflow Skill 必须询问：
 
 ```text
 是否要测试运行 scripts_for_install/install.* 并验证安装是否成功？
@@ -230,7 +288,10 @@ ost_{GithubName}_{RepoName}/skill_for_setup/ost_{GithubName}_{RepoName}_install/
 - [x] 给 `ost-repo-readme-summary` 增加 `Clarification / Blocking` 协议
 - [x] 给 `ost-install-script` 增加 `Clarification / Blocking` 协议
 - [x] 给 `ost-skill-for-setup` 增加 `Clarification / Blocking` 协议
-- [x] 在 workflow Skill 中实现第 4 阶段 `optional_test_install` 的用户确认门
+- [x] 新增 `.copilot-skills/ost-usage-examples/SKILL.md`
+- [x] 在 workflow Skill 中增加 `optional_usage_examples` 阶段
+- [x] 在 workflow Skill 中实现 `optional_test_install` 的用户确认门
+- [x] 更新 workflow plan，使状态机包含可选 usage examples 阶段
 - [x] 更新 `README-todo.md`，登记 workflow Skill 和状态机制
 - [x] 修正模板文件名 `repo_readme_sunmary.md` 为 `repo_readme_summary.md`
 - [x] 增加 `sh + jq` 状态脚本 `state.sh`
