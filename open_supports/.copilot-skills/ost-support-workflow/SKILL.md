@@ -23,16 +23,17 @@ argument-hint: 'GitHub owner/repo, e.g. colbymchenry/codegraph'
 
 ## Workflow
 
-按顺序执行四个阶段：
+按顺序执行五个阶段：
 
 1. `repo_readme_summary`：串行派发阶段子代理，读取并遵循 `.copilot-skills/ost-repo-readme-summary/SKILL.md`，产出 `repo_readme_summary.md`
 2. `install_script`：串行派发阶段子代理，读取并遵循 `.copilot-skills/ost-install-script/SKILL.md`，产出 `scripts_for_install/install.*`
 3. `skill_for_setup`：串行派发阶段子代理，读取并遵循 `.copilot-skills/ost-skill-for-setup/SKILL.md`，产出 `skill_for_setup/README.md` 和 `skill_for_setup/ost_*_install/SKILL.md`
-4. `optional_test_install`：询问用户是否测试运行安装脚本并验证安装成功
+4. `optional_usage_examples`：按 checklist 判断是否建议生成；用户同意后串行派发阶段子代理，读取并遵循 `.copilot-skills/ost-usage-examples/SKILL.md`，产出 `usage_examples.md`
+5. `optional_test_install`：询问用户是否测试运行安装脚本并验证安装成功
 
 不要假设客户端支持嵌套调用 Skill；本 Skill 的职责是编排、状态管理、澄清和恢复。阶段细节以对应阶段 Skill 为准。
 
-前三个产出阶段默认使用子代理执行，但必须串行执行，不能并行。`optional_test_install` 默认由主 workflow 控制，因为它可能真实修改本机 CLI / Agent 配置。
+三个核心产出阶段和可选 `optional_usage_examples` 阶段默认使用子代理执行，但必须串行执行，不能并行。`optional_test_install` 默认由主 workflow 控制，因为它可能真实修改本机 CLI / Agent 配置。
 
 ## Stage Subagents
 
@@ -55,6 +56,8 @@ argument-hint: 'GitHub owner/repo, e.g. colbymchenry/codegraph'
 收到 `NEEDS_CLARIFICATION`：主 workflow 使用状态脚本记录 `agent-run ... NEEDS_CLARIFICATION ...`，再用 `block ...` 写入阻塞问题，然后只向用户提出该问题。
 
 收到 `FAILED`：主 workflow 使用状态脚本记录 `agent-run ... FAILED ...`，将阶段标记为 `failed`，再询问用户下一步。
+
+`optional_usage_examples` 被用户同意后，按普通阶段子代理处理；用户拒绝或 checklist 未命中时不派发子代理，直接标记为 `skipped`。
 
 ## Context Hygiene
 
@@ -92,6 +95,26 @@ open_supports/.ost-workflow-state/
 
 ```text
 open_supports/.ost-workflow-state/{GithubName}_{RepoName}.json
+```
+
+状态 JSON 包含阶段状态和可选用法示例决策，例如：
+
+```json
+{
+  "stages": {
+    "repo_readme_summary": "pending",
+    "install_script": "pending",
+    "skill_for_setup": "pending",
+    "optional_usage_examples": "pending",
+    "optional_test_install": "pending"
+  },
+  "usage_examples": {
+    "offered": false,
+    "decision": "pending",
+    "matched_criteria": [],
+    "result": null
+  }
+}
 ```
 
 状态 JSON 默认不提交 Git。恢复工作流时，先读取对应状态文件：
@@ -162,9 +185,49 @@ ost_{GithubName}_{RepoName}/skill_for_setup/ost_{GithubName}_{RepoName}_install/
 
 最小恢复策略：只处理当前唯一 open clarification，不维护多问题队列。
 
+## Optional Usage Examples
+
+三个核心产出阶段完成后，先按以下 checklist 判断是否建议生成 `usage_examples.md`：
+
+- 官方文档包含 CLI 或可执行命令示例
+- 官方文档包含项目初始化流程
+- 支持包涉及配置文件或状态目录
+- 支持包涉及 Agent、MCP、IDE、Copilot、Claude 或 Codex 接入
+- 安装后存在常见工作流或后续操作
+- 官方文档提供多个用法场景
+- `.ost-refs/` 中存在本地约定、项目约定或推荐实践
+
+命中 2 项或以上才询问用户是否生成用法示例。未命中时：
+
+- 将 `optional_usage_examples` 标记为 `skipped`
+- 将 `usage_examples.decision` 记为 `not_applicable`
+- 继续进入 `optional_test_install`
+
+命中 2 项或以上时，询问用户：
+
+```text
+检测到该支持包适合生成 usage_examples.md。是否要派发 ost-usage-examples 阶段子代理生成安装后的用法示例？
+回复“是”则生成，回复“否”则跳过并继续 optional_test_install。
+```
+
+用户拒绝：
+
+- 将 `optional_usage_examples` 标记为 `skipped`
+- 将 `usage_examples.decision` 记为 `declined`
+- 继续进入 `optional_test_install`
+
+用户同意：
+
+- 将 `usage_examples.offered` 记为 `true`，记录命中的 `usage_examples.matched_criteria`
+- 将 `usage_examples.decision` 记为 `accepted`
+- 将 `optional_usage_examples` 标记为 `in_progress`
+- 串行派发阶段子代理，读取并遵循 `.copilot-skills/ost-usage-examples/SKILL.md`
+- 子代理产出 `usage_examples.md`
+- 主 workflow 审查产物后，记录 `agent-run ... DONE ...`，将 `usage_examples.result` 记为 `generated`，并将 `optional_usage_examples` 标记为 `done`
+
 ## Optional Test Install
 
-三个产出阶段完成后，必须询问用户：
+三个核心产出阶段和 `optional_usage_examples` 完成或跳过后，必须询问用户：
 
 ```text
 是否要测试运行 scripts_for_install/install.* 并验证安装是否成功？
@@ -202,5 +265,6 @@ ost_{GithubName}_{RepoName}/skill_for_setup/ost_{GithubName}_{RepoName}_install/
 - `repo_readme_summary` 为 `done`
 - `install_script` 为 `done`
 - `skill_for_setup` 为 `done`
+- `optional_usage_examples` 为 `done` 或 `skipped`
 - `optional_test_install` 为 `skipped` 或测试结果为 `passed`
 - `workflow_status` 为 `done`

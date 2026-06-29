@@ -50,7 +50,7 @@ require_owner_repo() {
 
 valid_stage() {
   case "$1" in
-    repo_readme_summary|install_script|skill_for_setup|optional_test_install) return 0 ;;
+    repo_readme_summary|install_script|skill_for_setup|optional_usage_examples|optional_test_install) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -101,9 +101,16 @@ cmd_init() {
         repo_readme_summary: "pending",
         install_script: "pending",
         skill_for_setup: "pending",
+        optional_usage_examples: "pending",
         optional_test_install: "pending"
       },
       clarifications: [],
+      usage_examples: {
+        offered: false,
+        decision: "pending",
+        matched_criteria: [],
+        result: null
+      },
       test_install: {
         offered: false,
         decision: "pending",
@@ -289,7 +296,14 @@ cmd_complete() {
   now=$(now_utc)
 
   write_jq '
-    .workflow_status = "done"
+    .stages.optional_usage_examples //= "skipped"
+    | .usage_examples //= {
+        offered: false,
+        decision: "not_applicable",
+        matched_criteria: [],
+        result: null
+      }
+    | .workflow_status = "done"
     | .updated_at = $now
   ' --arg now "$now"
 }

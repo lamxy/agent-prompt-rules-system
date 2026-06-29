@@ -38,6 +38,8 @@ assert_jq "$STATE_FILE" '.package_dir' 'ost_ExampleOwner_example-repo'
 assert_jq "$STATE_FILE" '.workflow_status' 'in_progress'
 assert_jq "$STATE_FILE" '.current_stage' 'repo_readme_summary'
 assert_jq "$STATE_FILE" '.stages.install_script' 'pending'
+assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'pending'
+assert_jq "$STATE_FILE" '.usage_examples.decision' 'pending'
 assert_jq "$STATE_FILE" '.execution.mode' 'subagent_preferred'
 
 run_state set-stage "$OWNER_REPO" install_script in_progress
@@ -62,6 +64,18 @@ assert_jq "$STATE_FILE" '.execution.agent_runs[-1].stage' 'install_script'
 assert_jq "$STATE_FILE" '.execution.agent_runs[-1].status' 'DONE'
 assert_jq "$STATE_FILE" '.execution.agent_runs[-1].summary' 'Created install.sh'
 
+run_state set-stage "$OWNER_REPO" optional_usage_examples in_progress
+assert_jq "$STATE_FILE" '.current_stage' 'optional_usage_examples'
+assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'in_progress'
+
+run_state agent-run "$OWNER_REPO" optional_usage_examples DONE "Created usage_examples.md"
+assert_jq "$STATE_FILE" '.execution.agent_runs[-1].stage' 'optional_usage_examples'
+assert_jq "$STATE_FILE" '.execution.agent_runs[-1].status' 'DONE'
+assert_jq "$STATE_FILE" '.execution.agent_runs[-1].summary' 'Created usage_examples.md'
+
+run_state set-stage "$OWNER_REPO" optional_usage_examples done
+assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'done'
+
 run_state test-result "$OWNER_REPO" failed "sh install.sh" "1" "network unavailable"
 assert_jq "$STATE_FILE" '.workflow_status' 'blocked'
 assert_jq "$STATE_FILE" '.stages.optional_test_install' 'failed'
@@ -75,6 +89,8 @@ assert_jq "$STATE_FILE" '.test_install.result' 'passed'
 
 run_state complete "$OWNER_REPO"
 assert_jq "$STATE_FILE" '.workflow_status' 'done'
+assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'done'
+assert_jq "$STATE_FILE" '.usage_examples.decision' 'pending'
 
 run_state show "$OWNER_REPO" >/dev/null
 
