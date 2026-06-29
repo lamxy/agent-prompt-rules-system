@@ -257,6 +257,7 @@ cmd_usage_examples() {
   case "$decision" in
     accepted)
       if [ "$has_result" = false ] || [ "$result" = "" ] || [ "$result" = "pending" ]; then
+        result=pending
         stage_status=in_progress
       else
         case "$result" in
@@ -268,6 +269,7 @@ cmd_usage_examples() {
       ;;
     declined|not_applicable)
       if [ "$has_result" = false ] || [ "$result" = "" ] || [ "$result" = "skipped" ]; then
+        result=skipped
         stage_status=skipped
       else
         case "$result" in
@@ -284,7 +286,7 @@ cmd_usage_examples() {
     | .usage_examples.matched_criteria = (
         if $decision == "not_applicable" or $criteria == "" then [] else [$criteria] end
       )
-    | .usage_examples.result = (if $has_result == "true" then $result else null end)
+    | .usage_examples.result = $result
     | .stages.optional_usage_examples = $stage_status
     | .current_stage = "optional_usage_examples"
     | .workflow_status = "in_progress"
@@ -293,7 +295,6 @@ cmd_usage_examples() {
     --arg decision "$decision" \
     --arg criteria "$criteria" \
     --arg result "$result" \
-    --arg has_result "$has_result" \
     --arg stage_status "$stage_status" \
     --arg now "$now"
 }

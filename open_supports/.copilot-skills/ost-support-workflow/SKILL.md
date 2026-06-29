@@ -145,6 +145,8 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh test-resu
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh complete OWNER/REPO
 ```
 
+`RESULT` 可省略；省略时 `accepted` 默认 `pending`，`declined` / `not_applicable` 默认 `skipped`。
+
 阶段状态只使用：
 
 ```text

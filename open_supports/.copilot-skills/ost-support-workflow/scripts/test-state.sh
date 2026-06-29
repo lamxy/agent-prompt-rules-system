@@ -78,6 +78,20 @@ assert_jq "$STATE_FILE" '.usage_examples.result' 'pending'
 assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'in_progress'
 assert_jq "$STATE_FILE" '.current_stage' 'optional_usage_examples'
 
+ACCEPTED_DEFAULT_OWNER_REPO="ExampleOwner/accepted-default-usage-examples"
+ACCEPTED_DEFAULT_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_accepted-default-usage-examples.json"
+run_state init "$ACCEPTED_DEFAULT_OWNER_REPO"
+run_state usage-examples "$ACCEPTED_DEFAULT_OWNER_REPO" accepted "CLI, Agent integration"
+assert_jq "$ACCEPTED_DEFAULT_STATE_FILE" '.usage_examples.result' 'pending'
+assert_jq "$ACCEPTED_DEFAULT_STATE_FILE" '.stages.optional_usage_examples' 'in_progress'
+
+ACCEPTED_EMPTY_RESULT_OWNER_REPO="ExampleOwner/accepted-empty-result-usage-examples"
+ACCEPTED_EMPTY_RESULT_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_accepted-empty-result-usage-examples.json"
+run_state init "$ACCEPTED_EMPTY_RESULT_OWNER_REPO"
+run_state usage-examples "$ACCEPTED_EMPTY_RESULT_OWNER_REPO" accepted "CLI, Agent integration" ""
+assert_jq "$ACCEPTED_EMPTY_RESULT_STATE_FILE" '.usage_examples.result' 'pending'
+assert_jq "$ACCEPTED_EMPTY_RESULT_STATE_FILE" '.stages.optional_usage_examples' 'in_progress'
+
 INVALID_ACCEPTED_OWNER_REPO="ExampleOwner/invalid-accepted-usage-examples"
 INVALID_ACCEPTED_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_invalid-accepted-usage-examples.json"
 run_state init "$INVALID_ACCEPTED_OWNER_REPO"
@@ -111,6 +125,23 @@ assert_jq "$NA_STATE_FILE" '.usage_examples.matched_criteria | length' '0'
 assert_jq "$NA_STATE_FILE" '.usage_examples.result' 'skipped'
 assert_jq "$NA_STATE_FILE" '.stages.optional_usage_examples' 'skipped'
 
+NA_DEFAULT_OWNER_REPO="ExampleOwner/no-usage-examples-default"
+NA_DEFAULT_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_no-usage-examples-default.json"
+run_state init "$NA_DEFAULT_OWNER_REPO"
+run_state usage-examples "$NA_DEFAULT_OWNER_REPO" not_applicable ""
+assert_jq "$NA_DEFAULT_STATE_FILE" '.usage_examples.offered' 'false'
+assert_jq "$NA_DEFAULT_STATE_FILE" '.usage_examples.decision' 'not_applicable'
+assert_jq "$NA_DEFAULT_STATE_FILE" '.usage_examples.matched_criteria | length' '0'
+assert_jq "$NA_DEFAULT_STATE_FILE" '.usage_examples.result' 'skipped'
+assert_jq "$NA_DEFAULT_STATE_FILE" '.stages.optional_usage_examples' 'skipped'
+
+INVALID_NA_OWNER_REPO="ExampleOwner/invalid-na-usage-examples"
+INVALID_NA_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_invalid-na-usage-examples.json"
+run_state init "$INVALID_NA_OWNER_REPO"
+assert_fails usage-examples "$INVALID_NA_OWNER_REPO" not_applicable "" pending
+assert_jq "$INVALID_NA_STATE_FILE" '.usage_examples.decision' 'pending'
+assert_jq "$INVALID_NA_STATE_FILE" '.stages.optional_usage_examples' 'pending'
+
 DECLINED_OWNER_REPO="ExampleOwner/declined-usage-examples"
 DECLINED_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_declined-usage-examples.json"
 run_state init "$DECLINED_OWNER_REPO"
@@ -120,6 +151,13 @@ assert_jq "$DECLINED_STATE_FILE" '.usage_examples.decision' 'declined'
 assert_jq "$DECLINED_STATE_FILE" '.usage_examples.matched_criteria[0]' 'Only one criterion matched'
 assert_jq "$DECLINED_STATE_FILE" '.usage_examples.result' 'skipped'
 assert_jq "$DECLINED_STATE_FILE" '.stages.optional_usage_examples' 'skipped'
+
+DECLINED_DEFAULT_OWNER_REPO="ExampleOwner/declined-default-usage-examples"
+DECLINED_DEFAULT_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_declined-default-usage-examples.json"
+run_state init "$DECLINED_DEFAULT_OWNER_REPO"
+run_state usage-examples "$DECLINED_DEFAULT_OWNER_REPO" declined "Only one criterion matched"
+assert_jq "$DECLINED_DEFAULT_STATE_FILE" '.usage_examples.result' 'skipped'
+assert_jq "$DECLINED_DEFAULT_STATE_FILE" '.stages.optional_usage_examples' 'skipped'
 
 INVALID_DECLINED_OWNER_REPO="ExampleOwner/invalid-declined-usage-examples"
 INVALID_DECLINED_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_invalid-declined-usage-examples.json"
