@@ -27,6 +27,12 @@ run_state() {
   sh "$STATE_SH" "$@"
 }
 
+assert_fails() {
+  if run_state "$@"; then
+    fail "expected failure: state.sh $*"
+  fi
+}
+
 OWNER_REPO="ExampleOwner/example-repo"
 STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_example-repo.json"
 
@@ -72,6 +78,13 @@ assert_jq "$STATE_FILE" '.usage_examples.result' 'pending'
 assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'in_progress'
 assert_jq "$STATE_FILE" '.current_stage' 'optional_usage_examples'
 
+INVALID_ACCEPTED_OWNER_REPO="ExampleOwner/invalid-accepted-usage-examples"
+INVALID_ACCEPTED_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_invalid-accepted-usage-examples.json"
+run_state init "$INVALID_ACCEPTED_OWNER_REPO"
+assert_fails usage-examples "$INVALID_ACCEPTED_OWNER_REPO" accepted "CLI, Agent integration" skipped
+assert_jq "$INVALID_ACCEPTED_STATE_FILE" '.usage_examples.decision' 'pending'
+assert_jq "$INVALID_ACCEPTED_STATE_FILE" '.stages.optional_usage_examples' 'pending'
+
 run_state agent-run "$OWNER_REPO" optional_usage_examples DONE "Created usage_examples.md"
 assert_jq "$STATE_FILE" '.execution.agent_runs[-1].stage' 'optional_usage_examples'
 assert_jq "$STATE_FILE" '.execution.agent_runs[-1].status' 'DONE'
@@ -80,6 +93,13 @@ assert_jq "$STATE_FILE" '.execution.agent_runs[-1].summary' 'Created usage_examp
 run_state usage-examples "$OWNER_REPO" accepted "CLI, Agent integration" generated
 assert_jq "$STATE_FILE" '.usage_examples.result' 'generated'
 assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'done'
+
+PENDING_USAGE_OWNER_REPO="ExampleOwner/pending-usage-examples"
+PENDING_USAGE_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_pending-usage-examples.json"
+run_state init "$PENDING_USAGE_OWNER_REPO"
+assert_fails complete "$PENDING_USAGE_OWNER_REPO"
+assert_jq "$PENDING_USAGE_STATE_FILE" '.workflow_status' 'in_progress'
+assert_jq "$PENDING_USAGE_STATE_FILE" '.stages.optional_usage_examples' 'pending'
 
 NA_OWNER_REPO="ExampleOwner/no-usage-examples"
 NA_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_no-usage-examples.json"
@@ -100,6 +120,13 @@ assert_jq "$DECLINED_STATE_FILE" '.usage_examples.decision' 'declined'
 assert_jq "$DECLINED_STATE_FILE" '.usage_examples.matched_criteria[0]' 'Only one criterion matched'
 assert_jq "$DECLINED_STATE_FILE" '.usage_examples.result' 'skipped'
 assert_jq "$DECLINED_STATE_FILE" '.stages.optional_usage_examples' 'skipped'
+
+INVALID_DECLINED_OWNER_REPO="ExampleOwner/invalid-declined-usage-examples"
+INVALID_DECLINED_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_invalid-declined-usage-examples.json"
+run_state init "$INVALID_DECLINED_OWNER_REPO"
+assert_fails usage-examples "$INVALID_DECLINED_OWNER_REPO" declined "Only one criterion matched" generated
+assert_jq "$INVALID_DECLINED_STATE_FILE" '.usage_examples.decision' 'pending'
+assert_jq "$INVALID_DECLINED_STATE_FILE" '.stages.optional_usage_examples' 'pending'
 
 run_state test-result "$OWNER_REPO" failed "sh install.sh" "1" "network unavailable"
 assert_jq "$STATE_FILE" '.workflow_status' 'blocked'

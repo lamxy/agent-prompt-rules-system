@@ -254,10 +254,28 @@ cmd_usage_examples() {
   ensure_state_exists
   now=$(now_utc)
 
-  case "$decision:$result" in
-    accepted:generated|accepted:done) stage_status=done ;;
-    accepted:*) stage_status=in_progress ;;
-    declined:*|not_applicable:*) stage_status=skipped ;;
+  case "$decision" in
+    accepted)
+      if [ "$has_result" = false ] || [ "$result" = "" ] || [ "$result" = "pending" ]; then
+        stage_status=in_progress
+      else
+        case "$result" in
+          generated|done) stage_status=done ;;
+          skipped) die "usage examples result 'skipped' is invalid for accepted decision; omit result, use pending, generated, or done" ;;
+          *) die "usage examples result '$result' is invalid for accepted decision; omit result, use pending, generated, or done" ;;
+        esac
+      fi
+      ;;
+    declined|not_applicable)
+      if [ "$has_result" = false ] || [ "$result" = "" ] || [ "$result" = "skipped" ]; then
+        stage_status=skipped
+      else
+        case "$result" in
+          pending|generated|done) die "usage examples result '$result' is invalid for $decision decision; omit result or use skipped" ;;
+          *) die "usage examples result '$result' is invalid for $decision decision; omit result or use skipped" ;;
+        esac
+      fi
+      ;;
   esac
 
   write_jq '
@@ -340,6 +358,12 @@ cmd_complete() {
   state_file=$(state_file_for "$1")
   ensure_state_exists
   now=$(now_utc)
+
+  optional_usage_examples=$(jq -r 'if .stages | has("optional_usage_examples") then .stages.optional_usage_examples else "__missing__" end' "$state_file")
+  case "$optional_usage_examples" in
+    __missing__|done|skipped) ;;
+    *) die "optional_usage_examples must be done or skipped before complete; current status: $optional_usage_examples" ;;
+  esac
 
   write_jq '
     .stages.optional_usage_examples //= "skipped"

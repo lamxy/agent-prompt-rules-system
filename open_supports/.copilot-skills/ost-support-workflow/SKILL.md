@@ -220,6 +220,8 @@ ost_{GithubName}_{RepoName}/skill_for_setup/ost_{GithubName}_{RepoName}_install/
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]
 ```
 
+`MATCHED_CRITERIA` 是 checklist 命中摘要字串，状态中以单元素数组保存；不要求 shell 解析多值列表。
+
 用户拒绝：
 
 - 将 `optional_usage_examples` 标记为 `skipped`
