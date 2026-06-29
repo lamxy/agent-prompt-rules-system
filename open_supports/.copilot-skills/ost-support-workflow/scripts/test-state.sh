@@ -28,7 +28,7 @@ run_state() {
 }
 
 assert_fails() {
-  if run_state "$@"; then
+  if run_state "$@" >/dev/null 2>&1; then
     fail "expected failure: state.sh $*"
   fi
 }
