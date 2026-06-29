@@ -46,3 +46,5 @@ temp/
 # open_supports workflow runtime state
 open_supports/.ost-workflow-state/*.json
 !open_supports/.ost-workflow-state/README.md
+
+.codex

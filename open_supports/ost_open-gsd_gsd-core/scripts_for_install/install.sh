@@ -64,7 +64,7 @@ ALL_SELECTED="no"
 NEED_CODEX="no"
 
 usage() {
-  sed -n '/^# 用法/,/^# ====/p' "$0" | sed 's/^# \?//'
+  sed -n '/^# 用法/,/^# ====/p' "$0" | sed '/^# ====/d; s/^# \?//'
 }
 
 fail_usage() {
