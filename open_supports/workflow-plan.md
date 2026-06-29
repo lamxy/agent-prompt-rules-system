@@ -12,7 +12,7 @@
 4. `optional_usage_examples`
 5. `optional_test_install`
 
-前三个阶段负责生成核心支持包文件；第四阶段只在 checklist 命中且用户同意时生成 `usage_examples.md`。用户拒绝或条件不足时跳过，不影响核心支持包完成。第五阶段在用户明确同意后测试运行安装脚本并验证安装是否成功；用户拒绝测试时，工作流直接标记完成。
+前三个阶段负责生成核心支持包文件；第四阶段只在 checklist 命中且用户同意时生成 `usage_examples.md`。用户拒绝或条件不足时跳过，不影响核心支持包完成。第五阶段在用户明确同意后测试运行安装脚本并验证安装是否成功；用户拒绝测试时记录 skipped 决策，然后由 `complete` 统一验证完成。
 
 ## Scope
 
@@ -205,6 +205,21 @@ workflow Skill 负责把该 blocked 信息写入状态文件，并在恢复时�
 open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh
 ```
 
+常用命令：
+
+```sh
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh init OWNER/REPO
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh show OWNER/REPO
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh set-stage OWNER/REPO STAGE STATUS
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh block OWNER/REPO STAGE REASON QUESTION [SUGGESTED_DEFAULT]
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh answer OWNER/REPO ANSWER
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh agent-run OWNER/REPO STAGE STATUS SUMMARY
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh offer-usage-examples OWNER/REPO MATCHED_CRITERIA
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh test-result OWNER/REPO RESULT COMMAND EXIT_CODE SUMMARY
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh complete OWNER/REPO
+```
+
 阶段子代理不能直接调用状态脚本，避免并发写入和状态污染。
 
 ## Package Preparation
@@ -222,7 +237,7 @@ ost_{GithubName}_{RepoName}/skill_for_setup/ost_{GithubName}_{RepoName}_install/
 
 ## Optional Usage Examples
 
-`skill_for_setup` 完成后，workflow Skill 先按 checklist 判断是否建议生成 `usage_examples.md`。命中 2 项以上时询问用户；只有用户同意才执行 `optional_usage_examples` 阶段。用户拒绝或条件不足时，将 `optional_usage_examples` 标记为 `skipped`，记录 usage examples 决策，然后继续进入 `optional_test_install`。
+`skill_for_setup` 完成后，workflow Skill 先按 checklist 判断是否建议生成 `usage_examples.md`。命中 2 项以上时先用 `offer-usage-examples OWNER/REPO MATCHED_CRITERIA` 持久化等待决策状态，再询问用户；只有用户同意才执行 `optional_usage_examples` 阶段。用户拒绝或条件不足时，将 `optional_usage_examples` 标记为 `skipped`，记录 usage examples 决策，然后继续进入 `optional_test_install`。
 
 Checklist：
 
@@ -234,7 +249,7 @@ Checklist：
 - 官方文档提供多个用法场景
 - `.ost-refs/` 中存在本地约定、项目约定或推荐实践
 
-命中 2 项或以上时，workflow Skill 记录 checklist 命中摘要并询问用户。传给 `state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]` 的 `MATCHED_CRITERIA` 是单个摘要字串；`state.sh` 会把它保存为 `usage_examples.matched_criteria` 的单元素数组。它不是 shell 解析的多值列表。
+命中 2 项或以上时，workflow Skill 先调用 `state.sh offer-usage-examples OWNER/REPO MATCHED_CRITERIA`，将 `usage_examples.offered = true`、`usage_examples.decision = pending`、`usage_examples.result = pending`、`optional_usage_examples = waiting_user`、`workflow_status = blocked` 写入状态，再询问用户。传给 `state.sh offer-usage-examples` 和 `state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]` 的 `MATCHED_CRITERIA` 是单个摘要字串；`state.sh` 会把它保存为 `usage_examples.matched_criteria` 的单元素数组。它不是 shell 解析的多值列表。
 
 Decision/result matrix：
 
@@ -250,6 +265,9 @@ Decision/result matrix：
 
 ```text
 检测到该支持包适合生成 usage_examples.md。是否要派发 ost-usage-examples 阶段子代理生成安装后的用法示例？
+命中原因：
+- CLI, Agent integration
+这不影响核心支持包完成。
 回复“是”则生成，回复“否”则跳过并继续 optional_test_install。
 ```
 
@@ -260,6 +278,7 @@ Decision/result matrix：
 - 记录 `usage_examples.decision` 为 `accepted`
 - 记录命中的 `usage_examples.matched_criteria`
 - 初始记录 `usage_examples.result` 为 `pending`
+- 将 `workflow_status` 从 `blocked` 恢复为 `in_progress`
 - 派发 `ost-usage-examples` 阶段子代理生成或更新 `usage_examples.md`
 - 完成后记录 `usage_examples.result` 为 `generated`，并将 `optional_usage_examples` 标记为 `done`
 
@@ -297,16 +316,17 @@ Decision/result matrix：
 - 记录 `test_install.offered` 为 `true`
 - 记录 `test_install.decision` 为 `declined`
 - 记录 `test_install.result` 为 `skipped`
-- 将 `workflow_status` 标记为 `done`
+- 使用 `test-result OWNER/REPO skipped ...` 记录拒绝测试；`workflow_status` 保持 `in_progress`
+- 调用 `complete OWNER/REPO` 统一验证并完成
 
 测试安装失败后不要自动修复。保存失败命令、退出码和关键输出摘要，将 `optional_test_install` 标记为 `failed`，将 `workflow_status` 标记为 `blocked`，然后询问用户下一步：修复支持包文件、跳过测试并完成，或停在失败状态稍后恢复。
 
 ## Completion
 
-workflow 只能在三个核心产出阶段为 `done`、`optional_usage_examples` 为 `done` 或 `skipped`，且满足以下任一条件时完成：
+workflow 只能通过 `complete OWNER/REPO` 完成。该命令会验证三个核心产出阶段为 `done`、`optional_usage_examples` 为 `done` 或 `skipped`，且满足以下任一条件：
 
 - `optional_test_install` 为 `skipped`
-- `test_install.result == passed`
+- `optional_test_install` 为 `done` 且 `test_install.result == passed`
 
 测试安装失败时保持 `workflow_status` 为 `blocked`，直到用户选择修复、跳过测试完成，或稍后恢复。
 

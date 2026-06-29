@@ -140,6 +140,7 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh set-stage
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh block OWNER/REPO STAGE REASON QUESTION [SUGGESTED_DEFAULT]
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh answer OWNER/REPO ANSWER
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh agent-run OWNER/REPO STAGE STATUS SUMMARY
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh offer-usage-examples OWNER/REPO MATCHED_CRITERIA
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh test-result OWNER/REPO RESULT COMMAND EXIT_CODE SUMMARY
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh complete OWNER/REPO
@@ -211,12 +212,23 @@ ost_{GithubName}_{RepoName}/skill_for_setup/ost_{GithubName}_{RepoName}_install/
 
 命中 2 项或以上时，询问用户：
 
+提问前必须先持久化等待决策状态：
+
+```sh
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh offer-usage-examples OWNER/REPO "CLI, Agent integration"
+```
+
+这会记录 `usage_examples.offered = true`、`usage_examples.decision = "pending"`、命中的 `usage_examples.matched_criteria`、`usage_examples.result = "pending"`，并将 `optional_usage_examples` 标记为 `waiting_user`、`workflow_status` 标记为 `blocked`，以便断点恢复。
+
 ```text
-检测到该支持包适合生成 usage_examples.md。是否要派发 ost-usage-examples 阶段子代理生成安装后的用法示例？
+检测到该支持包适合生成 usage_examples.md，命中原因：
+- CLI, Agent integration
+
+是否要派发 ost-usage-examples 阶段子代理生成安装后的用法示例？这不影响核心支持包完成。
 回复“是”则生成，回复“否”则跳过并继续 optional_test_install。
 ```
 
-主 workflow 在 checklist 判断或询问用户并做出决策后，必须使用状态脚本记录 `usage_examples.decision`、`usage_examples.matched_criteria` 和 `usage_examples.result`：
+主 workflow 在 checklist 判断或用户回答后，必须使用状态脚本记录 `usage_examples.decision`、`usage_examples.matched_criteria` 和 `usage_examples.result`：
 
 ```sh
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]
@@ -246,6 +258,8 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-exa
 推荐调用顺序：
 
 ```sh
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh offer-usage-examples OWNER/REPO "CLI, Agent integration"
+# 用户同意后：
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-examples OWNER/REPO accepted "CLI, Agent integration" pending
 # 子代理 DONE 且主 workflow 审查 usage_examples.md 后：
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-examples OWNER/REPO accepted "CLI, Agent integration" generated
@@ -263,8 +277,11 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-exa
 用户拒绝：
 
 - 将 `optional_test_install` 标记为 `skipped`
+- 将 `test_install.offered` 记为 `true`
 - 将 `test_install.decision` 记为 `declined`
-- 将 `workflow_status` 标记为 `done`
+- 将 `test_install.result` 记为 `skipped`
+- 使用 `test-result OWNER/REPO skipped ...` 记录拒绝测试；`workflow_status` 保持 `in_progress`
+- 之后由 `complete OWNER/REPO` 统一验证并完成工作流
 
 用户同意：
 
@@ -288,9 +305,8 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-exa
 
 完成时确认：
 
-- `repo_readme_summary` 为 `done`
-- `install_script` 为 `done`
-- `skill_for_setup` 为 `done`
-- `optional_usage_examples` 为 `done` 或 `skipped`
-- `optional_test_install` 为 `skipped` 或测试结果为 `passed`
+- 必须调用 `complete OWNER/REPO`
+- `complete` 会验证 `repo_readme_summary`、`install_script`、`skill_for_setup` 都为 `done`
+- `complete` 会验证 `optional_usage_examples` 为 `done` 或 `skipped`；legacy state 缺少该 stage 时会补为 `skipped`
+- `complete` 会验证 `optional_test_install` 为 `skipped`，或 `test_install.result` 为 `passed` 且 stage 状态为 `done`
 - `workflow_status` 为 `done`

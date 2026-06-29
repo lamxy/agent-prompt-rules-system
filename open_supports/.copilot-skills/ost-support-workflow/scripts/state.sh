@@ -15,6 +15,7 @@ Usage:
   state.sh block OWNER/REPO STAGE REASON QUESTION [SUGGESTED_DEFAULT]
   state.sh answer OWNER/REPO ANSWER
   state.sh agent-run OWNER/REPO STAGE STATUS SUMMARY
+  state.sh offer-usage-examples OWNER/REPO MATCHED_CRITERIA
   state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]
   state.sh test-result OWNER/REPO RESULT COMMAND EXIT_CODE SUMMARY
   state.sh complete OWNER/REPO
@@ -242,6 +243,25 @@ cmd_agent_run() {
   ' --arg stage "$stage" --arg status "$status" --arg summary "$summary" --arg now "$now"
 }
 
+cmd_offer_usage_examples() {
+  require_owner_repo "$1"
+  criteria=$2
+  state_file=$(state_file_for "$1")
+  ensure_state_exists
+  now=$(now_utc)
+
+  write_jq '
+    .usage_examples.offered = true
+    | .usage_examples.decision = "pending"
+    | .usage_examples.matched_criteria = (if $criteria == "" then [] else [$criteria] end)
+    | .usage_examples.result = "pending"
+    | .stages.optional_usage_examples = "waiting_user"
+    | .current_stage = "optional_usage_examples"
+    | .workflow_status = "blocked"
+    | .updated_at = $now
+  ' --arg criteria "$criteria" --arg now "$now"
+}
+
 cmd_usage_examples() {
   require_owner_repo "$1"
   decision=$2
@@ -323,10 +343,11 @@ cmd_test_result() {
       )
     | .workflow_status = (
         if $result == "failed" then "blocked"
-        elif $result == "skipped" then "done"
         else "in_progress"
         end
       )
+    | .test_install.offered = true
+    | .test_install.decision = (if $result == "skipped" then "declined" else "accepted" end)
     | .test_install.result = $result
     | .test_install.updated_at = $now
     | .test_install.last_command = {
@@ -360,10 +381,27 @@ cmd_complete() {
   ensure_state_exists
   now=$(now_utc)
 
+  for stage in repo_readme_summary install_script skill_for_setup; do
+    status=$(jq -r --arg stage "$stage" '(.stages // {}) as $st | if ($st | has($stage)) then $st[$stage] else "__missing__" end' "$state_file")
+    [ "$status" = "done" ] || die "$stage must be done before complete; current status: $status"
+  done
+
   optional_usage_examples=$(jq -r 'if .stages | has("optional_usage_examples") then .stages.optional_usage_examples else "__missing__" end' "$state_file")
   case "$optional_usage_examples" in
     __missing__|done|skipped) ;;
     *) die "optional_usage_examples must be done or skipped before complete; current status: $optional_usage_examples" ;;
+  esac
+
+  optional_test_install=$(jq -r '(.stages // {}) as $st | if ($st | has("optional_test_install")) then $st.optional_test_install else "__missing__" end' "$state_file")
+  test_result=$(jq -r '.test_install.result // "__missing__"' "$state_file")
+  case "$optional_test_install" in
+    skipped) ;;
+    done)
+      [ "$test_result" = "passed" ] || die "optional_test_install is done but test_install.result must be passed before complete; current result: $test_result"
+      ;;
+    *)
+      die "optional_test_install must be skipped or done with test_install.result passed before complete; current status: $optional_test_install, result: $test_result"
+      ;;
   esac
 
   write_jq '
@@ -409,6 +447,10 @@ case "$cmd" in
   agent-run)
     [ "$#" -eq 4 ] || { usage >&2; exit 2; }
     cmd_agent_run "$1" "$2" "$3" "$4"
+    ;;
+  offer-usage-examples)
+    [ "$#" -eq 2 ] || { usage >&2; exit 2; }
+    cmd_offer_usage_examples "$1" "$2"
     ;;
   usage-examples)
     [ "$#" -eq 3 ] || [ "$#" -eq 4 ] || { usage >&2; exit 2; }

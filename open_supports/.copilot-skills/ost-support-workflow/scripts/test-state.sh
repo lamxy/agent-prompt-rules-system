@@ -33,6 +33,13 @@ assert_fails() {
   fi
 }
 
+mark_core_done() {
+  _owner_repo=$1
+  run_state set-stage "$_owner_repo" repo_readme_summary done
+  run_state set-stage "$_owner_repo" install_script done
+  run_state set-stage "$_owner_repo" skill_for_setup done
+}
+
 OWNER_REPO="ExampleOwner/example-repo"
 STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_example-repo.json"
 
@@ -47,6 +54,8 @@ assert_jq "$STATE_FILE" '.stages.install_script' 'pending'
 assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'pending'
 assert_jq "$STATE_FILE" '.usage_examples.decision' 'pending'
 assert_jq "$STATE_FILE" '.execution.mode' 'subagent_preferred'
+
+mark_core_done "$OWNER_REPO"
 
 run_state set-stage "$OWNER_REPO" install_script in_progress
 assert_jq "$STATE_FILE" '.current_stage' 'install_script'
@@ -111,6 +120,8 @@ assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'done'
 PENDING_USAGE_OWNER_REPO="ExampleOwner/pending-usage-examples"
 PENDING_USAGE_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_pending-usage-examples.json"
 run_state init "$PENDING_USAGE_OWNER_REPO"
+mark_core_done "$PENDING_USAGE_OWNER_REPO"
+run_state test-result "$PENDING_USAGE_OWNER_REPO" skipped "not run" "0" "declined"
 assert_fails complete "$PENDING_USAGE_OWNER_REPO"
 assert_jq "$PENDING_USAGE_STATE_FILE" '.workflow_status' 'in_progress'
 assert_jq "$PENDING_USAGE_STATE_FILE" '.stages.optional_usage_examples' 'pending'
@@ -166,6 +177,64 @@ assert_fails usage-examples "$INVALID_DECLINED_OWNER_REPO" declined "Only one cr
 assert_jq "$INVALID_DECLINED_STATE_FILE" '.usage_examples.decision' 'pending'
 assert_jq "$INVALID_DECLINED_STATE_FILE" '.stages.optional_usage_examples' 'pending'
 
+INCOMPLETE_CORE_OWNER_REPO="ExampleOwner/incomplete-core-complete"
+INCOMPLETE_CORE_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_incomplete-core-complete.json"
+run_state init "$INCOMPLETE_CORE_OWNER_REPO"
+run_state usage-examples "$INCOMPLETE_CORE_OWNER_REPO" not_applicable "" skipped
+run_state test-result "$INCOMPLETE_CORE_OWNER_REPO" skipped "not run" "0" "declined"
+assert_fails complete "$INCOMPLETE_CORE_OWNER_REPO"
+assert_jq "$INCOMPLETE_CORE_STATE_FILE" '.stages.repo_readme_summary' 'pending'
+assert_jq "$INCOMPLETE_CORE_STATE_FILE" '.workflow_status' 'in_progress'
+
+PENDING_TEST_OWNER_REPO="ExampleOwner/pending-test-complete"
+PENDING_TEST_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_pending-test-complete.json"
+run_state init "$PENDING_TEST_OWNER_REPO"
+mark_core_done "$PENDING_TEST_OWNER_REPO"
+run_state usage-examples "$PENDING_TEST_OWNER_REPO" not_applicable "" skipped
+assert_fails complete "$PENDING_TEST_OWNER_REPO"
+assert_jq "$PENDING_TEST_STATE_FILE" '.stages.optional_test_install' 'pending'
+assert_jq "$PENDING_TEST_STATE_FILE" '.workflow_status' 'in_progress'
+
+FAILED_TEST_OWNER_REPO="ExampleOwner/failed-test-complete"
+FAILED_TEST_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_failed-test-complete.json"
+run_state init "$FAILED_TEST_OWNER_REPO"
+mark_core_done "$FAILED_TEST_OWNER_REPO"
+run_state usage-examples "$FAILED_TEST_OWNER_REPO" not_applicable "" skipped
+run_state test-result "$FAILED_TEST_OWNER_REPO" failed "sh install.sh" "1" "install failed"
+assert_fails complete "$FAILED_TEST_OWNER_REPO"
+assert_jq "$FAILED_TEST_STATE_FILE" '.stages.optional_test_install' 'failed'
+assert_jq "$FAILED_TEST_STATE_FILE" '.workflow_status' 'blocked'
+
+SKIPPED_TEST_OWNER_REPO="ExampleOwner/skipped-test-complete"
+SKIPPED_TEST_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_skipped-test-complete.json"
+run_state init "$SKIPPED_TEST_OWNER_REPO"
+mark_core_done "$SKIPPED_TEST_OWNER_REPO"
+run_state usage-examples "$SKIPPED_TEST_OWNER_REPO" not_applicable "" skipped
+run_state test-result "$SKIPPED_TEST_OWNER_REPO" skipped "not run" "0" "declined"
+assert_jq "$SKIPPED_TEST_STATE_FILE" '.test_install.offered' 'true'
+assert_jq "$SKIPPED_TEST_STATE_FILE" '.test_install.decision' 'declined'
+assert_jq "$SKIPPED_TEST_STATE_FILE" '.test_install.result' 'skipped'
+assert_jq "$SKIPPED_TEST_STATE_FILE" '.stages.optional_test_install' 'skipped'
+assert_jq "$SKIPPED_TEST_STATE_FILE" '.workflow_status' 'in_progress'
+run_state complete "$SKIPPED_TEST_OWNER_REPO"
+assert_jq "$SKIPPED_TEST_STATE_FILE" '.workflow_status' 'done'
+
+OFFER_USAGE_OWNER_REPO="ExampleOwner/offer-usage-examples"
+OFFER_USAGE_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_offer-usage-examples.json"
+run_state init "$OFFER_USAGE_OWNER_REPO"
+run_state offer-usage-examples "$OFFER_USAGE_OWNER_REPO" "CLI, Agent integration"
+assert_jq "$OFFER_USAGE_STATE_FILE" '.usage_examples.offered' 'true'
+assert_jq "$OFFER_USAGE_STATE_FILE" '.usage_examples.decision' 'pending'
+assert_jq "$OFFER_USAGE_STATE_FILE" '.usage_examples.matched_criteria[0]' 'CLI, Agent integration'
+assert_jq "$OFFER_USAGE_STATE_FILE" '.usage_examples.result' 'pending'
+assert_jq "$OFFER_USAGE_STATE_FILE" '.stages.optional_usage_examples' 'waiting_user'
+assert_jq "$OFFER_USAGE_STATE_FILE" '.current_stage' 'optional_usage_examples'
+assert_jq "$OFFER_USAGE_STATE_FILE" '.workflow_status' 'blocked'
+run_state usage-examples "$OFFER_USAGE_OWNER_REPO" accepted "CLI, Agent integration"
+assert_jq "$OFFER_USAGE_STATE_FILE" '.usage_examples.decision' 'accepted'
+assert_jq "$OFFER_USAGE_STATE_FILE" '.stages.optional_usage_examples' 'in_progress'
+assert_jq "$OFFER_USAGE_STATE_FILE" '.workflow_status' 'in_progress'
+
 run_state test-result "$OWNER_REPO" failed "sh install.sh" "1" "network unavailable"
 assert_jq "$STATE_FILE" '.workflow_status' 'blocked'
 assert_jq "$STATE_FILE" '.stages.optional_test_install' 'failed'
@@ -177,6 +246,7 @@ assert_jq "$STATE_FILE" '.workflow_status' 'in_progress'
 assert_jq "$STATE_FILE" '.stages.optional_test_install' 'done'
 assert_jq "$STATE_FILE" '.test_install.result' 'passed'
 
+mark_core_done "$OWNER_REPO"
 run_state complete "$OWNER_REPO"
 assert_jq "$STATE_FILE" '.workflow_status' 'done'
 assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'done'

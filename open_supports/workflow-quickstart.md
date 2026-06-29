@@ -16,9 +16,10 @@
 1. 先阅读 open_supports/README-todo.md
 2. 再阅读 open_supports/workflow-plan.md
 3. 使用 .ost-workflow-state/ 记录状态
-4. 三个产出阶段用子代理串行执行
+4. 三个核心产出阶段用子代理串行执行；可选 usage examples 阶段在用户同意后也串行执行
 5. 如需澄清，只问当前一个问题
-6. 最后测试安装前必须先问我
+6. workflow checklist 命中时，生成 usage_examples.md 前必须先问我
+7. 最后测试安装前必须先问我
 ```
 
 示例：
