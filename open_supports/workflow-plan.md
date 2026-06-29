@@ -20,7 +20,7 @@
 
 - 工作流状态机
 - `.ost-workflow-state/` 状态目录约定
-- 三个阶段 Skill 的统一澄清协议
+- 三个核心阶段 Skill 和可选 `ost-usage-examples` Skill 的统一澄清协议
 - 可选 usage examples 阶段确认门
 - 可选测试安装确认门
 
@@ -80,8 +80,8 @@ open_supports/.ost-workflow-state/*.json
   "test_install": {
     "offered": false,
     "decision": "pending",
-    "script_command": null,
-    "verify_commands": [],
+    "last_command": null,
+    "failure": null,
     "result": null
   },
   "execution": {
@@ -133,7 +133,7 @@ stateDiagram-v2
   DetectNextStage --> SetupSkill: script done && setup skill pending/in_progress
   DetectNextStage --> OfferUsageExamples: setup skill done && usage examples not decided
   DetectNextStage --> OfferTestInstall: usage examples done/skipped && test not decided
-  DetectNextStage --> Completed: all required stages done && test skipped/passed
+  DetectNextStage --> Completed: all required stages done && (optional_test_install skipped OR test_install.result == passed)
 
   RepoSummary --> ClarificationNeeded: missing required info
   RepoSummary --> RepoSummaryDone: repo_readme_summary.md created/updated
@@ -147,8 +147,8 @@ stateDiagram-v2
   SetupSkill --> SetupSkillDone: README.md + SKILL.md created/updated
   SetupSkillDone --> OfferUsageExamples
 
-  OfferUsageExamples --> UsageExamplesSkipped: checklist not matched or user declines
-  OfferUsageExamples --> UsageExamples: user accepts
+  OfferUsageExamples --> UsageExamplesSkipped: checklist not matched
+  OfferUsageExamples --> WaitingUsageExamplesDecision: ask user
   UsageExamples --> ClarificationNeeded: missing usage example info
   UsageExamples --> UsageExamplesDone: usage_examples.md created/updated
   UsageExamplesSkipped --> OfferTestInstall
@@ -166,7 +166,7 @@ stateDiagram-v2
 
 ## Clarification Protocol
 
-三个阶段 Skill 需要补充同一段轻量协议：
+三个核心阶段 Skill 和可选 `ost-usage-examples` Skill 需要遵循统一澄清协议：
 
 ```markdown
 ## Clarification / Blocking
@@ -189,13 +189,15 @@ workflow Skill 负责把该 blocked 信息写入状态文件，并在恢复时�
 
 ## Subagent Execution
 
-三个产出阶段默认由阶段子代理串行执行：
+三个核心产出阶段默认由阶段子代理串行执行：
 
 1. `repo_readme_summary`
 2. `install_script`
 3. `skill_for_setup`
 
 子代理只返回 `DONE`、`NEEDS_CLARIFICATION` 或 `FAILED` 的结构化结果。主 workflow 是唯一状态管理者和唯一用户交互者。
+
+用户同意后，`optional_usage_examples` 也按阶段子代理串行执行。`optional_test_install` 由主 workflow 控制，不派发给阶段子代理。
 
 主 workflow 使用内部状态脚本读写状态：
 
@@ -232,6 +234,18 @@ Checklist：
 - 官方文档提供多个用法场景
 - `.ost-refs/` 中存在本地约定、项目约定或推荐实践
 
+命中 2 项或以上时，workflow Skill 记录 checklist 命中摘要并询问用户。传给 `state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]` 的 `MATCHED_CRITERIA` 是单个摘要字串；`state.sh` 会把它保存为 `usage_examples.matched_criteria` 的单元素数组。它不是 shell 解析的多值列表。
+
+Decision/result matrix：
+
+| Decision | Offered | Default result | Stage status | Notes |
+| --- | --- | --- | --- | --- |
+| `not_applicable` | `false` | `skipped` | `skipped` | checklist 命中不足，`matched_criteria` 保存为 `[]` |
+| `declined` | `true` | `skipped` | `skipped` | 用户拒绝生成 usage examples |
+| `accepted` | `true` | `pending` | `in_progress` | 用户同意后派发阶段子代理；产物审查后记录 `result: generated` 并将阶段标记为 `done` |
+
+`RESULT` 省略时，`accepted` 默认 `result: pending`；`declined` 和 `not_applicable` 默认 `result: skipped`。
+
 命中 2 项或以上时，workflow Skill 询问：
 
 ```text
@@ -245,6 +259,7 @@ Checklist：
 - 记录 `usage_examples.offered` 为 `true`
 - 记录 `usage_examples.decision` 为 `accepted`
 - 记录命中的 `usage_examples.matched_criteria`
+- 初始记录 `usage_examples.result` 为 `pending`
 - 派发 `ost-usage-examples` 阶段子代理生成或更新 `usage_examples.md`
 - 完成后记录 `usage_examples.result` 为 `generated`，并将 `optional_usage_examples` 标记为 `done`
 
@@ -252,7 +267,7 @@ Checklist：
 
 - 将 `optional_usage_examples` 标记为 `skipped`
 - 用户拒绝时记录 `usage_examples.decision` 为 `declined`
-- 条件不足时记录 `usage_examples.decision` 为 `not_applicable`
+- 条件不足时记录 `usage_examples.decision` 为 `not_applicable`，并将 `usage_examples.offered` 记录为 `false`、`usage_examples.matched_criteria` 记录为 `[]`
 - 将 `usage_examples.result` 记录为 `skipped`
 - 继续进入 `optional_test_install`
 
@@ -268,18 +283,32 @@ Checklist：
 用户同意时：
 
 - 将 `optional_test_install` 标记为 `in_progress`
+- 记录 `test_install.offered` 为 `true`
+- 记录 `test_install.decision` 为 `accepted`
 - 运行安装脚本
 - 运行验证命令
-- 记录执行命令、结果和失败摘要
+- 记录 `test_install.last_command`、`test_install.result`，失败时记录 `test_install.failure`
 
 验证命令优先来自 `repo_readme_summary.md` 第 2 部分，其次来自安装脚本或 setup Skill；仍不能判断时进入澄清。
 
 用户拒绝时：
 
 - 将 `optional_test_install` 标记为 `skipped`
+- 记录 `test_install.offered` 为 `true`
+- 记录 `test_install.decision` 为 `declined`
+- 记录 `test_install.result` 为 `skipped`
 - 将 `workflow_status` 标记为 `done`
 
 测试安装失败后不要自动修复。保存失败命令、退出码和关键输出摘要，将 `optional_test_install` 标记为 `failed`，将 `workflow_status` 标记为 `blocked`，然后询问用户下一步：修复支持包文件、跳过测试并完成，或停在失败状态稍后恢复。
+
+## Completion
+
+workflow 只能在三个核心产出阶段为 `done`、`optional_usage_examples` 为 `done` 或 `skipped`，且满足以下任一条件时完成：
+
+- `optional_test_install` 为 `skipped`
+- `test_install.result == passed`
+
+测试安装失败时保持 `workflow_status` 为 `blocked`，直到用户选择修复、跳过测试完成，或稍后恢复。
 
 ## Implementation Tasks
 
