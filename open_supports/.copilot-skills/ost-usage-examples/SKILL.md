@@ -32,7 +32,7 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 1. 不要猜测命令、配置、客户端接入或预期结果
 2. 向 workflow 返回一个澄清问题
 3. 标明 blocked 字段：
-   - `stage`: `usage_examples`
+   - `stage`: `optional_usage_examples`
    - `reason`
    - `question`
    - `suggested_default`（如有）
@@ -58,7 +58,7 @@ usage_examples.md
 ```markdown
 # {LibraryName} — 使用示例
 
-> 來源：官方 README / 文檔；本文件只保留 open_supports 使用者最常見的入口。
+> 来源：官方 README / 文档；本文件只保留 open_supports 使用者最常见的入口。
 ```
 
 ## 文档结构
@@ -98,6 +98,7 @@ usage_examples.md
 - 优先保留最常见、最短路径的操作
 - 注释用于解释命令目的和成功判断，不展开背景教程
 - 安装步骤仍以 `repo_readme_summary.md` 第 2 部分和 `scripts_for_install/install.*` 为准
+- 有副作用的命令必须明确说明影响范围，不能伪装成无风险示例
 
 ## 禁止事项
 
@@ -106,13 +107,16 @@ usage_examples.md
 - 不重写完整安装流程
 - 不把卸载流程写成可执行指导；如官方有卸载文档，只能在延伸阅读或排错中给链接
 - 不加入与 open_supports 使用者无关的高级场景
+- 不把会修改用户项目、配置、云资源或本地状态的命令写成无副作用示例
 
 ## Quality Checklist
 
 - [ ] 文件写入目标支持包根目录 `usage_examples.md`
 - [ ] 快速开始不重复安装步骤
 - [ ] 每个示例都有适用场景、命令或最小配置、预期结果
+- [ ] 每个示例都能标明来源或链接，便于 review 追溯
 - [ ] 命令、配置和客户端接入方式均可追溯到官方文档、支持包文件或 `.ost-refs/`
+- [ ] 如果示例命令会修改用户项目、配置、云资源或本地状态，必须写清影响范围
 - [ ] 没有大段复制官方文档
 - [ ] 没有发明未确认的命令、flag 或配置键
 - [ ] 没有把卸载流程写成默认可执行操作
