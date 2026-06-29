@@ -30,6 +30,7 @@ __pycache__/
 tmp/
 temp/
 .cache/
+.worktrees/
 
 # smoke test
 .tmp/
