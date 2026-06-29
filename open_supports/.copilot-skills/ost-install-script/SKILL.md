@@ -47,6 +47,18 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 | 驱动方式 | 纯 flag 驱动 | 无交互式提示 |
 | location 默认 | `local`（项目级） | `global` 需用户显式指定 |
 | 已安装时 | 提示版本 + 执行升级 | 升级命令见官方文档 |
+| 卸载策略 | 默认不实现卸载 | 只记录官方卸载方法；仅当官方卸载命令明确且用户要求时，才可扩展 `--uninstall` |
+
+## 卸载策略
+
+默认一键脚本只负责安装、更新、配置和验证，不加入删除或卸载逻辑。
+
+- 官方提供卸载文档时，可在 `repo_readme_summary.md` Part 5 或 setup Skill 的 Troubleshooting 中给出链接
+- 不要默认删除二进制、配置文件、缓存目录或 Agent 客户端配置
+- 只有同时满足以下条件时，才允许把 `--uninstall` 作为可选扩展加入脚本：
+  1. 官方文档明确提供卸载命令或可验证的卸载流程
+  2. 用户明确要求脚本支持卸载
+  3. 脚本在执行前打印将删除或修改的路径 / 配置范围
 
 ## [库特定] 替换清单
 
@@ -212,3 +224,4 @@ main
 - [ ] 无关的 flag 和函数块已删除（如库没有 configure 步骤）
 - [ ] `--help` 有用法说明和示例
 - [ ] `print_next_steps` 告知用户安装后该做什么
+- [ ] 未默认加入删除、卸载或清理配置等破坏性逻辑；如支持 `--uninstall`，已确认官方依据和用户要求

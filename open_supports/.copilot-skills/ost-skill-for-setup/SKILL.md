@@ -47,6 +47,14 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 
 优势：安装逻辑只在脚本中维护一份，技能轻薄；兜底路径覆盖脚本不适用的场景（如 Windows）。
 
+## 范围边界
+
+setup Skill 聚焦安装、配置、验证和升级入口，不负责生成详细教程。
+
+- 若支持包存在 `usage_examples.md`，安装完成后可提示用户阅读该文件
+- 若官方提供卸载文档，可在 Troubleshooting 中链接，但不默认执行卸载
+- 详细安装后用例由可选 `ost-usage-examples` Skill 生成
+
 ## [库特定] 替换清单
 
 | 占位符 | 说明 |
@@ -131,7 +139,7 @@ sh scripts_for_install/install.* [flags]
 ## 安装完成后告知用户
 
 ```
-[下一步提示，如需用户手动执行的操作]
+[下一步提示，如需用户手动执行的操作；若 ../../usage_examples.md 存在，提示可阅读该文件]
 ```
 
 ---
@@ -183,3 +191,6 @@ sh scripts_for_install/install.* [flags]
 - [ ] 验证命令来自官方文档或 `repo_readme_summary.md`
 - [ ] README.md 中 `/ost-...` 触发词与 `name` frontmatter 一致
 - [ ] 范围说明中"不含"部分已填写（避免用户误以为包含）
+- [ ] 范围说明明确 setup Skill 不负责生成详细教程
+- [ ] 如 `usage_examples.md` 存在，安装完成后提示用户可阅读该文件
+- [ ] Troubleshooting 没有默认执行卸载；如提及卸载，只链接官方说明
