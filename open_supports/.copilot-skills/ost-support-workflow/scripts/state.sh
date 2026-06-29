@@ -254,15 +254,18 @@ cmd_usage_examples() {
   ensure_state_exists
   now=$(now_utc)
 
-  case "$decision" in
-    accepted) stage_status=in_progress ;;
-    declined|not_applicable) stage_status=skipped ;;
+  case "$decision:$result" in
+    accepted:generated|accepted:done) stage_status=done ;;
+    accepted:*) stage_status=in_progress ;;
+    declined:*|not_applicable:*) stage_status=skipped ;;
   esac
 
   write_jq '
-    .usage_examples.offered = true
+    .usage_examples.offered = (if $decision == "not_applicable" then false else true end)
     | .usage_examples.decision = $decision
-    | .usage_examples.matched_criteria = [$criteria]
+    | .usage_examples.matched_criteria = (
+        if $decision == "not_applicable" or $criteria == "" then [] else [$criteria] end
+      )
     | .usage_examples.result = (if $has_result == "true" then $result else null end)
     | .stages.optional_usage_examples = $stage_status
     | .current_stage = "optional_usage_examples"

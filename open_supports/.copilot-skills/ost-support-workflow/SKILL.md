@@ -202,6 +202,9 @@ ost_{GithubName}_{RepoName}/skill_for_setup/ost_{GithubName}_{RepoName}_install/
 
 - 将 `optional_usage_examples` 标记为 `skipped`
 - 将 `usage_examples.decision` 记为 `not_applicable`
+- 将 `usage_examples.offered` 记为 `false`
+- 将 `usage_examples.matched_criteria` 记为 `[]`
+- 将 `usage_examples.result` 记为 `skipped`
 - 继续进入 `optional_test_install`
 
 命中 2 项或以上时，询问用户：
@@ -220,17 +223,29 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-exa
 用户拒绝：
 
 - 将 `optional_usage_examples` 标记为 `skipped`
+- 将 `usage_examples.offered` 记为 `true`
 - 将 `usage_examples.decision` 记为 `declined`
+- 可保存传入的 checklist 命中摘要到 `usage_examples.matched_criteria`
+- 将 `usage_examples.result` 记为 `skipped`
 - 继续进入 `optional_test_install`
 
 用户同意：
 
 - 将 `usage_examples.offered` 记为 `true`，记录命中的 `usage_examples.matched_criteria`
 - 将 `usage_examples.decision` 记为 `accepted`
+- 先将 `usage_examples.result` 记为 `pending`
 - 将 `optional_usage_examples` 标记为 `in_progress`
 - 串行派发阶段子代理，读取并遵循 `.copilot-skills/ost-usage-examples/SKILL.md`
 - 子代理产出 `usage_examples.md`
-- 主 workflow 审查产物后，记录 `agent-run ... DONE ...`，将 `usage_examples.result` 记为 `generated`，并将 `optional_usage_examples` 标记为 `done`
+- 主 workflow 审查产物后，记录 `agent-run ... DONE ...`，再使用状态脚本将 `usage_examples.result` 记为 `generated`，并将 `optional_usage_examples` 标记为 `done`
+
+推荐调用顺序：
+
+```sh
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-examples OWNER/REPO accepted "CLI, Agent integration" pending
+# 子代理 DONE 且主 workflow 审查 usage_examples.md 后：
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-examples OWNER/REPO accepted "CLI, Agent integration" generated
+```
 
 ## Optional Test Install
 

@@ -71,15 +71,35 @@ assert_jq "$STATE_FILE" '.usage_examples.matched_criteria[0]' 'CLI, Agent integr
 assert_jq "$STATE_FILE" '.usage_examples.result' 'pending'
 assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'in_progress'
 assert_jq "$STATE_FILE" '.current_stage' 'optional_usage_examples'
-assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'in_progress'
 
 run_state agent-run "$OWNER_REPO" optional_usage_examples DONE "Created usage_examples.md"
 assert_jq "$STATE_FILE" '.execution.agent_runs[-1].stage' 'optional_usage_examples'
 assert_jq "$STATE_FILE" '.execution.agent_runs[-1].status' 'DONE'
 assert_jq "$STATE_FILE" '.execution.agent_runs[-1].summary' 'Created usage_examples.md'
 
-run_state set-stage "$OWNER_REPO" optional_usage_examples done
+run_state usage-examples "$OWNER_REPO" accepted "CLI, Agent integration" generated
+assert_jq "$STATE_FILE" '.usage_examples.result' 'generated'
 assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'done'
+
+NA_OWNER_REPO="ExampleOwner/no-usage-examples"
+NA_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_no-usage-examples.json"
+run_state init "$NA_OWNER_REPO"
+run_state usage-examples "$NA_OWNER_REPO" not_applicable "" skipped
+assert_jq "$NA_STATE_FILE" '.usage_examples.offered' 'false'
+assert_jq "$NA_STATE_FILE" '.usage_examples.decision' 'not_applicable'
+assert_jq "$NA_STATE_FILE" '.usage_examples.matched_criteria | length' '0'
+assert_jq "$NA_STATE_FILE" '.usage_examples.result' 'skipped'
+assert_jq "$NA_STATE_FILE" '.stages.optional_usage_examples' 'skipped'
+
+DECLINED_OWNER_REPO="ExampleOwner/declined-usage-examples"
+DECLINED_STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_declined-usage-examples.json"
+run_state init "$DECLINED_OWNER_REPO"
+run_state usage-examples "$DECLINED_OWNER_REPO" declined "Only one criterion matched" skipped
+assert_jq "$DECLINED_STATE_FILE" '.usage_examples.offered' 'true'
+assert_jq "$DECLINED_STATE_FILE" '.usage_examples.decision' 'declined'
+assert_jq "$DECLINED_STATE_FILE" '.usage_examples.matched_criteria[0]' 'Only one criterion matched'
+assert_jq "$DECLINED_STATE_FILE" '.usage_examples.result' 'skipped'
+assert_jq "$DECLINED_STATE_FILE" '.stages.optional_usage_examples' 'skipped'
 
 run_state test-result "$OWNER_REPO" failed "sh install.sh" "1" "network unavailable"
 assert_jq "$STATE_FILE" '.workflow_status' 'blocked'
