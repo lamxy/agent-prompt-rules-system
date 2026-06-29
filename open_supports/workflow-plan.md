@@ -322,7 +322,7 @@ workflow 只能在三个核心产出阶段为 `done`、`optional_usage_examples`
 - [x] 在 workflow Skill 中实现 `optional_test_install` 的用户确认门
 - [x] 更新 workflow plan，使状态机包含可选 usage examples 阶段
 - [x] 更新 `README-todo.md`，登记 workflow Skill 和状态机制
-- [x] 修正模板文件名 `repo_readme_sunmary.md` 为 `repo_readme_summary.md`
+- [x] 统一模板摘要文件名为 `repo_readme_summary.md`
 - [x] 增加 `sh + jq` 状态脚本 `state.sh`
 - [x] 增加状态脚本测试 `test-state.sh`
 - [x] 将串行子代理执行和上下文节省规则写入 workflow Skill
