@@ -122,6 +122,6 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 - [ ] Part 3：示例包含有限理解性注释，能说明用途或预期结果
 - [ ] Part 3：没有扩展成多场景教程；详细用例留给可选 `usage_examples.md`
 - [ ] Part 4：注意事项都是实际存在的限制，无泛泛描述
-- [ ] Part 5：安装相关深度内容（CI、手动安装、高级配置）均给出原文链接
+- [ ] Part 5：安装相关深度内容（CI、非交互式安装、手动安装、高级配置、卸载）均给出原文链接
 - [ ] Part 5：没有大段复制原文
 - [ ] 全文没有「详情请查阅官方文档」类无效表述（要么给具体链接，要么不写）

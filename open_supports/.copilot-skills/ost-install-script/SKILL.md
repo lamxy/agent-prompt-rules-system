@@ -53,7 +53,7 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 
 默认一键脚本只负责安装、更新、配置和验证，不加入删除或卸载逻辑。
 
-- 官方提供卸载文档时，可在 `repo_readme_summary.md` Part 5 或 setup Skill 的 Troubleshooting 中给出链接
+- 官方提供卸载文档时，必须优先在 `repo_readme_summary.md` Part 5 记录原文链接；setup Skill 的 Troubleshooting 可补充指向同一官方说明
 - 不要默认删除二进制、配置文件、缓存目录或 Agent 客户端配置
 - 只有同时满足以下条件时，才允许把 `--uninstall` 作为可选扩展加入脚本：
   1. 官方文档明确提供卸载命令或可验证的卸载流程
