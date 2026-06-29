@@ -7,7 +7,7 @@
 `open_supports/` 用于收录与 Agent 编程相关的开源库的**本地化支持包**。  
 每个支持包提炼开源仓库的核心介绍，并将官方安装 / 更新流程封装为：
 
-- **一键脚本**：适合手动执行的 shell 脚本
+- **一键脚本**：适合手动执行的一键安装 / 更新脚本
 - **安装 Skill**：适合通过自然语言让 AI 模型完成安装 / 更新
 
 ---
@@ -66,7 +66,7 @@ open_supports/
 
 ### `usage_examples.md`
 
-可选文件，由 `ost-usage-examples` Skill 在 workflow checklist 命中且用户同意时生成。
+可选文件，由 `ost-usage-examples` Skill 在 [workflow checklist](workflow-plan.md) 命中且用户同意时生成。用户明确要求时，也可单独使用 `ost-usage-examples` 生成。
 
 面向安装后的快速开始、常见场景、Agent 客户端配合、验证与排错；不重复安装流程，不承载卸载流程。
 
@@ -96,7 +96,7 @@ open_supports/
 **客户端优先级**：优先支持 Claude Code、Codex；其他客户端按各开源库官方支持范围决定是否收录。
 
 - `README.md`：说明 Skill 触发词、适用客户端、交互式 / 非交互式使用方式
-- `SKILL.md`：Skill 主体，包含安装步骤、参数说明、验证方法
+- `ost_{GithubName}_{RepoName}_install/SKILL.md`：Skill 主体，包含安装步骤、参数说明、验证方法
 
 ### `.copilot-skills/`
 
@@ -120,9 +120,9 @@ open_supports/
 1. 复制 `ost_GithubName_RepoName_TEMPLATE/` 并按命名规范重命名
 2. 填写 `repo_readme_summary.md`（摘自官方 README，保留原文链接）
 3. 编写 `scripts_for_install/install.*`（语言随库的运行时选型，参考官方安装文档，保持幂等）
-4. 编写 `skill_for_setup/SKILL.md`（优先覆盖 Claude Code / Codex）
+4. 编写 `skill_for_setup/ost_{GithubName}_{RepoName}_install/SKILL.md`（优先覆盖 Claude Code / Codex）
 5. 更新 `skill_for_setup/README.md` 说明触发词与使用方式
-6. 可选：workflow checklist 命中且用户同意时，生成 `usage_examples.md`
+6. 可选：[workflow checklist](workflow-plan.md) 命中且用户同意时，生成 `usage_examples.md`；用户明确要求时，也可单独使用 `ost-usage-examples` 生成
 7. 在本文件下方 TODO 列表中登记状态
 
 ---
@@ -142,7 +142,7 @@ open_supports/
 
 - [x] 新增 workflow Skill：串联 `ost-repo-readme-summary` → `ost-install-script` → `ost-skill-for-setup` → `optional_usage_examples` → 可选测试安装验证；计划见 [`workflow-plan.md`](workflow-plan.md)
 - [x] 增加 `.ost-workflow-state/` 状态目录约定，用于 workflow Skill 的问题澄清、断点续传和恢复执行
-- [x] 为 3 个阶段 Skill 增加统一 `Clarification / Blocking` 协议：信息不足时不猜测，返回 blocked 信息并等待用户澄清
+- [x] 为 3 个核心阶段 Skill 及可选 `ost-usage-examples` 增加统一 `Clarification / Blocking` 协议：信息不足时不猜测，返回 blocked 信息并等待用户澄清
 - [x] workflow Skill 增加串行子代理执行策略、上下文节省约束和 `sh + jq` 状态脚本
 - [x] `.copilot-skills/` 补充说明：明确哪类通用 Skill 应沉淀至此（如通用 MCP 注册、版本检测等），以及与各库 `skill_for_setup/` 的边界
 - [x] 新增可选 `ost-usage-examples` Skill：用于在 workflow 后生成 `usage_examples.md`
@@ -158,6 +158,7 @@ open_supports/
 
 - [x] `ost_GithubName_RepoName_TEMPLATE`：统一使用 `repo_readme_summary.md` 文件名
 - [ ] `ost_GithubName_RepoName_TEMPLATE`：完善模板文件内容（当前均为空文件）
-- [ ] `ost_colbymchenry_codegraph`：填充 `repo_readme_summary.md`、`scripts_for_install/install.*`、`skill_for_setup/SKILL.md`
+- [ ] `ost_colbymchenry_codegraph`：填充 `repo_readme_summary.md`、`scripts_for_install/install.*`、`skill_for_setup/ost_colbymchenry_codegraph_install/SKILL.md`
 - [x] `ost_open-gsd_gsd-core`：补充目录内容
-- [ ] `.copilot-skills/`：收录首批可复用的通用 Skill（在完成至少 1 个支持包后评估）
+- [x] `.copilot-skills/`：已收录首批通用 Skill（摘要、安装脚本、setup、workflow、可选用例）
+- [ ] `.copilot-skills/`：按后续支持包经验继续补充通用 MCP 注册、版本检测等 Skill
