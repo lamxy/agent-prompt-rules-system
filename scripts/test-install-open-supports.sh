@@ -29,8 +29,8 @@ assert_not_exists() {
 assert_contains() {
   file="$1"
   pattern="$2"
-  if ! grep -F "$pattern" "$file" >/dev/null 2>&1; then
-    printf '--- %s ---\n' "$file" >&2
+  if ! grep -F -- "$pattern" "$file" >/dev/null 2>&1; then
+    printf '%s\n' "--- $file ---" >&2
     sed -n '1,160p' "$file" >&2
     fail "expected $file to contain: $pattern"
   fi
