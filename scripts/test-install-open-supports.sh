@@ -56,6 +56,9 @@ EOF_SKILL
   cat > "$root/ost_acme_widget/scripts_for_install/install.sh" <<'EOF_INSTALL'
 #!/bin/sh
 set -eu
+if [ "${OPEN_SUPPORTS_TEST_SENTINEL:-}" ]; then
+  printf 'ran:%s\n' "$PWD" >> "$OPEN_SUPPORTS_TEST_SENTINEL"
+fi
 printf 'count=%s\n' "$#" > install-args.log
 i=1
 for arg in "$@"; do
@@ -96,7 +99,7 @@ test_skills_only_vendors_and_generates_wrapper() {
   new_target "$target"
   printf 'acme/widget --alpha beta\n' > "$target/.claude/open_supports_name_list.txt"
 
-  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only)
+  (cd "$tmp" && OPEN_SUPPORTS_TEST_SENTINEL="$tmp/sentinel.log" sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only)
 
   assert_dir "$target/.claude/open_supports/ost_acme_widget"
   assert_file "$target/.claude/open_supports/ost_acme_widget/repo_readme_summary.md"
@@ -104,6 +107,7 @@ test_skills_only_vendors_and_generates_wrapper() {
   assert_contains "$target/.claude/skills/ost_acme_widget_install/SKILL.md" "name: ost-acme-widget-install"
   assert_contains "$target/.claude/skills/ost_acme_widget_install/SKILL.md" ".claude/open_supports/ost_acme_widget/repo_readme_summary.md"
   assert_not_exists "$target/.claude/open_supports/ost_acme_widget/install-ran.log"
+  assert_not_exists "$tmp/sentinel.log"
   pass "skills-only vendors support package and generates wrapper"
 }
 
@@ -197,10 +201,11 @@ test_dry_run_writes_nothing() {
   new_target "$target"
   printf 'acme/widget\n' > "$target/.claude/open_supports_name_list.txt"
 
-  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --dry-run)
+  (cd "$tmp" && OPEN_SUPPORTS_TEST_SENTINEL="$tmp/sentinel.log" sh "$INSTALLER" -t "$target" -s "$source_root" --dry-run)
 
   assert_not_exists "$target/.claude/open_supports"
   assert_not_exists "$target/.claude/skills"
+  assert_not_exists "$tmp/sentinel.log"
   pass "dry-run writes nothing"
 }
 
@@ -220,6 +225,7 @@ test_missing_package_returns_nonzero_after_summary() {
   fi
 
   assert_file "$target/.claude/open_supports/ost_acme_widget/repo_readme_summary.md"
+  assert_file "$target/.claude/skills/ost_acme_widget_install/SKILL.md"
   assert_contains "$tmp/out.log" "missing=1"
   pass "missing package returns non-zero after processing later entries"
 }
