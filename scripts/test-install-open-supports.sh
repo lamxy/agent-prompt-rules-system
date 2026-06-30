@@ -56,7 +56,12 @@ EOF_SKILL
   cat > "$root/ost_acme_widget/scripts_for_install/install.sh" <<'EOF_INSTALL'
 #!/bin/sh
 set -eu
-printf '%s\n' "$*" > install-args.log
+printf 'count=%s\n' "$#" > install-args.log
+i=1
+for arg in "$@"; do
+  printf 'arg%s=%s\n' "$i" "$arg" >> install-args.log
+  i=$((i + 1))
+done
 printf 'ran\n' > install-ran.log
 EOF_INSTALL
   chmod +x "$root/ost_acme_widget/scripts_for_install/install.sh"
@@ -114,7 +119,9 @@ test_no_skills_runs_vendored_script_without_wrapper() {
 
   assert_dir "$target/.claude/open_supports/ost_acme_widget"
   assert_file "$target/.claude/open_supports/ost_acme_widget/install-ran.log"
-  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "--one two"
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "count=2"
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "arg1=--one"
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "arg2=two"
   assert_not_exists "$target/.claude/skills/ost_acme_widget_install/SKILL.md"
   pass "no-skills runs vendored script without wrapper"
 }
@@ -135,7 +142,9 @@ test_default_mode_generates_wrapper_and_runs_script() {
 
   assert_file "$target/.claude/skills/ost_acme_widget_install/SKILL.md"
   assert_file "$target/.claude/open_supports/ost_acme_widget/install-ran.log"
-  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "--default yes"
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "count=2"
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "arg1=--default"
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "arg2=yes"
   pass "default mode generates wrapper and runs script"
 }
 
@@ -202,8 +211,8 @@ test_missing_package_returns_nonzero_after_summary() {
   make_support_root "$source_root"
   new_target "$target"
   {
-    printf 'acme/widget\n'
     printf 'acme/missing\n'
+    printf 'acme/widget\n'
   } > "$target/.claude/open_supports_name_list.txt"
 
   if sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > "$tmp/out.log" 2>&1; then
