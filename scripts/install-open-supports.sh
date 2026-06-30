@@ -136,6 +136,7 @@ SCRIPT_OK=0
 MISSING=0
 NO_SCRIPT=0
 FAILED=0
+CONFLICT=0
 
 trim_line() {
   printf '%s\n' "$1" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//'
@@ -145,15 +146,31 @@ support_to_ost() {
   name="$1"
   case "$name" in
     ost_*)
-      printf '%s\n' "$name"
+      ost_name="$name"
       ;;
     */*)
-      printf 'ost_%s\n' "$(printf '%s\n' "$name" | sed 's,/,_,g')"
+      ost_name="ost_$(printf '%s\n' "$name" | sed 's,/,_,g')"
       ;;
     *)
       return 1
       ;;
   esac
+
+  case "$ost_name" in
+    ost_[A-Za-z0-9._-]*)
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  case "$ost_name" in
+    *..*|*[!A-Za-z0-9._-]*)
+      return 1
+      ;;
+  esac
+
+  printf '%s\n' "$ost_name"
 }
 
 skill_slug() {
@@ -170,6 +187,19 @@ copy_support_package() {
   fi
 
   mkdir -p "$(dirname "$dest")"
+  if [ -L "$dest" ]; then
+    if [ "$FORCE" -eq 1 ]; then
+      printf '[FORCE] replacing support package symlink: %s\n' "$dest"
+      rm -rf "$dest"
+      cp -R "$src" "$dest"
+      VENDORED=$((VENDORED + 1))
+      return 0
+    fi
+    printf '[CONFLICT] support package path is a symlink: %s\n' "$dest" >&2
+    CONFLICT=$((CONFLICT + 1))
+    return 1
+  fi
+
   if [ -d "$dest" ]; then
     if [ "$FORCE" -eq 1 ]; then
       printf '[FORCE] replacing support package: %s\n' "$dest"
@@ -181,6 +211,19 @@ copy_support_package() {
     printf '[REUSED] support package: %s\n' "$dest"
     REUSED=$((REUSED + 1))
     return 0
+  fi
+
+  if [ -e "$dest" ]; then
+    if [ "$FORCE" -eq 1 ]; then
+      printf '[FORCE] replacing support package file: %s\n' "$dest"
+      rm -rf "$dest"
+      cp -R "$src" "$dest"
+      VENDORED=$((VENDORED + 1))
+      return 0
+    fi
+    printf '[CONFLICT] support package path is not a directory: %s\n' "$dest" >&2
+    CONFLICT=$((CONFLICT + 1))
+    return 1
   fi
 
   cp -R "$src" "$dest"
@@ -204,7 +247,16 @@ generate_wrapper_skill() {
     return 0
   fi
 
-  if [ -e "$dest_dir" ]; then
+  if [ -L "$dest_dir" ]; then
+    if [ "$FORCE" -eq 1 ]; then
+      printf '[FORCE] replacing wrapper Skill symlink: %s\n' "$dest_dir"
+      rm -rf "$dest_dir"
+    else
+      printf '[CONFLICT] wrapper Skill path is a symlink: %s\n' "$dest_dir" >&2
+      CONFLICT=$((CONFLICT + 1))
+      return 1
+    fi
+  elif [ -d "$dest_dir" ]; then
     if [ "$FORCE" -eq 1 ]; then
       printf '[FORCE] replacing wrapper Skill: %s\n' "$dest_dir"
       rm -rf "$dest_dir"
@@ -212,6 +264,15 @@ generate_wrapper_skill() {
       printf '[REUSED] wrapper Skill: %s\n' "$dest_dir"
       SKILL_REUSED=$((SKILL_REUSED + 1))
       return 0
+    fi
+  elif [ -e "$dest_dir" ]; then
+    if [ "$FORCE" -eq 1 ]; then
+      printf '[FORCE] replacing wrapper Skill file: %s\n' "$dest_dir"
+      rm -rf "$dest_dir"
+    else
+      printf '[CONFLICT] wrapper Skill path is not a directory: %s\n' "$dest_dir" >&2
+      CONFLICT=$((CONFLICT + 1))
+      return 1
     fi
   fi
 
@@ -259,11 +320,14 @@ find_install_script() {
     fi
   done
 
+  set +f
   for abs in "$pkg_dir"/scripts_for_install/install.*; do
     [ -f "$abs" ] || continue
     printf 'scripts_for_install/%s\n' "$(basename "$abs")"
+    set -f
     return 0
   done
+  set -f
 
   return 1
 }
@@ -327,8 +391,13 @@ process_entry() {
     return 0
   fi
 
-  copy_support_package "$src_dir" "$vendored_dir"
-  generate_wrapper_skill "$ost_name" "$TARGET"
+  if ! copy_support_package "$src_dir" "$vendored_dir"; then
+    return 0
+  fi
+
+  if ! generate_wrapper_skill "$ost_name" "$TARGET"; then
+    return 0
+  fi
 
   if [ "$SKILLS_ONLY" -eq 1 ]; then
     return 0
@@ -345,6 +414,11 @@ process_entry() {
     return 0
   fi
 
+  if [ "$DRY_RUN" -eq 1 ]; then
+    run_install_script "$vendored_dir" "$rel_script" "$args"
+    return 0
+  fi
+
   if run_install_script "$vendored_dir" "$rel_script" "$args"; then
     printf '[SCRIPT_OK] %s\n' "$ost_name"
     SCRIPT_OK=$((SCRIPT_OK + 1))
@@ -353,6 +427,8 @@ process_entry() {
     FAILED=$((FAILED + 1))
   fi
 }
+
+set -f
 
 while IFS= read -r raw_line || [ -n "$raw_line" ]; do
   line="$(trim_line "$raw_line")"
@@ -370,9 +446,9 @@ while IFS= read -r raw_line || [ -n "$raw_line" ]; do
   process_entry "$support_name" "$args"
 done < "$LIST_FILE"
 
-printf '\nDone. total=%d vendored=%d reused=%d skill_generated=%d skill_reused=%d script_ok=%d missing=%d no_script=%d failed=%d\n' \
-  "$TOTAL" "$VENDORED" "$REUSED" "$SKILL_GENERATED" "$SKILL_REUSED" "$SCRIPT_OK" "$MISSING" "$NO_SCRIPT" "$FAILED"
+printf '\nDone. total=%d vendored=%d reused=%d skill_generated=%d skill_reused=%d script_ok=%d missing=%d no_script=%d failed=%d conflict=%d\n' \
+  "$TOTAL" "$VENDORED" "$REUSED" "$SKILL_GENERATED" "$SKILL_REUSED" "$SCRIPT_OK" "$MISSING" "$NO_SCRIPT" "$FAILED" "$CONFLICT"
 
-if [ "$MISSING" -gt 0 ] || [ "$NO_SCRIPT" -gt 0 ] || [ "$FAILED" -gt 0 ]; then
+if [ "$MISSING" -gt 0 ] || [ "$NO_SCRIPT" -gt 0 ] || [ "$FAILED" -gt 0 ] || [ "$CONFLICT" -gt 0 ]; then
   exit 1
 fi

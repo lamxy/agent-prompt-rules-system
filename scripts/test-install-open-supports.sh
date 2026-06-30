@@ -36,6 +36,16 @@ assert_contains() {
   fi
 }
 
+assert_not_contains() {
+  file="$1"
+  pattern="$2"
+  if grep -F -- "$pattern" "$file" >/dev/null 2>&1; then
+    printf '%s\n' "--- $file ---" >&2
+    sed -n '1,160p' "$file" >&2
+    fail "expected $file not to contain: $pattern"
+  fi
+}
+
 make_support_root() {
   root="$1"
   mkdir -p "$root/ost_acme_widget/scripts_for_install"
@@ -201,12 +211,130 @@ test_dry_run_writes_nothing() {
   new_target "$target"
   printf 'acme/widget\n' > "$target/.claude/open_supports_name_list.txt"
 
-  (cd "$tmp" && OPEN_SUPPORTS_TEST_SENTINEL="$tmp/sentinel.log" sh "$INSTALLER" -t "$target" -s "$source_root" --dry-run)
+  (cd "$tmp" && OPEN_SUPPORTS_TEST_SENTINEL="$tmp/sentinel.log" sh "$INSTALLER" -t "$target" -s "$source_root" --dry-run > "$tmp/out.log" 2>&1)
 
   assert_not_exists "$target/.claude/open_supports"
   assert_not_exists "$target/.claude/skills"
   assert_not_exists "$tmp/sentinel.log"
+  assert_contains "$tmp/out.log" "script_ok=0"
+  assert_not_contains "$tmp/out.log" "[SCRIPT_OK]"
   pass "dry-run writes nothing"
+}
+
+test_glob_args_pass_literally() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/project"
+  make_support_root "$source_root"
+  new_target "$target"
+  printf 'acme/widget *.md literal\n' > "$target/.claude/open_supports_name_list.txt"
+  printf 'caller cwd file\n' > "$tmp/caller.md"
+
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --no-skills)
+
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "count=2"
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "arg1=*.md"
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "arg2=literal"
+  assert_not_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "caller.md"
+  pass "glob args pass literally"
+}
+
+test_unsafe_support_name_is_rejected() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/project"
+  make_support_root "$source_root"
+  new_target "$target"
+  {
+    printf 'acme/../evil\n'
+    printf 'ost_../evil\n'
+  } > "$target/.claude/open_supports_name_list.txt"
+
+  if (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > "$tmp/out.log" 2>&1); then
+    fail "unsafe support name should return non-zero"
+  fi
+
+  assert_contains "$tmp/out.log" "invalid support name"
+  assert_contains "$tmp/out.log" "missing=2"
+  assert_not_exists "$target/.claude/open_supports"
+  assert_not_exists "$target/.claude/skills"
+  pass "unsafe support name is rejected"
+}
+
+test_vendor_file_conflict_returns_nonzero_and_continues() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/project"
+  make_support_root "$source_root"
+  new_target "$target"
+  {
+    printf 'acme/widget\n'
+    printf 'acme/failing\n'
+  } > "$target/.claude/open_supports_name_list.txt"
+  mkdir -p "$target/.claude/open_supports"
+  printf 'not a directory\n' > "$target/.claude/open_supports/ost_acme_widget"
+
+  if (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --no-skills > "$tmp/out.log" 2>&1); then
+    fail "vendor file conflict should return non-zero"
+  fi
+
+  assert_contains "$tmp/out.log" "conflict=1"
+  assert_contains "$tmp/out.log" "failed=1"
+  assert_contains "$target/.claude/open_supports/ost_acme_widget" "not a directory"
+  pass "vendor file conflict returns non-zero and continues"
+}
+
+test_force_replaces_vendor_file_conflict() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/project"
+  make_support_root "$source_root"
+  new_target "$target"
+  printf 'acme/widget\n' > "$target/.claude/open_supports_name_list.txt"
+  mkdir -p "$target/.claude/open_supports"
+  printf 'not a directory\n' > "$target/.claude/open_supports/ost_acme_widget"
+
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only -F)
+
+  assert_dir "$target/.claude/open_supports/ost_acme_widget"
+  assert_file "$target/.claude/open_supports/ost_acme_widget/repo_readme_summary.md"
+  pass "force replaces vendor file conflict"
+}
+
+test_wrapper_file_conflict_returns_nonzero() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/project"
+  make_support_root "$source_root"
+  new_target "$target"
+  printf 'acme/widget\n' > "$target/.claude/open_supports_name_list.txt"
+  mkdir -p "$target/.claude/skills"
+  printf 'not a directory\n' > "$target/.claude/skills/ost_acme_widget_install"
+
+  if (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > "$tmp/out.log" 2>&1); then
+    fail "wrapper file conflict should return non-zero"
+  fi
+
+  assert_contains "$tmp/out.log" "conflict=1"
+  assert_contains "$target/.claude/skills/ost_acme_widget_install" "not a directory"
+  pass "wrapper file conflict returns non-zero"
+}
+
+test_force_replaces_wrapper_file_conflict() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/project"
+  make_support_root "$source_root"
+  new_target "$target"
+  printf 'acme/widget\n' > "$target/.claude/open_supports_name_list.txt"
+  mkdir -p "$target/.claude/skills"
+  printf 'not a directory\n' > "$target/.claude/skills/ost_acme_widget_install"
+
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only -F)
+
+  assert_file "$target/.claude/skills/ost_acme_widget_install/SKILL.md"
+  assert_contains "$target/.claude/skills/ost_acme_widget_install/SKILL.md" "name: ost-acme-widget-install"
+  pass "force replaces wrapper file conflict"
 }
 
 test_missing_package_returns_nonzero_after_summary() {
@@ -303,6 +431,12 @@ test_default_mode_generates_wrapper_and_runs_script
 test_reuse_existing_vendor_without_force
 test_force_replaces_existing_vendor
 test_dry_run_writes_nothing
+test_glob_args_pass_literally
+test_unsafe_support_name_is_rejected
+test_vendor_file_conflict_returns_nonzero_and_continues
+test_force_replaces_vendor_file_conflict
+test_wrapper_file_conflict_returns_nonzero
+test_force_replaces_wrapper_file_conflict
 test_missing_package_returns_nonzero_after_summary
 test_no_script_fails_when_scripts_enabled
 test_failing_script_continues_and_returns_nonzero
