@@ -96,7 +96,7 @@ test_skills_only_vendors_and_generates_wrapper() {
   new_target "$target"
   printf 'acme/widget --alpha beta\n' > "$target/.claude/open_supports_name_list.txt"
 
-  sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only)
 
   assert_dir "$target/.claude/open_supports/ost_acme_widget"
   assert_file "$target/.claude/open_supports/ost_acme_widget/repo_readme_summary.md"
@@ -115,7 +115,7 @@ test_no_skills_runs_vendored_script_without_wrapper() {
   new_target "$target"
   printf 'ost_acme_widget --one two\n' > "$target/.claude/open_supports_name_list.txt"
 
-  sh "$INSTALLER" -t "$target" -s "$source_root" --no-skills
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --no-skills)
 
   assert_dir "$target/.claude/open_supports/ost_acme_widget"
   assert_file "$target/.claude/open_supports/ost_acme_widget/install-ran.log"
@@ -138,7 +138,7 @@ test_default_mode_generates_wrapper_and_runs_script() {
     printf 'acme/widget --default yes\n'
   } > "$target/.claude/open_supports_name_list.txt"
 
-  sh "$INSTALLER" -t "$target" -s "$source_root"
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root")
 
   assert_file "$target/.claude/skills/ost_acme_widget_install/SKILL.md"
   assert_file "$target/.claude/open_supports/ost_acme_widget/install-ran.log"
@@ -164,7 +164,7 @@ printf 'existing\n' > install-ran.log
 EOF_EXISTING
   chmod +x "$target/.claude/open_supports/ost_acme_widget/scripts_for_install/install.sh"
 
-  sh "$INSTALLER" -t "$target" -s "$source_root" --no-skills
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --no-skills)
 
   assert_contains "$target/.claude/open_supports/ost_acme_widget/marker.txt" "kept"
   assert_contains "$target/.claude/open_supports/ost_acme_widget/install-ran.log" "existing"
@@ -182,7 +182,7 @@ test_force_replaces_existing_vendor() {
   mkdir -p "$target/.claude/open_supports/ost_acme_widget"
   printf 'remove me\n' > "$target/.claude/open_supports/ost_acme_widget/stale.txt"
 
-  sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only -F
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only -F)
 
   assert_not_exists "$target/.claude/open_supports/ost_acme_widget/stale.txt"
   assert_file "$target/.claude/open_supports/ost_acme_widget/repo_readme_summary.md"
@@ -197,7 +197,7 @@ test_dry_run_writes_nothing() {
   new_target "$target"
   printf 'acme/widget\n' > "$target/.claude/open_supports_name_list.txt"
 
-  sh "$INSTALLER" -t "$target" -s "$source_root" --dry-run
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --dry-run)
 
   assert_not_exists "$target/.claude/open_supports"
   assert_not_exists "$target/.claude/skills"
@@ -215,7 +215,7 @@ test_missing_package_returns_nonzero_after_summary() {
     printf 'acme/widget\n'
   } > "$target/.claude/open_supports_name_list.txt"
 
-  if sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > "$tmp/out.log" 2>&1; then
+  if (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > "$tmp/out.log" 2>&1); then
     fail "missing package should return non-zero"
   fi
 
@@ -232,7 +232,7 @@ test_no_script_fails_when_scripts_enabled() {
   new_target "$target"
   printf 'acme/no_script\n' > "$target/.claude/open_supports_name_list.txt"
 
-  if sh "$INSTALLER" -t "$target" -s "$source_root" > "$tmp/out.log" 2>&1; then
+  if (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" > "$tmp/out.log" 2>&1); then
     fail "missing install script should return non-zero"
   fi
 
@@ -251,7 +251,7 @@ test_failing_script_continues_and_returns_nonzero() {
     printf 'acme/widget\n'
   } > "$target/.claude/open_supports_name_list.txt"
 
-  if sh "$INSTALLER" -t "$target" -s "$source_root" --no-skills > "$tmp/out.log" 2>&1; then
+  if (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --no-skills > "$tmp/out.log" 2>&1); then
     fail "failing install script should return non-zero"
   fi
 
@@ -267,7 +267,7 @@ test_missing_manifest_fails_immediately() {
   make_support_root "$source_root"
   new_target "$target"
 
-  if sh "$INSTALLER" -t "$target" -s "$source_root" > "$tmp/out.log" 2>&1; then
+  if (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" > "$tmp/out.log" 2>&1); then
     fail "missing manifest should fail"
   fi
 
@@ -283,7 +283,7 @@ test_mutually_exclusive_modes_fail() {
   new_target "$target"
   printf 'acme/widget\n' > "$target/.claude/open_supports_name_list.txt"
 
-  if sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only --no-skills > "$tmp/out.log" 2>&1; then
+  if (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only --no-skills > "$tmp/out.log" 2>&1); then
     fail "mutually exclusive modes should fail"
   fi
 
