@@ -14,21 +14,64 @@ argument-hint: 'GitHub owner/repo, e.g. colbymchenry/codegraph'
 
 ## Pre-read
 
-执行前先读取：
+主 workflow 执行前只允许预读 workflow-level 轻量材料：
 
-1. `open_supports/README-todo.md`
-2. `open_supports/workflow-plan.md`
-3. 目标支持包的 `.ost-refs/` 目录（如存在且有内容）
-4. 目标阶段对应的 `.copilot-skills/*/SKILL.md`
+1. `open_supports/README.md`
+2. 目标状态文件 `open_supports/.ost-workflow-state/{GithubName}_{RepoName}.json`（如存在）
+3. 目标支持包目录和 `.ost-refs/` 的文件列表；只在判断恢复、存在性或短本地约定时读取必要短内容
+4. 本 workflow 自身的状态脚本用法：`open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh --help`
+
+主 workflow 不得预读：
+
+- `open_supports/workflow-quickstart.md` 等设计/教程文档
+- 任何阶段 Skill 全文，例如 `.copilot-skills/ost-repo-readme-summary/SKILL.md`
+- 官方 README、官方文档长文、npm package metadata、API 文档长文
+- 阶段产物草稿的完整内容，除非用于最终轻量审查
+
+阶段 Skill 只在派发给该阶段子代理的 prompt contract 中引用。主 workflow 不得为了“熟悉阶段要求”提前读取所有阶段 Skill。
+
+## External Skill Interference
+
+本任务显式指定 `ost-support-workflow` 时，它是主流程。 workflow 主代理严禁主动执行 `superpowers:using-superpowers skill` 或其他外部流程 Skill 来扩大预读范围、替子代理读取阶段材料，或改变本 workflow 的状态/派发纪律。
+
+If this workflow is explicitly selected, the workflow agent must not use external process skills such as `superpowers:using-superpowers skill` to expand pre-read scope, preload stage materials, or bypass this workflow's dispatch and state rules.
+
+子代理在各自环境中遵循其可见规则，但主 workflow 不得因此替子代理预读阶段 Skill、官方文档或长上下文。
+
+## Subagent Tool Discovery
+
+三个核心阶段和用户同意后的 `optional_usage_examples` 必须优先由子代理串行执行。
+
+开始派发前，主 workflow 必须确认子代理能力：
+
+1. 如果当前可见工具列表中已经有可用的子代理 / multi-agent / spawn-agent 工具，使用该工具串行派发阶段。
+2. 如果当前工具列表没有可见子代理工具，必须先通过 `tool_search` 搜索 `multi-agent`、`subagent` 或 `spawn agent` 能力。
+3. 如果搜索到可用工具，必须使用它串行派发阶段；generic subagent 可作为 workaround，但状态摘要必须注明 `generic-agent workaround`。
+4. 只有在工具不存在、`tool_search` 确认不可用、工具 schema 不满足最低调度要求、用户明确要求不用子代理，或子代理连续失败后用户明确同意 inline 接管时，才允许 inline fallback。
+5. fallback 原因必须具体写入状态，不能写成泛泛的 `tool unavailable`。
+
+## GitHub Source Policy
+
+阶段子代理获取 GitHub 仓库事实、README、目录、release、issue、PR 或文件内容时，必须遵循以下来源优先级：
+
+1. 本地支持包文件和 `.ost-refs/`
+2. GitHub connector / GitHub app tools
+3. `gh` CLI 或 GitHub 官方 API
+4. 官方文档网站
+5. `curl` / raw GitHub URL，仅作为记录原因的 fallback
+
+`curl` 不是禁止项：官方安装文档明确给出的 `curl | sh`、release asset 下载、验证本地 HTTP 服务，或 GitHub connector / `gh` / 官方 API 不可用且需要降级时可以使用。除官方安装命令本身外，使用 `curl` 获取 GitHub 信息必须在阶段结果的 `fallbacks` 中说明原因。
+
+主 workflow 不得为了审计来源而预读官方 README 或长文档。主 workflow 只把本 policy 放入 dispatch contract，并检查阶段子代理返回的 `sources_used` / `fallbacks` 摘要是否存在且合理。
 
 ## Workflow
 
 按顺序执行五个阶段：
 
-1. `repo_readme_summary`：串行派发阶段子代理，读取并遵循 `.copilot-skills/ost-repo-readme-summary/SKILL.md`，产出 `repo_readme_summary.md`
-2. `install_script`：串行派发阶段子代理，读取并遵循 `.copilot-skills/ost-install-script/SKILL.md`，产出 `scripts_for_install/install.*`
-3. `skill_for_setup`：串行派发阶段子代理，读取并遵循 `.copilot-skills/ost-skill-for-setup/SKILL.md`，产出 `skill_for_setup/README.md` 和 `skill_for_setup/ost_*_install/SKILL.md`
-4. `optional_usage_examples`：按 checklist 判断是否建议生成；用户同意后串行派发阶段子代理，读取并遵循 `.copilot-skills/ost-usage-examples/SKILL.md`，产出 `usage_examples.md`
+1. `repo_readme_summary`：串行派发阶段子代理，在 contract 中引用 `.copilot-skills/ost-repo-readme-summary/SKILL.md`，产出 `repo_readme_summary.md`
+2. `install_script`：串行派发阶段子代理，在 contract 中引用 `.copilot-skills/ost-install-script/SKILL.md`，产出 `scripts_for_install/install.*`
+3. `skill_for_setup`：串行派发阶段子代理，在 contract 中引用 `.copilot-skills/ost-skill-for-setup/SKILL.md`，产出 `skill_for_setup/README.md` 和 `skill_for_setup/ost_*_install/SKILL.md`
+4. `optional_usage_examples`：按 checklist 判断是否建议生成；用户同意后串行派发阶段子代理，在 contract 中引用 `.copilot-skills/ost-usage-examples/SKILL.md`，产出 `usage_examples.md`
 5. `optional_test_install`：询问用户是否测试运行安装脚本并验证安装成功
 
 不要假设客户端支持嵌套调用 Skill；本 Skill 的职责是编排、状态管理、澄清和恢复。阶段细节以对应阶段 Skill 为准。
@@ -42,8 +85,53 @@ argument-hint: 'GitHub owner/repo, e.g. colbymchenry/codegraph'
 派发阶段子代理前：
 
 1. 使用状态脚本将阶段设为 `in_progress`
-2. 给子代理提供目标阶段、目标支持包目录、对应阶段 Skill 路径、必要的上一阶段产物路径、已有用户澄清答案
-3. 明确要求子代理只返回结构化结果
+2. 构造并持久化 dispatch contract 摘要
+3. 给子代理提供目标阶段、目标支持包目录、对应阶段 Skill 路径、必要的上一阶段产物路径、已有用户澄清答案
+4. 明确要求子代理只返回结构化结果
+
+最小 dispatch contract：
+
+```json
+{
+  "stage": "install_script",
+  "package_dir": "open_supports/ost_owner_repo",
+  "stage_skill_path": "open_supports/.copilot-skills/ost-install-script/SKILL.md",
+  "required_inputs": [
+    "repo_readme_summary.md"
+  ],
+  "clarification_answers": [],
+  "allowed_outputs": [
+    "DONE",
+    "NEEDS_CLARIFICATION",
+    "FAILED"
+  ],
+  "tool_policy": {
+    "github_source_priority": [
+      "local package files and .ost-refs",
+      "GitHub connector / GitHub app tools",
+      "gh CLI or GitHub official API",
+      "official documentation website",
+      "curl/raw GitHub URLs only as recorded fallback"
+    ],
+    "curl_boundary": "Allowed for official install commands and explicit fallback only; not the default for repository fact gathering.",
+    "fallback_reporting": "Return sources_used and fallbacks when lower-priority tools are used."
+  },
+  "context_hygiene": {
+    "do_not_return": [
+      "long official docs excerpts",
+      "full README",
+      "full generated files",
+      "step-by-step private reasoning"
+    ]
+  }
+}
+```
+
+派发前用状态脚本保存可审计 contract 摘要：
+
+```sh
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh contract OWNER/REPO install_script open_supports/ost_owner_repo open_supports/.copilot-skills/ost-install-script/SKILL.md repo_readme_summary.md DONE,NEEDS_CLARIFICATION,FAILED
+```
 
 阶段子代理只能返回：
 
@@ -59,6 +147,14 @@ argument-hint: 'GitHub owner/repo, e.g. colbymchenry/codegraph'
 
 `optional_usage_examples` 被用户同意后，按普通阶段子代理处理；用户拒绝或 checklist 未命中时不派发子代理，直接标记为 `skipped`。
 
+如果允许 inline fallback，不能使用 `agent-run` 伪装成子代理结果；必须使用：
+
+```sh
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh inline-run OWNER/REPO STAGE STATUS SUMMARY "specific fallback reason"
+```
+
+最终报告必须说明是否使用过 fallback，以及每次 fallback 的具体原因。
+
 ## Context Hygiene
 
 主 workflow 必须尽可能保持上下文干净、节省。阶段子代理用于隔离重上下文，避免把官方 README、长文档、详细推理过程或完整中间草稿回灌给主 workflow。
@@ -70,6 +166,8 @@ argument-hint: 'GitHub owner/repo, e.g. colbymchenry/codegraph'
 - `summary`: 1-3 条结果摘要
 - `files_changed`: 产物文件路径列表
 - `verification`: 已执行的轻量检查及结果
+- `sources_used`: 来源类别和关键路径摘要，例如 `github_connector: fetch_file owner/repo README.md` 或 `local: open_supports/ost_owner_repo/.ost-refs/install.md`
+- `fallbacks`: 降级或保留 direct HTTP 的原因摘要；没有降级时返回空数组
 - `clarification`: 仅当 `NEEDS_CLARIFICATION` 时返回，包含 `reason`、`question`、`suggested_default`
 - `failure`: 仅当 `FAILED` 时返回，包含失败命令、退出码和关键输出摘要
 
@@ -113,6 +211,14 @@ open_supports/.ost-workflow-state/{GithubName}_{RepoName}.json
     "decision": "pending",
     "matched_criteria": [],
     "result": null
+  },
+  "execution": {
+    "mode": "subagent_preferred",
+    "fallback": "inline",
+    "current_agent_stage": null,
+    "dispatch_contracts": [],
+    "agent_runs": [],
+    "inline_runs": []
   }
 }
 ```
@@ -131,6 +237,8 @@ open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh
 
 该脚本使用 `sh + jq`，只负责 JSON 状态机械读写，不负责 workflow 决策。只有主 workflow 可以调用该脚本；阶段子代理不能直接调用。
 
+所有 `state.sh` 写操作必须串行执行。主 workflow 不得用 `multi_tool_use.parallel` 或其他并行机制同时调用 `set-stage`、`contract`、`agent-run`、`inline-run`、`usage-examples`、`test-result`、`complete` 等写命令。每次写入后，如阶段推进或恢复依赖状态文件，先确认状态 JSON 仍可被 `jq` 解析。
+
 常用命令：
 
 ```sh
@@ -139,7 +247,9 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh show OWNE
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh set-stage OWNER/REPO STAGE STATUS
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh block OWNER/REPO STAGE REASON QUESTION [SUGGESTED_DEFAULT]
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh answer OWNER/REPO ANSWER
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh contract OWNER/REPO STAGE PACKAGE_DIR STAGE_SKILL_PATH REQUIRED_INPUTS ALLOWED_OUTPUTS
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh agent-run OWNER/REPO STAGE STATUS SUMMARY
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh inline-run OWNER/REPO STAGE STATUS SUMMARY FALLBACK_REASON
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh offer-usage-examples OWNER/REPO MATCHED_CRITERIA
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh test-result OWNER/REPO RESULT COMMAND EXIT_CODE SUMMARY
@@ -251,7 +361,7 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-exa
 - 将 `usage_examples.decision` 记为 `accepted`
 - 先将 `usage_examples.result` 记为 `pending`
 - 将 `optional_usage_examples` 标记为 `in_progress`
-- 串行派发阶段子代理，读取并遵循 `.copilot-skills/ost-usage-examples/SKILL.md`
+- 串行派发阶段子代理，在 contract 中引用 `.copilot-skills/ost-usage-examples/SKILL.md`
 - 子代理产出 `usage_examples.md`
 - 主 workflow 审查产物后，记录 `agent-run ... DONE ...`，再使用状态脚本将 `usage_examples.result` 记为 `generated`，并将 `optional_usage_examples` 标记为 `done`
 

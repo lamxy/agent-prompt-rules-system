@@ -16,8 +16,7 @@
 
 ```
 open_supports/
-├── README-todo.md                  # 本文件：体系说明 + 待办事项
-├── workflow-plan.md                # workflow Skill 状态机与实施计划
+├── README.md                       # 本文件：体系说明 + 待办事项
 ├── workflow-quickstart.md          # workflow Skill 快速使用教程
 ├── .ost-workflow-state/            # workflow 运行时状态目录（JSON 状态默认不提交）
 ├── ost_{GithubName}_{RepoName}/    # 每个开源库一个支持包目录
@@ -66,7 +65,7 @@ open_supports/
 
 ### `usage_examples.md`
 
-可选文件，由 `ost-usage-examples` Skill 在 [workflow checklist](workflow-plan.md) 命中且用户同意时生成。用户明确要求时，也可单独使用 `ost-usage-examples` 生成。
+可选文件，由 `ost-support-workflow` 的 `optional_usage_examples` checklist 命中且用户同意时生成。用户明确要求时，也可单独使用 `ost-usage-examples` 生成。
 
 面向安装后的快速开始、常见场景、Agent 客户端配合、验证与排错；不重复安装流程，不承载卸载流程。
 
@@ -122,7 +121,7 @@ open_supports/
 3. 编写 `scripts_for_install/install.*`（语言随库的运行时选型，参考官方安装文档，保持幂等）
 4. 编写 `skill_for_setup/ost_{GithubName}_{RepoName}_install/SKILL.md`（优先覆盖 Claude Code / Codex）
 5. 更新 `skill_for_setup/README.md` 说明触发词与使用方式
-6. 可选：[workflow checklist](workflow-plan.md) 命中且用户同意时，生成 `usage_examples.md`；用户明确要求时，也可单独使用 `ost-usage-examples` 生成
+6. 可选：workflow 的 `optional_usage_examples` checklist 命中且用户同意时，生成 `usage_examples.md`；用户明确要求时，也可单独使用 `ost-usage-examples` 生成
 7. 在本文件下方 TODO 列表中登记状态
 
 ---
@@ -131,8 +130,13 @@ open_supports/
 
 | 支持包目录 | 库名 | 脚本 | Skill | 状态 |
 |-----------|------|------|-------|------|
-| `ost_colbymchenry_codegraph` | [codegraph](https://github.com/colbymchenry/codegraph) | ⬜ 待填充 | ⬜ 待填充 | 🚧 进行中 |
+| `ost_colbymchenry_codegraph` | [codegraph](https://github.com/colbymchenry/codegraph) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
+| `ost_deanpeters_Product-Manager-Skills` | [Product-Manager-Skills](https://github.com/deanpeters/Product-Manager-Skills) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
+| `ost_eyaltoledano_claude-task-master` | [claude-task-master](https://github.com/eyaltoledano/claude-task-master) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
+| `ost_garrytan_gstack` | [gstack](https://github.com/garrytan/gstack) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
+| `ost_msitarzewski_agency-agents` | [agency-agents](https://github.com/msitarzewski/agency-agents) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
 | `ost_open-gsd_gsd-core` | [gsd-core](https://github.com/open-gsd/gsd-core) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
+| `ost_topoteretes_cognee` | [cognee](https://github.com/topoteretes/cognee) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
 
 ---
 
@@ -140,7 +144,7 @@ open_supports/
 
 ### 体系层
 
-- [x] 新增 workflow Skill：串联 `ost-repo-readme-summary` → `ost-install-script` → `ost-skill-for-setup` → `optional_usage_examples` → 可选测试安装验证；计划见 [`workflow-plan.md`](workflow-plan.md)
+- [x] 新增 workflow Skill：串联 `ost-repo-readme-summary` → `ost-install-script` → `ost-skill-for-setup` → `optional_usage_examples` → 可选测试安装验证
 - [x] 增加 `.ost-workflow-state/` 状态目录约定，用于 workflow Skill 的问题澄清、断点续传和恢复执行
 - [x] 为 3 个核心阶段 Skill 及可选 `ost-usage-examples` 增加统一 `Clarification / Blocking` 协议：信息不足时不猜测，返回 blocked 信息并等待用户澄清
 - [x] workflow Skill 增加串行子代理执行策略、上下文节省约束和 `sh + jq` 状态脚本
@@ -157,8 +161,8 @@ open_supports/
 ### 具体待办
 
 - [x] `ost_GithubName_RepoName_TEMPLATE`：统一使用 `repo_readme_summary.md` 文件名
-- [ ] `ost_GithubName_RepoName_TEMPLATE`：完善模板文件内容（当前均为空文件）
-- [ ] `ost_colbymchenry_codegraph`：填充 `repo_readme_summary.md`、`scripts_for_install/install.*`、`skill_for_setup/ost_colbymchenry_codegraph_install/SKILL.md`
+- [x] `ost_colbymchenry_codegraph`：填充 `repo_readme_summary.md`、`scripts_for_install/install.*`、`skill_for_setup/ost_colbymchenry_codegraph_install/SKILL.md`
+- [x] `ost_garrytan_gstack`：填充 `repo_readme_summary.md`、`scripts_for_install/install.sh`、`skill_for_setup/ost_garrytan_gstack_install/SKILL.md`，并生成 `usage_examples.md`
 - [x] `ost_open-gsd_gsd-core`：补充目录内容
 - [x] `.copilot-skills/`：已收录首批通用 Skill（摘要、安装脚本、setup、workflow、可选用例）
 - [ ] `.copilot-skills/`：按后续支持包经验继续补充通用 MCP 注册、版本检测等 Skill

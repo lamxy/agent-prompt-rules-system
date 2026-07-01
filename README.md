@@ -43,7 +43,7 @@
 
 ## 仓库结构概览
 
-本仓库由三类内容组成：
+本仓库由四类内容组成：
 
 ### 一、`.claude/` — 核心规则与配置目录
 
@@ -85,7 +85,27 @@
 | `dot_mcp_jsons/` | 按项目场景分类的 .mcp.json 配置文件（`dot-mcp-json-<FLAG>.json`） | `install-dot-mcp.sh` |
 | `dot_claude_projects/` | 按项目场景分类的项目级指令模板目录（`.claude-<FLAG>/`，含 `.claude/`、`.mcp.json`、`CLAUDE.md`，可声明 `open_supports_name_list.txt`） | `install-claude-project.sh`；支持包安装用 `install-open-supports.sh` |
 
-### 三、`docs/` — 文档与教程目录
+### 三、`open_supports/` — 开源库本地化支持包目录
+
+`open_supports/` 用于收录与 Agent 编程相关的开源库支持包。每个支持包以 `ost_{GithubName}_{RepoName}/` 命名，保留官方仓库的核心摘要，并把安装、更新、配置和验证流程整理成可复用的本地材料。
+
+典型支持包结构：
+
+```text
+open_supports/ost_{GithubName}_{RepoName}/
+├── repo_readme_summary.md        # 官方 README / 文档的结构化摘要
+├── usage_examples.md             # 可选：安装后的常见使用示例
+├── scripts_for_install/
+│   └── install.*                 # 一键安装 / 更新脚本
+└── skill_for_setup/
+    ├── README.md                 # Skill 使用说明
+    └── ost_{GithubName}_{RepoName}_install/
+        └── SKILL.md              # 面向 Agent 的安装 Skill
+```
+
+`open_supports/.copilot-skills/` 存放跨支持包复用的工作流 Skill，用于串联仓库摘要、安装脚本、setup Skill、可选 usage examples 和可选安装验证。详细约定见 `open_supports/README.md`。
+
+### 四、`docs/` — 文档与教程目录
 
 `docs/` 用于沉淀设计说明、使用手册与外部资源整理，便于使用者快速理解、上手与后续扩展。
 
@@ -279,6 +299,25 @@ sh ./scripts/install-open-supports.sh -t /path/to/project --no-skills
 sh ./scripts/install-open-supports.sh -t /path/to/project -F
 ```
 
+#### 3.9 维护 open_supports 支持包
+
+新增或更新一个 `open_supports/ost_{GithubName}_{RepoName}/` 支持包时，先阅读：
+
+```text
+open_supports/README.md
+open_supports/.copilot-skills/ost-support-workflow/SKILL.md
+```
+
+推荐按 workflow 顺序生成和审查：
+
+1. `repo_readme_summary`：提炼官方 README / 文档，生成 `repo_readme_summary.md`
+2. `install_script`：封装幂等安装 / 更新脚本，生成 `scripts_for_install/install.*`
+3. `skill_for_setup`：生成面向 Agent 客户端的安装 Skill
+4. `optional_usage_examples`：当库存在安装后高频使用场景且用户同意时，生成 `usage_examples.md`
+5. `optional_test_install`：按需测试运行安装脚本并记录验证结果
+
+工作流状态默认保存在 `open_supports/.ost-workflow-state/`，用于澄清问题、断点续传和恢复执行。状态文件属于运行时产物，提交前应按实际需要单独审查。
+
 ---
 
 ## 完整目录结构
@@ -296,6 +335,7 @@ sh ./scripts/install-open-supports.sh -t /path/to/project -F
 │   ├── install-claude-md.sh     # 安装 CLAUDE.md 配置
 │   ├── install-dot-mcp.sh       # 安装 .mcp.json 配置
 │   ├── install-open-supports.sh # 安装项目声明的 open_supports 支持包
+│   ├── test-install-open-supports.sh # open_supports 安装器回归测试
 │   └── install-claude-project.sh # 安装项目级完整配置包
 ├── settings/                    # Settings 模板集合
 │   ├── settings.user.json
@@ -315,6 +355,7 @@ sh ./scripts/install-open-supports.sh -t /path/to/project -F
 │   └── ...
 ├── skills/                      # Skill 包集合（按场景分组）
 │   ├── skills-<FLAG>/           # 每个包含该场景所需的 skill 子目录
+│   ├── skills-open-supports/    # open_supports 安装器自然语言入口
 │   └── ...
 ├── claude_mds/                  # CLAUDE.md 配置文件集合（按场景分类）
 │   ├── CLAUDE-<FLAG>.md
@@ -323,7 +364,17 @@ sh ./scripts/install-open-supports.sh -t /path/to/project -F
 │   ├── dot-mcp-json-<FLAG>.json
 │   └── ...
 ├── dot_claude_projects/         # 项目级指令模板目录集合（按场景分类）
-│   ├── .claude-<FLAG>/          # 每个包含 .claude/、.mcp.json、CLAUDE.md
+│   ├── .claude-<FLAG>/          # 每个包含 .claude/、.mcp.json、CLAUDE.md，可声明 open_supports_name_list.txt
+│   └── ...
+├── open_supports/               # Agent 编程开源库的本地化支持包
+│   ├── README.md                # 支持包体系说明、贡献规范和收录状态
+│   ├── .copilot-skills/         # 跨支持包复用的摘要、脚本、setup、workflow Skill
+│   ├── .ost-workflow-state/     # workflow 运行时状态目录
+│   ├── ost_{GithubName}_{RepoName}/
+│   │   ├── repo_readme_summary.md
+│   │   ├── usage_examples.md
+│   │   ├── scripts_for_install/
+│   │   └── skill_for_setup/
 │   └── ...
 ├── docs/                        # 文档与教程目录
 │   ├── claude-memory-and-slimming-rationale.md
@@ -476,6 +527,8 @@ expandable/templates/
 - Hook 分阶段执行路径（完成性门禁、噪音治理、压缩保全、高风险 ask）
 - 完整的场景化 settings 模板体系（user / project / local 三层）
 - agent 包、skill 包、CLAUDE.md 配置包的脚本化安装支持
+- `open_supports/` 本地化支持包体系：支持包摘要、安装脚本、setup Skill、可选 usage examples 和 workflow 状态管理
+- 项目模板可通过 `.claude/open_supports_name_list.txt` 声明所需支持包，并通过 `install-open-supports.sh` 单独 vendor 到目标项目
 
 暂不作为当前运行前提：完整规约层系统化展开、规则触发决策树、规约披露风格层、串联协议文件驱动。
 
@@ -551,6 +604,9 @@ expandable/templates/
 - [x] 场景化 settings 模板体系（user / project / local）
 - [x] Agent 包、Skill 包、CLAUDE.md 配置包的脚本化安装（`v1.2.1`）
 - [x] 子代理纠正流程规范化（SendMessage 优先，禁止重新派发）
+- [x] `open_supports/` 支持包体系与 `ost-support-workflow` 编排流程
+- [x] `install-open-supports.sh`：按项目 manifest vendor 支持包、生成 wrapper Skill、运行 vendored install script
+- [x] `skills-open-supports`：为 open_supports 安装器提供自然语言 Skill 入口
 
 ### 下一阶段
 - [ ] 补充完整规约层（`expandable/specs/`）并验证按需展开策略
@@ -559,6 +615,8 @@ expandable/templates/
 - [ ] 引入披露层与串联协议
 - [ ] 验证复杂阶段结束后的"退回极简"机制
 - [ ] 形成更稳定的多仓库复用方式
+- [ ] 按后续支持包经验扩展 `.copilot-skills/`，例如通用 MCP 注册、版本检测、多客户端配置写入
+- [ ] 持续补充和验证更多 `open_supports/ost_*` 支持包
 
 ---
 

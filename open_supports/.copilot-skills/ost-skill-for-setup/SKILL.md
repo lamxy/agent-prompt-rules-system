@@ -17,6 +17,17 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 2. `scripts_for_install/install.*` 的实际内容 — 了解脚本支持的 flag 和排除的平台
 3. `.ost-refs/` 目录（如存在）
 
+## GitHub Source Policy
+
+读取 GitHub 仓库事实、README、目录、release、issue、PR 或文件内容时，优先使用 GitHub connector / GitHub app 的结构化工具；若工具不可见，先通过 `tool_search` 搜索 GitHub 工具。仍不可用时，再考虑 `gh` CLI、GitHub 官方 API 或官方文档网站。
+
+`curl` / raw GitHub URL 只用于官方安装命令本身，或作为明确记录的 fallback。setup Skill 的兜底安装路径可以引用官方给出的 `curl | sh`，但不应把 raw GitHub URL 当成事实读取的默认来源。
+
+作为 workflow 阶段子代理返回结果时，必须包含：
+
+- `sources_used`: 来源类别和关键路径摘要
+- `fallbacks`: 降级原因摘要；没有降级时返回空数组
+
 ## Clarification / Blocking
 
 如果执行本阶段所需信息无法从 `repo_readme_summary.md`、`scripts_for_install/install.*` 或 `.ost-refs/` 中可靠判断：

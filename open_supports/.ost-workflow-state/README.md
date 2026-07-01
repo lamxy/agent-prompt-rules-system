@@ -10,3 +10,7 @@
 - 示例：`colbymchenry_codegraph.json`
 - 具体 JSON 状态文件由仓库根目录 `.gitignore` 忽略
 - 本说明文件可以提交，用于保留目录约定
+- `execution.agent_runs` 只记录真实子代理执行结果
+- `execution.inline_runs` 记录 fallback inline 执行及具体 `fallback_reason`
+- `execution.dispatch_contracts` 记录每次子代理派发的可审计 contract 摘要
+- 所有状态写入必须通过 workflow 主代理串行调用 `state.sh`

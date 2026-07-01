@@ -44,6 +44,7 @@ OWNER_REPO="ExampleOwner/example-repo"
 STATE_FILE="$OST_WORKFLOW_STATE_DIR/ExampleOwner_example-repo.json"
 
 run_state init "$OWNER_REPO"
+assert_fails init "$OWNER_REPO"
 
 [ -f "$STATE_FILE" ] || fail "state file was not created"
 assert_jq "$STATE_FILE" '.owner_repo' "$OWNER_REPO"
@@ -54,6 +55,8 @@ assert_jq "$STATE_FILE" '.stages.install_script' 'pending'
 assert_jq "$STATE_FILE" '.stages.optional_usage_examples' 'pending'
 assert_jq "$STATE_FILE" '.usage_examples.decision' 'pending'
 assert_jq "$STATE_FILE" '.execution.mode' 'subagent_preferred'
+assert_jq "$STATE_FILE" '.execution.dispatch_contracts | length' '0'
+assert_jq "$STATE_FILE" '.execution.inline_runs | length' '0'
 
 mark_core_done "$OWNER_REPO"
 
@@ -78,6 +81,23 @@ run_state agent-run "$OWNER_REPO" install_script DONE "Created install.sh"
 assert_jq "$STATE_FILE" '.execution.agent_runs[-1].stage' 'install_script'
 assert_jq "$STATE_FILE" '.execution.agent_runs[-1].status' 'DONE'
 assert_jq "$STATE_FILE" '.execution.agent_runs[-1].summary' 'Created install.sh'
+assert_jq "$STATE_FILE" '.execution.agent_runs[-1].executor' 'subagent'
+assert_jq "$STATE_FILE" '.execution.agent_runs[-1].fallback_reason' 'null'
+
+run_state contract "$OWNER_REPO" install_script "open_supports/ost_ExampleOwner_example-repo" "open_supports/.copilot-skills/ost-install-script/SKILL.md" "repo_readme_summary.md" "DONE,NEEDS_CLARIFICATION,FAILED"
+assert_jq "$STATE_FILE" '.execution.dispatch_contracts[-1].stage' 'install_script'
+assert_jq "$STATE_FILE" '.execution.dispatch_contracts[-1].executor' 'subagent'
+assert_jq "$STATE_FILE" '.execution.dispatch_contracts[-1].package_dir' 'open_supports/ost_ExampleOwner_example-repo'
+assert_jq "$STATE_FILE" '.execution.dispatch_contracts[-1].stage_skill_path' 'open_supports/.copilot-skills/ost-install-script/SKILL.md'
+assert_jq "$STATE_FILE" '.execution.dispatch_contracts[-1].required_inputs[0]' 'repo_readme_summary.md'
+assert_jq "$STATE_FILE" '.execution.dispatch_contracts[-1].allowed_outputs[0]' 'DONE'
+
+run_state inline-run "$OWNER_REPO" skill_for_setup DONE "Updated setup skill" "tool_search found no usable subagent tool"
+assert_jq "$STATE_FILE" '.execution.inline_runs[-1].stage' 'skill_for_setup'
+assert_jq "$STATE_FILE" '.execution.inline_runs[-1].status' 'DONE'
+assert_jq "$STATE_FILE" '.execution.inline_runs[-1].summary' 'Updated setup skill'
+assert_jq "$STATE_FILE" '.execution.inline_runs[-1].executor' 'fallback_inline'
+assert_jq "$STATE_FILE" '.execution.inline_runs[-1].fallback_reason' 'tool_search found no usable subagent tool'
 
 run_state usage-examples "$OWNER_REPO" accepted "CLI, Agent integration" pending
 assert_jq "$STATE_FILE" '.usage_examples.offered' 'true'

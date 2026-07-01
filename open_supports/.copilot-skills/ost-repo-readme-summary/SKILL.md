@@ -21,6 +21,17 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 
 > **下游说明**：`repo_readme_summary.md` 直接作为 `ost-install-script`（写安装脚本）和 `ost-skill-for-setup`（写安装技能）的参考输入。**Part 2 的准确性和完整性对这两个技能的产出质量有直接影响**，是本文档最重要的部分。
 
+## GitHub Source Policy
+
+读取 GitHub 仓库事实、README、目录、release、issue、PR 或文件内容时，优先使用 GitHub connector / GitHub app 的结构化工具；若工具不可见，先通过 `tool_search` 搜索 GitHub 工具。仍不可用时，再考虑 `gh` CLI、GitHub 官方 API 或官方文档网站。
+
+`curl` / raw GitHub URL 只用于官方安装命令本身，或作为明确记录的 fallback。不要把安装文档中的 `curl | sh` 习惯扩展为 README、仓库结构或 release 信息的默认获取方式。
+
+作为 workflow 阶段子代理返回结果时，必须包含：
+
+- `sources_used`: 来源类别和关键路径摘要
+- `fallbacks`: 降级原因摘要；没有降级时返回空数组
+
 ## Clarification / Blocking
 
 如果执行本阶段所需信息无法从官方 README、官方文档或 `.ost-refs/` 中可靠判断：

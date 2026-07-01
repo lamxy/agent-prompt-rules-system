@@ -13,13 +13,17 @@
 为 GitHub 仓库 owner/repo 创建 open_supports 支持包。
 
 要求：
-1. 先阅读 open_supports/README-todo.md
-2. 再阅读 open_supports/workflow-plan.md
+1. 先阅读 open_supports/README.md
+2. 读取或初始化目标 .ost-workflow-state/ 状态文件
 3. 使用 .ost-workflow-state/ 记录状态
-4. 三个核心产出阶段用子代理串行执行；可选 usage examples 阶段在用户同意后也串行执行
-5. 如需澄清，只问当前一个问题
-6. workflow checklist 命中时，生成 usage_examples.md 前必须先问我
-7. 最后测试安装前必须先问我
+4. 主 workflow 不要预读阶段 Skill、官方 README 或长文档；阶段 Skill 只在子代理 contract 中引用
+5. 三个核心产出阶段用子代理串行执行；可选 usage examples 阶段在用户同意后也串行执行
+6. 如果子代理工具未显示，先用 tool_search 搜索 multi-agent / subagent / spawn-agent 工具，不得直接 inline
+7. 每次派发前记录 dispatch contract；所有 state.sh 写入必须串行
+8. inline fallback 只在工具确认不可用、schema 不支持、我明确要求不用子代理，或子代理连续失败后我同意接管时使用，并必须用 inline-run 记录具体原因
+9. 如需澄清，只问当前一个问题
+10. workflow checklist 命中时，生成 usage_examples.md 前必须先问我
+11. 最后测试安装前必须先问我
 ```
 
 示例：
@@ -34,6 +38,7 @@
 ```text
 继续 open-gsd/gsd-core 的 open_supports workflow。
 先读取 .ost-workflow-state/open-gsd_gsd-core.json，然后从断点恢复。
+如果子代理工具未显示，先用 tool_search 搜索 multi-agent / subagent / spawn-agent 工具，不得直接 inline。
 ```
 
 ## 可选方式：复制到 Codex 全局技能目录

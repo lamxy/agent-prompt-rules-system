@@ -14,7 +14,9 @@ Usage:
   state.sh set-stage OWNER/REPO STAGE STATUS
   state.sh block OWNER/REPO STAGE REASON QUESTION [SUGGESTED_DEFAULT]
   state.sh answer OWNER/REPO ANSWER
+  state.sh contract OWNER/REPO STAGE PACKAGE_DIR STAGE_SKILL_PATH REQUIRED_INPUTS ALLOWED_OUTPUTS
   state.sh agent-run OWNER/REPO STAGE STATUS SUMMARY
+  state.sh inline-run OWNER/REPO STAGE STATUS SUMMARY FALLBACK_REASON
   state.sh offer-usage-examples OWNER/REPO MATCHED_CRITERIA
   state.sh usage-examples OWNER/REPO DECISION MATCHED_CRITERIA [RESULT]
   state.sh test-result OWNER/REPO RESULT COMMAND EXIT_CODE SUMMARY
@@ -75,14 +77,38 @@ ensure_state_exists() {
   [ -f "$state_file" ] || die "state file not found: $state_file"
 }
 
+cleanup_lock() {
+  [ -n "${lock_dir:-}" ] && [ -d "$lock_dir" ] && rmdir "$lock_dir" 2>/dev/null || true
+}
+
+acquire_lock() {
+  lock_dir="${state_file}.lock"
+  i=0
+  while ! mkdir "$lock_dir" 2>/dev/null; do
+    i=$((i + 1))
+    [ "$i" -le 50 ] || die "could not acquire state lock: $lock_dir"
+    sleep 1
+  done
+  trap 'cleanup_lock' EXIT HUP INT TERM
+}
+
+release_lock() {
+  cleanup_lock
+  lock_dir=
+  trap - EXIT HUP INT TERM
+}
+
 write_jq() {
   filter=$1
   shift
   tmp="${state_file}.tmp.$$"
+  acquire_lock
   if jq "$@" "$filter" "$state_file" > "$tmp"; then
     mv "$tmp" "$state_file"
+    release_lock
   else
     rm -f "$tmp"
+    release_lock
     exit 1
   fi
 }
@@ -93,7 +119,11 @@ cmd_init() {
   state_name=$(state_name_for "$owner_repo")
   state_file=$(state_file_for "$owner_repo")
   mkdir -p "$STATE_DIR"
-  [ ! -e "$state_file" ] || die "state file already exists: $state_file"
+  acquire_lock
+  if [ -e "$state_file" ]; then
+    release_lock
+    die "state file already exists: $state_file"
+  fi
   now=$(now_utc)
 
   tmp="${state_file}.tmp.$$"
@@ -131,11 +161,14 @@ cmd_init() {
         mode: "subagent_preferred",
         fallback: "inline",
         current_agent_stage: null,
+        dispatch_contracts: [],
+        inline_runs: [],
         agent_runs: []
       },
       updated_at: $now
     }' > "$tmp"
   mv "$tmp" "$state_file"
+  release_lock
   printf '%s\n' "$state_file"
 }
 
@@ -235,12 +268,92 @@ cmd_agent_run() {
     .execution.current_agent_stage = $stage
     | .execution.agent_runs += [{
         stage: $stage,
+        executor: "subagent",
+        fallback_reason: null,
         status: $status,
         summary: $summary,
         recorded_at: $now
       }]
     | .updated_at = $now
   ' --arg stage "$stage" --arg status "$status" --arg summary "$summary" --arg now "$now"
+}
+
+cmd_contract() {
+  require_owner_repo "$1"
+  stage=$2
+  package_dir=$3
+  stage_skill_path=$4
+  required_inputs=$5
+  allowed_outputs=$6
+  valid_stage "$stage" || die "unknown stage: $stage"
+  state_file=$(state_file_for "$1")
+  ensure_state_exists
+  now=$(now_utc)
+
+  write_jq '
+    .execution.dispatch_contracts += [{
+      stage: $stage,
+      executor: "subagent",
+      package_dir: $package_dir,
+      stage_skill_path: $stage_skill_path,
+      required_inputs: (
+        if $required_inputs == "" then []
+        else ($required_inputs | split(",") | map(gsub("^ +| +$"; "")))
+        end
+      ),
+      allowed_outputs: (
+        if $allowed_outputs == "" then []
+        else ($allowed_outputs | split(",") | map(gsub("^ +| +$"; "")))
+        end
+      ),
+      context_hygiene: {
+        do_not_return: [
+          "long official docs excerpts",
+          "full README",
+          "full generated files",
+          "step-by-step private reasoning"
+        ]
+      },
+      recorded_at: $now
+    }]
+    | .updated_at = $now
+  ' \
+    --arg stage "$stage" \
+    --arg package_dir "$package_dir" \
+    --arg stage_skill_path "$stage_skill_path" \
+    --arg required_inputs "$required_inputs" \
+    --arg allowed_outputs "$allowed_outputs" \
+    --arg now "$now"
+}
+
+cmd_inline_run() {
+  require_owner_repo "$1"
+  stage=$2
+  status=$3
+  summary=$4
+  fallback_reason=$5
+  valid_stage "$stage" || die "unknown stage: $stage"
+  [ -n "$fallback_reason" ] || die "fallback reason is required"
+  state_file=$(state_file_for "$1")
+  ensure_state_exists
+  now=$(now_utc)
+
+  write_jq '
+    .execution.inline_runs += [{
+      stage: $stage,
+      executor: "fallback_inline",
+      fallback_reason: $fallback_reason,
+      status: $status,
+      summary: $summary,
+      recorded_at: $now
+    }]
+    | .updated_at = $now
+  ' \
+    --arg stage "$stage" \
+    --arg status "$status" \
+    --arg summary "$summary" \
+    --arg fallback_reason "$fallback_reason" \
+    --arg now "$now"
 }
 
 cmd_offer_usage_examples() {
@@ -444,9 +557,17 @@ case "$cmd" in
     [ "$#" -eq 2 ] || { usage >&2; exit 2; }
     cmd_answer "$1" "$2"
     ;;
+  contract)
+    [ "$#" -eq 6 ] || { usage >&2; exit 2; }
+    cmd_contract "$1" "$2" "$3" "$4" "$5" "$6"
+    ;;
   agent-run)
     [ "$#" -eq 4 ] || { usage >&2; exit 2; }
     cmd_agent_run "$1" "$2" "$3" "$4"
+    ;;
+  inline-run)
+    [ "$#" -eq 5 ] || { usage >&2; exit 2; }
+    cmd_inline_run "$1" "$2" "$3" "$4" "$5"
     ;;
   offer-usage-examples)
     [ "$#" -eq 2 ] || { usage >&2; exit 2; }

@@ -48,3 +48,6 @@ open_supports/.ost-workflow-state/*.json
 !open_supports/.ost-workflow-state/README.md
 
 .codex
+
+docs/superpowers
+docs/superpowers-bak
