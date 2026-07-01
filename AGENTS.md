@@ -2,11 +2,22 @@
 
 ## Project Structure & Module Organization
 
-This repository maintains a Claude Code prompt and configuration system. Core reusable configuration lives in `.claude/`, including rules, hooks, commands, settings, and expandable templates. Scenario packages are grouped by type: `agents/agents-<FLAG>/` for agent definitions, `skills/skills-<FLAG>/` for skill directories, `claude_mds/` for `CLAUDE.md` variants, `dot_mcp_jsons/` for MCP templates, and `dot_claude_projects/` for full project starter bundles. Installer scripts live in `scripts/`. Documentation and external recommendations belong in `docs/`, while `examples/` and `open_supports/` hold sample and third-party support material.
+This repository maintains Claude Code prompt, rule, agent, skill, MCP, and settings templates. Reusable shared configuration lives in `.claude/`, including rules, hooks, commands, settings, and base guidance.
+
+Package-style assets are grouped by target:
+
+- `agents/agents-<FLAG>/`: agent definitions.
+- `skills/skills-<FLAG>/`: skill packages.
+- `claude_mds/`: `CLAUDE.md` variants such as `CLAUDE-frontend-dev.md`.
+- `dot_mcp_jsons/`: `.mcp.json` templates.
+- `dot_claude_projects/`: full project starter bundles.
+- `settings/`: user, project, and local settings templates.
+- `scripts/`: POSIX shell installers and smoke tests.
+- `docs/`, `examples/`, and `open_supports/`: documentation, examples, and external support materials.
 
 ## Build, Test, and Development Commands
 
-There is no compiled build step. Use shell scripts directly from the repository root:
+There is no build step. Run scripts from the repository root:
 
 ```sh
 sh ./scripts/install.sh -l project -p /path/to/project/.claude -m ask
@@ -15,20 +26,30 @@ sh ./scripts/install-skill-pkg.sh -f frontend-dev -t /path/to/project/.claude/sk
 sh ./scripts/install-claude-project.sh -f frontend-dev -t /path/to/project
 ```
 
-Before changing scripts, run syntax checks with `sh -n scripts/*.sh` and test risky copy behavior against a temporary directory.
+Before changing shell scripts, run:
+
+```sh
+sh -n scripts/*.sh
+```
+
+For installer behavior, use temporary directories for smoke tests. Do not test against real user configuration unless explicitly requested.
 
 ## Coding Style & Naming Conventions
 
-Shell scripts use POSIX `sh`, `set -eu`, two-space indentation, small helper functions, and `printf` for messages. Keep scripts portable and avoid Bash-only features. Markdown should be concise, task-oriented, and easy to scan. Preserve package naming patterns: `agents-<FLAG>`, `skills-<FLAG>`, `CLAUDE-<FLAG>.md`, and `dot-mcp-json-<FLAG>.json`. New minimal rule files should use `*-min.md`.
+Shell scripts should use POSIX `sh`, `set -eu`, two-space indentation, small helper functions, and `printf` for output. Avoid Bash-only syntax.
+
+Markdown should be concise, task-oriented, and easy to scan. Preserve existing naming patterns: `agents-<FLAG>`, `skills-<FLAG>`, `CLAUDE-<FLAG>.md`, `dot-mcp-json-<FLAG>.json`, and `*-min.md` for minimal rule files.
 
 ## Testing Guidelines
 
-This project currently relies on script syntax checks, installer smoke tests, and manual review of generated prompt/config files. For installer changes, verify success and conflict paths, including non-existent package errors, existing target files, and `-F` overwrite behavior. Do not test installers against real user configuration unless explicitly intended.
+Testing relies on shell syntax checks, installer smoke tests, and manual review of generated prompt/config files. Installer changes should cover successful install paths, missing package errors, existing target conflict handling, and `-F` overwrite behavior.
 
 ## Commit & Pull Request Guidelines
 
-Git history uses concise messages, often with conventional prefixes such as `feat:`, `refactor:`, `docs:`, `rules:`, and `templates:`. Make commits describe intent, not only files changed. PRs should state the goal, rationale, affected directories, whether context size or maintenance cost increases, and why the change belongs in its chosen layer instead of `CLAUDE.md` or another package.
+Git history uses concise conventional-style prefixes such as `feat:`, `docs:`, `test:`, `templates:`, and `refactor:`. Commit messages should describe intent, not only changed files.
+
+Pull requests should state the goal, affected directories, verification performed, and any maintenance or context-size impact. For template or rule changes, explain why the change belongs at that layer rather than in a package-specific `CLAUDE.md`.
 
 ## Security & Configuration Tips
 
-Never commit API keys, access tokens, `.env` contents, or private cloud credentials. Shared settings should deny sensitive paths where possible and skip automatic JSON overwrites unless the merge is manually reviewed.
+Never commit API keys, access tokens, `.env` contents, or private cloud credentials. Shared settings should avoid sensitive paths and should not automatically overwrite JSON that requires human review.
