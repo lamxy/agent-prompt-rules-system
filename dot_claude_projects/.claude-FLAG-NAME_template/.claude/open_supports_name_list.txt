@@ -1,0 +1,13 @@
+# open_supports_name_list.txt
+#
+# Each non-empty, non-comment line:
+#   <support-name> [install args...]
+#
+# Accepted support names:
+#   GithubName/RepoName
+#   ost_GithubName_RepoName
+#
+# Examples:
+# colbymchenry/codegraph --target=claude --location=local
+# open-gsd/gsd-core --claude --local
+# ost_garrytan_gstack

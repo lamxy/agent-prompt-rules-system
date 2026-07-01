@@ -38,6 +38,36 @@ sh scripts/install-claude-project.sh -f frontend-dev -t /path/to/project -F
 sh scripts/install-claude-project.sh -f frontend-dev -t /path/to/project -s /custom/dot_claude_projects
 ```
 
+## Open Supports List
+
+Project templates may include:
+
+```text
+.claude/open_supports_name_list.txt
+```
+
+This file declares localized `open_supports/` packages that should be vendored
+into a target project after the project template is installed. Installing a
+`.claude-<FLAG>/` template does not automatically install these support
+packages.
+
+Run the separate installer from this repository root:
+
+```sh
+sh scripts/install-open-supports.sh -t /path/to/project
+```
+
+The list format is line-oriented:
+
+```text
+# <support-name> [install args...]
+colbymchenry/codegraph --target=claude --location=local
+open-gsd/gsd-core --claude --local
+ost_garrytan_gstack
+```
+
+Both `GithubName/RepoName` and `ost_GithubName_RepoName` names are accepted.
+
 ## 新增模板
 
 1. 在 `dot_claude_projects/` 下新建 `.claude-<FLAG>/` 目录
