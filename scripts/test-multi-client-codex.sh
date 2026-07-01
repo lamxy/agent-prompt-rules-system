@@ -51,7 +51,7 @@ test_user_default_writes_to_codex_home() {
   CODEX_HOME="$tmp/codex-home" sh "$INSTALLER" -l user > "$tmp/out.log"
 
   assert_file "$tmp/codex-home/AGENTS.codex.md"
-  assert_contains "$tmp/codex-home/AGENTS.codex.md" "Codex Global Instructions"
+  assert_contains "$tmp/codex-home/AGENTS.codex.md" "Codex 全域指令"
   assert_contains "$tmp/codex-home/AGENTS.codex.md" ".agent-rules/claude/"
   assert_contains "$tmp/out.log" "[CREATED]"
   pass "user default writes AGENTS.codex.md under CODEX_HOME"
@@ -76,8 +76,8 @@ test_project_default_writes_codex_filename() {
   sh "$INSTALLER" -l project -p "$target" > "$tmp/out.log"
 
   assert_file "$target/AGENTS.codex.md"
-  assert_contains "$target/AGENTS.codex.md" "Codex Project Instructions"
-  assert_contains "$target/AGENTS.codex.md" "Use the smallest sufficient instruction layer."
+  assert_contains "$target/AGENTS.codex.md" "Codex 專案指令"
+  assert_contains "$target/AGENTS.codex.md" "使用最小且足夠的指令層。"
   assert_not_exists "$target/.agent-rules/claude"
   assert_contains "$tmp/out.log" "[CREATED]"
   pass "project default writes AGENTS.codex.md without vendoring"
@@ -91,7 +91,7 @@ test_project_custom_name() {
   sh "$INSTALLER" -l project -p "$target" -n AGENTS.md > "$tmp/out.log"
 
   assert_file "$target/AGENTS.md"
-  assert_contains "$target/AGENTS.md" "Codex Project Instructions"
+  assert_contains "$target/AGENTS.md" "Codex 專案指令"
   assert_contains "$tmp/out.log" "[CREATED]"
   pass "project custom filename is honored"
 }
@@ -135,7 +135,7 @@ test_force_overwrites_output() {
 
   sh "$INSTALLER" -l project -p "$target" -F > "$tmp/out.log"
 
-  assert_contains "$target/AGENTS.codex.md" "Codex Project Instructions"
+  assert_contains "$target/AGENTS.codex.md" "Codex 專案指令"
   assert_not_contains "$target/AGENTS.codex.md" "OLD-CODEX-CONTENT-MARKER"
   assert_contains "$tmp/out.log" "[FORCE]"
   pass "force overwrites output file"
