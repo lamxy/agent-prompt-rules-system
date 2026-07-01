@@ -116,13 +116,13 @@ test_existing_output_without_force_is_manual() {
   tmp="$(mktemp -d)"
   target="$tmp/project"
   mkdir -p "$target"
-  printf 'existing\n' > "$target/AGENTS.codex.md"
+  printf 'OLD-CODEX-CONTENT-MARKER\n' > "$target/AGENTS.codex.md"
 
   if sh "$INSTALLER" -l project -p "$target" > "$tmp/out.log" 2>&1; then
     fail "existing output without -F should fail"
   fi
 
-  assert_contains "$target/AGENTS.codex.md" "existing"
+  assert_contains "$target/AGENTS.codex.md" "OLD-CODEX-CONTENT-MARKER"
   assert_contains "$tmp/out.log" "[MANUAL]"
   pass "existing output without force is not overwritten"
 }
@@ -131,14 +131,29 @@ test_force_overwrites_output() {
   tmp="$(mktemp -d)"
   target="$tmp/project"
   mkdir -p "$target"
-  printf 'existing\n' > "$target/AGENTS.codex.md"
+  printf 'OLD-CODEX-CONTENT-MARKER\n' > "$target/AGENTS.codex.md"
 
   sh "$INSTALLER" -l project -p "$target" -F > "$tmp/out.log"
 
   assert_contains "$target/AGENTS.codex.md" "Codex Project Instructions"
-  assert_not_contains "$target/AGENTS.codex.md" "existing"
+  assert_not_contains "$target/AGENTS.codex.md" "OLD-CODEX-CONTENT-MARKER"
   assert_contains "$tmp/out.log" "[FORCE]"
   pass "force overwrites output file"
+}
+
+test_force_rejects_output_directory() {
+  tmp="$(mktemp -d)"
+  target="$tmp/project"
+  mkdir -p "$target/AGENTS.codex.md"
+
+  if sh "$INSTALLER" -l project -p "$target" -F > "$tmp/out.log" 2>&1; then
+    fail "force output with directory destination should fail"
+  fi
+
+  assert_dir "$target/AGENTS.codex.md"
+  assert_not_exists "$target/AGENTS.codex.md/AGENTS.codex-project.md"
+  assert_contains "$tmp/out.log" "[MANUAL]"
+  pass "force rejects output directory conflicts"
 }
 
 test_existing_vendor_without_force_is_manual() {
@@ -173,6 +188,37 @@ test_force_vendor_preserves_extra_files() {
   pass "force vendor copies source and preserves extra files"
 }
 
+test_force_vendor_rejects_wrong_type_conflict() {
+  tmp="$(mktemp -d)"
+  target="$tmp/project"
+  mkdir -p "$target/.agent-rules/claude/CLAUDE.md"
+
+  if sh "$INSTALLER" -l project -p "$target" -v -F > "$tmp/out.log" 2>&1; then
+    fail "force vendor with wrong-type destination should fail"
+  fi
+
+  assert_dir "$target/.agent-rules/claude/CLAUDE.md"
+  assert_not_exists "$target/.agent-rules/claude/CLAUDE.md/CLAUDE.md"
+  assert_contains "$tmp/out.log" "[MANUAL]"
+  pass "force vendor rejects wrong-type destination conflicts"
+}
+
+test_vendor_rejects_agent_rules_file_before_output() {
+  tmp="$(mktemp -d)"
+  target="$tmp/project"
+  mkdir -p "$target"
+  printf 'keep-agent-rules-file\n' > "$target/.agent-rules"
+
+  if sh "$INSTALLER" -l project -p "$target" -v -F > "$tmp/out.log" 2>&1; then
+    fail "vendor with .agent-rules file should fail"
+  fi
+
+  assert_not_exists "$target/AGENTS.codex.md"
+  assert_contains "$target/.agent-rules" "keep-agent-rules-file"
+  assert_contains "$tmp/out.log" "[MANUAL]"
+  pass "vendor rejects .agent-rules file before output"
+}
+
 test_invalid_option_combinations() {
   tmp="$(mktemp -d)"
   target="$tmp/project"
@@ -203,6 +249,9 @@ test_project_custom_name
 test_project_vendor_copies_claude_source
 test_existing_output_without_force_is_manual
 test_force_overwrites_output
+test_force_rejects_output_directory
 test_existing_vendor_without_force_is_manual
 test_force_vendor_preserves_extra_files
+test_force_vendor_rejects_wrong_type_conflict
+test_vendor_rejects_agent_rules_file_before_output
 test_invalid_option_combinations
