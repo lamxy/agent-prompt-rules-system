@@ -83,7 +83,7 @@
 | `skills/` | 按项目场景分组的 skill 技能包（`skills-<FLAG>/`） | `install-skill-pkg.sh` |
 | `claude_mds/` | 按项目场景分类的 CLAUDE.md 配置文件（`CLAUDE-<FLAG>.md`） | `install-claude-md.sh` |
 | `dot_mcp_jsons/` | 按项目场景分类的 .mcp.json 配置文件（`dot-mcp-json-<FLAG>.json`） | `install-dot-mcp.sh` |
-| `dot_claude_projects/` | 按项目场景分类的项目级指令模板目录（`.claude-<FLAG>/`，含 `.claude/`、`.mcp.json`、`CLAUDE.md`） | `install-claude-project.sh` |
+| `dot_claude_projects/` | 按项目场景分类的项目级指令模板目录（`.claude-<FLAG>/`，含 `.claude/`、`.mcp.json`、`CLAUDE.md`，可声明 `open_supports_name_list.txt`） | `install-claude-project.sh`；支持包安装用 `install-open-supports.sh` |
 
 ### 三、`docs/` — 文档与教程目录
 
@@ -247,6 +247,38 @@ sh ./scripts/install-claude-project.sh -f <FLAG> -t /path/to/project [-F]
 
 将 `dot_claude_projects/.claude-<FLAG>/` 下的 `.claude/`、`.mcp.json`、`CLAUDE.md` 一次性复制到目标项目根目录，适合快速初始化新项目。
 
+#### 3.8 安装项目声明的 open_supports 支持包
+
+项目级完整配置包可以在 `.claude/open_supports_name_list.txt` 中声明需要接入的本地化开源支持包。该列表不会在安装项目模板时自动执行；需要单独运行：
+
+```sh
+sh ./scripts/install-open-supports.sh -t /path/to/project
+```
+
+列表格式为一行一个支持包：
+
+```text
+# <support-name> [install args...]
+colbymchenry/codegraph --target=claude --location=local
+open-gsd/gsd-core --claude --local
+ost_garrytan_gstack
+```
+
+默认行为：
+
+- 将支持包复制到目标项目的 `.claude/open_supports/`
+- 在目标项目的 `.claude/skills/` 下生成 wrapper Skill
+- 执行 vendored 支持包内的 `scripts_for_install/install.*`
+
+常用选项：
+
+```sh
+sh ./scripts/install-open-supports.sh -t /path/to/project --dry-run
+sh ./scripts/install-open-supports.sh -t /path/to/project --skills-only
+sh ./scripts/install-open-supports.sh -t /path/to/project --no-skills
+sh ./scripts/install-open-supports.sh -t /path/to/project -F
+```
+
 ---
 
 ## 完整目录结构
@@ -263,6 +295,7 @@ sh ./scripts/install-claude-project.sh -f <FLAG> -t /path/to/project [-F]
 │   ├── install-skill-pkg.sh     # 安装 skill 包
 │   ├── install-claude-md.sh     # 安装 CLAUDE.md 配置
 │   ├── install-dot-mcp.sh       # 安装 .mcp.json 配置
+│   ├── install-open-supports.sh # 安装项目声明的 open_supports 支持包
 │   └── install-claude-project.sh # 安装项目级完整配置包
 ├── settings/                    # Settings 模板集合
 │   ├── settings.user.json
