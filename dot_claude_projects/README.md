@@ -40,24 +40,21 @@ sh scripts/install-claude-project.sh -f frontend-dev -t /path/to/project -s /cus
 
 ## Open Supports List
 
-Project templates may include:
+项目模板可能包括:
 
 ```text
 .claude/open_supports_name_list.txt
 ```
 
-This file declares localized `open_supports/` packages that should be vendored
-into a target project after the project template is installed. Installing a
-`.claude-<FLAG>/` template does not automatically install these support
-packages.
+该文件声明了本地化的 `open_supports/` 包；在安装项目模板后，这些包应被纳入（vendor）目标项目中。安装 `.claude-<FLAG>/` 模板并不会自动安装这些支持包。
 
-Run the separate installer from this repository root:
+从该仓库根目录运行独立的安装程序：
 
 ```sh
 sh scripts/install-open-supports.sh -t /path/to/project
 ```
 
-The list format is line-oriented:
+列表格式是面向行的：
 
 ```text
 # <support-name> [install args...]
@@ -66,7 +63,7 @@ open-gsd/gsd-core --claude --local
 ost_garrytan_gstack
 ```
 
-Both `GithubName/RepoName` and `ost_GithubName_RepoName` names are accepted.
+`GithubName/RepoName` 和 `ost_GithubName_RepoName` 两种名称格式均可接受。
 
 ## 新增模板
 
