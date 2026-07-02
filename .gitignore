@@ -47,7 +47,13 @@ temp/
 open_supports/.ost-workflow-state/*.json
 !open_supports/.ost-workflow-state/README.md
 
+# codex
 .codex
 
-docs/superpowers
+# superpowers
+docs/superpowers/*
 docs/superpowers-bak
+
+# src web dev
+src/agent-kits-system-management-platform-web/*
+!src/agent-kits-system-management-platform-web/.gitkeep
