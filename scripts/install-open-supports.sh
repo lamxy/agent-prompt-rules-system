@@ -6,26 +6,26 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
   cat <<'USAGE'
-Usage:
+用法：
   sh scripts/install-open-supports.sh -t <target_project_dir> [options]
 
-Options:
+选项：
   -t, --target <target_project_dir>
-                             Target project root directory
-  -l, --list <list_file>     List file (default: <target>/.claude/open_supports_name_list.txt)
-  -s, --source <source_root> Source open_supports root (default: <repo>/open_supports)
-  -F, --force                Force overwrite vendored support packages and wrapper Skills
-  --no-skills                Vendor packages and run install scripts, but do not generate wrapper Skills
-  --skills-only              Vendor packages and generate wrapper Skills, but do not run install scripts
-  --dry-run                  Print planned actions without copying or running scripts
-  -h, --help                 Show this help message
+                             目标项目根目录
+  -l, --list <list_file>     列表文件（默认：<target>/.claude/open_supports_name_list.txt）
+  -s, --source <source_root> 源 open_supports 根目录（默认：<repo>/open_supports）
+  -F, --force                强制覆盖已安装的支持包和 wrapper Skill
+  --no-skills                安装支持包并运行安装脚本，但不生成 wrapper Skill
+  --skills-only              安装支持包并生成 wrapper Skill，但不运行安装脚本
+  --dry-run                  仅打印计划操作，不实际复制或运行脚本
+  -h, --help                 显示此帮助信息
 
-Manifest format:
+列表文件格式：
   <support-name> [install args...]
 
-Support names:
-  GithubName/RepoName        Example: colbymchenry/codegraph
-  ost_GithubName_RepoName    Example: ost_colbymchenry_codegraph
+支持包名称格式：
+  GithubName/RepoName        示例：colbymchenry/codegraph
+  ost_GithubName_RepoName    示例：ost_colbymchenry_codegraph
 USAGE
 }
 
@@ -46,7 +46,7 @@ DRY_RUN=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     -t|--target)
-      [ "$#" -ge 2 ] || fail_usage '-t requires a value'
+      [ "$#" -ge 2 ] || fail_usage '-t 需要一个值'
       TARGET="$2"
       shift 2
       ;;
@@ -55,7 +55,7 @@ while [ "$#" -gt 0 ]; do
       shift
       ;;
     -l|--list)
-      [ "$#" -ge 2 ] || fail_usage '-l requires a value'
+      [ "$#" -ge 2 ] || fail_usage '-l 需要一个值'
       LIST_FILE="$2"
       shift 2
       ;;
@@ -64,7 +64,7 @@ while [ "$#" -gt 0 ]; do
       shift
       ;;
     -s|--source)
-      [ "$#" -ge 2 ] || fail_usage '-s requires a value'
+      [ "$#" -ge 2 ] || fail_usage '-s 需要一个值'
       SOURCE_ROOT="$2"
       shift 2
       ;;
@@ -93,15 +93,15 @@ while [ "$#" -gt 0 ]; do
       exit 0
       ;;
     *)
-      fail_usage "unknown option: $1"
+      fail_usage "未知选项：$1"
       ;;
   esac
 done
 
-[ -n "$TARGET" ] || fail_usage '-t <target_project_dir> is required'
+[ -n "$TARGET" ] || fail_usage '-t <target_project_dir> 为必填项'
 
 if [ "$NO_SKILLS" -eq 1 ] && [ "$SKILLS_ONLY" -eq 1 ]; then
-  fail_usage '--no-skills and --skills-only are mutually exclusive'
+  fail_usage '--no-skills 和 --skills-only 不可同时使用'
 fi
 
 if [ -z "$SOURCE_ROOT" ]; then
@@ -113,17 +113,17 @@ if [ -z "$LIST_FILE" ]; then
 fi
 
 if [ ! -d "$TARGET" ]; then
-  printf 'Error: target directory does not exist: %s\n' "$TARGET" >&2
+  printf '错误：目标目录不存在：%s\n' "$TARGET" >&2
   exit 1
 fi
 
 if [ ! -d "$SOURCE_ROOT" ]; then
-  printf 'Error: open_supports root not found: %s\n' "$SOURCE_ROOT" >&2
+  printf '错误：open_supports 根目录不存在：%s\n' "$SOURCE_ROOT" >&2
   exit 1
 fi
 
 if [ ! -f "$LIST_FILE" ]; then
-  printf 'Error: list file not found: %s\n' "$LIST_FILE" >&2
+  printf '错误：列表文件不存在：%s\n' "$LIST_FILE" >&2
   exit 1
 fi
 
@@ -189,45 +189,45 @@ copy_support_package() {
   mkdir -p "$(dirname "$dest")"
   if [ -L "$dest" ]; then
     if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] replacing support package symlink: %s\n' "$dest"
+      printf '[FORCE] 替换支持包符号链接：%s\n' "$dest"
       rm -rf "$dest"
       cp -R "$src" "$dest"
       VENDORED=$((VENDORED + 1))
       return 0
     fi
-    printf '[CONFLICT] support package path is a symlink: %s\n' "$dest" >&2
+    printf '[CONFLICT] 支持包路径是一个符号链接：%s\n' "$dest" >&2
     CONFLICT=$((CONFLICT + 1))
     return 1
   fi
 
   if [ -d "$dest" ]; then
     if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] replacing support package: %s\n' "$dest"
+      printf '[FORCE] 替换支持包：%s\n' "$dest"
       rm -rf "$dest"
       cp -R "$src" "$dest"
       VENDORED=$((VENDORED + 1))
       return 0
     fi
-    printf '[REUSED] support package: %s\n' "$dest"
+    printf '[REUSED] 复用已有支持包：%s\n' "$dest"
     REUSED=$((REUSED + 1))
     return 0
   fi
 
   if [ -e "$dest" ]; then
     if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] replacing support package file: %s\n' "$dest"
+      printf '[FORCE] 替换支持包文件：%s\n' "$dest"
       rm -rf "$dest"
       cp -R "$src" "$dest"
       VENDORED=$((VENDORED + 1))
       return 0
     fi
-    printf '[CONFLICT] support package path is not a directory: %s\n' "$dest" >&2
+    printf '[CONFLICT] 支持包路径不是目录：%s\n' "$dest" >&2
     CONFLICT=$((CONFLICT + 1))
     return 1
   fi
 
   cp -R "$src" "$dest"
-  printf '[VENDORED] support package: %s\n' "$dest"
+  printf '[VENDORED] 已安装支持包：%s\n' "$dest"
   VENDORED=$((VENDORED + 1))
 }
 
@@ -249,28 +249,28 @@ generate_wrapper_skill() {
 
   if [ -L "$dest_dir" ]; then
     if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] replacing wrapper Skill symlink: %s\n' "$dest_dir"
+      printf '[FORCE] 替换 wrapper Skill 符号链接：%s\n' "$dest_dir"
       rm -rf "$dest_dir"
     else
-      printf '[CONFLICT] wrapper Skill path is a symlink: %s\n' "$dest_dir" >&2
+      printf '[CONFLICT] wrapper Skill 路径是一个符号链接：%s\n' "$dest_dir" >&2
       CONFLICT=$((CONFLICT + 1))
       return 1
     fi
   elif [ -d "$dest_dir" ]; then
     if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] replacing wrapper Skill: %s\n' "$dest_dir"
+      printf '[FORCE] 替换 wrapper Skill：%s\n' "$dest_dir"
       rm -rf "$dest_dir"
     else
-      printf '[REUSED] wrapper Skill: %s\n' "$dest_dir"
+      printf '[REUSED] 复用已有 wrapper Skill：%s\n' "$dest_dir"
       SKILL_REUSED=$((SKILL_REUSED + 1))
       return 0
     fi
   elif [ -e "$dest_dir" ]; then
     if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] replacing wrapper Skill file: %s\n' "$dest_dir"
+      printf '[FORCE] 替换 wrapper Skill 文件：%s\n' "$dest_dir"
       rm -rf "$dest_dir"
     else
-      printf '[CONFLICT] wrapper Skill path is not a directory: %s\n' "$dest_dir" >&2
+      printf '[CONFLICT] wrapper Skill 路径不是目录：%s\n' "$dest_dir" >&2
       CONFLICT=$((CONFLICT + 1))
       return 1
     fi
@@ -375,7 +375,7 @@ process_entry() {
   TOTAL=$((TOTAL + 1))
 
   if ! ost_name="$(support_to_ost "$support_name")"; then
-    printf '[MISSING] invalid support name: %s\n' "$support_name" >&2
+    printf '[MISSING] 无效的支持包名称：%s\n' "$support_name" >&2
     MISSING=$((MISSING + 1))
     return 0
   fi
@@ -386,7 +386,7 @@ process_entry() {
   printf '\n==> %s\n' "$ost_name"
 
   if [ ! -d "$src_dir" ]; then
-    printf '[MISSING] source package not found: %s\n' "$src_dir" >&2
+    printf '[MISSING] 源支持包不存在：%s\n' "$src_dir" >&2
     MISSING=$((MISSING + 1))
     return 0
   fi
@@ -423,7 +423,7 @@ process_entry() {
     printf '[SCRIPT_OK] %s\n' "$ost_name"
     SCRIPT_OK=$((SCRIPT_OK + 1))
   else
-    printf '[FAILED] install script failed: %s\n' "$ost_name" >&2
+    printf '[FAILED] 安装脚本执行失败：%s\n' "$ost_name" >&2
     FAILED=$((FAILED + 1))
   fi
 }
@@ -446,7 +446,7 @@ while IFS= read -r raw_line || [ -n "$raw_line" ]; do
   process_entry "$support_name" "$args"
 done < "$LIST_FILE"
 
-printf '\nDone. total=%d vendored=%d reused=%d skill_generated=%d skill_reused=%d script_ok=%d missing=%d no_script=%d failed=%d conflict=%d\n' \
+printf '\n完成。total=%d vendored=%d reused=%d skill_generated=%d skill_reused=%d script_ok=%d missing=%d no_script=%d failed=%d conflict=%d\n' \
   "$TOTAL" "$VENDORED" "$REUSED" "$SKILL_GENERATED" "$SKILL_REUSED" "$SCRIPT_OK" "$MISSING" "$NO_SCRIPT" "$FAILED" "$CONFLICT"
 
 if [ "$MISSING" -gt 0 ] || [ "$NO_SCRIPT" -gt 0 ] || [ "$FAILED" -gt 0 ] || [ "$CONFLICT" -gt 0 ]; then

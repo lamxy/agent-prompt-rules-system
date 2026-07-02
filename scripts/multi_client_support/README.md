@@ -1,48 +1,48 @@
-# 多客戶端支援
+# 多客户端支持
 
-此目錄包含適配器，用於讓 Claude Code 以外的客戶端使用本倉庫的代理規則來源。
+此目录包含适配器，用于让 Claude Code 以外的客户端使用本仓库的代理规则来源。
 
-## 目前狀態
+## 目前状态
 
-目前只實作 Codex 第一階段適配器。
+目前只实现了 Codex 第一阶段适配器。
 
-Codex 適配器聚焦於指令文件與可選的規則來源內嵌。它不會產生 `.codex/config.toml`、Codex hooks、Codex `.rules`、Codex skills 或 Codex custom agents。
+Codex 适配器聚焦于指令文件与可选的规则来源内嵌。它不会生成 `.codex/config.toml`、Codex hooks、Codex `.rules`、Codex skills 或 Codex custom agents。
 
-## Codex 適配器
+## Codex 适配器
 
-使用 `codex.sh` 從模板產生 Codex-native 指令文件。
+使用 `codex.sh` 从模板生成 Codex-native 指令文件。
 
 ```sh
 sh scripts/multi_client_support/codex.sh -l <user|project> [-p <target_dir>] [-n <filename>] [-F] [-v]
 ```
 
-選項：
+选项：
 
-- `-l user|project`：目標層級。
-- `-p <target_dir>`：既有專案目標目錄。`project` 必填，`user` 不可使用。
-- `-n <filename>`：輸出檔名。預設為 `AGENTS.codex.md`。
-- `-F`：強制覆寫既有輸出檔。搭配 `-v` 時，更新相符的內嵌檔案，同時保留無關的額外檔案。
-- `-v`：對專案目標，將本倉庫的 `.claude/` 目錄複製到 `<target>/.agent-rules/claude/`。
+- `-l user|project`：目标层级。
+- `-p <target_dir>`：现有项目目标目录。`project` 必填，`user` 不可使用。
+- `-n <filename>`：输出文件名。默认为 `AGENTS.codex.md`。
+- `-F`：强制覆盖现有输出文件。搭配 `-v` 时，更新匹配的内嵌文件，同时保留无关的额外文件。
+- `-v`：对项目目标，将本仓库的 `.claude/` 目录复制到 `<target>/.agent-rules/claude/`。
 
-範例：
+示例：
 
 ```sh
-# 在 ${CODEX_HOME:-$HOME/.codex} 下產生使用者層級 Codex 指令
+# 在 ${CODEX_HOME:-$HOME/.codex} 下生成用户层级 Codex 指令
 sh scripts/multi_client_support/codex.sh -l user
 
-# 產生專案層級 Codex 指令草稿
+# 生成项目层级 Codex 指令草稿
 sh scripts/multi_client_support/codex.sh -l project -p /path/to/project
 
-# 產生專案指令並內嵌 Claude 規則來源
+# 生成项目指令并内嵌 Claude 规则来源
 sh scripts/multi_client_support/codex.sh -l project -p /path/to/project -v
 
-# 直接寫入 AGENTS.md
+# 直接写入 AGENTS.md
 sh scripts/multi_client_support/codex.sh -l project -p /path/to/project -n AGENTS.md -F
 ```
 
-## 產生的檔案
+## 生成的文件
 
-預設專案輸出：
+默认项目输出：
 
 ```text
 target-project/
@@ -65,19 +65,19 @@ target-project/
       ...
 ```
 
-此內嵌目錄樹為摘要示意；`codex.sh` 會遞迴複製本倉庫 `.claude/` 下的所有檔案與目錄。
+此内嵌目录树为摘要示意；`codex.sh` 会递归复制本仓库 `.claude/` 下的所有文件与目录。
 
-`AGENTS.codex.md` 是 Codex-native 入口。內嵌的 `.agent-rules/claude/` 目錄是參考材料。除非已另行安裝 Codex-native 設定，否則 Claude 專用 settings、hooks、plugins 與 `SendMessage` references 不是生效中的 Codex 執行時設定。
+`AGENTS.codex.md` 是 Codex-native 入口。内嵌的 `.agent-rules/claude/` 目录是参考材料。除非已另行安装 Codex-native 设定，否则 Claude 专用 settings、hooks、plugins 与 `SendMessage` references 不是生效中的 Codex 执行时设定。
 
-## 驗證
+## 验证
 
-執行：
+运行：
 
 ```sh
 sh -n scripts/multi_client_support/codex.sh
 sh scripts/test-multi-client-codex.sh
 ```
 
-## 未來方向
+## 未来方向
 
-未來階段可能會將選定的 Claude rule intent 轉換為 Codex-native config、hooks、command rules、skills 或 custom agents。這些範圍刻意不納入第一階段。
+未来阶段可能会将选定的 Claude rule intent 转换为 Codex-native config、hooks、command rules、skills 或 custom agents。这些范围刻意不纳入第一阶段。

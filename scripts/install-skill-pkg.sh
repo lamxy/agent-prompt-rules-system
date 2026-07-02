@@ -6,17 +6,17 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
   cat <<'USAGE'
-Usage:
+用法：
   sh scripts/install-skill-pkg.sh -f <FLAG> -t <target_skills_dir> [-s <skills_root>] [-F]
 
-Options:
-  -f  Skill package flag/identifier (e.g., frontend-dev → skills-frontend-dev/)
-  -t  Target skills directory (e.g., /path/to/project/.claude/skills)
-  -s  Source skills root (default: <repo>/skills)
-  -F  Force overwrite: delete existing same-name skill dirs and recopy
-  -h  Show this help message
+选项：
+  -f  Skill 包标识符（如 frontend-dev → skills-frontend-dev/）
+  -t  目标 skills 目录（如 /path/to/project/.claude/skills）
+  -s  源 skills 根目录（默认：<repo>/skills）
+  -F  强制覆盖：删除同名 skill 目录后重新复制
+  -h  显示此帮助信息
 
-Examples:
+示例：
   sh scripts/install-skill-pkg.sh -f frontend-dev -t ~/.claude/skills
   sh scripts/install-skill-pkg.sh -f frontend-dev -t /my/project/.claude/skills -F
 USAGE
@@ -39,7 +39,7 @@ while getopts "f:t:s:Fh" opt; do
 done
 
 if [ -z "$FLAG" ] || [ -z "$TARGET" ]; then
-  printf 'Error: -f <FLAG> and -t <target_skills_dir> are required.\n' >&2
+  printf '错误：-f <FLAG> 和 -t <target_skills_dir> 为必填项。\n' >&2
   usage
   exit 1
 fi
@@ -51,12 +51,12 @@ fi
 PKG_DIR="$SKILLS_ROOT/skills-$FLAG"
 
 if [ ! -d "$PKG_DIR" ]; then
-  printf 'Error: skill package not found: %s\n' "$PKG_DIR" >&2
+  printf '错误：Skill 包不存在：%s\n' "$PKG_DIR" >&2
   exit 1
 fi
 
 if [ ! -d "$TARGET" ]; then
-  printf 'Error: target directory does not exist: %s\n' "$TARGET" >&2
+  printf '错误：目标目录不存在：%s\n' "$TARGET" >&2
   exit 1
 fi
 
@@ -73,13 +73,13 @@ for skill_dir in "$PKG_DIR"/*/; do
 
   if [ -d "$dest" ]; then
     if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] Removing existing: %s\n' "$dest"
+      printf '[FORCE] 删除已有目录：%s\n' "$dest"
       rm -rf "$dest"
       cp -r "$skill_dir" "$dest"
       printf '[COPIED] %s\n' "$skill_name"
       FORCED=$((FORCED + 1))
     else
-      printf '[MANUAL] Skill already exists, please handle manually: %s\n' "$dest"
+      printf '[MANUAL] Skill 已存在，请手动处理：%s\n' "$dest"
       SKIPPED=$((SKIPPED + 1))
     fi
   else
@@ -91,5 +91,5 @@ done
 
 printf '\nDone. copied=%d  forced=%d  manual=%d\n' "$COPIED" "$FORCED" "$SKIPPED"
 if [ "$SKIPPED" -gt 0 ]; then
-  printf 'Skills marked [MANUAL] were skipped. Remove or rename them in the target, then rerun; or use -F to force overwrite.\n'
+  printf '标记为 [MANUAL] 的 Skill 已跳过。请在目标目录中删除或重命名后重新运行；或使用 -F 强制覆盖。\n'
 fi

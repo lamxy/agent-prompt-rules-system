@@ -6,18 +6,18 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
   cat <<'USAGE'
-Usage:
+用法：
   sh scripts/install-claude-md.sh -f <FLAG> -t <target_dir> [-n <filename>] [-s <claude_mds_root>] [-F]
 
-Options:
-  -f  Flag/identifier matching CLAUDE-<FLAG>.md in the source directory
-  -t  Target project directory (file will be placed here)
-  -n  Output filename (default: CLAUDE.md, e.g. AGENTS.md, GEMINI.md)
-  -s  Source claude_mds root (default: <repo>/claude_mds)
-  -F  Force overwrite if target file already exists
-  -h  Show this help message
+选项：
+  -f  与源目录中 CLAUDE-<FLAG>.md 匹配的标识符
+  -t  目标项目目录（文件将放置于此）
+  -n  输出文件名（默认：CLAUDE.md，如 AGENTS.md、GEMINI.md）
+  -s  源 claude_mds 根目录（默认：<repo>/claude_mds）
+  -F  目标文件已存在时强制覆盖
+  -h  显示此帮助信息
 
-Examples:
+示例：
   sh scripts/install-claude-md.sh -f project-frontend-dev -t ~/my-project
   sh scripts/install-claude-md.sh -f user-productivity -t ~/my-project -n AGENTS.md
   sh scripts/install-claude-md.sh -f project-backend-dev -t ~/my-project -F
@@ -60,7 +60,7 @@ while getopts "f:t:n:s:Fh" opt; do
 done
 
 if [ -z "$FLAG" ] || [ -z "$TARGET" ]; then
-  printf 'Error: -f <FLAG> and -t <target_dir> are required.\n' >&2
+  printf '错误：-f <FLAG> 和 -t <target_dir> 为必填项。\n' >&2
   usage
   exit 1
 fi
@@ -72,12 +72,12 @@ fi
 SRC_FILE="$SOURCE_ROOT/CLAUDE-$FLAG.md"
 
 if [ ! -f "$SRC_FILE" ]; then
-  printf 'Error: source file not found: %s\n' "$SRC_FILE" >&2
+  printf '错误：源文件不存在：%s\n' "$SRC_FILE" >&2
   exit 1
 fi
 
 if [ ! -d "$TARGET" ]; then
-  printf 'Error: target directory does not exist: %s\n' "$TARGET" >&2
+  printf '错误：目标目录不存在：%s\n' "$TARGET" >&2
   exit 1
 fi
 
@@ -85,12 +85,12 @@ DEST="$TARGET/$OUTNAME"
 
 if [ -f "$DEST" ]; then
   if [ "$FORCE" -eq 1 ]; then
-    printf '[FORCE] Overwriting: %s\n' "$DEST"
+    printf '[FORCE] 覆盖写入：%s\n' "$DEST"
     cp "$SRC_FILE" "$DEST"
     printf '[COPIED] %s -> %s\n' "$(basename "$SRC_FILE")" "$OUTNAME"
   else
-    printf '[MANUAL] File already exists, please handle manually: %s\n' "$DEST"
-    printf 'Use -F to force overwrite.\n'
+    printf '[MANUAL] 文件已存在，请手动处理：%s\n' "$DEST"
+    printf '使用 -F 可强制覆盖。\n'
     exit 0
   fi
 else

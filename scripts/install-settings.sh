@@ -3,40 +3,40 @@ set -eu
 
 usage() {
   printf '%s\n' \
-    'Usage:' \
+    '用法：' \
     '  sh ./scripts/install-settings.sh -l <user|project|local> [-s <scenario>] [--src <source_settings_json>] -m <overwrite|merge|ask> [-p <target_dir>]' \
     '' \
-    'Options:' \
-    '  -l  Settings level:' \
-    '      user     Operate on user-level settings' \
-    '      project  Operate on shared project settings' \
-    '      local    Operate on local project settings' \
+    '选项：' \
+    '  -l  配置作用域：' \
+    '      user     操作用户级配置' \
+    '      project  操作项目级共享配置' \
+    '      local    操作本地项目配置' \
     '' \
-    '  --src  Optional explicit source settings file path.' \
-    '         When provided, -s is ignored.' \
+    '  --src  可选，显式指定源配置文件路径。' \
+    '         提供时忽略 -s。' \
     '' \
-    '  -s  Scenario name used to resolve the default source template under ./settings/.' \
-    '      Resolution rules:' \
-    '      user without -s    -> settings/settings.user.json' \
-    '      user with -s foo   -> settings/settings.user-foo.json' \
-    '      project with -s foo-> settings/settings.project-foo.json' \
-    '      local with -s foo  -> settings/settings.local-foo.json' \
+    '  -s  场景名，用于解析 ./settings/ 下的默认源模板。' \
+    '      解析规则：' \
+    '      user 不带 -s    -> settings/settings.user.json' \
+    '      user 带 -s foo  -> settings/settings.user-foo.json' \
+    '      project 带 -s foo-> settings/settings.project-foo.json' \
+    '      local 带 -s foo  -> settings/settings.local-foo.json' \
     '' \
-    '  -m  Operation mode when target settings already exists:' \
-    '      overwrite  Replace the target file after creating a backup' \
-    '      merge      Merge enabledPlugins and extraKnownMarketplaces into target' \
-    '      ask        Ask whether to overwrite, merge, or skip' \
+    '  -m  目标配置已存在时的操作模式：' \
+    '      overwrite  备份后替换目标文件' \
+    '      merge      将 enabledPlugins 和 extraKnownMarketplaces 合并到目标' \
+    '      ask        询问是否覆盖、合并或跳过' \
     '' \
-    '  -p, --dst  Exact target directory.' \
-    '             Defaults to ~/.claude for user level.' \
-    '             Required for project and local levels.' \
+    '  -p, --dst  精确目标目录。' \
+    '             用户级默认 ~/.claude。' \
+    '             project 和 local 级必填。' \
     '' \
-    '  -h, --help  Show this help message' \
+    '  -h, --help  显示此帮助信息' \
     '' \
-    'Notes:' \
-    '  - merge only affects enabledPlugins and extraKnownMarketplaces.' \
-    '  - Source file names must match the selected level.' \
-    '  - Existing target files are backed up before overwrite or merge writes.'
+    '注意：' \
+    '  - merge 仅影响 enabledPlugins 和 extraKnownMarketplaces。' \
+    '  - 源文件名必须与所选作用域匹配。' \
+    '  - 覆盖或合并写入前，会自动备份已有目标文件。'
 }
 
 expand_path() {
@@ -77,7 +77,7 @@ resolve_python() {
     return 0
   fi
 
-  fail "Python 3 is required for JSON validation and merge operations."
+  fail "JSON 校验和合并操作需要 Python 3。"
 }
 
 run_python_stdin() {
@@ -122,26 +122,26 @@ with open(target_path, "r", encoding="utf-8") as target_handle:
     target = json.load(target_handle)
 
 if not isinstance(source, dict):
-    raise SystemExit("Source settings JSON must be an object")
+    raise SystemExit("源 settings JSON 必须为对象")
 
 if not isinstance(target, dict):
-    raise SystemExit("Target settings JSON must be an object")
+    raise SystemExit("目标 settings JSON 必须为对象")
 
 result = dict(target)
 
 target_plugins = target.get("enabledPlugins") or {}
 source_plugins = source.get("enabledPlugins") or {}
 if not isinstance(target_plugins, dict):
-    raise SystemExit("Target enabledPlugins must be an object")
+    raise SystemExit("目标 enabledPlugins 必须为对象")
 if not isinstance(source_plugins, dict):
-    raise SystemExit("Source enabledPlugins must be an object")
+    raise SystemExit("源 enabledPlugins 必须为对象")
 
 target_marketplaces = target.get("extraKnownMarketplaces") or {}
 source_marketplaces = source.get("extraKnownMarketplaces") or {}
 if not isinstance(target_marketplaces, dict):
-    raise SystemExit("Target extraKnownMarketplaces must be an object")
+    raise SystemExit("目标 extraKnownMarketplaces 必须为对象")
 if not isinstance(source_marketplaces, dict):
-    raise SystemExit("Source extraKnownMarketplaces must be an object")
+    raise SystemExit("源 extraKnownMarketplaces 必须为对象")
 
 result["enabledPlugins"] = dict(target_plugins)
 result["enabledPlugins"].update(source_plugins)
@@ -180,11 +180,11 @@ prompt_existing_file_action() {
   allow_merge="$2"
 
   while true; do
-    printf 'Target file exists: %s\n' "$target_file" >&2
+    printf '目标文件已存在：%s\n' "$target_file" >&2
     if [ "$allow_merge" = "yes" ]; then
-      printf 'Choose action: [o]verwrite, [m]erge, [s]kip: ' >&2
+      printf '选择操作：[o] 覆盖  [m] 合并  [s] 跳过：' >&2
     else
-      printf 'Choose action: [o]verwrite, [s]kip: ' >&2
+      printf '选择操作：[o] 覆盖  [s] 跳过：' >&2
     fi
 
     IFS= read -r answer
@@ -198,7 +198,7 @@ prompt_existing_file_action() {
           printf 'merge\n'
           return 0
         fi
-        printf 'Merge is unavailable because the target settings file is not valid JSON.\n' >&2
+        printf '目标配置文件不是合法 JSON，无法执行合并。\n' >&2
         ;;
       s|S|skip|SKIP)
         printf 'skip\n'
@@ -206,9 +206,9 @@ prompt_existing_file_action() {
         ;;
       *)
         if [ "$allow_merge" = "yes" ]; then
-          printf 'Invalid choice. Please enter o, m, or s.\n' >&2
+          printf '输入无效，请输入 o、m 或 s。\n' >&2
         else
-          printf 'Invalid choice. Please enter o or s.\n' >&2
+          printf '输入无效，请输入 o 或 s。\n' >&2
         fi
         ;;
     esac
@@ -255,27 +255,27 @@ TARGET_DIR=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     -l)
-      [ "$#" -ge 2 ] || fail "-l requires a value."
+      [ "$#" -ge 2 ] || fail "-l 需要一个值。"
       LEVEL="$2"
       shift 2
       ;;
     -s)
-      [ "$#" -ge 2 ] || fail "-s requires a value."
+      [ "$#" -ge 2 ] || fail "-s 需要一个值。"
       SCENARIO="$2"
       shift 2
       ;;
     -m)
-      [ "$#" -ge 2 ] || fail "-m requires a value."
+      [ "$#" -ge 2 ] || fail "-m 需要一个值。"
       MODE="$2"
       shift 2
       ;;
     -p|--dst)
-      [ "$#" -ge 2 ] || fail "$1 requires a value."
+      [ "$#" -ge 2 ] || fail "$1 需要一个值。"
       TARGET_DIR="$2"
       shift 2
       ;;
     --src)
-      [ "$#" -ge 2 ] || fail "--src requires a value."
+      [ "$#" -ge 2 ] || fail "--src 需要一个值。"
       SOURCE_PATH="$2"
       shift 2
       ;;
@@ -284,19 +284,19 @@ while [ "$#" -gt 0 ]; do
       exit 0
       ;;
     *)
-      fail "Unsupported argument: $1"
+      fail "不支持的参数：$1"
       ;;
   esac
 done
 
-[ -n "$LEVEL" ] || fail "-l is required."
-[ -n "$MODE" ] || fail "-m is required."
+[ -n "$LEVEL" ] || fail "-l 为必填项。"
+[ -n "$MODE" ] || fail "-m 为必填项。"
 
 case "$LEVEL" in
   user|project|local)
     ;;
   *)
-    fail "invalid level: $LEVEL. Use user, project, or local."
+    fail "无效的作用域：$LEVEL。请使用 user、project 或 local。"
     ;;
 esac
 
@@ -304,7 +304,7 @@ case "$MODE" in
   overwrite|merge|ask)
     ;;
   *)
-    fail "invalid mode: $MODE. Use overwrite, merge, or ask."
+    fail "无效的模式：$MODE。请使用 overwrite、merge 或 ask。"
     ;;
 esac
 
@@ -333,20 +333,20 @@ else
       fi
       ;;
     project)
-      [ -n "$SCENARIO" ] || fail "-s is required for project level when --src is not provided."
+      [ -n "$SCENARIO" ] || fail "未提供 --src 时，project 级必须指定 -s。"
       RESOLVED_SOURCE_PATH="$DEFAULT_SETTINGS_DIR/settings.project-$SCENARIO.json"
       ;;
     local)
-      [ -n "$SCENARIO" ] || fail "-s is required for local level when --src is not provided."
+      [ -n "$SCENARIO" ] || fail "未提供 --src 时，local 级必须指定 -s。"
       RESOLVED_SOURCE_PATH="$DEFAULT_SETTINGS_DIR/settings.local-$SCENARIO.json"
       ;;
   esac
 fi
 
-[ -f "$RESOLVED_SOURCE_PATH" ] || fail "source settings file not found: $RESOLVED_SOURCE_PATH"
+[ -f "$RESOLVED_SOURCE_PATH" ] || fail "源配置文件不存在：$RESOLVED_SOURCE_PATH"
 
 SOURCE_BASENAME="$(basename "$RESOLVED_SOURCE_PATH")"
-validate_source_name_matches_level "$SOURCE_BASENAME" "$LEVEL" || fail "source settings file does not match level $LEVEL: $SOURCE_BASENAME"
+validate_source_name_matches_level "$SOURCE_BASENAME" "$LEVEL" || fail "源配置文件与作用域 $LEVEL 不匹配：$SOURCE_BASENAME"
 
 if [ -n "$TARGET_DIR" ]; then
   RESOLVED_TARGET_DIR="$(expand_path "$TARGET_DIR")"
@@ -356,7 +356,7 @@ else
       RESOLVED_TARGET_DIR="$HOME/.claude"
       ;;
     project|local)
-      fail "-p/--dst is required for project and local levels."
+      fail "-p/--dst 对于 project 和 local 级为必填项。"
       ;;
   esac
 fi
@@ -373,7 +373,7 @@ esac
 TARGET_FILE="$RESOLVED_TARGET_DIR/$TARGET_FILE_NAME"
 
 resolve_python
-validate_json_file "$RESOLVED_SOURCE_PATH" || fail "source settings file is not valid JSON: $RESOLVED_SOURCE_PATH"
+validate_json_file "$RESOLVED_SOURCE_PATH" || fail "源配置文件不是合法 JSON：$RESOLVED_SOURCE_PATH"
 
 mkdir -p "$RESOLVED_TARGET_DIR"
 
@@ -393,7 +393,7 @@ if [ "$MODE" = "ask" ]; then
   if [ "$TARGET_JSON_VALID" = "yes" ]; then
     CURRENT_MODE="$(prompt_existing_file_action "$TARGET_FILE" "yes")"
   else
-    printf 'Target settings file is not valid JSON, merge is unavailable: %s\n' "$TARGET_FILE" >&2
+    printf '目标配置文件不是合法 JSON，合并不可用：%s\n' "$TARGET_FILE" >&2
     CURRENT_MODE="$(prompt_existing_file_action "$TARGET_FILE" "no")"
   fi
 fi
@@ -405,10 +405,10 @@ case "$CURRENT_MODE" in
     printf '[OVERWRITE] %s\n' "$TARGET_FILE"
     ;;
   merge)
-    [ "$TARGET_JSON_VALID" = "yes" ] || fail "target settings file is not valid JSON, cannot merge: $TARGET_FILE"
+    [ "$TARGET_JSON_VALID" = "yes" ] || fail "目标配置文件不是合法 JSON，无法合并：$TARGET_FILE"
     TMP_MERGED_FILE="$(create_temp_file "$RESOLVED_TARGET_DIR")"
     trap 'rm -f "$TMP_MERGED_FILE"' EXIT HUP INT TERM
-    merge_json_files "$RESOLVED_SOURCE_PATH" "$TARGET_FILE" "$TMP_MERGED_FILE" || fail "failed to merge settings JSON"
+    merge_json_files "$RESOLVED_SOURCE_PATH" "$TARGET_FILE" "$TMP_MERGED_FILE" || fail "settings JSON 合并失败"
     backup_target_file "$TARGET_FILE"
     cp "$TMP_MERGED_FILE" "$TARGET_FILE"
     rm -f "$TMP_MERGED_FILE"
@@ -419,8 +419,8 @@ case "$CURRENT_MODE" in
     printf '[SKIP] %s\n' "$TARGET_FILE"
     ;;
   *)
-    fail "unsupported action: $CURRENT_MODE"
+    fail "不支持的操作：$CURRENT_MODE"
     ;;
 esac
 
-printf 'Settings install complete.\n'
+printf '配置安装完成。\n'

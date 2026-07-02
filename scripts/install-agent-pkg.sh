@@ -6,17 +6,17 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
   cat <<'USAGE'
-Usage:
+用法：
   sh scripts/install-agent-pkg.sh -f <FLAG> -t <target_agents_dir> [-s <agents_root>] [-F]
 
-Options:
-  -f  Agent package flag/identifier (e.g., frontend-dev → agents-frontend-dev/)
-  -t  Target agents directory (e.g., /path/to/project/.claude/agents)
-  -s  Source agents root (default: <repo>/agents)
-  -F  Force overwrite: delete existing same-name .md files and recopy
-  -h  Show this help message
+选项：
+  -f  Agent 包标识符（如 frontend-dev → agents-frontend-dev/）
+  -t  目标 agents 目录（如 /path/to/project/.claude/agents）
+  -s  源 agents 根目录（默认：<repo>/agents）
+  -F  强制覆盖：删除同名 .md 文件后重新复制
+  -h  显示此帮助信息
 
-Examples:
+示例：
   sh scripts/install-agent-pkg.sh -f frontend-dev -t ~/.claude/agents
   sh scripts/install-agent-pkg.sh -f frontend-dev -t /my/project/.claude/agents -F
 USAGE
@@ -39,7 +39,7 @@ while getopts "f:t:s:Fh" opt; do
 done
 
 if [ -z "$FLAG" ] || [ -z "$TARGET" ]; then
-  printf 'Error: -f <FLAG> and -t <target_agents_dir> are required.\n' >&2
+  printf '错误：-f <FLAG> 和 -t <target_agents_dir> 为必填项。\n' >&2
   usage
   exit 1
 fi
@@ -51,12 +51,12 @@ fi
 PKG_DIR="$AGENTS_ROOT/agents-$FLAG"
 
 if [ ! -d "$PKG_DIR" ]; then
-  printf 'Error: agent package not found: %s\n' "$PKG_DIR" >&2
+  printf '错误：Agent 包不存在：%s\n' "$PKG_DIR" >&2
   exit 1
 fi
 
 if [ ! -d "$TARGET" ]; then
-  printf 'Error: target directory does not exist: %s\n' "$TARGET" >&2
+  printf '错误：目标目录不存在：%s\n' "$TARGET" >&2
   exit 1
 fi
 
@@ -73,13 +73,13 @@ for src_file in "$PKG_DIR"/*.md; do
 
   if [ -f "$dest" ]; then
     if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] Removing existing: %s\n' "$dest"
+      printf '[FORCE] 删除已有文件：%s\n' "$dest"
       rm -f "$dest"
       cp "$src_file" "$dest"
       printf '[COPIED] %s\n' "$file_name"
       FORCED=$((FORCED + 1))
     else
-      printf '[MANUAL] Agent file already exists, please handle manually: %s\n' "$dest"
+      printf '[MANUAL] Agent 文件已存在，请手动处理：%s\n' "$dest"
       SKIPPED=$((SKIPPED + 1))
     fi
   else
@@ -91,5 +91,5 @@ done
 
 printf '\nDone. copied=%d  forced=%d  manual=%d\n' "$COPIED" "$FORCED" "$SKIPPED"
 if [ "$SKIPPED" -gt 0 ]; then
-  printf 'Files marked [MANUAL] were skipped. Remove or rename them in the target, then rerun; or use -F to force overwrite.\n'
+  printf '标记为 [MANUAL] 的文件已跳过。请在目标目录中删除或重命名后重新运行；或使用 -F 强制覆盖。\n'
 fi

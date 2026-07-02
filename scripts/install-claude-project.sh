@@ -6,19 +6,19 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
   cat <<'USAGE'
-Usage:
+用法：
   sh scripts/install-claude-project.sh -f <FLAG> -t <target_dir> [-s <dot_claude_projects_root>] [-F]
 
-Options:
-  -f  Flag/identifier matching .claude-<FLAG>/ in the source directory
-  -t  Target project root directory (files are placed directly here)
-  -s  Source dot_claude_projects root (default: <repo>/dot_claude_projects)
-  -F  Force overwrite if target files/dirs already exist
-  -h  Show this help message
+选项：
+  -f  与源目录中 .claude-<FLAG>/ 匹配的标识符
+  -t  目标项目根目录（文件直接放置于此）
+  -s  源 dot_claude_projects 根目录（默认：<repo>/dot_claude_projects）
+  -F  目标文件/目录已存在时强制覆盖
+  -h  显示此帮助信息
 
-Copies .claude/, .mcp.json, and CLAUDE.md from .claude-<FLAG>/ into <target_dir>.
+将 .claude/、.mcp.json 和 CLAUDE.md 从 .claude-<FLAG>/ 复制到 <target_dir>。
 
-Examples:
+示例：
   sh scripts/install-claude-project.sh -f frontend-dev -t ~/my-project
   sh scripts/install-claude-project.sh -f frontend-dev -t ~/my-project -F
   sh scripts/install-claude-project.sh -f frontend-dev -t ~/my-project -s /custom/dot_claude_projects
@@ -56,7 +56,7 @@ while getopts "f:t:s:Fh" opt; do
 done
 
 if [ -z "$FLAG" ] || [ -z "$TARGET" ]; then
-  printf 'Error: -f <FLAG> and -t <target_dir> are required.\n' >&2
+  printf '错误：-f <FLAG> 和 -t <target_dir> 为必填项。\n' >&2
   usage
   exit 1
 fi
@@ -68,12 +68,12 @@ fi
 PKG_DIR="$SOURCE_ROOT/.claude-$FLAG"
 
 if [ ! -d "$PKG_DIR" ]; then
-  printf 'Error: source package not found: %s\n' "$PKG_DIR" >&2
+  printf '错误：源配置包不存在：%s\n' "$PKG_DIR" >&2
   exit 1
 fi
 
 if [ ! -d "$TARGET" ]; then
-  printf 'Error: target directory does not exist: %s\n' "$TARGET" >&2
+  printf '错误：目标目录不存在：%s\n' "$TARGET" >&2
   exit 1
 fi
 
@@ -86,12 +86,12 @@ copy_file() {
   src="$1"; dest="$2"; label="$3"
   if [ -f "$dest" ]; then
     if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] Overwriting: %s\n' "$dest"
+      printf '[FORCE] 覆盖写入：%s\n' "$dest"
       cp "$src" "$dest"
       printf '[COPIED] %s\n' "$label"
       FORCED=$((FORCED + 1))
     else
-      printf '[MANUAL] File already exists, please handle manually: %s\n' "$dest"
+      printf '[MANUAL] 文件已存在，请手动处理：%s\n' "$dest"
       SKIPPED=$((SKIPPED + 1))
     fi
   else
@@ -106,13 +106,13 @@ copy_dir() {
   src="$1"; dest="$2"; label="$3"
   if [ -d "$dest" ]; then
     if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] Removing and recopying: %s\n' "$dest"
+      printf '[FORCE] 删除并重新复制：%s\n' "$dest"
       rm -rf "$dest"
       cp -r "$src" "$dest"
       printf '[COPIED] %s\n' "$label"
       FORCED=$((FORCED + 1))
     else
-      printf '[MANUAL] Directory already exists, please handle manually: %s\n' "$dest"
+      printf '[MANUAL] 目录已存在，请手动处理：%s\n' "$dest"
       SKIPPED=$((SKIPPED + 1))
     fi
   else
@@ -139,5 +139,5 @@ fi
 
 printf '\nDone. copied=%d  forced=%d  manual=%d\n' "$COPIED" "$FORCED" "$SKIPPED"
 if [ "$SKIPPED" -gt 0 ]; then
-  printf 'Items marked [MANUAL] were skipped. Remove or rename them, then rerun; or use -F to force overwrite.\n'
+  printf '标记为 [MANUAL] 的项目已跳过。请删除或重命名后重新运行；或使用 -F 强制覆盖。\n'
 fi
