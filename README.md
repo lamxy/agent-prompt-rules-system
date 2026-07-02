@@ -87,19 +87,19 @@
 
 ### 三、`open_supports/` — 开源库本地化支持包目录
 
-`open_supports/` 用于收录与 Agent 编程相关的开源库支持包。每个支持包以 `ost_{GithubName}_{RepoName}/` 命名，保留官方仓库的核心摘要，并把安装、更新、配置和验证流程整理成可复用的本地材料。
+`open_supports/` 用于收录与 Agent 编程相关的开源库支持包。每个支持包以 `ost_{OwnerName}_{RepoName}/` 命名，保留官方仓库的核心摘要，并把安装、更新、配置和验证流程整理成可复用的本地材料。
 
 典型支持包结构：
 
 ```text
-open_supports/ost_{GithubName}_{RepoName}/
+open_supports/ost_{OwnerName}_{RepoName}/
 ├── repo_readme_summary.md        # 官方 README / 文档的结构化摘要
 ├── usage_examples.md             # 可选：安装后的常见使用示例
 ├── scripts_for_install/
 │   └── install.*                 # 一键安装 / 更新脚本
 └── skill_for_setup/
     ├── README.md                 # Skill 使用说明
-    └── ost_{GithubName}_{RepoName}_install/
+    └── ost_{OwnerName}_{RepoName}_install/
         └── SKILL.md              # 面向 Agent 的安装 Skill
 ```
 
@@ -301,7 +301,7 @@ sh ./scripts/install-open-supports.sh -t /path/to/project -F
 
 #### 3.9 维护 open_supports 支持包
 
-新增或更新一个 `open_supports/ost_{GithubName}_{RepoName}/` 支持包时，先阅读：
+新增或更新一个 `open_supports/ost_{OwnerName}_{RepoName}/` 支持包时，先阅读：
 
 ```text
 open_supports/README.md
@@ -370,7 +370,7 @@ open_supports/.copilot-skills/ost-support-workflow/SKILL.md
 │   ├── README.md                # 支持包体系说明、贡献规范和收录状态
 │   ├── .copilot-skills/         # 跨支持包复用的摘要、脚本、setup、workflow Skill
 │   ├── .ost-workflow-state/     # workflow 运行时状态目录
-│   ├── ost_{GithubName}_{RepoName}/
+│   ├── ost_{OwnerName}_{RepoName}/
 │   │   ├── repo_readme_summary.md
 │   │   ├── usage_examples.md
 │   │   ├── scripts_for_install/

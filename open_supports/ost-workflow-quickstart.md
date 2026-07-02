@@ -26,7 +26,7 @@
 11. 最后测试安装前必须先问我
 ```
 
-示例：
+示例：实际使用该提示词即可，工作流技能包含上述要求
 
 ```text
 请使用 open_supports/.copilot-skills/ost-support-workflow/SKILL.md 工作流，

@@ -6,7 +6,7 @@
 
 约定：
 
-- 状态文件命名：`{GithubName}_{RepoName}.json`
+- 状态文件命名：`{OwnerName}_{RepoName}.json`
 - 示例：`colbymchenry_codegraph.json`
 - 具体 JSON 状态文件由仓库根目录 `.gitignore` 忽略
 - 本说明文件可以提交，用于保留目录约定

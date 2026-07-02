@@ -24,8 +24,8 @@ usage() {
   <support-name> [install args...]
 
 支持包名称格式：
-  GithubName/RepoName        示例：colbymchenry/codegraph
-  ost_GithubName_RepoName    示例：ost_colbymchenry_codegraph
+  OwnerName/RepoName        示例：colbymchenry/codegraph
+  ost_OwnerName_RepoName    示例：ost_colbymchenry_codegraph
 USAGE
 }
 

@@ -4,8 +4,8 @@
 #   <support-name> [install args...]
 #
 # Accepted support names:
-#   GithubName/RepoName
-#   ost_GithubName_RepoName
+#   OwnerName/RepoName
+#   ost_OwnerName_RepoName
 #
 # Examples:
 # colbymchenry/codegraph --target=claude --location=local

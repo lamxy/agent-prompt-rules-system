@@ -24,8 +24,8 @@ sh scripts/install-open-supports.sh -t /path/to/project
 
 支持的名称格式：
 
-- `GithubName/RepoName`，例如 `colbymchenry/codegraph`
-- `ost_GithubName_RepoName`，例如 `ost_colbymchenry_codegraph`
+- `OwnerName/RepoName`，例如 `colbymchenry/codegraph`
+- `ost_OwnerName_RepoName`，例如 `ost_colbymchenry_codegraph`
 
 支持名称后的参数将传递给该包内包含的 `scripts_for_install/install.*` 脚本。
 

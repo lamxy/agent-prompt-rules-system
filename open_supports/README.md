@@ -19,7 +19,7 @@ open_supports/
 ├── README.md                       # 本文件：体系说明 + 待办事项
 ├── workflow-quickstart.md          # workflow Skill 快速使用教程
 ├── .ost-workflow-state/            # workflow 运行时状态目录（JSON 状态默认不提交）
-├── ost_{GithubName}_{RepoName}/    # 每个开源库一个支持包目录
+├── ost_{OwnerName}_{RepoName}/    # 每个开源库一个支持包目录
 │   ├── .ost-refs/                  # （可选）手动引用文档，大模型操作前优先阅读
 │   ├── repo_readme_summary.md      # 仓库核心介绍（摘自官方 README）
 │   ├── usage_examples.md           # （可选）安装后的使用示例与验证排错
@@ -27,19 +27,19 @@ open_supports/
 │   │   └── install.*               # 一键安装 / 更新脚本（扩展名随语言选型）
 │   └── skill_for_setup/
 │       ├── README.md               # Skill 使用说明
-│       └── ost_{GithubName}_{RepoName}_install/
+│       └── ost_{OwnerName}_{RepoName}_install/
 │           └── SKILL.md            # 安装 Skill 主文件
 └── .copilot-skills/                # 收录开源库过程中沉淀的通用 Skill，供跨支持包复用
 ```
 
 ### 命名规范
 
-命名均基于 GitHub 仓库路径 `{GithubName}/{RepoName}`（即 `github.com/{GithubName}/{RepoName}`），将路径中的 `/` 替换为对应分隔符后拼接：
+命名均基于 GitHub 仓库路径 `{OwnerName}/{RepoName}`（即 `github.com/{OwnerName}/{RepoName}`），将路径中的 `/` 替换为对应分隔符后拼接：
 
 | 类型 | 格式 | 映射规则 | 示例（来源：`colbymchenry/codegraph`） |
 |------|------|---------|--------------------------------------|
-| 支持包目录 | `ost_{GithubName}_{RepoName}` | `/` → `_` | `ost_colbymchenry_codegraph` |
-| Skill 目录 | `ost_{GithubName}_{RepoName}_install` | `/` → `_`，末尾加 `_install` | `ost_colbymchenry_codegraph_install` |
+| 支持包目录 | `ost_{OwnerName}_{RepoName}` | `/` → `_` | `ost_colbymchenry_codegraph` |
+| Skill 目录 | `ost_{OwnerName}_{RepoName}_install` | `/` → `_`，末尾加 `_install` | `ost_colbymchenry_codegraph_install` |
 | 脚本文件 | `install.sh` / `install.js` / `install.py` | 扩展名随语言选型；脚本需幂等（兼容首次安装与更新），无需单独 `update.*` | — |
 
 > 大小写与 GitHub 仓库地址完全一致，原样保留，不做转换。
@@ -95,7 +95,7 @@ open_supports/
 **客户端优先级**：优先支持 Claude Code、Codex；其他客户端按各开源库官方支持范围决定是否收录。
 
 - `README.md`：说明 Skill 触发词、适用客户端、交互式 / 非交互式使用方式
-- `ost_{GithubName}_{RepoName}_install/SKILL.md`：Skill 主体，包含安装步骤、参数说明、验证方法
+- `ost_{OwnerName}_{RepoName}_install/SKILL.md`：Skill 主体，包含安装步骤、参数说明、验证方法
 
 ### `.copilot-skills/`
 
@@ -116,10 +116,10 @@ open_supports/
 
 ## 贡献指南（新增支持包）
 
-1. 复制 `ost_GithubName_RepoName_TEMPLATE/` 并按命名规范重命名
+1. 复制 `ost_OwnerName_RepoName_TEMPLATE/` 并按命名规范重命名
 2. 填写 `repo_readme_summary.md`（摘自官方 README，保留原文链接）
 3. 编写 `scripts_for_install/install.*`（语言随库的运行时选型，参考官方安装文档，保持幂等）
-4. 编写 `skill_for_setup/ost_{GithubName}_{RepoName}_install/SKILL.md`（优先覆盖 Claude Code / Codex）
+4. 编写 `skill_for_setup/ost_{OwnerName}_{RepoName}_install/SKILL.md`（优先覆盖 Claude Code / Codex）
 5. 更新 `skill_for_setup/README.md` 说明触发词与使用方式
 6. 可选：workflow 的 `optional_usage_examples` checklist 命中且用户同意时，生成 `usage_examples.md`；用户明确要求时，也可单独使用 `ost-usage-examples` 生成
 7. 在本文件下方 TODO 列表中登记状态
@@ -160,7 +160,7 @@ open_supports/
 
 ### 具体待办
 
-- [x] `ost_GithubName_RepoName_TEMPLATE`：统一使用 `repo_readme_summary.md` 文件名
+- [x] `ost_OwnerName_RepoName_TEMPLATE`：统一使用 `repo_readme_summary.md` 文件名
 - [x] `ost_colbymchenry_codegraph`：填充 `repo_readme_summary.md`、`scripts_for_install/install.*`、`skill_for_setup/ost_colbymchenry_codegraph_install/SKILL.md`
 - [x] `ost_garrytan_gstack`：填充 `repo_readme_summary.md`、`scripts_for_install/install.sh`、`skill_for_setup/ost_garrytan_gstack_install/SKILL.md`，并生成 `usage_examples.md`
 - [x] `ost_open-gsd_gsd-core`：补充目录内容

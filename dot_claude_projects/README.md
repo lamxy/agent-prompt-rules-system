@@ -63,7 +63,7 @@ open-gsd/gsd-core --claude --local
 ost_garrytan_gstack
 ```
 
-`GithubName/RepoName` 和 `ost_GithubName_RepoName` 两种名称格式均可接受。
+`OwnerName/RepoName` 和 `ost_OwnerName_RepoName` 两种名称格式均可接受。
 
 ## 新增模板
 

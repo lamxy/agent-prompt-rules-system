@@ -17,7 +17,7 @@ argument-hint: 'GitHub owner/repo, e.g. colbymchenry/codegraph'
 主 workflow 执行前只允许预读 workflow-level 轻量材料：
 
 1. `open_supports/README.md`
-2. 目标状态文件 `open_supports/.ost-workflow-state/{GithubName}_{RepoName}.json`（如存在）
+2. 目标状态文件 `open_supports/.ost-workflow-state/{OwnerName}_{RepoName}.json`（如存在）
 3. 目标支持包目录和 `.ost-refs/` 的文件列表；只在判断恢复、存在性或短本地约定时读取必要短内容
 4. 本 workflow 自身的状态脚本用法：`open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh --help`
 
@@ -192,7 +192,7 @@ open_supports/.ost-workflow-state/
 状态文件：
 
 ```text
-open_supports/.ost-workflow-state/{GithubName}_{RepoName}.json
+open_supports/.ost-workflow-state/{OwnerName}_{RepoName}.json
 ```
 
 状态 JSON 包含阶段状态和可选用法示例决策，例如：
@@ -275,10 +275,10 @@ failed
 目标支持包目录不存在时，可以自动创建最小目录结构：
 
 ```text
-ost_{GithubName}_{RepoName}/
-ost_{GithubName}_{RepoName}/scripts_for_install/
-ost_{GithubName}_{RepoName}/skill_for_setup/
-ost_{GithubName}_{RepoName}/skill_for_setup/ost_{GithubName}_{RepoName}_install/
+ost_{OwnerName}_{RepoName}/
+ost_{OwnerName}_{RepoName}/scripts_for_install/
+ost_{OwnerName}_{RepoName}/skill_for_setup/
+ost_{OwnerName}_{RepoName}/skill_for_setup/ost_{OwnerName}_{RepoName}_install/
 ```
 
 可以创建缺失目录，但不要自动覆盖已有文件。目标产物已存在时，进入对应阶段的更新或确认逻辑。

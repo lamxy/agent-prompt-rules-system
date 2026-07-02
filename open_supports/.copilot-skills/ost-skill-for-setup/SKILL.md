@@ -70,7 +70,7 @@ setup Skill 聚焦安装、配置、验证和升级入口，不负责生成详�
 
 | 占位符 | 说明 |
 |--------|------|
-| skill `name` frontmatter | `ost-{GithubName}-{RepoName}-install`（全小写，连字符分隔） |
+| skill `name` frontmatter | `ost-{OwnerName}-{RepoName}-install`（全小写，连字符分隔） |
 | `{LibraryName}` | 库名，如 `CodeGraph` |
 | `{owner}/{repo}` | GitHub 路径 |
 | `install.*` 扩展名 | 与实际脚本语言一致（`.sh` / `.js` / `.py`） |
@@ -85,7 +85,7 @@ setup Skill 聚焦安装、配置、验证和升级入口，不负责生成详�
 
 ```markdown
 ---
-name: ost-{GithubName}-{RepoName}-install
+name: ost-{OwnerName}-{RepoName}-install
 description: '帮助用户安装并配置 {LibraryName}。主路径：运行支持包内的一键脚本；脚本不可用时回退到 repo_readme_summary.md。范围：[包含的步骤] 不含 [排除的步骤]。'
 argument-hint: '[可传参数说明]'
 ---
@@ -172,7 +172,7 @@ sh scripts_for_install/install.* [flags]
 | 触发方式 | 示例 |
 |----------|------|
 | 自然语言描述 | "[安装意图示例]" |
-| 明确指定 Skill | `/ost-{GithubName}-{RepoName}-install` |
+| 明确指定 Skill | `/ost-{OwnerName}-{RepoName}-install` |
 
 ## 适用客户端
 
