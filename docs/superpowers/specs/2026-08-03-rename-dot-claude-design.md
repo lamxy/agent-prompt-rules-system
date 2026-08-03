@@ -74,4 +74,3 @@ the multi-client test expects different Simplified/Traditional Chinese wording
 than its template, and an open-supports invalid-name assertion expects an
 English message while the implementation emits Chinese. They are not part of
 this rename and must not be silently fixed or attributed to it.
-
