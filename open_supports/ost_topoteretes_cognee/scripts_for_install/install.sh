@@ -181,11 +181,11 @@ print_summary() {
 
 ensure_local_venv() {
   if [ -x "$(local_python)" ]; then
-    printf '-> Reusing existing virtualenv at %s\n' "$VENV_DIR"
+    printf '%s\n' "-> Reusing existing virtualenv at $VENV_DIR"
     return
   fi
 
-  printf '-> Creating virtualenv at %s\n' "$VENV_DIR"
+  printf '%s\n' "-> Creating virtualenv at $VENV_DIR"
   if [ "$PKG_MANAGER" = "uv" ]; then
     uv venv "$VENV_DIR" --python "$PYTHON"
   else
@@ -199,9 +199,9 @@ install_local() {
 
   if "$VENV_PY" -c 'import cognee' >/dev/null 2>&1; then
     _installed="$("$VENV_PY" -c 'import cognee; print(getattr(cognee, "__version__", "installed"))' 2>/dev/null || printf 'installed')"
-    printf '-> Cognee is already present in %s (%s); updating with the package manager.\n' "$VENV_DIR" "$_installed"
+    printf '%s\n' "-> Cognee is already present in $VENV_DIR ($_installed); updating with the package manager."
   else
-    printf '-> Installing Cognee into %s\n' "$VENV_DIR"
+    printf '%s\n' "-> Installing Cognee into $VENV_DIR"
   fi
 
   if [ "$PKG_MANAGER" = "uv" ]; then
@@ -215,13 +215,13 @@ install_local() {
 install_global() {
   if "$PYTHON" -c 'import cognee' >/dev/null 2>&1; then
     _installed="$("$PYTHON" -c 'import cognee; print(getattr(cognee, "__version__", "installed"))' 2>/dev/null || printf 'installed')"
-    printf '-> Cognee is already available to %s (%s); updating with pip --user.\n' "$PYTHON" "$_installed"
+    printf '%s\n' "-> Cognee is already available to $PYTHON ($_installed); updating with pip --user."
   else
-    printf '-> Installing Cognee for the current user with pip --user.\n'
+    printf '%s\n' '-> Installing Cognee for the current user with pip --user.'
   fi
 
   if [ "$PKG_MANAGER" = "uv" ]; then
-    printf '-> Global installs use pip --user to avoid modifying system Python.\n'
+    printf '%s\n' '-> Global installs use pip --user to avoid modifying system Python.'
   fi
   "$PYTHON" -m pip install --user --upgrade "$PACKAGE_SPEC"
 }

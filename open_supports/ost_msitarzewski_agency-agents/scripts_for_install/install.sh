@@ -229,7 +229,7 @@ abs_dir() {
 
 ensure_checkout() {
   if [ -d "$REPO_DIR/.git" ]; then
-    printf '-> Updating official agency-agents checkout: %s\n' "$REPO_DIR"
+    printf '%s\n' "-> Updating official agency-agents checkout: $REPO_DIR"
     if ! git -C "$REPO_DIR" diff --quiet || ! git -C "$REPO_DIR" diff --cached --quiet; then
       printf 'Error: checkout has local changes: %s\n' "$REPO_DIR" >&2
       printf 'Commit/stash them or choose another cache path with --repo-dir=PATH.\n' >&2
@@ -245,7 +245,7 @@ ensure_checkout() {
     exit 1
   fi
 
-  printf '-> Cloning official agency-agents repository: %s\n' "$REPO_DIR"
+  printf '%s\n' "-> Cloning official agency-agents repository: $REPO_DIR"
   mkdir -p "$(dirname "$REPO_DIR")"
   git clone --depth 1 "$REPO_URL" "$REPO_DIR"
 }

@@ -190,16 +190,16 @@ normalize_project_dir() {
 
 install_cli() {
   if [ "$LOCATION" = "global" ]; then
-    printf '-> 安装 / 更新全局 %s...\n' "$PACKAGE_NAME"
+    printf '%s\n' "-> 安装 / 更新全局 $PACKAGE_NAME..."
     npm install -g "$PACKAGE_NAME@latest"
   else
-    printf '-> 在项目目录安装 / 更新 %s：%s\n' "$PACKAGE_NAME" "$PROJECT_DIR"
+    printf '%s\n' "-> 在项目目录安装 / 更新 $PACKAGE_NAME：$PROJECT_DIR"
     (cd "$PROJECT_DIR" && npm install "$PACKAGE_NAME@latest")
   fi
 }
 
 verify_cli() {
-  printf '-> 验证 CLI...\n'
+  printf '%s\n' '-> 验证 CLI...'
   if [ "$LOCATION" = "global" ]; then
     require_command "$BINARY_NAME" "全局安装完成后仍找不到 task-master，请检查 npm global bin 是否在 PATH 中。"
     "$BINARY_NAME" --version >/dev/null 2>&1 || "$BINARY_NAME" --help >/dev/null 2>&1
@@ -213,7 +213,7 @@ configure_claude_mcp() {
   [ "$CLAUDE_MCP" = "yes" ] || return 0
   require_command "claude" "配置 Claude Code MCP 前，请先安装并登录 Claude Code CLI。"
 
-  printf '-> 配置 Claude Code MCP server（scope=%s）...\n' "$MCP_SCOPE"
+  printf '%s\n' "-> 配置 Claude Code MCP server（scope=$MCP_SCOPE）..."
   if [ -n "$TOOLS_MODE" ]; then
     claude mcp add task-master-ai --scope "$MCP_SCOPE" \
       --env TASK_MASTER_TOOLS="$TOOLS_MODE" \
@@ -225,7 +225,7 @@ configure_claude_mcp() {
 
 init_project() {
   [ "$INIT_PROJECT" = "yes" ] || return 0
-  printf '-> 初始化 Taskmaster 项目：%s\n' "$PROJECT_DIR"
+  printf '%s\n' "-> 初始化 Taskmaster 项目：$PROJECT_DIR"
   if [ "$LOCATION" = "global" ]; then
     (cd "$PROJECT_DIR" && "$BINARY_NAME" init)
   else

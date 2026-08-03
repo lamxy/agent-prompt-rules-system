@@ -135,7 +135,7 @@ check_prerequisites() {
 
 ensure_checkout() {
   if [ -d "$INSTALL_DIR/.git" ]; then
-    printf '-> Updating existing gstack checkout: %s\n' "$INSTALL_DIR"
+    printf '%s\n' "-> Updating existing gstack checkout: $INSTALL_DIR"
     git -C "$INSTALL_DIR" pull --ff-only
     return 0
   fi
@@ -146,13 +146,13 @@ ensure_checkout() {
     exit 1
   fi
 
-  printf '-> Cloning gstack into: %s\n' "$INSTALL_DIR"
+  printf '%s\n' "-> Cloning gstack into: $INSTALL_DIR"
   mkdir -p "$(dirname "$INSTALL_DIR")"
   git clone --single-branch --depth 1 "$REPO_URL" "$INSTALL_DIR"
 }
 
 run_setup() {
-  printf '-> Running official setup for host: %s\n' "$HOST"
+  printf '%s\n' "-> Running official setup for host: $HOST"
   if [ "$HOST" = "claude" ]; then
     (cd "$INSTALL_DIR" && ./setup)
   else
@@ -168,7 +168,7 @@ run_team_init() {
     exit 1
   fi
 
-  printf '-> Initializing gstack team mode: %s\n' "$TEAM_MODE"
+  printf '%s\n' "-> Initializing gstack team mode: $TEAM_MODE"
   "$INSTALL_DIR/bin/gstack-team-init" "$TEAM_MODE"
 }
 

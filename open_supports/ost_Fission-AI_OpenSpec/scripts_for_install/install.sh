@@ -246,7 +246,7 @@ normalize_project_dir() {
 }
 
 install_or_update_cli() {
-  printf '-> Installing or updating OpenSpec CLI with %s...\n' "$PACKAGE_MANAGER"
+  printf '%s\n' "-> Installing or updating OpenSpec CLI with $PACKAGE_MANAGER..."
   case "$PACKAGE_MANAGER" in
     npm)
       npm install -g "$PACKAGE_NAME@latest"
@@ -265,7 +265,7 @@ install_or_update_cli() {
 }
 
 verify_cli() {
-  printf '-> Verifying OpenSpec CLI...\n'
+  printf '%s\n' '-> Verifying OpenSpec CLI...'
   if ! command -v "$BINARY_NAME" >/dev/null 2>&1; then
     printf 'Error: %s is still not on PATH after installation.\n' "$BINARY_NAME" >&2
     printf 'Open a new terminal or check your global package-manager bin directory.\n' >&2
@@ -277,7 +277,7 @@ verify_cli() {
 init_project() {
   [ "$INIT_PROJECT" = "yes" ] || return 0
 
-  printf '-> Initializing OpenSpec project: %s\n' "$PROJECT_DIR"
+  printf '%s\n' "-> Initializing OpenSpec project: $PROJECT_DIR"
   if [ -n "$PROFILE" ]; then
     (cd "$PROJECT_DIR" && "$BINARY_NAME" init --tools "$TOOLS" --profile "$PROFILE")
   else
@@ -288,7 +288,7 @@ init_project() {
 update_project() {
   [ "$UPDATE_PROJECT" = "yes" ] || return 0
 
-  printf '-> Updating OpenSpec project files: %s\n' "$PROJECT_DIR"
+  printf '%s\n' "-> Updating OpenSpec project files: $PROJECT_DIR"
   (cd "$PROJECT_DIR" && "$BINARY_NAME" update)
 }
 
