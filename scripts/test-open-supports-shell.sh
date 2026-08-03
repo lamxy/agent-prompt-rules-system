@@ -9,7 +9,7 @@ assert_exit() { [ "$1" -eq "$2" ] || fail "exit=$1 want=$2"; }
 [ -f /.dockerenv ] || fail "run this harness inside Docker"
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-tmp=$(mktemp -d "${TMPDIR:-/tmp}/open-supports-shell.XXXXXX")
+tmp=$(mktemp -d /tmp/open-supports-shell.XXXXXX)
 cleanup() {
   rm -rf "$tmp"
 }
@@ -71,15 +71,21 @@ write_stub git \
   'if [ "${1:-}" != "clone" ]; then exit 0; fi' \
   'target=""' \
   'for arg in "$@"; do target="$arg"; done' \
+  'repo_url=""' \
+  'for arg in "$@"; do' \
+  '  case "$arg" in' \
+  '    https://github.com/garrytan/gstack.git|https://github.com/msitarzewski/agency-agents.git) repo_url="$arg" ;;' \
+  '  esac' \
+  'done' \
   'mkdir -p "$target/.git"' \
-  'case "$*" in' \
-  '  *garrytan/gstack.git)' \
+  'case "$repo_url" in' \
+  '  https://github.com/garrytan/gstack.git)' \
   '    mkdir -p "$target/bin"' \
   '    printf "%s\\n" "#!/bin/sh" "printf '\''gstack setup %s\\n'\'' \"\$*\" >> \"\$TEST_LOG\"" "mkdir -p \"\$HOME/.codex/skills\"" ": > \"\$HOME/.codex/skills/gstack-setup-sentinel\"" > "$target/setup"' \
   '    printf "%s\\n" "#!/bin/sh" "test -f \"\$HOME/.codex/skills/gstack-setup-sentinel\"" "printf '\''gstack team %s sentinel=yes\\n'\'' \"\$1\" >> \"\$TEST_LOG\"" > "$target/bin/gstack-team-init"' \
   '    chmod +x "$target/setup" "$target/bin/gstack-team-init"' \
   '    ;;' \
-  '  *msitarzewski/agency-agents.git)' \
+  '  https://github.com/msitarzewski/agency-agents.git)' \
   '    mkdir -p "$target/scripts"' \
   '    printf "%s\\n" "#!/bin/sh" "printf '\''agency upstream %s\\n'\'' \"\$*\" >> \"\$TEST_LOG\"" > "$target/scripts/install.sh"' \
   '    printf "%s\\n" "#!/bin/sh" "exit 0" > "$target/scripts/convert.sh"' \
@@ -174,7 +180,7 @@ run_capture "$tmp/cognee-dry.out" \
   sh open_supports/ost_topoteretes_cognee/scripts_for_install/install.sh \
     --dry-run --manager=pip --venv-dir="$cognee_venv"
 assert_exit "$RUN_STATUS" 0
-if grep -F -- 'pip install' "$TEST_LOG" >/dev/null 2>&1; then
+if grep -F -- 'python3 -m pip' "$TEST_LOG" >/dev/null 2>&1; then
   fail 'cognee dry-run invoked pip'
 fi
 run_capture "$tmp/cognee-local.out" \
