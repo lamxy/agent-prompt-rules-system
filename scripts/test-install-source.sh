@@ -25,7 +25,7 @@ assert_dir() {
 }
 
 assert_not_exists() {
-  [ ! -e "$1" ] || fail "expected path to be absent: $1"
+  [ ! -e "$1" ] && [ ! -L "$1" ] || fail "expected path to be absent: $1"
 }
 
 assert_same_file() {
