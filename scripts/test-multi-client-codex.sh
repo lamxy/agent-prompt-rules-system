@@ -96,7 +96,7 @@ test_project_custom_name() {
   pass "project custom filename is honored"
 }
 
-test_project_vendor_copies_claude_source() {
+test_project_vendor_copies_dot_claude_source() {
   tmp="$(mktemp -d)"
   target="$tmp/project"
   mkdir -p "$target"
@@ -109,7 +109,7 @@ test_project_vendor_copies_claude_source() {
   assert_dir "$target/.agent-rules/claude/rules"
   assert_dir "$target/.agent-rules/claude/expandable"
   assert_contains "$tmp/out.log" "[VENDORED]"
-  pass "project vendor copies .claude source"
+  pass "project vendor copies dot_claude source"
 }
 
 test_existing_output_without_force_is_manual() {
@@ -246,7 +246,7 @@ test_user_default_writes_to_codex_home
 test_user_rejects_project_path
 test_project_default_writes_codex_filename
 test_project_custom_name
-test_project_vendor_copies_claude_source
+test_project_vendor_copies_dot_claude_source
 test_existing_output_without_force_is_manual
 test_force_overwrites_output
 test_force_rejects_output_directory

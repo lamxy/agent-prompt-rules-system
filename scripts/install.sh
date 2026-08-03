@@ -20,7 +20,7 @@ usage() {
             需手动合并以保持合法 JSON 结构。
   -e  排除匹配指定文件名或 glob 模式的文件（可重复）
       示例：-e CLAUDE.md -e "*.local.json"
-  -E  排除相对于源 .claude/ 根目录的指定目录（可重复）
+  -E  排除相对于源 dot_claude/ 根目录的指定目录（可重复）
       示例：-E expandable -E "rules/preferences"
   -h  显示此帮助信息
 USAGE
@@ -169,7 +169,7 @@ is_excluded_dir() {
 }
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-SOURCE_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)/.claude"
+SOURCE_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)/dot_claude"
 
 if [ ! -d "$SOURCE_DIR" ]; then
   printf '错误：源目录不存在：%s\n' "$SOURCE_DIR" >&2

@@ -4,7 +4,7 @@ set -eu
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TEMPLATE_DIR="$SCRIPT_DIR/templates"
-SOURCE_CLAUDE_DIR="$REPO_ROOT/.claude"
+SOURCE_DOT_CLAUDE_DIR="$REPO_ROOT/dot_claude"
 
 usage() {
   cat <<'USAGE'
@@ -18,7 +18,7 @@ usage() {
   -p  目标项目目录。-l project 时必填；-l user 时不可使用。
   -n  输出文件名（默认：AGENTS.codex.md）
   -F  强制覆盖已有输出文件。与 -v 一同使用时，更新匹配的内嵌文件，同时保留无关的额外文件。
-  -v  将本仓库的 .claude/ 内嵌到 <target>/.agent-rules/claude/。仅 -l project 时有效。
+  -v  将本仓库的 dot_claude/ 内嵌到 <target>/.agent-rules/claude/。仅 -l project 时有效。
   -h  显示此帮助信息
 
 示例：
@@ -72,8 +72,8 @@ preflight_vendor() {
   parent="$target_project/.agent-rules"
   dest="$target_project/.agent-rules/claude"
 
-  if [ ! -d "$SOURCE_CLAUDE_DIR" ]; then
-    printf '错误：源 .claude 目录不存在：%s\n' "$SOURCE_CLAUDE_DIR" >&2
+  if [ ! -d "$SOURCE_DOT_CLAUDE_DIR" ]; then
+    printf '错误：源 dot_claude 目录不存在：%s\n' "$SOURCE_DOT_CLAUDE_DIR" >&2
     exit 1
   fi
 
@@ -96,7 +96,7 @@ preflight_vendor() {
   fi
 
   (
-    cd "$SOURCE_CLAUDE_DIR"
+    cd "$SOURCE_DOT_CLAUDE_DIR"
     find . -type d -exec sh -c '
       dest="$1"
       shift
@@ -162,7 +162,7 @@ vendor_claude_source() {
   fi
 
   (
-    cd "$SOURCE_CLAUDE_DIR"
+    cd "$SOURCE_DOT_CLAUDE_DIR"
     find . -type d -exec sh -c '
       dest="$1"
       shift
@@ -187,7 +187,7 @@ vendor_claude_source() {
     ' sh "$dest" {} +
   )
 
-  printf '[VENDORED] %s -> %s\n' "$SOURCE_CLAUDE_DIR" "$dest"
+  printf '[VENDORED] %s -> %s\n' "$SOURCE_DOT_CLAUDE_DIR" "$dest"
 }
 
 LEVEL=""
