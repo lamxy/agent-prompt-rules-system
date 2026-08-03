@@ -21,6 +21,9 @@ export TEST_LOG
 : > "$TEST_LOG"
 bin="$tmp/bin"
 mkdir -p "$bin" "$tmp/home"
+HOME="$tmp/home"
+export HOME
+[ "$HOME" = "$tmp/home" ] || fail "HOME=$HOME want=$tmp/home"
 
 run_capture() {
   output=$1
