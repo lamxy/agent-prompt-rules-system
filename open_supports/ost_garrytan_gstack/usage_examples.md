@@ -117,7 +117,7 @@ sh scripts_for_install/install.sh --host=codex
 
 预期结果：脚本更新或克隆 gstack，运行官方 `./setup --host codex`，并提示重启 Codex 后确认 gstack skills 是否出现。
 
-注意事项：把 `codex` 替换为已确认支持的 host：`opencode`、`cursor`、`factory`、`slate`、`kiro`、`hermes` 或 `gbrain`。该命令会写入目标 Agent 的技能目录。
+注意事项：把 `codex` 替换为 wrapper 支持的 host：`opencode`、`factory`、`kiro` 或 `auto`。`cursor`、`slate` 会被提前拒绝；`openclaw`、`hermes`、`gbrain` 应走各自的 artifact-generation 或 session workflow。该命令会写入目标 Agent 的技能目录。
 
 来源：`repo_readme_summary.md` 第 2 部分；`scripts_for_install/install.sh`
 
@@ -194,6 +194,18 @@ sh scripts_for_install/install.sh --install-dir="$HOME/gstack"
 注意事项：不要自动删除已有目录；先移动或选择新的 `--install-dir`。该命令会写入指定安装目录和目标 Agent 技能目录。
 
 来源：`scripts_for_install/install.sh`；`skill_for_setup/ost_garrytan_gstack_install/SKILL.md`
+
+### Git 网络超时或代理环境
+
+适用场景：clone 或 pull 因网络延迟失败，或运行环境需要代理。
+
+```sh
+GSTACK_GIT_TIMEOUT_SECONDS=180 sh scripts_for_install/install.sh --host=codex
+```
+
+预期结果：脚本以非交互方式运行 Git，并在可用时使用 timeout/gtimeout；失败信息包含 clone/pull、安装目录、timeout 和 exit code。
+
+注意事项：`GSTACK_GIT_TIMEOUT_SECONDS` 只能是正十进制整数。已导出的 `HTTP_PROXY`、`HTTPS_PROXY`、`NO_PROXY` 等变量会继承给 Git 和 upstream `./setup`；Docker 测试必须显式注入这些变量。
 
 ## 延伸阅读
 

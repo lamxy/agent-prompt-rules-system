@@ -14,10 +14,9 @@
 #
 # Options:
 #   --host=HOST          Run ./setup --host HOST for non-Claude hosts.
-#                        Supported values from upstream docs include:
-#                        codex, opencode, cursor, factory, slate, kiro,
-#                        hermes, gbrain.
-#                        Default: claude, which runs ./setup without --host.
+#                        Upstream setup installs: codex, opencode, factory,
+#                        kiro, or auto. Default: claude, which runs ./setup
+#                        without --host.
 #   --team=MODE         Also run gstack-team-init MODE after setup.
 #                        MODE must be required or optional. Default: none.
 #   --install-dir=DIR   Checkout directory.
@@ -29,7 +28,7 @@
 #   ./install.sh --host=codex
 #   ./install.sh --team=optional
 #   ./install.sh --team=required
-#   ./install.sh --host=cursor --install-dir="$HOME/gstack"
+#   ./install.sh --host=auto --install-dir="$HOME/gstack"
 #
 # Notes:
 #   - This script does not uninstall gstack or delete configuration.
@@ -44,6 +43,8 @@ REPO_URL="https://github.com/garrytan/gstack.git"
 HOST="claude"
 TEAM_MODE="none"
 INSTALL_DIR="$HOME/.claude/skills/gstack"
+GSTACK_GIT_TIMEOUT_SECONDS="${GSTACK_GIT_TIMEOUT_SECONDS:-120}"
+GIT_TIMEOUT_WARNING_PRINTED="no"
 
 usage() {
   sed -n '/^# Usage:/,/^# ====/p' "$0" | sed '/^# ====/d; s/^# \?//'
@@ -77,8 +78,16 @@ for arg in "$@"; do
 done
 
 case "$HOST" in
-  claude|codex|opencode|cursor|factory|slate|kiro|hermes|gbrain) ;;
-  *) fail_usage '--host must be claude, codex, opencode, cursor, factory, slate, kiro, hermes, or gbrain' ;;
+  claude|codex|opencode|factory|kiro|auto) ;;
+  cursor|slate)
+    printf 'Error: --host=%s is unsupported by upstream setup.\n' "$HOST" >&2
+    exit 1
+    ;;
+  openclaw|hermes|gbrain)
+    printf 'Error: --host=%s requires a separate artifact-generation/session workflow.\n' "$HOST" >&2
+    exit 1
+    ;;
+  *) fail_usage '--host must be claude, codex, opencode, factory, kiro, or auto' ;;
 esac
 
 case "$TEAM_MODE" in
@@ -88,6 +97,21 @@ esac
 
 case "$INSTALL_DIR" in
   ""|"/") fail_usage '--install-dir must not be empty or /' ;;
+esac
+
+case "$GSTACK_GIT_TIMEOUT_SECONDS" in
+  ""|*[!0-9]*)
+    printf '%s\n' 'Error: GSTACK_GIT_TIMEOUT_SECONDS must be a positive decimal integer.' >&2
+    exit 1
+    ;;
+esac
+
+case "$GSTACK_GIT_TIMEOUT_SECONDS" in
+  *[1-9]*) ;;
+  *)
+    printf '%s\n' 'Error: GSTACK_GIT_TIMEOUT_SECONDS must be a positive decimal integer.' >&2
+    exit 1
+    ;;
 esac
 
 detect_platform() {
@@ -133,10 +157,43 @@ check_prerequisites() {
   fi
 }
 
+run_git() {
+  _operation=$1
+  shift
+
+  if command -v timeout >/dev/null 2>&1; then
+    if GIT_TERMINAL_PROMPT=0 timeout "$GSTACK_GIT_TIMEOUT_SECONDS" git "$@"; then
+      return 0
+    else
+      _status=$?
+    fi
+  elif command -v gtimeout >/dev/null 2>&1; then
+    if GIT_TERMINAL_PROMPT=0 gtimeout "$GSTACK_GIT_TIMEOUT_SECONDS" git "$@"; then
+      return 0
+    else
+      _status=$?
+    fi
+  else
+    if [ "$GIT_TIMEOUT_WARNING_PRINTED" = "no" ]; then
+      printf '%s\n' 'Warning: timeout/gtimeout unavailable; running Git without a wall-clock limit.' >&2
+      GIT_TIMEOUT_WARNING_PRINTED="yes"
+    fi
+    if GIT_TERMINAL_PROMPT=0 git "$@"; then
+      return 0
+    else
+      _status=$?
+    fi
+  fi
+
+  printf 'Error: gstack Git %s failed for %s (timeout=%ss, exit=%s).\n' \
+    "$_operation" "$INSTALL_DIR" "$GSTACK_GIT_TIMEOUT_SECONDS" "$_status" >&2
+  return "$_status"
+}
+
 ensure_checkout() {
   if [ -d "$INSTALL_DIR/.git" ]; then
     printf '%s\n' "-> Updating existing gstack checkout: $INSTALL_DIR"
-    git -C "$INSTALL_DIR" pull --ff-only
+    run_git pull -C "$INSTALL_DIR" pull --ff-only
     return 0
   fi
 
@@ -148,7 +205,7 @@ ensure_checkout() {
 
   printf '%s\n' "-> Cloning gstack into: $INSTALL_DIR"
   mkdir -p "$(dirname "$INSTALL_DIR")"
-  git clone --single-branch --depth 1 "$REPO_URL" "$INSTALL_DIR"
+  run_git clone clone --single-branch --depth 1 "$REPO_URL" "$INSTALL_DIR"
 }
 
 run_setup() {

@@ -65,9 +65,20 @@ write_stub openspec \
   'printf "openspec %s\\n" "$*" >> "$TEST_LOG"' \
   'if [ "${1:-}" = "--version" ]; then printf "openspec test\\n"; fi'
 
+write_stub timeout \
+  '#!/bin/sh' \
+  'printf "timeout %s prompt=%s\\n" "$*" "${GIT_TERMINAL_PROMPT:-unset}" >> "$TEST_LOG"' \
+  'seconds=$1' \
+  'shift' \
+  'exec "$@"'
+
 write_stub git \
   '#!/bin/sh' \
-  'printf "git %s\\n" "$*" >> "$TEST_LOG"' \
+  'printf "git prompt=%s %s\\n" "${GIT_TERMINAL_PROMPT:-unset}" "$*" >> "$TEST_LOG"' \
+  'case "${GSTACK_TEST_GIT_FAIL:-}" in' \
+  '  clone) [ "${1:-}" = clone ] && exit 124 ;;' \
+  '  pull) [ "${1:-}" = -C ] && [ "${3:-}" = pull ] && exit 124 ;;' \
+  'esac' \
   'if [ "${1:-}" != "clone" ]; then exit 0; fi' \
   'target=""' \
   'for arg in "$@"; do target="$arg"; done' \
@@ -145,17 +156,112 @@ do
 done
 [ ! -s "$TEST_LOG" ] || fail 'an installer --help path invoked a stubbed command'
 
+: > "$TEST_LOG"
+for unsupported_host in cursor slate openclaw hermes gbrain
+do
+  run_capture "$tmp/unsupported-$unsupported_host.out" \
+    env GSTACK_GIT_TIMEOUT_SECONDS=17 HOME="$tmp/home" \
+      sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
+        --host="$unsupported_host" --install-dir="$tmp/$unsupported_host"
+  if [ "$RUN_STATUS" -ne 1 ]; then
+    cat "$tmp/unsupported-$unsupported_host.out" >&2
+  fi
+  assert_exit "$RUN_STATUS" 1
+  case "$unsupported_host" in
+    cursor|slate)
+      assert_contains "$tmp/unsupported-$unsupported_host.out" \
+        "Error: --host=$unsupported_host is unsupported by upstream setup."
+      ;;
+    openclaw|hermes|gbrain)
+      assert_contains "$tmp/unsupported-$unsupported_host.out" \
+        "Error: --host=$unsupported_host requires a separate artifact-generation/session workflow."
+      ;;
+  esac
+  [ ! -s "$TEST_LOG" ] || fail "unsupported host invoked Git: $unsupported_host"
+done
+
+: > "$TEST_LOG"
+for invalid_timeout in 0 -1 1.5 nope
+do
+  run_capture "$tmp/invalid-timeout.out" \
+    env GSTACK_GIT_TIMEOUT_SECONDS="$invalid_timeout" HOME="$tmp/home" \
+      sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
+        --host=codex --install-dir="$tmp/invalid-timeout"
+  assert_exit "$RUN_STATUS" 1
+  assert_contains "$tmp/invalid-timeout.out" \
+    'Error: GSTACK_GIT_TIMEOUT_SECONDS must be a positive decimal integer.'
+  [ ! -s "$TEST_LOG" ] || fail "invalid timeout invoked Git: $invalid_timeout"
+done
+
+: > "$TEST_LOG"
 gstack_dir="$tmp/gstack"
 run_capture "$tmp/gstack.out" \
-  env HOME="$tmp/home" sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
+  env GSTACK_GIT_TIMEOUT_SECONDS=17 HOME="$tmp/home" \
+    sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
     --host=codex --team=required --install-dir="$gstack_dir"
 if [ "$RUN_STATUS" -ne 0 ]; then
   cat "$tmp/gstack.out" >&2
 fi
 assert_exit "$RUN_STATUS" 0
-assert_contains "$TEST_LOG" "git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git $gstack_dir"
+assert_contains "$TEST_LOG" "timeout 17 git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git $gstack_dir prompt=0"
+assert_contains "$TEST_LOG" "git prompt=0 clone --single-branch --depth 1 https://github.com/garrytan/gstack.git $gstack_dir"
 assert_contains "$TEST_LOG" 'gstack setup --host codex'
 assert_contains "$TEST_LOG" 'gstack team required sentinel=yes'
+
+: > "$TEST_LOG"
+auto_dir="$tmp/gstack-auto"
+run_capture "$tmp/gstack-auto.out" \
+  env GSTACK_GIT_TIMEOUT_SECONDS=17 HOME="$tmp/home" \
+    sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
+      --host=auto --install-dir="$auto_dir"
+assert_exit "$RUN_STATUS" 0
+assert_contains "$TEST_LOG" "git prompt=0 clone --single-branch --depth 1 https://github.com/garrytan/gstack.git $auto_dir"
+assert_contains "$TEST_LOG" 'gstack setup --host auto'
+
+: > "$TEST_LOG"
+clone_timeout_dir="$tmp/gstack-clone-timeout"
+run_capture "$tmp/gstack-clone-timeout.out" \
+  env GSTACK_GIT_TIMEOUT_SECONDS=17 GSTACK_TEST_GIT_FAIL=clone HOME="$tmp/home" \
+    sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
+      --host=codex --install-dir="$clone_timeout_dir"
+assert_exit "$RUN_STATUS" 124
+assert_contains "$tmp/gstack-clone-timeout.out" \
+  "Error: gstack Git clone failed for $clone_timeout_dir (timeout=17s, exit=124)."
+assert_contains "$TEST_LOG" "timeout 17 git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git $clone_timeout_dir prompt=0"
+
+: > "$TEST_LOG"
+pull_timeout_dir="$tmp/gstack-pull-timeout"
+mkdir -p "$pull_timeout_dir/.git"
+run_capture "$tmp/gstack-pull-timeout.out" \
+  env GSTACK_GIT_TIMEOUT_SECONDS=17 GSTACK_TEST_GIT_FAIL=pull HOME="$tmp/home" \
+    sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
+      --host=codex --install-dir="$pull_timeout_dir"
+assert_exit "$RUN_STATUS" 124
+assert_contains "$tmp/gstack-pull-timeout.out" \
+  "Error: gstack Git pull failed for $pull_timeout_dir (timeout=17s, exit=124)."
+assert_contains "$TEST_LOG" "timeout 17 git -C $pull_timeout_dir pull --ff-only prompt=0"
+assert_contains "$TEST_LOG" "git prompt=0 -C $pull_timeout_dir pull --ff-only"
+
+no_timeout_bin="$tmp/bin-no-timeout"
+mkdir -p "$no_timeout_bin"
+for utility in dirname grep mkdir chmod sed uname
+do
+  utility_path=$(PATH=/usr/bin:/bin command -v "$utility")
+  ln -s "$utility_path" "$no_timeout_bin/$utility"
+done
+ln -s "$bin/bun" "$no_timeout_bin/bun"
+ln -s "$bin/git" "$no_timeout_bin/git"
+ln -s "$bin/node" "$no_timeout_bin/node"
+: > "$TEST_LOG"
+no_timeout_dir="$tmp/gstack-no-timeout"
+run_capture "$tmp/gstack-no-timeout.out" \
+  env GSTACK_GIT_TIMEOUT_SECONDS=17 HOME="$tmp/home" PATH="$no_timeout_bin" \
+    /bin/sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
+      --host=auto --install-dir="$no_timeout_dir"
+assert_exit "$RUN_STATUS" 0
+assert_contains "$tmp/gstack-no-timeout.out" \
+  'Warning: timeout/gtimeout unavailable; running Git without a wall-clock limit.'
+assert_contains "$TEST_LOG" "git prompt=0 clone --single-branch --depth 1 https://github.com/garrytan/gstack.git $no_timeout_dir"
 
 : > "$TEST_LOG"
 taskmaster_project="$tmp/taskmaster-project"
@@ -196,7 +302,7 @@ run_capture "$tmp/agency.out" \
   sh open_supports/ost_msitarzewski_agency-agents/scripts_for_install/install.sh \
     --verify-only --repo-dir="$agency_dir"
 assert_exit "$RUN_STATUS" 0
-assert_contains "$TEST_LOG" "git clone --depth 1 https://github.com/msitarzewski/agency-agents.git $agency_dir"
+assert_contains "$TEST_LOG" "git prompt=unset clone --depth 1 https://github.com/msitarzewski/agency-agents.git $agency_dir"
 assert_contains "$TEST_LOG" "bash $agency_dir/scripts/install.sh --list tools"
 assert_contains "$TEST_LOG" 'agency upstream --list tools'
 if grep -F -- '--no-interactive' "$TEST_LOG" >/dev/null 2>&1; then

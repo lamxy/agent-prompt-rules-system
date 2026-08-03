@@ -1,7 +1,7 @@
 ---
 name: ost-garrytan-gstack-install
 description: 'Help users install or update gstack. Primary path: run the support package install script; fallback to repo_readme_summary.md when the script is unavailable or manual control is needed. Scope: install, update, host selection, optional team mode, and verification guidance; excludes uninstall and detailed usage tutorials.'
-argument-hint: '[--host=claude|codex|opencode|cursor|factory|slate|kiro|hermes|gbrain] [--team=none|required|optional] [--install-dir=DIR]'
+argument-hint: '[--host=claude|codex|opencode|factory|kiro|auto] [--team=none|required|optional] [--install-dir=DIR]'
 ---
 
 # gstack Install (skill_for_setup)
@@ -50,7 +50,7 @@ Common examples:
 ```sh
 sh scripts_for_install/install.sh
 sh scripts_for_install/install.sh --host=codex
-sh scripts_for_install/install.sh --host=cursor --install-dir="$HOME/gstack"
+sh scripts_for_install/install.sh --host=auto --install-dir="$HOME/gstack"
 sh scripts_for_install/install.sh --team=optional
 sh scripts_for_install/install.sh --team=required
 ```
@@ -62,6 +62,17 @@ The script:
 - clones or updates `https://github.com/garrytan/gstack.git`;
 - runs upstream `./setup` for Claude Code or `./setup --host HOST` for non-Claude hosts;
 - optionally runs `bin/gstack-team-init required|optional`.
+
+The wrapper accepts only `claude`, `codex`, `opencode`, `factory`, `kiro`, and
+`auto`, matching upstream setup's actual install capability. Cursor and Slate
+are rejected because upstream setup does not install them. OpenClaw, Hermes,
+and GBrain require their separate artifact-generation or session workflow.
+
+Git is non-interactive (`GIT_TERMINAL_PROMPT=0`) and uses a `120` second
+default wall-clock limit when `timeout` or `gtimeout` is available. Set
+`GSTACK_GIT_TIMEOUT_SECONDS` to a positive decimal integer to override it.
+Exported proxy variables are passed through to Git and upstream `setup`; Docker
+tests need those variables injected explicitly into the container.
 
 ### Fallback path: use repo_readme_summary.md
 
@@ -112,6 +123,9 @@ gstack is installed or updated. Restart the target agent or start a new session,
 | `missing required command: git` | Git is not on `PATH`. | Install Git, then rerun the script. |
 | `missing required command: bun` | Bun v1.0+ is not on `PATH`. | Install Bun, then rerun the script. |
 | `missing required command: node` on WSL or Git Bash/MSYS | Windows browser fallback support needs Node.js. | Install Node.js and ensure it is on `PATH`, then rerun the script. |
+| Git clone or pull fails | The remote failed, or the configured wall-clock limit expired. | Read the operation, directory, timeout, and exit code in the error. Set `GSTACK_GIT_TIMEOUT_SECONDS` to a positive decimal integer if an override is needed. |
+| `--host=cursor` or `--host=slate` | Upstream setup does not install this host. | Use a supported wrapper host or follow that client's own install flow. |
+| `--host=openclaw`, `hermes`, or `gbrain` | These use a separate upstream artifact-generation or session workflow. | Follow upstream integration guidance instead of this wrapper. |
 | Install directory exists but is not a git checkout | The target path contains unrelated files. | Move it aside or rerun with `--install-dir=DIR`. Do not delete user files automatically. |
 | Skills are not visible after install | The agent session has not reloaded or project guidance is missing. | Restart the target agent. For Claude Code, add the upstream gstack section and slash-command list to `CLAUDE.md` if needed. |
 | Windows without Developer Mode loses symlink behavior | Upstream setup copies files instead of symlinking. | After future `git pull` updates, rerun `cd ~/.claude/skills/gstack && ./setup`. |

@@ -16,12 +16,11 @@
 | Claude Code | Primary |
 | Codex CLI | Primary via `--host=codex` |
 | OpenCode | Supported via `--host=opencode` |
-| Cursor | Supported via `--host=cursor` |
 | Factory Droid | Supported via `--host=factory` |
-| Slate | Supported via `--host=slate` |
 | Kiro | Supported via `--host=kiro` |
-| Hermes | Supported via `--host=hermes` |
-| GBrain | Supported via `--host=gbrain` |
+| Auto-detected installed host | Supported via `--host=auto` |
+| Cursor / Slate | Rejected: upstream `setup` does not install these hosts |
+| OpenClaw / Hermes / GBrain | Use their separate artifact-generation or session workflow |
 
 ## Parameters
 
@@ -31,6 +30,11 @@
 | `--team=MODE` | `none` | Also runs `gstack-team-init`; valid values are `required` and `optional`. |
 | `--install-dir=DIR` | `~/.claude/skills/gstack` | Checkout directory for the official gstack repository. |
 | `--help` / `-h` | | Shows script usage. |
+
+`GSTACK_GIT_TIMEOUT_SECONDS` is an environment variable, not a CLI flag. It
+defaults to `120` and accepts only positive decimal integers. Git runs with
+`GIT_TERMINAL_PROMPT=0`; exported proxy variables are inherited by Git and
+upstream `setup`.
 
 ## Scope
 

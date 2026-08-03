@@ -7,7 +7,7 @@
 gstack 是 Garry Tan 开源的 AI 编码工作流与技能包，把 Claude Code 和多个 AI 编码 Agent 组织成“Think → Plan → Build → Review → Test → Ship → Reflect”的软件交付流程。
 
 - 核心能力：产品 office hours、CEO/工程/设计/DX 计划评审、代码审查、浏览器 QA、安全审计、发布与部署、复盘、文档生成、跨模型 Codex 复核。
-- 安装形态：主要面向 Claude Code，也生成/安装到 Codex CLI、OpenCode、Cursor、Factory Droid、Slate、Kiro、Hermes、GBrain、OpenClaw 等 Agent。
+- 安装形态：wrapper 直接安装 Claude Code、Codex CLI、OpenCode、Factory Droid、Kiro，或使用 `auto` 检测；Cursor、Slate、OpenClaw、Hermes、GBrain 需要各自的 upstream 流程。
 - 浏览器能力：`/browse`、`/qa`、`/open-gstack-browser` 可驱动 Chromium、截图、测试登录态页面，并提供 prompt injection 防护。
 - 记忆能力：`/learn`、GBrain 集成、项目级 learnings 与可选私有同步，用于跨会话保留偏好和工程经验。
 - 官方入口：[README](https://github.com/garrytan/gstack)；深度文档见仓库内 `docs/`、`ARCHITECTURE.md`、`BROWSER.md`、`USING_GBRAIN_WITH_GSTACK.md`。
@@ -21,6 +21,7 @@ gstack 是 Garry Tan 开源的 AI 编码工作流与技能包，把 Claude Code 
 - Bun v1.0+
 - Node.js：仅 Windows 需要；README 说明 Windows 上 Bun 的 Playwright pipe transport 有已知问题，browse server 会回退到 Node.js。
 - Windows 支持方式：Windows 11 通过 Git Bash 或 WSL 使用；`bun` 和 `node` 都需要在 `PATH` 上。
+- Git：wrapper 使用 `GIT_TERMINAL_PROMPT=0`，并在可用时以 `timeout`/`gtimeout` 限制 Git；`GSTACK_GIT_TIMEOUT_SECONDS` 默认 `120`，只能设为正十进制整数。已导出的代理变量会传给 Git 与 upstream `setup`；Docker 测试需显式注入。
 
 ### Claude Code：个人安装
 
@@ -85,12 +86,13 @@ cd ~/gstack && ./setup
 |---|---|---|
 | OpenAI Codex CLI | `--host codex` | `~/.codex/skills/gstack-*/` |
 | OpenCode | `--host opencode` | `~/.config/opencode/skills/gstack-*/` |
-| Cursor | `--host cursor` | `~/.cursor/skills/gstack-*/` |
 | Factory Droid | `--host factory` | `~/.factory/skills/gstack-*/` |
-| Slate | `--host slate` | `~/.slate/skills/gstack-*/` |
 | Kiro | `--host kiro` | `~/.kiro/skills/gstack-*/` |
-| Hermes | `--host hermes` | `~/.hermes/skills/gstack-*/` |
-| GBrain (mod) | `--host gbrain` | `~/.gbrain/skills/gstack-*/` |
+| Auto-detected installed host | `--host auto` | Determined by upstream setup |
+
+Cursor and Slate are not installed by current upstream `setup`, so this wrapper
+rejects them before Git runs. OpenClaw, Hermes, and GBrain use a separate
+artifact-generation or session workflow rather than this wrapper.
 
 ### Windows / WSL 差异
 
