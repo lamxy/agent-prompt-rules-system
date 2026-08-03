@@ -32,7 +32,7 @@
 欢迎以下类型的贡献：
 
 - 修正文档错误、链接错误、命名错误
-- 优化 `CLAUDE.md` 的表达，使其更稳定、简洁、可执行
+- 优化 `dot_claude/CLAUDE.md` 的表达，使其更稳定、简洁、可执行
 - 增加新的极简规约文件
 - 增加新的输出模板
 - 提出更清晰的分层方式
@@ -45,7 +45,7 @@
 
 以下改动通常不建议直接提交：
 
-- 把 `CLAUDE.md` 扩展成巨大的万能提示词
+- 把 `dot_claude/CLAUDE.md` 扩展成巨大的万能提示词
 - 在主文件中加入大量低频、场景化细节
 - 为了“完整”而堆砌规则
 - 引入重复表达或大段说明性文字
@@ -55,13 +55,13 @@
 
 ## 文件修改建议
 
-### 修改 `CLAUDE.md` 前
+### 修改 `dot_claude/CLAUDE.md` 前
 请优先判断：
 
 - 这是否属于高频、稳定、高杠杆规则？
-- 这是否应该放到 `.claude/rules/task/`？
-- 这是否应该放到 `.claude/rules/templates/`？
-- 这是否应该放到 `.claude/rules/preferences/`？
+- 这是否应该放到 `dot_claude/rules/task/`？
+- 这是否应该放到 `dot_claude/rules/templates/`？
+- 这是否应该放到 `dot_claude/rules/preferences/`？
 
 主文件应尽量保持短、小、稳。
 

@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-This repository maintains Claude Code prompt, rule, agent, skill, MCP, and settings templates. Reusable shared configuration lives in `.claude/`, including rules, hooks, commands, settings, and base guidance.
+This repository maintains Claude Code prompt, rule, agent, skill, MCP, and settings templates. Reusable shared configuration lives in `dot_claude/`, including rules, hooks, commands, settings, and base guidance.
 
 Package-style assets are grouped by target:
 

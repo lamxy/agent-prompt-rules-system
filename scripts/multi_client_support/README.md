@@ -22,7 +22,7 @@ sh scripts/multi_client_support/codex.sh -l <user|project> [-p <target_dir>] [-n
 - `-p <target_dir>`：现有项目目标目录。`project` 必填，`user` 不可使用。
 - `-n <filename>`：输出文件名。默认为 `AGENTS.codex.md`。
 - `-F`：强制覆盖现有输出文件。搭配 `-v` 时，更新匹配的内嵌文件，同时保留无关的额外文件。
-- `-v`：对项目目标，将本仓库的 `.claude/` 目录复制到 `<target>/.agent-rules/claude/`。
+- `-v`：对项目目标，将本仓库的 `dot_claude/` 源目录复制到 `<target>/.agent-rules/claude/`。
 
 示例：
 
@@ -65,7 +65,7 @@ target-project/
       ...
 ```
 
-此内嵌目录树为摘要示意；`codex.sh` 会递归复制本仓库 `.claude/` 下的所有文件与目录。
+此内嵌目录树为摘要示意；`codex.sh` 会递归复制本仓库 `dot_claude/` 下的所有文件与目录。
 
 `AGENTS.codex.md` 是 Codex-native 入口。内嵌的 `.agent-rules/claude/` 目录是参考材料。除非已另行安装 Codex-native 设定，否则 Claude 专用 settings、hooks、plugins 与 `SendMessage` references 不是生效中的 Codex 执行时设定。
 

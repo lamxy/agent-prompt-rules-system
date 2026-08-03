@@ -45,12 +45,12 @@
 
 本仓库由四类内容组成：
 
-### 一、`.claude/` — 核心规则与配置目录
+### 一、`dot_claude/` — 核心规则与配置源目录
 
-`.claude/` 是 Claude Code 的配置根目录，包含主规则文件、场景极简规约、可扩展内容和基础 settings，可通过 `scripts/install.sh` 同步到**用户级**（`~/.claude`）或**项目级**（项目的 `.claude/` 目录）。
+`dot_claude/` 是仓库中的 Claude Code 配置源目录，包含主规则文件、场景极简规约、可扩展内容和基础 settings。`scripts/install.sh` 会将它同步到**用户级**（`~/.claude`）或**项目级**（项目的 `.claude/` 目录）。
 
 ```
-.claude/
+dot_claude/
 ├── CLAUDE.md              # 主记忆文件，始终生效的默认运行策略
 ├── RTK.md                 # 补充参考文档
 ├── settings.json          # 项目级权限与工具配置基线
@@ -175,9 +175,9 @@ open_supports/ost_{OwnerName}_{RepoName}/
 
 ### 方式三：使用脚本同步与安装
 
-#### 3.1 同步 `.claude` 目录（用户级或项目级）
+#### 3.1 同步 `dot_claude/` 源目录（用户级或项目级）
 
-使用 `scripts/install.sh` 将整个 `.claude` 目录（规则、命令、hooks、基础 settings 等）同步到用户级或项目级：
+使用 `scripts/install.sh` 将整个 `dot_claude/` 源目录（规则、命令、hooks、基础 settings 等）同步到用户级或项目级的 `.claude/` 目录：
 
 ```sh
 sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask> [-e <file>] [-E <dir>]
@@ -187,7 +187,7 @@ sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite
 - `-l project`：同步到指定项目的 .claude 目录（项目级共享）
 - `-l local`：同步到本地个人覆盖目录
 - `-e <pattern>`：排除指定文件名或 glob 模式，可重复使用
-- `-E <dir>`：排除指定目录（相对于 `.claude/` 根），可重复使用
+- `-E <dir>`：排除指定目录（相对于源 `dot_claude/` 根），可重复使用
 
 ```sh
 # 同步到用户级，排除 audi_reports 目录和 CLAUDE.md 文件
@@ -328,7 +328,7 @@ open_supports/.copilot-skills/ost-support-workflow/SKILL.md
 ├── LICENSE
 ├── CONTRIBUTING.md
 ├── scripts/
-│   ├── install.sh               # 同步 .claude 目录（用户级/项目级）
+│   ├── install.sh               # 将 dot_claude/ 同步到用户级/项目级 .claude/
 │   ├── install-settings.sh      # 安装场景化 settings 模板
 │   ├── install-agent-pkg.sh     # 安装 agent 包
 │   ├── install-skill-pkg.sh     # 安装 skill 包
@@ -388,7 +388,7 @@ open_supports/.copilot-skills/ost-support-workflow/SKILL.md
 │           ├── Graphify-详细使用教程
 │           ├── gstack-详细使用教程
 │           └── OpenSpec-详细使用教程
-└── .claude/                     # 核心规则与配置（可直接同步到项目）
+└── dot_claude/                  # 核心规则与配置源（可同步到项目 .claude/）
     ├── CLAUDE.md
     ├── RTK.md
     ├── settings.json

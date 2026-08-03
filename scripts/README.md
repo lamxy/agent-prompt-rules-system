@@ -8,9 +8,9 @@
 
 ## 脚本一览
 
-### `install.sh` — 同步 `.claude/` 目录
+### `install.sh` — 将 `dot_claude/` 同步到 `.claude/`
 
-将整个 `.claude/` 目录（规则、命令、hooks、基础 settings 等）同步到用户级或项目级：
+将整个 `dot_claude/` 源目录（规则、命令、hooks、基础 settings 等）同步到用户级或项目级的 `.claude/` 目录：
 
 ```sh
 sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask> [-e <file>] [-E <dir>]
@@ -23,7 +23,7 @@ sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite
 | `-l local` | 同步到本地个人覆盖目录 |
 | `-m overwrite\|append\|ask` | 冲突处理模式 |
 | `-e <pattern>` | 排除指定文件名或 glob 模式，可重复使用 |
-| `-E <dir>` | 排除指定目录（相对于 `.claude/` 根），可重复使用 |
+| `-E <dir>` | 排除指定目录（相对于源 `dot_claude/` 根），可重复使用 |
 
 ```sh
 # 同步到用户级，排除 audit_reports 目录和 CLAUDE.md 文件

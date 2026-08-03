@@ -9,7 +9,7 @@ Thumbs.db
 *.swo
 
 # Claude local files
-.claude/settings.local.json
+dot_claude/settings.local.json
 
 # Environment / secrets
 .env
@@ -36,11 +36,11 @@ temp/
 .tmp/
 
 # long claude.md
-.claude/CLAUDE-long.md
+dot_claude/CLAUDE-long.md
 
 # audit reporter
-.claude/audit-reports/*
-!.claude/audit-reports/.gitkeep
+dot_claude/audit-reports/*
+!dot_claude/audit-reports/.gitkeep
 */.ost-refs
 
 # open_supports workflow runtime state
