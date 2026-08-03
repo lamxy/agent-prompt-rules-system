@@ -72,6 +72,13 @@ write_stub timeout \
   'shift' \
   'exec "$@"'
 
+write_stub gtimeout \
+  '#!/bin/sh' \
+  'printf "gtimeout %s prompt=%s\\n" "$*" "${GIT_TERMINAL_PROMPT:-unset}" >> "$TEST_LOG"' \
+  'seconds=$1' \
+  'shift' \
+  'exec "$@"'
+
 write_stub git \
   '#!/bin/sh' \
   'printf "git prompt=%s %s\\n" "${GIT_TERMINAL_PROMPT:-unset}" "$*" >> "$TEST_LOG"' \
@@ -209,6 +216,15 @@ assert_contains "$TEST_LOG" 'gstack setup --host codex'
 assert_contains "$TEST_LOG" 'gstack team required sentinel=yes'
 
 : > "$TEST_LOG"
+unset GSTACK_GIT_TIMEOUT_SECONDS
+default_timeout_dir="$tmp/gstack-default-timeout"
+run_capture "$tmp/gstack-default-timeout.out" \
+  env HOME="$tmp/home" sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
+    --host=auto --install-dir="$default_timeout_dir"
+assert_exit "$RUN_STATUS" 0
+assert_contains "$TEST_LOG" "timeout 120 git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git $default_timeout_dir prompt=0"
+
+: > "$TEST_LOG"
 auto_dir="$tmp/gstack-auto"
 run_capture "$tmp/gstack-auto.out" \
   env GSTACK_GIT_TIMEOUT_SECONDS=17 HOME="$tmp/home" \
@@ -217,6 +233,27 @@ run_capture "$tmp/gstack-auto.out" \
 assert_exit "$RUN_STATUS" 0
 assert_contains "$TEST_LOG" "git prompt=0 clone --single-branch --depth 1 https://github.com/garrytan/gstack.git $auto_dir"
 assert_contains "$TEST_LOG" 'gstack setup --host auto'
+
+gtimeout_bin="$tmp/bin-gtimeout"
+mkdir -p "$gtimeout_bin"
+for utility in dirname grep mkdir chmod sed uname
+do
+  utility_path=$(PATH=/usr/bin:/bin command -v "$utility")
+  ln -s "$utility_path" "$gtimeout_bin/$utility"
+done
+ln -s "$bin/bun" "$gtimeout_bin/bun"
+ln -s "$bin/git" "$gtimeout_bin/git"
+ln -s "$bin/gtimeout" "$gtimeout_bin/gtimeout"
+ln -s "$bin/node" "$gtimeout_bin/node"
+: > "$TEST_LOG"
+gtimeout_dir="$tmp/gstack-gtimeout"
+run_capture "$tmp/gstack-gtimeout.out" \
+  env GSTACK_GIT_TIMEOUT_SECONDS=17 HOME="$tmp/home" PATH="$gtimeout_bin" \
+    /bin/sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
+      --host=auto --install-dir="$gtimeout_dir"
+assert_exit "$RUN_STATUS" 0
+assert_contains "$TEST_LOG" "gtimeout 17 git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git $gtimeout_dir prompt=0"
+assert_contains "$TEST_LOG" "git prompt=0 clone --single-branch --depth 1 https://github.com/garrytan/gstack.git $gtimeout_dir"
 
 : > "$TEST_LOG"
 clone_timeout_dir="$tmp/gstack-clone-timeout"

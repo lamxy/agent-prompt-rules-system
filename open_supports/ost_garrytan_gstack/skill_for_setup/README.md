@@ -34,7 +34,8 @@
 `GSTACK_GIT_TIMEOUT_SECONDS` is an environment variable, not a CLI flag. It
 defaults to `120` and accepts only positive decimal integers. Git runs with
 `GIT_TERMINAL_PROMPT=0`; exported proxy variables are inherited by Git and
-upstream `setup`.
+upstream `setup`. Docker callers must inject those proxy environment variables
+explicitly into the container.
 
 ## Scope
 

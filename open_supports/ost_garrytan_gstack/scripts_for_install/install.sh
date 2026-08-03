@@ -33,6 +33,10 @@
 # Notes:
 #   - This script does not uninstall gstack or delete configuration.
 #   - Team mode modifies the current project through gstack-team-init.
+#   - GSTACK_GIT_TIMEOUT_SECONDS defaults to 120 and must be a positive
+#     decimal integer. Git is non-interactive and uses timeout/gtimeout when available.
+#   - Exported proxy variables are inherited by Git and upstream setup; Docker
+#     callers must inject proxy environment variables explicitly.
 #   - If using Windows without Developer Mode, upstream setup may copy files
 #     instead of symlinking; rerun this script after future git updates.
 # =============================================================================
