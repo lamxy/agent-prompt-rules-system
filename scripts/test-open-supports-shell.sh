@@ -108,7 +108,7 @@ write_stub python3 \
   '      venv)' \
   '        target=$3' \
   '        mkdir -p "$target/bin"' \
-  '        printf "%s\\n" "#!/bin/sh" "printf '\''venv python %s\\n'\'' \"\$*\" >> \"\$TEST_LOG\"" "case \"\${1:-}\" in -c) exit 1 ;; esac" > "$target/bin/python"' \
+  '        printf "%s\\n" "#!/bin/sh" "printf '\''venv python %s\\n'\'' \"\$*\" >> \"\$TEST_LOG\"" "case \"\${1:-}\" in" "  -c) [ -f \"\$0.installed\" ] && exit 0; exit 1 ;;" "  -m) if [ \"\${2:-}\" = pip ]; then for arg in \"\$@\"; do case \"\$arg\" in cognee*) : > \"\$0.installed\" ;; esac; done; fi ;;" "esac" > "$target/bin/python"' \
   '        chmod +x "$target/bin/python"' \
   '        ;;' \
   '    esac' \
