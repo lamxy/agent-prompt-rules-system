@@ -1,5 +1,7 @@
 # Agency Agents — 仓库核心介绍
 
+> **安装作用域（模式 D）**：上游同时包含用户级与 CWD 项目级工具；项目级工具以当前目录计算目标路径，`--path` 可直接覆盖目标。支持包统一接收 `TARGET_DIR` / `--project-dir`，先检查并在子 Shell 中切换目录：`sh scripts_for_install/install.sh --tool=opencode /path/to/project`。依据：[上游安装器](https://raw.githubusercontent.com/msitarzewski/agency-agents/main/scripts/install.sh)。
+
 > 官方仓库：[msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents)
 > 官方文档：[Agency Agents App](https://agencyagents.app/)
 

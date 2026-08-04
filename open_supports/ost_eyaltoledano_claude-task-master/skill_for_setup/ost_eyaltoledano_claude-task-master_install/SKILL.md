@@ -6,6 +6,8 @@ argument-hint: '可选：--location=local|global、--project-dir=DIR、--claude-
 
 # Taskmaster 安装（skill_for_setup）
 
+> **安装作用域**：模式 D；本地 npm 安装为 CWD-sensitive。AI Agent 必须把目标项目作为最后一个 `TARGET_DIR` 参数（或 `--project-dir`）传入；全局安装不带目录。
+
 > 参考：[`repo_readme_summary.md`](../../repo_readme_summary.md)  
 > 脚本：[`scripts_for_install/install.sh`](../../scripts_for_install/install.sh)  
 > 官方仓库：[eyaltoledano/claude-task-master](https://github.com/eyaltoledano/claude-task-master)
@@ -49,7 +51,7 @@ argument-hint: '可选：--location=local|global、--project-dir=DIR、--claude-
 从支持包根目录（本 `SKILL.md` 向上两级）执行：
 
 ```sh
-sh scripts_for_install/install.sh [options]
+sh scripts_for_install/install.sh [options] [TARGET_DIR]
 ```
 
 常用示例：
@@ -58,7 +60,7 @@ sh scripts_for_install/install.sh [options]
 sh scripts_for_install/install.sh --location=local --project-dir=/path/to/project
 sh scripts_for_install/install.sh --global
 sh scripts_for_install/install.sh --global --claude-mcp --tools=core
-sh scripts_for_install/install.sh --location=local --project-dir=. --init-project
+sh scripts_for_install/install.sh --location=local --init-project /path/to/project
 ```
 
 脚本会执行平台检查、Node.js/npm/npx 检查、npm 安装 / 更新、CLI 验证；只有显式传 `--claude-mcp` 才会修改 Claude Code MCP 配置，只有显式传 `--init-project` 才会运行 `task-master init`。

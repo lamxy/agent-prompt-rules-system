@@ -1,29 +1,31 @@
 #!/bin/sh
 # =============================================================================
-# install.sh - Cognee installation helper
-# Repository: https://github.com/topoteretes/cognee
+# install.sh - Cognee 安装助手
+# 仓库：https://github.com/topoteretes/cognee
 #
-# Usage:
-#   ./install.sh [OPTIONS]
+# 用法：
+#   ./install.sh [选项] [目标项目目录]
 #
-# Options:
-#   --location=local       Install or update into a project virtualenv (default)
-#   --location=global      Install or update with pip --user using the selected Python
-#   --venv-dir=PATH        Virtualenv path for --location=local (default: .venv)
-#   --extras=LIST          Optional Cognee extras, comma-separated
-#                          Examples: ollama, postgres, neo4j, docs, anthropic
-#   --manager=auto         Prefer uv when available, otherwise pip (default)
-#   --manager=uv           Require uv for package installation
-#   --manager=pip          Use python -m pip
-#   --dry-run              Print the planned actions without installing
-#   --help                 Show this help
+# 选项：
+#   --location=local       安装或更新到项目虚拟环境（默认）
+#   --location=global      使用所选 Python 的 pip --user 安装或更新
+#   --venv-dir=PATH        --location=local 的虚拟环境路径（默认：.venv）
+#   TARGET_DIR             本地项目根目录；默认虚拟环境为 TARGET_DIR/.venv
+#   --extras=LIST          可选 Cognee extras，逗号分隔
+#                          示例：ollama、postgres、neo4j、docs、anthropic
+#   --manager=auto         优先使用可用的 uv，否则使用 pip（默认）
+#   --manager=uv           要求使用 uv 安装包
+#   --manager=pip          使用 python -m pip
+#   --dry-run              只输出计划操作，不安装
+#   --help                 显示帮助
 #
-# Examples:
+# 示例：
 #   ./install.sh
 #   ./install.sh --extras=ollama
 #   ./install.sh --extras=postgres,neo4j,aws
 #   ./install.sh --location=global --manager=pip
 # =============================================================================
+# 安装模式：双模。本地封装使用显式虚拟环境路径；全局模式使用当前用户的 Python 环境。
 
 set -eu
 
@@ -32,27 +34,50 @@ VENV_DIR=".venv"
 EXTRAS=""
 MANAGER="auto"
 DRY_RUN="no"
+TARGET_DIR="."
+TARGET_DIR_SET="no"
+VENV_DIR_SET="no"
 
-for arg in "$@"; do
-  case "$arg" in
-    --location=local) LOCATION="local" ;;
-    --location=global) LOCATION="global" ;;
-    --venv-dir=*) VENV_DIR="${arg#--venv-dir=}" ;;
-    --extras=*) EXTRAS="${arg#--extras=}" ;;
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --location=local|--local) LOCATION="local" ;;
+    --location=global|--global) LOCATION="global" ;;
+    --venv-dir=*) VENV_DIR="${1#--venv-dir=}"; VENV_DIR_SET="yes" ;;
+    --extras=*) EXTRAS="${1#--extras=}" ;;
     --manager=auto) MANAGER="auto" ;;
     --manager=uv) MANAGER="uv" ;;
     --manager=pip) MANAGER="pip" ;;
     --dry-run) DRY_RUN="yes" ;;
     --help|-h)
-      sed -n '/^# Usage:/,/^# ====/p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '/^# 用法：/,/^# ====/p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
-    *)
-      printf 'Error: unknown option "%s"\nRun "%s --help" for usage.\n' "$arg" "$0" >&2
+    -*)
+      printf '错误：未知选项“%s”\n运行“%s --help”查看用法。\n' "$1" "$0" >&2
       exit 1
       ;;
+    *)
+      if [ "$TARGET_DIR_SET" = "yes" ]; then
+        printf '错误：只能指定一个 TARGET_DIR\n' >&2
+        exit 1
+      fi
+      TARGET_DIR="$1"
+      TARGET_DIR_SET="yes"
+      ;;
   esac
+  shift
 done
+
+if [ "$LOCATION" = "local" ]; then
+  [ -d "$TARGET_DIR" ] || {
+    printf '错误：目标项目目录不存在：%s\n' "$TARGET_DIR" >&2
+    exit 1
+  }
+  TARGET_DIR="$(CDPATH= cd -- "$TARGET_DIR" && pwd)"
+  if [ "$VENV_DIR_SET" = "no" ]; then
+    VENV_DIR="$TARGET_DIR/.venv"
+  fi
+fi
 
 detect_platform() {
   _uname="$(uname -s 2>/dev/null || echo unknown)"
@@ -66,7 +91,7 @@ detect_platform() {
       fi
       ;;
     *)
-      printf 'Error: unsupported platform "%s". This script supports macOS, Linux, and WSL.\n' "$_uname" >&2
+      printf '错误：不支持的平台“%s”。本脚本支持 macOS、Linux 和 WSL。\n' "$_uname" >&2
       printf 'Windows users can use PowerShell directly:\n' >&2
       printf '  uv venv\n  .\\.venv\\Scripts\\Activate.ps1\n  uv pip install cognee\n' >&2
       exit 1
@@ -80,7 +105,7 @@ find_python() {
   elif command -v python >/dev/null 2>&1; then
     PYTHON="$(command -v python)"
   else
-    printf 'Error: Python was not found. Cognee requires Python 3.10 through 3.14.\n' >&2
+    printf '错误：未找到 Python。Cognee 需要 Python 3.10 至 3.14。\n' >&2
     exit 1
   fi
 }
@@ -92,7 +117,7 @@ raise SystemExit(0 if (3, 10) <= sys.version_info[:2] < (3, 15) else 1)
 PY
   then
     _ver="$("$PYTHON" -c 'import sys; print(".".join(map(str, sys.version_info[:3])))' 2>/dev/null || printf 'unknown')"
-    printf 'Error: Cognee requires Python 3.10 through 3.14; found %s at %s.\n' "$_ver" "$PYTHON" >&2
+    printf '错误：Cognee 需要 Python 3.10 至 3.14；在 %s 找到 %s。\n' "$PYTHON" "$_ver" >&2
     exit 1
   fi
 }

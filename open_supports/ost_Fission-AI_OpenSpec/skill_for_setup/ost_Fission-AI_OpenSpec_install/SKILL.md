@@ -6,6 +6,8 @@ argument-hint: '[--package-manager=npm|pnpm|yarn|bun] [--init-project --tools=cl
 
 # OpenSpec 安装（skill_for_setup）
 
+> **安装作用域**：模式 A。CLI 始终全局安装；`--init-project` 与 `--update-project` 是独立 CWD-sensitive 项目操作，AI Agent 必须把 `TARGET_DIR` 作为最后一个参数传入。
+
 > 参考：[`repo_readme_summary.md`](../../repo_readme_summary.md)
 > 脚本：[`scripts_for_install/install.sh`](../../scripts_for_install/install.sh)
 > 官方仓库：[Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec)

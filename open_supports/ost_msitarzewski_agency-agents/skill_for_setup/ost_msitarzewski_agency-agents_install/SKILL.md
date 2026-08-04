@@ -6,6 +6,8 @@ argument-hint: '[--tool=claude-code|codex|all] [--division=engineering] [--agent
 
 # Agency Agents 安装（skill_for_setup）
 
+> **安装作用域**：模式 D。项目级上游工具依赖 CWD；AI Agent 必须传入最后一个 `TARGET_DIR`（或 `--project-dir`），脚本会在子 Shell 中调用官方安装器。全局工具可省略目录。
+
 > 参考：[`repo_readme_summary.md`](../../repo_readme_summary.md)  
 > 脚本：[`scripts_for_install/install.sh`](../../scripts_for_install/install.sh)  
 > 官方仓库：[msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents)

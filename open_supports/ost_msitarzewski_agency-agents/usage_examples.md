@@ -1,5 +1,15 @@
 # Agency Agents — 使用示例
 
+## 安装作用域示例
+
+```sh
+# CWD-sensitive 项目工具：脚本在目标项目内调用上游安装器
+sh scripts_for_install/install.sh --tool=opencode /path/to/project
+
+# 精确指定上游目标目录时，仍可透传 --path
+sh scripts_for_install/install.sh --tool=opencode --path=/path/to/project/.opencode/agents /path/to/project
+```
+
 > 来源：官方 README / 文档；本文件只保留 open_supports 使用者最常见的入口。
 
 ## 快速开始

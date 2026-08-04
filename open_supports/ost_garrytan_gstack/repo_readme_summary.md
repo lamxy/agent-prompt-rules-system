@@ -1,5 +1,7 @@
 # gstack — 仓库核心介绍
 
+> **安装作用域（模式 D；本地為 B）**：常規 `setup`（可顯式傳 `--global`）安裝至使用者層級；只有 `--team` 需要目標專案，且上游 team 初始化依賴 CWD。使用支持包時傳入 `TARGET_DIR`：`sh scripts_for_install/install.sh --team=required /path/to/project`；腳本以子 Shell 切換目錄，不改變呼叫者的 CWD。依據：[官方安裝指南](https://github.com/garrytan/gstack#install--30-seconds)。
+
 > 官方仓库：[garrytan/gstack](https://github.com/garrytan/gstack)
 
 ## 1. 概览

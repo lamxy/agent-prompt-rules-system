@@ -6,6 +6,8 @@ argument-hint: '--client=codex-zip|codex-cli|claude-code|claude-desktop [--proje
 
 # Product Manager Skills 安装（skill_for_setup）
 
+> **安装作用域**：模式 D。`codex-zip` 以最后一个 `TARGET_DIR` / `--project-dir` 精确写入项目，不依赖 CWD；`codex-cli` 是全局模式，AI Agent 必须带 `--global` 且不得假装项目路径会改变其作用域。
+
 > 参考：[`repo_readme_summary.md`](../../repo_readme_summary.md)  
 > 脚本：[`scripts_for_install/install.sh`](../../scripts_for_install/install.sh)  
 > 官方仓库：[deanpeters/Product-Manager-Skills](https://github.com/deanpeters/Product-Manager-Skills)

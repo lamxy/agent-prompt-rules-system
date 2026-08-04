@@ -1,5 +1,15 @@
 # Product Manager Skills — 使用示例
 
+## 安装作用域示例
+
+```sh
+# 项目级：支持包将 ZIP 内容写入明确目标，而非调用者 CWD
+sh scripts_for_install/install.sh --client=codex-zip /path/to/project
+
+# 全局：官方 Skills CLI 路径
+sh scripts_for_install/install.sh --client=codex-cli --skill=prd-development --global
+```
+
 > 来源：官方 README / 文档；本文件只保留 open_supports 使用者最常见的入口。
 
 ## 快速开始

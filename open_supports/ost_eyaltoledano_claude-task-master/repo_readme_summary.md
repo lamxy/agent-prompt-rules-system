@@ -1,5 +1,7 @@
 # Taskmaster — 仓库核心介绍
 
+> **安装作用域（模式 D / 本地为 B）**：`npm install -g task-master-ai` 是全局安装；项目安装由 npm 的当前目录决定。支持包以位置参数或 `--project-dir` 接收目标目录，并在子 Shell 中执行本地 npm 安装：`sh scripts_for_install/install.sh --local /path/to/project`；全局安装为 `sh scripts_for_install/install.sh --global`。依据：[官方 README](https://github.com/eyaltoledano/claude-task-master#readme)。
+
 > 官方仓库：[eyaltoledano/claude-task-master](https://github.com/eyaltoledano/claude-task-master)  
 > 官方文档：[Taskmaster Docs](https://tryhamster.com/docs/taskmaster)
 

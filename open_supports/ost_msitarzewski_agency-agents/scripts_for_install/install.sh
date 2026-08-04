@@ -1,49 +1,46 @@
 #!/bin/sh
 # =============================================================================
-# install.sh - Agency Agents install/update helper
-# Repository: https://github.com/msitarzewski/agency-agents
+# install.sh - Agency Agents 安装/更新助手
+# 仓库：https://github.com/msitarzewski/agency-agents
 #
-# Purpose:
-#   1. Detect supported shell platforms: macOS, Linux, WSL, and Git Bash/MSYS.
-#   2. Clone or fast-forward an official agency-agents checkout.
-#   3. Run the official Bash installer in non-interactive mode.
-#   4. Keep selection flags delegated to upstream instead of reimplementing them.
+# 功能：
+#   1. 检测支持的 Shell 平台：macOS、Linux、WSL 和 Git Bash/MSYS。
+#   2. 克隆或快进更新官方 agency-agents 检出目录。
+#   3. 以非交互模式运行官方 Bash 安装器。
+#   4. 将选择参数交给上游处理，避免重复实现。
 #
-# Usage:
-#   ./install.sh [OPTIONS]
+# 用法：
+#   ./install.sh [选项] [目标项目目录]
 #
-# Options:
-#   --tool=NAME             Tool to install for: claude-code, copilot,
-#                           antigravity, gemini-cli, opencode, openclaw,
-#                           cursor, aider, windsurf, qwen, kimi, codex,
-#                           osaurus, hermes, or all. Default: all detected.
-#   --division=LIST         Comma-separated divisions/teams to install.
-#   --agent=LIST            Comma-separated agent slugs/names to install.
-#   --agents-file=PATH      File of agent slugs/names, one per line.
-#   --project-dir=PATH      Project directory for project-scoped tools.
-#                           Default: current directory.
-#   --repo-dir=PATH         Official checkout cache.
-#                           Default: ~/.cache/agency-agents/agency-agents.
-#   --path=PATH             Override upstream install directory for one tool.
-#   --link                  Ask upstream to symlink instead of copy.
-#   --no-convert            Do not let upstream auto-run convert.sh.
-#   --parallel              Ask upstream to install selected tools in parallel.
-#   --jobs=N                Upstream parallel job count.
-#   --dry-run               Print upstream installation plan without writing.
-#   --verify-only           Verify checkout and upstream installer availability.
-#   --list=WHAT             List upstream tools, teams/divisions, agents, or all.
-#   --help|-h               Show this help.
+# 选项：
+#   --tool=NAME             要安装的工具：claude-code、copilot、antigravity、gemini-cli、opencode、openclaw、cursor、aider、windsurf、qwen、kimi、codex、osaurus、hermes 或 all；默认检测全部。
+#   --division=LIST         要安装的 division/team，逗号分隔。
+#   --agent=LIST            要安装的 agent slug/名称，逗号分隔。
+#   --agents-file=PATH      agent slug/名称文件，每行一个。
+#   --project-dir=PATH      项目级工具的项目目录（默认：当前目录）。
+#   TARGET_DIR              --project-dir 的位置参数别名。
+#   --repo-dir=PATH         官方检出缓存目录（默认：~/.cache/agency-agents/agency-agents）。
+#   --path=PATH             覆盖一个工具的上游安装目录。
+#   --link                  要求上游创建符号链接而非复制。
+#   --no-convert            不允许上游自动运行 convert.sh。
+#   --parallel              要求上游并行安装所选工具。
+#   --jobs=N                上游并行任务数。
+#   --dry-run               只输出上游安装计划，不写入。
+#   --verify-only           验证检出目录与上游安装器可用性。
+#   --list=WHAT             列出上游工具、team/division、agent 或全部。
+#   --help|-h               显示帮助。
 #
-# Examples:
+# 示例：
 #   ./install.sh --tool=codex
 #   ./install.sh --tool=opencode --division=engineering --project-dir=/path/to/project
 #   ./install.sh --tool=cursor --agent=frontend-developer,ui-designer --dry-run
 #   ./install.sh --list=teams
 #
-# Notes:
-#   - This script does not uninstall agents or delete configuration.
-#   - The official installer is Bash-based; this wrapper is POSIX sh.
-#   - The native Agency Agents desktop app is available from:
+# 说明：
+#   - 安装模式：双模。部分上游工具为全局安装，项目级工具则从 CWD 推导目标位置。
+#   - 本脚本不会卸载 agent 或删除配置。
+#   - 官方安装器基于 Bash；本封装使用 POSIX sh。
+#   - Agency Agents 原生桌面应用可从以下地址获取：
 #     https://github.com/msitarzewski/agency-agents-app/releases/latest
 # =============================================================================
 
@@ -64,14 +61,15 @@ JOBS=""
 DRY_RUN="no"
 VERIFY_ONLY="no"
 LIST_WHAT=""
+PROJECT_DIR_SET="no"
 
 usage() {
-  sed -n '/^# Usage:/,/^# ====/p' "$0" | sed '/^# ====/d; s/^# \?//'
+  sed -n '/^# 用法：/,/^# ====/p' "$0" | sed '/^# ====/d; s/^# \?//'
 }
 
 fail_usage() {
-  printf 'Error: %s\n' "$1" >&2
-  printf 'Run "%s --help" for usage.\n' "$0" >&2
+  printf '错误：%s\n' "$1" >&2
+  printf '运行“%s --help”查看用法。\n' "$0" >&2
   exit 1
 }
 
@@ -111,10 +109,11 @@ while [ "$#" -gt 0 ]; do
       AGENTS_FILE="$2"
       shift
       ;;
-    --project-dir=*) PROJECT_DIR="${1#--project-dir=}" ;;
+    --project-dir=*) PROJECT_DIR="${1#--project-dir=}"; PROJECT_DIR_SET="yes" ;;
     --project-dir)
       [ "$#" -ge 2 ] || fail_usage '--project-dir requires a value'
       PROJECT_DIR="$2"
+      PROJECT_DIR_SET="yes"
       shift
       ;;
     --repo-dir=*) REPO_DIR="${1#--repo-dir=}" ;;
@@ -153,8 +152,15 @@ while [ "$#" -gt 0 ]; do
       usage
       exit 0
       ;;
+    -*)
+      fail_usage "未知选项 \"$1\""
+      ;;
     *)
-      fail_usage "unknown option \"$1\""
+      if [ "$PROJECT_DIR_SET" = "yes" ]; then
+        fail_usage 'specify only one TARGET_DIR or --project-dir'
+      fi
+      PROJECT_DIR="$1"
+      PROJECT_DIR_SET="yes"
       ;;
   esac
   shift
@@ -217,14 +223,11 @@ require_command() {
 abs_dir() {
   _dir="$1"
   if [ ! -d "$_dir" ]; then
-    printf 'Error: directory does not exist: %s\n' "$_dir" >&2
+    printf 'Target project directory does not exist: %s\n' "$_dir" >&2
     exit 1
   fi
 
-  _old_pwd="$(pwd)"
-  cd "$_dir"
-  pwd
-  cd "$_old_pwd"
+  CDPATH= cd -- "$_dir" && pwd
 }
 
 ensure_checkout() {
@@ -266,7 +269,7 @@ verify_checkout() {
 }
 
 run_official_installer() {
-  _project_dir="$(abs_dir "$PROJECT_DIR")"
+  _project_dir="$PROJECT_DIR"
   _installer="$REPO_DIR/scripts/install.sh"
 
   printf 'Platform: %s\n' "$PLATFORM"
@@ -282,23 +285,24 @@ run_official_installer() {
   [ -n "$OVERRIDE_PATH" ] && printf 'Path override: %s\n' "$OVERRIDE_PATH"
   printf '\n'
 
-  cd "$_project_dir"
-  set -- "$_installer" --no-interactive
-  if [ -n "$TOOL" ] && [ "$TOOL" != "all" ]; then
-    set -- "$@" --tool "$TOOL"
-  fi
-  [ -z "$DIVISIONS" ] || set -- "$@" --division "$DIVISIONS"
-  [ -z "$AGENTS" ] || set -- "$@" --agent "$AGENTS"
-  [ -z "$AGENTS_FILE" ] || set -- "$@" --agents-file "$AGENTS_FILE"
-  [ -z "$OVERRIDE_PATH" ] || set -- "$@" --path "$OVERRIDE_PATH"
-  [ "$LINK" = "no" ] || set -- "$@" --link
-  [ "$NO_CONVERT" = "no" ] || set -- "$@" --no-convert
-  [ "$PARALLEL" = "no" ] || set -- "$@" --parallel
-  [ -z "$JOBS" ] || set -- "$@" --jobs "$JOBS"
-  [ "$DRY_RUN" = "no" ] || set -- "$@" --dry-run
-  [ -z "$LIST_WHAT" ] || set -- "$@" --list "$LIST_WHAT"
-
-  bash "$@"
+  (
+    cd "$_project_dir" || exit 1
+    set -- "$_installer" --no-interactive
+    if [ -n "$TOOL" ] && [ "$TOOL" != "all" ]; then
+      set -- "$@" --tool "$TOOL"
+    fi
+    [ -z "$DIVISIONS" ] || set -- "$@" --division "$DIVISIONS"
+    [ -z "$AGENTS" ] || set -- "$@" --agent "$AGENTS"
+    [ -z "$AGENTS_FILE" ] || set -- "$@" --agents-file "$AGENTS_FILE"
+    [ -z "$OVERRIDE_PATH" ] || set -- "$@" --path "$OVERRIDE_PATH"
+    [ "$LINK" = "no" ] || set -- "$@" --link
+    [ "$NO_CONVERT" = "no" ] || set -- "$@" --no-convert
+    [ "$PARALLEL" = "no" ] || set -- "$@" --parallel
+    [ -z "$JOBS" ] || set -- "$@" --jobs "$JOBS"
+    [ "$DRY_RUN" = "no" ] || set -- "$@" --dry-run
+    [ -z "$LIST_WHAT" ] || set -- "$@" --list "$LIST_WHAT"
+    bash "$@"
+  )
 }
 
 print_next_steps() {
@@ -315,6 +319,7 @@ print_next_steps() {
 }
 
 main() {
+  PROJECT_DIR="$(abs_dir "$PROJECT_DIR")"
   detect_platform
   require_command "git" "Install Git, then rerun this script."
   require_command "bash" "Install Bash 3.2 or newer, then rerun this script."

@@ -1,5 +1,15 @@
 # gstack — 使用示例
 
+## 安装作用域示例
+
+```sh
+# 常规安装是用户级；无需项目路径
+sh scripts_for_install/install.sh --host=codex
+
+# 只有 team 初始化需要项目路径；脚本会在子 Shell 中切换目录
+sh scripts_for_install/install.sh --team=required /path/to/project
+```
+
 > 来源：官方 README / 文档；本文件只保留 open_supports 使用者最常见的入口。
 
 ## 快速开始

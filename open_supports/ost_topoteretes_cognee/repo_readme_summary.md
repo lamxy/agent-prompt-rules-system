@@ -1,5 +1,7 @@
 # Cognee — 仓库核心介绍
 
+> **安装作用域（模式 D / 本地为 C）**：官方包安装到当前 Python 环境；支持包提供用户级 `--global` 与本地虚拟环境两种策略。本地命令接受 `TARGET_DIR`，将虚拟环境显式设为 `TARGET_DIR/.venv`，无需依赖 CWD：`sh scripts_for_install/install.sh --local /path/to/project`。依据：[官方快速开始](https://github.com/topoteretes/cognee#step-1-install-cognee)。
+
 > 官方仓库：[topoteretes/cognee](https://github.com/topoteretes/cognee)
 > 官方文档：[Cognee Documentation](https://docs.cognee.ai/)
 

@@ -1,5 +1,15 @@
 # Taskmaster — 使用示例
 
+## 安装作用域示例
+
+```sh
+# 项目级 npm 安装；位置参数也可替换为 --project-dir=/path/to/project
+sh scripts_for_install/install.sh --local /path/to/project
+
+# 全局 npm 安装
+sh scripts_for_install/install.sh --global
+```
+
 > 来源：官方 README / 文档；本文件只保留 open_supports 使用者最常见的入口。
 
 ## 快速开始

@@ -1,5 +1,15 @@
 # Cognee — 使用示例
 
+## 安装作用域示例
+
+```sh
+# 项目级：显式建立 /path/to/project/.venv，不依赖调用者 CWD
+sh scripts_for_install/install.sh --local /path/to/project
+
+# 用户级 Python 安装
+sh scripts_for_install/install.sh --global --manager=pip
+```
+
 > 来源：官方 README / 文档；本文件只保留 open_supports 使用者最常见的入口。
 
 ## 快速开始

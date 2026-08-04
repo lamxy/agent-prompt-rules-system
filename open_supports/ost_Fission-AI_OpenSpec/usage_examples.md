@@ -1,5 +1,15 @@
 # OpenSpec — 使用示例
 
+## 安装作用域示例
+
+```sh
+# CLI 永远是全局安装
+sh scripts_for_install/install.sh
+
+# 项目操作不是本地 CLI 安装；脚本在目标目录运行 openspec init
+sh scripts_for_install/install.sh --init-project /path/to/project
+```
+
 > 来源：官方 README / 文档；本文件只保留 open_supports 使用者最常见的入口。
 
 ## 快速开始

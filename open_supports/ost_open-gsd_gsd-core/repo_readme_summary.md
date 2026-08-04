@@ -1,5 +1,7 @@
 # GSD Core — 仓库核心介绍
 
+> **安装作用域（模式 D / 本地为 B）**：官方 `--global` 写入用户级配置；`--local` 以当前工作目录识别目标项目。支持包的本地命令必须带 `TARGET_DIR`，脚本会检查目录并在子 Shell 中 `cd` 后运行官方命令：`sh scripts_for_install/install.sh --claude --local /path/to/project`。全局命令不需要项目路径：`sh scripts_for_install/install.sh --claude --global`。依据：[官方安装文档](https://docs.opengsd.net/core/installation)。
+
 > 官方仓库：[open-gsd/gsd-core](https://github.com/open-gsd/gsd-core)
 > 官方文档：[Open GSD Docs](https://docs.opengsd.net/) / [GSD Core Installation](https://docs.opengsd.net/core/installation)
 

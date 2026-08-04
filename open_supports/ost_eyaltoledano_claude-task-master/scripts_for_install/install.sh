@@ -11,7 +11,7 @@
 #   5. 可选：显式传 --init-project 时，在目标项目运行 task-master init
 #
 # 用法：
-#   ./install.sh [OPTIONS]
+#   ./install.sh [OPTIONS] [TARGET_DIR]
 #
 # 选项：
 #   --location=local      项目级 npm 安装（默认）
@@ -19,6 +19,7 @@
 #   --global              --location=global 的别名
 #   --local               --location=local 的别名
 #   --project-dir=DIR     项目目录（默认：当前目录）
+#   TARGET_DIR            --project-dir 的位置参数别名（仅本地安装或 --init-project 时使用）
 #   --claude-mcp          同时配置 Claude Code MCP server（会修改 Claude 配置）
 #   --mcp-scope=SCOPE     Claude MCP scope，默认 user；透传给 claude mcp add --scope
 #   --tools=MODE          MCP 工具加载模式，如 core、standard、all、lean 或逗号列表
@@ -32,6 +33,7 @@
 #   ./install.sh --location=local --project-dir=. --init-project
 #
 # 说明：
+#   - 安装模式：双模（全局 + 项目级）。项目级 npm 安装依赖 CWD；脚本会在子 Shell 中切换到目标目录。
 #   - 本脚本不会写入 API keys。
 #   - MCP 使用 API key 时，请在项目 .env 或 MCP 配置 env 区块中设置。
 #   - 使用 Claude Code / Codex CLI provider 时，需要对应 CLI 已安装并完成认证。
@@ -47,6 +49,7 @@ CLAUDE_MCP="no"
 MCP_SCOPE="user"
 TOOLS_MODE=""
 INIT_PROJECT="no"
+PROJECT_DIR_SET="no"
 
 usage() {
   sed -n '/^# 用法/,/^# ====/p' "$0" | sed '/^# ====/d; s/^# \?//'
@@ -58,8 +61,8 @@ fail_usage() {
   exit 1
 }
 
-for arg in "$@"; do
-  case "$arg" in
+while [ "$#" -gt 0 ]; do
+  case "$1" in
     --location=local|--local)
       LOCATION="local"
       ;;
@@ -67,16 +70,17 @@ for arg in "$@"; do
       LOCATION="global"
       ;;
     --project-dir=*)
-      PROJECT_DIR="${arg#--project-dir=}"
+      PROJECT_DIR="${1#--project-dir=}"
+      PROJECT_DIR_SET="yes"
       ;;
     --claude-mcp)
       CLAUDE_MCP="yes"
       ;;
     --mcp-scope=*)
-      MCP_SCOPE="${arg#--mcp-scope=}"
+      MCP_SCOPE="${1#--mcp-scope=}"
       ;;
     --tools=*)
-      TOOLS_MODE="${arg#--tools=}"
+      TOOLS_MODE="${1#--tools=}"
       ;;
     --init-project)
       INIT_PROJECT="yes"
@@ -85,10 +89,18 @@ for arg in "$@"; do
       usage
       exit 0
       ;;
+    -*)
+      fail_usage "未知选项 \"$1\""
+      ;;
     *)
-      fail_usage "未知选项 \"$arg\""
+      if [ "$PROJECT_DIR_SET" = "yes" ]; then
+        fail_usage '只能指定一个 TARGET_DIR 或 --project-dir'
+      fi
+      PROJECT_DIR="$1"
+      PROJECT_DIR_SET="yes"
       ;;
   esac
+  shift
 done
 
 case "$MCP_SCOPE" in
@@ -181,7 +193,7 @@ check_node_runtime() {
 normalize_project_dir() {
   if [ "$LOCATION" = "local" ] || [ "$INIT_PROJECT" = "yes" ]; then
     [ -d "$PROJECT_DIR" ] || {
-      printf 'Error: 项目目录不存在：%s\n' "$PROJECT_DIR" >&2
+      printf 'Target project directory does not exist: %s\n' "$PROJECT_DIR" >&2
       exit 1
     }
     PROJECT_DIR="$(CDPATH= cd -- "$PROJECT_DIR" && pwd)"
@@ -269,9 +281,9 @@ print_next_steps() {
 }
 
 main() {
+  normalize_project_dir
   detect_platform
   check_node_runtime
-  normalize_project_dir
   print_summary
   install_cli
   verify_cli

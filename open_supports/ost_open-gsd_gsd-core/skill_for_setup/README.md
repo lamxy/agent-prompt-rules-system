@@ -1,5 +1,7 @@
 # GSD Core 安装 Skill — 使用说明
 
+> **目录契约**：`--local` 是 CWD-sensitive。调用脚本时始终传 `TARGET_DIR`（位置参数）；脚本在子 Shell 中切换目录。`--global` 不传项目目录。
+
 ## 触发词
 
 | 触发方式 | 示例 |

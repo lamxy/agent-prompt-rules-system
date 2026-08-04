@@ -6,6 +6,8 @@ argument-hint: '目标 Agent 和配置范围，如 "--target=claude" 或 "--loca
 
 # CodeGraph 安装（skill_for_setup）
 
+> **安装作用域**：模式 D；`--location=local` 为 CWD-sensitive。AI Agent 必须传入最后一个 `TARGET_DIR`，脚本会在子 Shell 中运行 `codegraph install`；`--global` 不带目录。
+
 > 参考：[`repo_readme_summary.md`](../../repo_readme_summary.md)  
 > 脚本：[`scripts_for_install/install.sh`](../../scripts_for_install/install.sh)  
 > 官方仓库：[colbymchenry/codegraph](https://github.com/colbymchenry/codegraph)
@@ -40,14 +42,14 @@ argument-hint: '目标 Agent 和配置范围，如 "--target=claude" 或 "--loca
 从支持包根目录（本 SKILL.md 向上两级）执行：
 
 ```sh
-sh scripts_for_install/install.sh [--target=<agents>] [--location=local|global]
+sh scripts_for_install/install.sh [--target=<agents>] [--location=local|global] [TARGET_DIR]
 ```
 
 常用示例：
 
 ```sh
-sh scripts_for_install/install.sh                        # auto 检测，项目级（推荐默认）
-sh scripts_for_install/install.sh --target=claude        # 仅 Claude Code，项目级
+sh scripts_for_install/install.sh /path/to/project       # auto 检测，项目级
+sh scripts_for_install/install.sh --target=claude /path/to/project # 仅 Claude Code，项目级
 sh scripts_for_install/install.sh --location=global      # 全局配置，auto 检测
 ```
 

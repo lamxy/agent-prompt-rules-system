@@ -1,32 +1,35 @@
 #!/bin/sh
 # =============================================================================
-# install.sh - PM Skills Marketplace install helper
-# Repository: https://github.com/phuryn/pm-skills
+# install.sh - PM Skills Marketplace 安装助手
+# 仓库：https://github.com/phuryn/pm-skills
 #
-# Usage:
-#   ./install.sh [OPTIONS]
+# 用法：
+#   ./install.sh [选项] [目标项目目录]
 #
-# Options:
-#   --client=codex        Install with Codex CLI plugin commands (default)
-#   --client=claude-code  Install with Claude Code plugin commands
-#   --client=cowork       Print Claude Cowork GUI install steps
-#   --client=gemini       Copy skills to Gemini CLI skills directory
-#   --client=opencode     Copy skills to OpenCode skills directory
-#   --client=cursor       Copy skills to Cursor skills directory
-#   --client=kiro         Copy skills to Kiro skills directory
-#   --plugins=all         Install/copy all PM plugins (default)
-#   --plugins=a,b,c       Install/copy selected plugin names
-#   --location=local      Project-level skills directory for copy clients (default)
-#   --location=global     User-level skills directory for copy clients
-#   --repo-dir=PATH       Existing phuryn/pm-skills checkout for copy clients
-#   --verify-only         Do not install; run verification checks only
-#   --help                Show this help
+# 选项：
+#   --client=codex        使用 Codex CLI 插件命令安装（默认）
+#   --client=claude-code  使用 Claude Code 插件命令安装
+#   --client=cowork       输出 Claude Cowork 图形界面安装步骤
+#   --client=gemini       将 skills 复制到 Gemini CLI skills 目录
+#   --client=opencode     将 skills 复制到 OpenCode skills 目录
+#   --client=cursor       将 skills 复制到 Cursor skills 目录
+#   --client=kiro         将 skills 复制到 Kiro skills 目录
+#   --plugins=all         安装/复制全部 PM 插件（默认）
+#   --plugins=a,b,c       安装/复制指定插件名
+#   --location=local      复制客户端使用项目级 skills 目录（默认）
+#   --location=global     复制客户端使用用户级 skills 目录
+#   --project-dir=PATH    本地复制客户端的项目根目录（默认：.）
+#   TARGET_DIR            --project-dir 的位置参数别名
+#   --repo-dir=PATH       复制客户端使用的既有 phuryn/pm-skills 检出目录
+#   --verify-only         不安装，只运行验证检查
+#   --help                显示帮助
 #
-# Examples:
+# 示例：
 #   ./install.sh --client=codex
 #   ./install.sh --client=claude-code --plugins=pm-toolkit,pm-execution
 #   ./install.sh --client=opencode --location=local --repo-dir=/path/to/pm-skills
 # =============================================================================
+# 安装模式：双模。marketplace 命令为用户/全局级；本地复制客户端从 CWD 推导目标，并在 TARGET_DIR 内运行。
 
 set -eu
 
@@ -41,21 +44,33 @@ LOCATION="local"
 REPO_DIR=""
 VERIFY_ONLY="no"
 TMP_DIR=""
+PROJECT_DIR="."
+PROJECT_DIR_SET="no"
 
-for arg in "$@"; do
-  case "$arg" in
-    --client=*) CLIENT="${arg#--client=}" ;;
-    --plugins=*) PLUGINS="${arg#--plugins=}" ;;
-    --location=local) LOCATION="local" ;;
-    --location=global) LOCATION="global" ;;
-    --repo-dir=*) REPO_DIR="${arg#--repo-dir=}" ;;
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --client=*) CLIENT="${1#--client=}" ;;
+    --plugins=*) PLUGINS="${1#--plugins=}" ;;
+    --location=local|--local) LOCATION="local" ;;
+    --location=global|--global) LOCATION="global" ;;
+    --project-dir=*) PROJECT_DIR="${1#--project-dir=}"; PROJECT_DIR_SET="yes" ;;
+    --repo-dir=*) REPO_DIR="${1#--repo-dir=}" ;;
     --verify-only) VERIFY_ONLY="yes" ;;
-    --help|-h) sed -n '/^# Usage:/,/^# ====/p' "$0" | sed 's/^# \?//'; exit 0 ;;
-    *)
-      printf 'Error: unknown option "%s"\nRun "%s --help" for usage.\n' "$arg" "$0" >&2
+    --help|-h) sed -n '/^# 用法：/,/^# ====/p' "$0" | sed 's/^# \?//'; exit 0 ;;
+    -*)
+      printf '错误：未知选项“%s”\n运行“%s --help”查看用法。\n' "$1" "$0" >&2
       exit 1
       ;;
+    *)
+      if [ "$PROJECT_DIR_SET" = "yes" ]; then
+        printf '错误：只能指定一个 TARGET_DIR 或 --project-dir\n' >&2
+        exit 1
+      fi
+      PROJECT_DIR="$1"
+      PROJECT_DIR_SET="yes"
+      ;;
   esac
+  shift
 done
 
 cleanup() {
@@ -77,7 +92,7 @@ detect_platform() {
       fi
       ;;
     *)
-      printf 'Error: unsupported platform "%s". This script supports macOS, Linux, and WSL.\n' "$_uname" >&2
+      printf '错误：不支持的平台“%s”。本脚本支持 macOS、Linux 和 WSL。\n' "$_uname" >&2
       printf 'Windows users can use Claude Cowork from the GUI or run the relevant Claude/Codex plugin commands manually.\n' >&2
       exit 1
       ;;
@@ -86,9 +101,17 @@ detect_platform() {
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    printf 'Error: required command not found: %s\n' "$1" >&2
+    printf '错误：找不到必需命令：%s\n' "$1" >&2
     exit 1
   fi
+}
+
+normalize_project_dir() {
+  [ -d "$PROJECT_DIR" ] || {
+    printf '错误：目标项目目录不存在：%s\n' "$PROJECT_DIR" >&2
+    exit 1
+  }
+  PROJECT_DIR="$(CDPATH= cd -- "$PROJECT_DIR" && pwd)"
 }
 
 plugin_names() {
@@ -316,6 +339,12 @@ main() {
   detect_platform
   validate_plugins
 
+  case "$CLIENT:$LOCATION" in
+    gemini:local|opencode:local|cursor:local|kiro:local)
+      normalize_project_dir
+      ;;
+  esac
+
   printf 'Platform: %s\n' "$PLATFORM"
   print_summary
   printf '\n'
@@ -337,10 +366,20 @@ main() {
       print_cowork_steps
       ;;
     gemini|opencode|cursor|kiro)
-      if [ "$VERIFY_ONLY" = "no" ]; then
-        copy_skills_for_client
+      if [ "$LOCATION" = "local" ]; then
+        (
+          cd "$PROJECT_DIR" || exit 1
+          if [ "$VERIFY_ONLY" = "no" ]; then
+            copy_skills_for_client
+          fi
+          verify_skills_client
+        )
+      else
+        if [ "$VERIFY_ONLY" = "no" ]; then
+          copy_skills_for_client
+        fi
+        verify_skills_client
       fi
-      verify_skills_client
       ;;
     *)
       printf 'Error: unsupported client "%s". Run "%s --help" for supported clients.\n' "$CLIENT" "$0" >&2

@@ -6,6 +6,8 @@ argument-hint: '[--host=claude|codex|opencode|factory|kiro|auto] [--team=none|re
 
 # gstack Install (skill_for_setup)
 
+> **Installation scope**: global setup plus a CWD-sensitive project team mode. The AI Agent passes `TARGET_DIR` only with `--team=required|optional`; the wrapper enters that directory in a sub-shell before team initialization.
+
 > Reference: [`repo_readme_summary.md`](../../repo_readme_summary.md)  
 > Script: [`scripts_for_install/install.sh`](../../scripts_for_install/install.sh)  
 > Upstream repository: [garrytan/gstack](https://github.com/garrytan/gstack)
@@ -51,8 +53,8 @@ Common examples:
 sh scripts_for_install/install.sh
 sh scripts_for_install/install.sh --host=codex
 sh scripts_for_install/install.sh --host=auto --install-dir="$HOME/gstack"
-sh scripts_for_install/install.sh --team=optional
-sh scripts_for_install/install.sh --team=required
+sh scripts_for_install/install.sh --team=optional /path/to/project
+sh scripts_for_install/install.sh --team=required /path/to/project
 ```
 
 The script:

@@ -1,5 +1,7 @@
 # Product Manager Skills 安装 Skill - 使用说明
 
+> **目录契约**：`codex-zip` 使用显式 `TARGET_DIR` / `--project-dir` 写入项目，不依赖 CWD；`codex-cli` 是全局路径，必须使用 `--global`。
+
 ## 触发词
 
 | 触发方式 | 示例 |

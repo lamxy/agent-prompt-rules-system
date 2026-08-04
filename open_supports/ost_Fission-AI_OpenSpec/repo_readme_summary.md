@@ -1,5 +1,7 @@
 # OpenSpec — 仓库核心介绍
 
+> **安装作用域（模式 A；初始化为 B）**：OpenSpec CLI 只按官方全局方式安装：`sh scripts_for_install/install.sh`。`openspec init` / `openspec update` 是独立的项目操作，依赖 CWD；使用支持包时传入 `TARGET_DIR`：`sh scripts_for_install/install.sh --init-project /path/to/project`。依据：[官方 README](https://github.com/Fission-AI/OpenSpec#readme)。
+
 > 官方仓库：[Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec)
 > 官方文档：[Documentation Home](https://github.com/Fission-AI/OpenSpec/blob/main/docs/README.md)
 

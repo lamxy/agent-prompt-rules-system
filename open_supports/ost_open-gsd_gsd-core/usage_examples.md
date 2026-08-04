@@ -1,5 +1,15 @@
 # GSD Core — 使用示例
 
+## 安装作用域示例
+
+```sh
+# 项目级：脚本在 /path/to/project 内运行 CWD-sensitive 官方 --local 命令
+sh scripts_for_install/install.sh --claude --local /path/to/project
+
+# 全局：不传项目目录
+sh scripts_for_install/install.sh --claude --global
+```
+
 > 来源：官方 README / 文档；本文件只保留 open_supports 使用者最常见的入口。
 
 ## 快速开始
@@ -76,7 +86,7 @@
 适用场景：安装已完成，但想用支持包脚本重新执行同一 runtime 的安装 / 更新路径，并查看脚本给出的验证提示。
 
 ```sh
-sh scripts_for_install/install.sh --claude --local
+sh scripts_for_install/install.sh --claude --local /path/to/project
 ```
 
 预期结果：脚本完成平台、Node.js、npm、npx 检查，调用官方 `@opengsd/gsd-core` 安装器，然后输出对应 runtime 的验证命令。
@@ -165,7 +175,7 @@ codex --reload
 适用场景：运行支持包脚本时看到「请至少指定一个 runtime flag」。
 
 ```sh
-sh scripts_for_install/install.sh --codex --local
+sh scripts_for_install/install.sh --codex --local /path/to/project
 ```
 
 预期结果：脚本使用明确 runtime 与 scope 执行安装 / 更新路径。

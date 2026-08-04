@@ -6,6 +6,8 @@ argument-hint: '[--location=local|global] [--venv-dir=PATH] [--extras=LIST] [--m
 
 # Cognee 安装（skill_for_setup）
 
+> **安装作用域**：模式 D；本地 wrapper 为路径参数型。AI Agent 必须传最后一个 `TARGET_DIR`，脚本会安装到 `TARGET_DIR/.venv`；`--global` 不带目录。
+
 > 参考：[`repo_readme_summary.md`](../../repo_readme_summary.md)  
 > 脚本：[`scripts_for_install/install.sh`](../../scripts_for_install/install.sh)  
 > 官方仓库：[topoteretes/cognee](https://github.com/topoteretes/cognee)
@@ -60,16 +62,16 @@ argument-hint: '[--location=local|global] [--venv-dir=PATH] [--extras=LIST] [--m
 从支持包根目录（本 `SKILL.md` 向上两级）执行：
 
 ```sh
-sh scripts_for_install/install.sh [flags]
+sh scripts_for_install/install.sh [flags] [TARGET_DIR]
 ```
 
 常用示例：
 
 ```sh
-sh scripts_for_install/install.sh
-sh scripts_for_install/install.sh --dry-run
-sh scripts_for_install/install.sh --extras=ollama
-sh scripts_for_install/install.sh --extras=postgres,neo4j,aws
+sh scripts_for_install/install.sh /path/to/project
+sh scripts_for_install/install.sh --dry-run /path/to/project
+sh scripts_for_install/install.sh --extras=ollama /path/to/project
+sh scripts_for_install/install.sh --extras=postgres,neo4j,aws /path/to/project
 sh scripts_for_install/install.sh --location=global --manager=pip
 sh scripts_for_install/install.sh --location=local --venv-dir=.venv --manager=uv
 ```

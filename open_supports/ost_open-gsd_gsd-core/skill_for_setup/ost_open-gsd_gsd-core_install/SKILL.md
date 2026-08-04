@@ -6,6 +6,8 @@ argument-hint: '至少一个 runtime flag，如 --claude 或 --codex；可选 sc
 
 # GSD Core 安装（skill_for_setup）
 
+> **安装作用域**：模式 D；`--local` 为 CWD-sensitive。AI Agent 必须把用户的项目根目录作为最后一个 `TARGET_DIR` 参数传给脚本；只在 `--global` 时省略它。
+
 > 参考：[`repo_readme_summary.md`](../../repo_readme_summary.md)  
 > 脚本：[`scripts_for_install/install.sh`](../../scripts_for_install/install.sh)  
 > 官方仓库：[open-gsd/gsd-core](https://github.com/open-gsd/gsd-core)
@@ -46,14 +48,14 @@ argument-hint: '至少一个 runtime flag，如 --claude 或 --codex；可选 sc
 从支持包根目录（本 `SKILL.md` 向上两级）执行：
 
 ```sh
-sh scripts_for_install/install.sh [runtime flags] [scope]
+sh scripts_for_install/install.sh [runtime flags] [scope] [TARGET_DIR]
 ```
 
 常用示例：
 
 ```sh
-sh scripts_for_install/install.sh --claude --local
-sh scripts_for_install/install.sh --codex --local
+sh scripts_for_install/install.sh --claude --local /path/to/project
+sh scripts_for_install/install.sh --codex --local /path/to/project
 sh scripts_for_install/install.sh --claude --codex --global
 sh scripts_for_install/install.sh --all --global
 ```

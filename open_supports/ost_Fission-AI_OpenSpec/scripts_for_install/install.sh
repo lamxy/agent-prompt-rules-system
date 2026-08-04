@@ -1,41 +1,39 @@
 #!/bin/sh
 # =============================================================================
-# install.sh — OpenSpec installation script
-# Repository: https://github.com/Fission-AI/OpenSpec
+# install.sh — OpenSpec 安装脚本
+# 仓库：https://github.com/Fission-AI/OpenSpec
 #
-# Purpose:
-#   1. Detect supported shell platforms: macOS, Linux, and WSL.
-#   2. Check the official runtime prerequisite: Node.js >= 20.19.0.
-#   3. Install or update the official OpenSpec CLI package.
-#   4. Optionally initialize or update OpenSpec files in a target project.
+# 功能：
+#   1. 检测支持的 Shell 平台：macOS、Linux 和 WSL。
+#   2. 检查官方运行时前置条件：Node.js >= 20.19.0。
+#   3. 安装或更新官方 OpenSpec CLI 包。
+#   4. 可选地初始化或更新目标项目中的 OpenSpec 文件。
 #
-# Usage:
-#   ./install.sh [OPTIONS]
+# 用法：
+#   ./install.sh [选项] [目标项目目录]
 #
-# Options:
-#   --package-manager=PM   Package manager: npm, pnpm, yarn, or bun.
-#                          Default: npm.
-#   --project-dir=DIR      Target project for --init-project or --update-project.
-#                          Default: current directory.
-#   --init-project         Run openspec init in the target project.
-#   --tools=TOOLS          Non-interactive init tool selection, e.g. none, all,
-#                          claude,cursor. Default for --init-project: none.
-#   --profile=PROFILE      Optional profile passed to openspec init.
-#   --update-project       Run openspec update in the target project.
-#   --help|-h              Show this help.
+# 选项：
+#   --package-manager=PM   包管理器：npm、pnpm、yarn 或 bun（默认：npm）。
+#   --project-dir=DIR      --init-project 或 --update-project 的目标项目目录（默认：当前目录）。
+#   TARGET_DIR             初始化或更新项目时，--project-dir 的位置参数别名。
+#   --init-project         在目标项目中运行 openspec init。
+#   --tools=TOOLS          非交互式初始化的工具选择，例如 none、all、claude,cursor；默认：none。
+#   --profile=PROFILE      传给 openspec init 的可选 profile。
+#   --update-project       在目标项目中运行 openspec update。
+#   --help|-h              显示帮助。
 #
-# Examples:
+# 示例：
 #   ./install.sh
 #   ./install.sh --package-manager=pnpm
 #   ./install.sh --init-project --tools=claude,codex --project-dir=/path/to/project
 #   ./install.sh --update-project --project-dir=.
 #
-# Notes:
-#   - This script does not uninstall OpenSpec or delete project/tool files.
-#   - Project initialization and project updates are explicit because they write
-#     OpenSpec specs/changes and AI tool command files into the target project.
-#   - Official docs also describe Nix usage; this script uses package-manager
-#     install commands because they are the documented cross-platform path.
+# 说明：
+#   - 安装模式：仅全局安装 CLI；项目初始化/更新是独立且依赖 CWD 的操作。
+#   - 本脚本不会卸载 OpenSpec，也不会删除项目或工具文件。
+#   - 项目初始化和更新必须显式指定，因为它们会向目标项目写入 OpenSpec
+#     specs/changes 及 AI 工具命令文件。
+#   - 官方文档也说明了 Nix 用法；本脚本采用有文档依据的跨平台包管理器安装路径。
 # =============================================================================
 
 set -eu
@@ -50,33 +48,35 @@ INIT_PROJECT="no"
 TOOLS="none"
 PROFILE=""
 UPDATE_PROJECT="no"
+PROJECT_DIR_SET="no"
 
 usage() {
-  sed -n '/^# Usage:/,/^# ====/p' "$0" | sed '/^# ====/d; s/^# \?//'
+  sed -n '/^# 用法：/,/^# ====/p' "$0" | sed '/^# ====/d; s/^# \?//'
 }
 
 fail_usage() {
-  printf 'Error: %s\n' "$1" >&2
-  printf 'Run "%s --help" for usage.\n' "$0" >&2
+  printf '错误：%s\n' "$1" >&2
+  printf '运行“%s --help”查看用法。\n' "$0" >&2
   exit 1
 }
 
-for arg in "$@"; do
-  case "$arg" in
+while [ "$#" -gt 0 ]; do
+  case "$1" in
     --package-manager=*)
-      PACKAGE_MANAGER="${arg#--package-manager=}"
+      PACKAGE_MANAGER="${1#--package-manager=}"
       ;;
     --project-dir=*)
-      PROJECT_DIR="${arg#--project-dir=}"
+      PROJECT_DIR="${1#--project-dir=}"
+      PROJECT_DIR_SET="yes"
       ;;
     --init-project)
       INIT_PROJECT="yes"
       ;;
     --tools=*)
-      TOOLS="${arg#--tools=}"
+      TOOLS="${1#--tools=}"
       ;;
     --profile=*)
-      PROFILE="${arg#--profile=}"
+      PROFILE="${1#--profile=}"
       ;;
     --update-project)
       UPDATE_PROJECT="yes"
@@ -85,19 +85,27 @@ for arg in "$@"; do
       usage
       exit 0
       ;;
+    -*)
+      fail_usage "未知选项 \"$1\""
+      ;;
     *)
-      fail_usage "unknown option \"$arg\""
+      if [ "$PROJECT_DIR_SET" = "yes" ]; then
+        fail_usage '只能指定一个 TARGET_DIR 或 --project-dir'
+      fi
+      PROJECT_DIR="$1"
+      PROJECT_DIR_SET="yes"
       ;;
   esac
+  shift
 done
 
 case "$PACKAGE_MANAGER" in
   npm|pnpm|yarn|bun) ;;
-  *) fail_usage '--package-manager must be npm, pnpm, yarn, or bun' ;;
+  *) fail_usage '--package-manager 必须是 npm、pnpm、yarn 或 bun' ;;
 esac
 
 case "$PROJECT_DIR" in
-  "") fail_usage '--project-dir must not be empty' ;;
+  "") fail_usage '--project-dir 不能为空' ;;
 esac
 
 detect_platform() {
@@ -114,15 +122,15 @@ detect_platform() {
       fi
       ;;
     MINGW*|MSYS*|CYGWIN*)
-      printf 'Error: detected Windows native shell (%s).\n' "$_uname" >&2
-      printf 'This script supports macOS, Linux, and WSL.\n' >&2
-      printf 'Windows users can run the official package-manager command in a Node.js terminal:\n' >&2
+      printf '错误：检测到 Windows 原生 Shell（%s）。\n' "$_uname" >&2
+      printf '本脚本支持 macOS、Linux 和 WSL。\n' >&2
+      printf 'Windows 用户可在具备 Node.js 的终端中运行官方包管理器命令：\n' >&2
       printf '  npm install -g %s@latest\n' "$PACKAGE_NAME" >&2
       exit 1
       ;;
     *)
-      printf 'Error: unsupported platform "%s".\n' "$_uname" >&2
-      printf 'This script supports macOS, Linux, and WSL.\n' >&2
+      printf '错误：不支持的平台“%s”。\n' "$_uname" >&2
+      printf '本脚本支持 macOS、Linux 和 WSL。\n' >&2
       exit 1
       ;;
   esac
@@ -132,7 +140,7 @@ require_command() {
   _cmd="$1"
   _hint="$2"
   if ! command -v "$_cmd" >/dev/null 2>&1; then
-    printf 'Error: missing required command: %s\n' "$_cmd" >&2
+    printf '错误：缺少必需命令：%s\n' "$_cmd" >&2
     printf '%s\n' "$_hint" >&2
     exit 1
   fi
@@ -168,13 +176,13 @@ version_ge() {
 }
 
 check_node_runtime() {
-  require_command "node" "Install Node.js >= 20.19.0, then rerun this script."
+  require_command "node" "请安装 Node.js >= 20.19.0 后重新运行本脚本。"
 
   _node_version="$(clean_version "$(node --version 2>/dev/null || true)")"
   if [ -z "$_node_version" ] || ! version_ge "$_node_version" "$MIN_NODE_VERSION"; then
-    printf 'Error: Node.js version does not meet OpenSpec requirements.\n' >&2
-    printf 'Current: %s\n' "${_node_version:-unknown}" >&2
-    printf 'Required: >= %s\n' "$MIN_NODE_VERSION" >&2
+    printf '错误：Node.js 版本不满足 OpenSpec 要求。\n' >&2
+    printf '当前版本：%s\n' "${_node_version:-未知}" >&2
+    printf '要求：>= %s\n' "$MIN_NODE_VERSION" >&2
     exit 1
   fi
 
@@ -184,19 +192,19 @@ check_node_runtime() {
 check_package_manager() {
   case "$PACKAGE_MANAGER" in
     npm)
-      require_command "npm" "Install npm, then rerun this script."
+      require_command "npm" "请安装 npm 后重新运行本脚本。"
       PM_VERSION="$(npm --version 2>/dev/null || printf unknown)"
       ;;
     pnpm)
-      require_command "pnpm" "Install pnpm, then rerun this script."
+      require_command "pnpm" "请安装 pnpm 后重新运行本脚本。"
       PM_VERSION="$(pnpm --version 2>/dev/null || printf unknown)"
       ;;
     yarn)
-      require_command "yarn" "Install Yarn, then rerun this script."
+      require_command "yarn" "请安装 Yarn 后重新运行本脚本。"
       PM_VERSION="$(yarn --version 2>/dev/null || printf unknown)"
       ;;
     bun)
-      require_command "bun" "Install Bun, then rerun this script."
+      require_command "bun" "请安装 Bun 后重新运行本脚本。"
       PM_VERSION="$(bun --version 2>/dev/null || printf unknown)"
       ;;
   esac
@@ -238,7 +246,7 @@ refresh_path() {
 normalize_project_dir() {
   if [ "$INIT_PROJECT" = "yes" ] || [ "$UPDATE_PROJECT" = "yes" ]; then
     if [ ! -d "$PROJECT_DIR" ]; then
-      printf 'Error: project directory does not exist: %s\n' "$PROJECT_DIR" >&2
+      printf '错误：目标项目目录不存在：%s\n' "$PROJECT_DIR" >&2
       exit 1
     fi
     PROJECT_DIR="$(CDPATH= cd -- "$PROJECT_DIR" && pwd)"
@@ -246,7 +254,7 @@ normalize_project_dir() {
 }
 
 install_or_update_cli() {
-  printf '%s\n' "-> Installing or updating OpenSpec CLI with $PACKAGE_MANAGER..."
+  printf '%s\n' "-> 正在使用 $PACKAGE_MANAGER 安装或更新 OpenSpec CLI..."
   case "$PACKAGE_MANAGER" in
     npm)
       npm install -g "$PACKAGE_NAME@latest"
@@ -265,10 +273,10 @@ install_or_update_cli() {
 }
 
 verify_cli() {
-  printf '%s\n' '-> Verifying OpenSpec CLI...'
+  printf '%s\n' '-> 正在验证 OpenSpec CLI...'
   if ! command -v "$BINARY_NAME" >/dev/null 2>&1; then
-    printf 'Error: %s is still not on PATH after installation.\n' "$BINARY_NAME" >&2
-    printf 'Open a new terminal or check your global package-manager bin directory.\n' >&2
+    printf '错误：安装后仍无法在 PATH 中找到 %s。\n' "$BINARY_NAME" >&2
+    printf '请打开新终端，或检查包管理器的全局 bin 目录。\n' >&2
     exit 1
   fi
   OPENSPEC_VERSION="$("$BINARY_NAME" --version 2>/dev/null || printf unknown)"
@@ -277,7 +285,7 @@ verify_cli() {
 init_project() {
   [ "$INIT_PROJECT" = "yes" ] || return 0
 
-  printf '%s\n' "-> Initializing OpenSpec project: $PROJECT_DIR"
+  printf '%s\n' "-> 正在初始化 OpenSpec 项目：$PROJECT_DIR"
   if [ -n "$PROFILE" ]; then
     (cd "$PROJECT_DIR" && "$BINARY_NAME" init --tools "$TOOLS" --profile "$PROFILE")
   else
@@ -288,42 +296,42 @@ init_project() {
 update_project() {
   [ "$UPDATE_PROJECT" = "yes" ] || return 0
 
-  printf '%s\n' "-> Updating OpenSpec project files: $PROJECT_DIR"
+  printf '%s\n' "-> 正在更新 OpenSpec 项目文件：$PROJECT_DIR"
   (cd "$PROJECT_DIR" && "$BINARY_NAME" update)
 }
 
 print_summary() {
-  printf 'Platform: %s\n' "$PLATFORM"
-  printf 'Node.js: %s\n' "$NODE_VERSION"
-  printf 'Package manager: %s (%s)\n' "$PACKAGE_MANAGER" "$PM_VERSION"
-  printf 'Initialize project: %s\n' "$INIT_PROJECT"
-  printf 'Update project: %s\n' "$UPDATE_PROJECT"
+  printf '平台：%s\n' "$PLATFORM"
+  printf 'Node.js：%s\n' "$NODE_VERSION"
+  printf '包管理器：%s（%s）\n' "$PACKAGE_MANAGER" "$PM_VERSION"
+  printf '初始化项目：%s\n' "$INIT_PROJECT"
+  printf '更新项目：%s\n' "$UPDATE_PROJECT"
   if [ "$INIT_PROJECT" = "yes" ] || [ "$UPDATE_PROJECT" = "yes" ]; then
-    printf 'Project dir: %s\n' "$PROJECT_DIR"
-    printf 'Init tools: %s\n' "$TOOLS"
-    printf 'Init profile: %s\n' "${PROFILE:-default}"
+    printf '项目目录：%s\n' "$PROJECT_DIR"
+    printf '初始化工具：%s\n' "$TOOLS"
+    printf '初始化 profile：%s\n' "${PROFILE:-默认}"
   fi
   printf '\n'
 }
 
 print_next_steps() {
   printf '\n'
-  printf 'Installed or updated OpenSpec CLI (%s).\n' "$OPENSPEC_VERSION"
+  printf '已安装或更新 OpenSpec CLI（%s）。\n' "$OPENSPEC_VERSION"
   printf '\n'
-  printf 'Useful commands:\n'
+  printf '常用命令：\n'
   printf '  openspec --version\n'
   printf '  openspec init --tools claude,codex\n'
   printf '  openspec list\n'
   printf '  openspec validate <change-id>\n'
   printf '\n'
-  printf 'Use /opsx:* commands inside your AI assistant chat after initializing a project.\n'
+  printf '初始化项目后，可在 AI 助手对话中使用 /opsx:* 命令。\n'
 }
 
 main() {
+  normalize_project_dir
   detect_platform
   check_node_runtime
   check_package_manager
-  normalize_project_dir
   print_summary
   install_or_update_cli
   verify_cli

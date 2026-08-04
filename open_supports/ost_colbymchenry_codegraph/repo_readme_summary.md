@@ -1,5 +1,7 @@
 # CodeGraph — 仓库核心介绍
 
+> **安装作用域（模式 D / 本地为 B）**：`codegraph install --location=global` 配置用户级 Agent；本地配置由 CWD 决定。使用支持包时，本地模式必须传项目目录：`sh scripts_for_install/install.sh --location=local /path/to/project`，脚本会在子 Shell 中切换目录；全局模式为 `sh scripts_for_install/install.sh --global`。`codegraph init [path]` 则原生支持路径参数。依据：[官方 README](https://github.com/colbymchenry/codegraph#installing)。
+
 > 官方仓库：[colbymchenry/codegraph](https://github.com/colbymchenry/codegraph)  
 > 官方文档：[colbymchenry.github.io/codegraph](https://colbymchenry.github.io/codegraph/)
 

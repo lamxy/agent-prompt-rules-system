@@ -6,6 +6,8 @@ argument-hint: '--client=codex|claude-code|cowork|gemini|opencode|cursor|kiro [-
 
 # PM Skills Marketplace Install
 
+> **Installation scope**: mode D. Local skills-only clients are CWD-sensitive; the AI Agent must pass `TARGET_DIR` last (or `--project-dir`) so the wrapper can enter it in a sub-shell. Marketplace and `--global` paths do not take a project directory.
+
 > Reference: [`repo_readme_summary.md`](../../repo_readme_summary.md)  
 > Script: [`scripts_for_install/install.sh`](../../scripts_for_install/install.sh)  
 > Official repository: [phuryn/pm-skills](https://github.com/phuryn/pm-skills)
@@ -47,7 +49,7 @@ Before running any command that modifies local CLI, plugin, or assistant configu
 Use this path on macOS, Linux, and WSL. From the support-package root, which is two directories above this `SKILL.md`, run:
 
 ```sh
-sh scripts_for_install/install.sh [flags]
+sh scripts_for_install/install.sh [flags] [TARGET_DIR]
 ```
 
 Common examples:
@@ -56,7 +58,7 @@ Common examples:
 sh scripts_for_install/install.sh --client=codex
 sh scripts_for_install/install.sh --client=claude-code --plugins=pm-toolkit,pm-execution
 sh scripts_for_install/install.sh --client=cowork
-sh scripts_for_install/install.sh --client=opencode --location=local --repo-dir=/path/to/pm-skills
+sh scripts_for_install/install.sh --client=opencode --location=local --repo-dir=/path/to/pm-skills /path/to/project
 sh scripts_for_install/install.sh --client=gemini --location=global --repo-dir=/path/to/pm-skills
 sh scripts_for_install/install.sh --client=codex --verify-only
 ```
@@ -114,7 +116,7 @@ Use the script verification mode when possible:
 ```sh
 sh scripts_for_install/install.sh --client=codex --verify-only
 sh scripts_for_install/install.sh --client=claude-code --verify-only
-sh scripts_for_install/install.sh --client=opencode --location=local --verify-only
+sh scripts_for_install/install.sh --client=opencode --location=local --verify-only /path/to/project
 ```
 
 Manual verification commands from the summary:

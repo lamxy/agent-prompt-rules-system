@@ -1,5 +1,7 @@
 # Product Manager Skills - 仓库核心介绍
 
+> **安装作用域（模式 D）**：官方 Skills CLI 路径是全局安装（`-g`）；Codex ZIP 是项目级材料。支持包把 ZIP 解压结果写入显式 `TARGET_DIR`，无需依赖 CWD：`sh scripts_for_install/install.sh --client=codex-zip /path/to/project`。全局 Skills CLI：`sh scripts_for_install/install.sh --client=codex-cli --skill=prd-development --global`。依据：[官方 Codex 指南](https://github.com/deanpeters/Product-Manager-Skills/blob/main/docs/Using%20PM%20Skills%20with%20Codex.md)。
+
 > 官方仓库：[deanpeters/Product-Manager-Skills](https://github.com/deanpeters/Product-Manager-Skills)  
 > 官方文档：[README](https://github.com/deanpeters/Product-Manager-Skills#readme) · [Install guides](https://github.com/deanpeters/Product-Manager-Skills/tree/main/docs) · [Latest release](https://github.com/deanpeters/Product-Manager-Skills/releases/latest)
 

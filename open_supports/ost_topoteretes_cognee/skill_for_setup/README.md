@@ -1,5 +1,7 @@
 # Cognee 安装 Skill — 使用说明
 
+> **目录契约**：本地模式传 `TARGET_DIR`；脚本明确使用 `TARGET_DIR/.venv`，不依赖 CWD。`--global` 安装到用户 Python 环境，不传项目目录。
+
 ## 触发词
 
 | 触发方式 | 示例 |
@@ -37,15 +39,15 @@
 主路径从支持包根目录运行：
 
 ```sh
-sh scripts_for_install/install.sh [flags]
+sh scripts_for_install/install.sh [flags] [TARGET_DIR]
 ```
 
 常用示例：
 
 ```sh
-sh scripts_for_install/install.sh --dry-run
-sh scripts_for_install/install.sh --extras=ollama
-sh scripts_for_install/install.sh --extras=postgres,neo4j,aws
+sh scripts_for_install/install.sh --dry-run /path/to/project
+sh scripts_for_install/install.sh --extras=ollama /path/to/project
+sh scripts_for_install/install.sh --extras=postgres,neo4j,aws /path/to/project
 sh scripts_for_install/install.sh --location=global --manager=pip
 ```
 

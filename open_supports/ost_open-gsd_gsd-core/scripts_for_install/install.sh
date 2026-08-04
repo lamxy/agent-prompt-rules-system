@@ -9,7 +9,7 @@
 #   3. 通过官方安装器安装 / 更新指定 runtime 的 GSD Core 配置
 #
 # 用法：
-#   ./install.sh [RUNTIME_FLAGS] [SCOPE]
+#   ./install.sh [RUNTIME_FLAGS] [SCOPE] [TARGET_DIR]
 #
 # Runtime flags（至少选择一个，均透传给官方安装器）：
 #   --claude          Claude Code
@@ -35,17 +35,19 @@
 #   --global            全局安装（需显式指定）
 #   --location=local    --local 的别名
 #   --location=global   --global 的别名
+#   TARGET_DIR          本地安装目标项目目录（默认：.）
 #
 # 选项：
 #   --help|-h           显示此帮助
 #
 # 示例：
-#   ./install.sh --claude
-#   ./install.sh --codex --local
+#   ./install.sh --claude /path/to/project
+#   ./install.sh --codex --local /path/to/project
 #   ./install.sh --claude --codex --global
 #   ./install.sh --all --global
 #
 # 说明：
+#   - 安装模式：双模（全局 + 项目级）。项目级安装依赖当前工作目录；脚本会在子 Shell 中切换到 TARGET_DIR。
 #   - 本脚本不运行交互式安装；未指定 runtime 时会报错。
 #   - 如需自定义官方支持的配置目录，可在执行前设置对应环境变量，
 #     例如 CLAUDE_CONFIG_DIR、GEMINI_CONFIG_DIR、OPENCODE_CONFIG_DIR 等。
@@ -57,6 +59,8 @@ GSD_INSTALLER="@opengsd/gsd-core@latest"
 SCOPE="local"
 SCOPE_EXPLICIT="no"
 SCOPE_FLAG="--local"
+TARGET_DIR="."
+TARGET_DIR_SET="no"
 RUNTIME_FLAGS=""
 RUNTIME_LABELS=""
 RUNTIME_COUNT=0
@@ -104,8 +108,8 @@ add_runtime() {
   fi
 }
 
-for arg in "$@"; do
-  case "$arg" in
+while [ "$#" -gt 0 ]; do
+  case "$1" in
     --claude) add_runtime "claude" "claude" ;;
     --codex) add_runtime "codex" "codex" ;;
     --gemini) add_runtime "gemini" "gemini" ;;
@@ -137,10 +141,18 @@ for arg in "$@"; do
       usage
       exit 0
       ;;
+    -*)
+      fail_usage "未知选项 \"$1\""
+      ;;
     *)
-      fail_usage "未知选项 \"$arg\""
+      if [ "$TARGET_DIR_SET" = "yes" ]; then
+        fail_usage '只能指定一个 TARGET_DIR'
+      fi
+      TARGET_DIR="$1"
+      TARGET_DIR_SET="yes"
       ;;
   esac
+  shift
 done
 
 if [ "$RUNTIME_COUNT" -eq 0 ]; then
@@ -152,6 +164,18 @@ if [ "$ALL_SELECTED" = "yes" ] && [ "$SCOPE" != "global" ]; then
     fail_usage '官方摘要只给出 --all --global；请改用 --global 或选择单个 runtime'
   fi
   fail_usage '官方摘要只给出 --all --global；请显式追加 --global'
+fi
+
+normalize_target_dir() {
+  [ -d "$TARGET_DIR" ] || {
+    printf 'Target project directory does not exist: %s\n' "$TARGET_DIR" >&2
+    exit 1
+  }
+  TARGET_DIR="$(CDPATH= cd -- "$TARGET_DIR" && pwd)"
+}
+
+if [ "$SCOPE" = "local" ]; then
+  normalize_target_dir
 fi
 
 detect_platform() {
@@ -272,6 +296,7 @@ print_summary() {
   printf '平台：%s\n' "$PLATFORM"
   printf 'Runtime：%s\n' "$RUNTIME_LABELS"
   printf 'Scope：%s\n' "$SCOPE"
+  [ "$SCOPE" != "local" ] || printf 'Target project directory：%s\n' "$TARGET_DIR"
   printf 'Node.js：%s\n' "$NODE_VERSION"
   printf 'npm：%s\n' "$NPM_VERSION"
   if [ "$NEED_CODEX" = "yes" ]; then
@@ -284,7 +309,11 @@ print_summary() {
 
 run_installer() {
   # RUNTIME_FLAGS 只由脚本内固定白名单拼接，允许按空格拆分为多个官方 flag。
-  npx "$GSD_INSTALLER" $RUNTIME_FLAGS "$SCOPE_FLAG"
+  if [ "$SCOPE" = "local" ]; then
+    (cd "$TARGET_DIR" && npx "$GSD_INSTALLER" $RUNTIME_FLAGS "$SCOPE_FLAG")
+  else
+    npx "$GSD_INSTALLER" $RUNTIME_FLAGS "$SCOPE_FLAG"
+  fi
 }
 
 print_next_steps() {

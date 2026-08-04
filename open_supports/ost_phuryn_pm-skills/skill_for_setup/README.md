@@ -1,5 +1,7 @@
 # PM Skills Marketplace Install Skill - Usage
 
+> **Directory contract**: local skills-only clients are CWD-sensitive. Pass `TARGET_DIR` or `--project-dir`; the wrapper enters it in a sub-shell. Marketplace and `--global` paths do not use a project directory.
+
 ## Triggers
 
 | Trigger | Example |

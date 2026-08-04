@@ -1,5 +1,15 @@
 # PM Skills Marketplace — 使用示例
 
+## 安装作用域示例
+
+```sh
+# 项目级 skills-only 复制：脚本在目标项目中建立 .opencode/skills
+sh scripts_for_install/install.sh --client=opencode --local /path/to/project
+
+# 用户级 skills-only 复制
+sh scripts_for_install/install.sh --client=opencode --global
+```
+
 > 来源：官方 README / 文档；本文件只保留 open_supports 使用者最常见的入口。
 
 ## 快速开始
@@ -75,7 +85,7 @@ find .opencode/skills -mindepth 2 -maxdepth 2 -name SKILL.md
 ```sh
 sh scripts_for_install/install.sh --client=codex --verify-only
 sh scripts_for_install/install.sh --client=claude-code --verify-only
-sh scripts_for_install/install.sh --client=opencode --location=local --verify-only
+sh scripts_for_install/install.sh --client=opencode --location=local --verify-only /path/to/project
 ```
 
 预期结果：脚本打印 marketplace/plugin 或 `SKILL.md` 检查结果；失败时返回非零状态并指出缺失的命令、插件或目录。
@@ -163,7 +173,7 @@ sh scripts_for_install/install.sh --client=claude-code --verify-only
 适用场景：Gemini CLI、OpenCode、Cursor 或 Kiro 中 PM skills 不可用。
 
 ```sh
-sh scripts_for_install/install.sh --client=opencode --location=local --verify-only
+sh scripts_for_install/install.sh --client=opencode --location=local --verify-only /path/to/project
 ```
 
 预期结果：脚本打印 `Verification passed: found ... SKILL.md file(s)`。

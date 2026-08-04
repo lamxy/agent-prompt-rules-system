@@ -1,5 +1,7 @@
 # gstack Install Skill - Usage
 
+> **Directory contract**: normal setup is global and takes no project path. Only `--team=required|optional` needs `TARGET_DIR`; the wrapper enters it in a sub-shell for project-local initialization.
+
 ## Triggers
 
 | Trigger | Example |

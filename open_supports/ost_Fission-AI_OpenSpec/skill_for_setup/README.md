@@ -1,5 +1,7 @@
 # OpenSpec 安装 Skill — 使用说明
 
+> **目录契约**：CLI 安装是全局模式，不传项目目录。只有 `--init-project` / `--update-project` 需要 `TARGET_DIR`，脚本会在子 Shell 中切换目录。
+
 ## 触发词
 
 | 触发方式 | 示例 |

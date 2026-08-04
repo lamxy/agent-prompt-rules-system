@@ -13,21 +13,24 @@
 #   - 项目索引请在每个项目目录下单独执行：cd <project> && codegraph init
 #
 # 用法：
-#   ./install.sh [OPTIONS]
+#   ./install.sh [OPTIONS] [TARGET_DIR]
 #
 # 选项：
 #   --target=TARGETS     Agent 目标，逗号分隔：auto、claude、codex、cursor 等
 #                        默认：auto（自动检测已安装的 Agent）
 #   --location=local     仅为当前项目配置 Agent（默认，推荐）
 #   --location=global    为所有项目全局配置 Agent（需显式指定）
+#   --global             --location=global 的别名
+#   TARGET_DIR           本地配置的目标项目目录（默认：.）
 #   --help               显示此帮助
 #
 # 示例：
-#   ./install.sh                                   # 自动检测 Agent，项目级配置
-#   ./install.sh --target=claude                   # 仅配置 Claude Code，项目级
+#   ./install.sh /path/to/project                  # 自动检测 Agent，项目级配置
+#   ./install.sh --target=claude /path/to/project  # 仅配置 Claude Code，项目级
 #   ./install.sh --target=claude,codex             # 配置多个 Agent，项目级
 #   ./install.sh --location=global                 # 全局配置，自动检测 Agent
 # =============================================================================
+# 安装模式：双模（全局 + 项目级）。项目级 `codegraph install` 依赖 CWD；脚本会在子 Shell 中切换到 TARGET_DIR。
 
 set -eu
 
@@ -37,6 +40,8 @@ CODEGRAPH_INSTALL_URL="https://raw.githubusercontent.com/colbymchenry/codegraph/
 # --- 默认值 ---
 TARGET="auto"
 LOCATION="local"
+TARGET_DIR="."
+TARGET_DIR_SET="no"
 
 # =============================================================================
 # 帮助信息
@@ -49,19 +54,36 @@ usage() {
 # =============================================================================
 # 解析 flag
 # =============================================================================
-for arg in "$@"; do
-  case "$arg" in
-    --target=*)   TARGET="${arg#--target=}" ;;
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --target=*)   TARGET="${1#--target=}" ;;
     --location=local)  LOCATION="local" ;;
-    --location=global) LOCATION="global" ;;
+    --location=global|--global) LOCATION="global" ;;
     --help|-h)    usage ;;
-    *)
-      printf 'Error: 未知选项 "%s"\n' "$arg" >&2
+    -*)
+      printf 'Error: 未知选项 "%s"\n' "$1" >&2
       printf '运行 "%s --help" 查看用法\n' "$0" >&2
       exit 1
       ;;
+    *)
+      if [ "$TARGET_DIR_SET" = "yes" ]; then
+        printf 'Error: 只能指定一个 TARGET_DIR\n' >&2
+        exit 1
+      fi
+      TARGET_DIR="$1"
+      TARGET_DIR_SET="yes"
+      ;;
   esac
+  shift
 done
+
+if [ "$LOCATION" = "local" ]; then
+  [ -d "$TARGET_DIR" ] || {
+    printf 'Target project directory does not exist: %s\n' "$TARGET_DIR" >&2
+    exit 1
+  }
+  TARGET_DIR="$(CDPATH= cd -- "$TARGET_DIR" && pwd)"
+fi
 
 # =============================================================================
 # 平台检测
@@ -122,7 +144,11 @@ install_cli() {
 # =============================================================================
 wire_agents() {
   printf '→ 配置 Agent（target=%s，location=%s）...\n' "$TARGET" "$LOCATION"
-  codegraph install --target="$TARGET" --location="$LOCATION" --yes
+  if [ "$LOCATION" = "local" ]; then
+    (cd "$TARGET_DIR" && codegraph install --target="$TARGET" --location="$LOCATION" --yes)
+  else
+    codegraph install --target="$TARGET" --location="$LOCATION" --yes
+  fi
 }
 
 # =============================================================================
@@ -149,6 +175,7 @@ main() {
   printf '平台：%s\n' "$PLATFORM"
   printf 'Agent 目标：%s\n' "$TARGET"
   printf '配置范围：%s\n' "$LOCATION"
+  [ "$LOCATION" != "local" ] || printf '目标项目目录：%s\n' "$TARGET_DIR"
   printf '\n'
 
   # --- 已安装：升级检查 ---
