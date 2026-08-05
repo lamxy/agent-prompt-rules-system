@@ -31,6 +31,7 @@ tmp/
 temp/
 .cache/
 .worktrees/
+.release_notes_tmp.md
 
 # smoke test
 .tmp/
