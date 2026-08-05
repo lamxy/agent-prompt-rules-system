@@ -57,6 +57,14 @@ assert_jq "$STATE_FILE" '.usage_examples.decision' 'pending'
 assert_jq "$STATE_FILE" '.execution.mode' 'subagent_preferred'
 assert_jq "$STATE_FILE" '.execution.dispatch_contracts | length' '0'
 assert_jq "$STATE_FILE" '.execution.inline_runs | length' '0'
+assert_jq "$STATE_FILE" '.installation_scope.classification' 'null'
+
+run_state scope-contract "$OWNER_REPO" B project_local "target directory, default ." cwd_sensitive "https://example.test/docs#local"
+assert_jq "$STATE_FILE" '.installation_scope.classification' 'B'
+assert_jq "$STATE_FILE" '.installation_scope.official_default' 'project_local'
+assert_jq "$STATE_FILE" '.installation_scope.target_directory_requirement' 'target directory, default .'
+assert_jq "$STATE_FILE" '.installation_scope.execution_mechanism' 'cwd_sensitive'
+assert_jq "$STATE_FILE" '.installation_scope.evidence[0]' 'https://example.test/docs#local'
 
 mark_core_done "$OWNER_REPO"
 
@@ -236,6 +244,8 @@ assert_jq "$SKIPPED_TEST_STATE_FILE" '.test_install.decision' 'declined'
 assert_jq "$SKIPPED_TEST_STATE_FILE" '.test_install.result' 'skipped'
 assert_jq "$SKIPPED_TEST_STATE_FILE" '.stages.optional_test_install' 'skipped'
 assert_jq "$SKIPPED_TEST_STATE_FILE" '.workflow_status' 'in_progress'
+assert_fails complete "$SKIPPED_TEST_OWNER_REPO"
+run_state scope-contract "$SKIPPED_TEST_OWNER_REPO" A global "not applicable" direct "https://example.test/docs#global"
 run_state complete "$SKIPPED_TEST_OWNER_REPO"
 assert_jq "$SKIPPED_TEST_STATE_FILE" '.workflow_status' 'done'
 

@@ -16,6 +16,17 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 1. 目标库的**官方安装文档**（主要依据）
 2. 该支持包的 `repo_readme_summary.md` — 确认平台要求和安装命令
 3. `.ost-refs/` 目录（如存在）— 了解本地路径约定
+4. `SCOPE-CONTRACT-CASES.md` — 按用例审查生成设计，不运行真实安装
+
+先从 `repo_readme_summary.md` Part 2 提取并核对以下**安装作用域契约**；缺失任一字段不得开始写脚本：
+
+| 字段 | 必须记录的事实 |
+|---|---|
+| 分类 | `A` 仅全局、`B` 项目本地且 CWD 敏感、`C` 原生项目路径参数、或 `D` 同时支持全局和项目模式 |
+| 官方默认 | 官方命令不带 flag 时究竟写入全局还是项目目录 |
+| 目标目录 | 是否需要、默认值、是否由 CWD 决定、或是否有原生路径 flag |
+| 执行机制 | 直接执行、`( cd "$ABS_TARGET_DIR" && command )`、或 `command --project "$ABS_TARGET_DIR"` |
+| 证据 | 对应官方一手文档链接和原始命令 |
 
 ## GitHub Source Policy
 
@@ -46,6 +57,7 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 - 无法确定脚本语言应使用 sh、Node.js 还是 Python
 - 官方安装方式包含破坏性或高权限操作，无法判断是否适合一键脚本
 - 客户端接入命令、配置范围或默认 flag 无法可靠确定
+- 安装作用域分类、官方默认、CWD 语义或原生路径参数无法可靠确定
 - 已有安装时的升级行为不明确
 - 验证命令无法确认工具可用
 
@@ -56,7 +68,7 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 | 脚本语言 | POSIX sh | 库有 Node.js / Python 运行时时可改用对应语言 |
 | 平台覆盖 | macOS、Linux、WSL | 不包含 Windows native；Windows 安装命令在报错提示中给出 |
 | 驱动方式 | 纯 flag 驱动 | 无交互式提示 |
-| location 默认 | `local`（项目级） | `global` 需用户显式指定 |
+| 安装作用域 | 以官方契约为准 | 不得把所有库一律设为 local 或 global |
 | 已安装时 | 提示版本 + 执行升级 | 升级命令见官方文档 |
 | 卸载策略 | 默认不实现卸载 | 只记录官方卸载方法；仅当官方卸载命令明确且用户要求时，才可扩展 `--uninstall` |
 
@@ -86,6 +98,25 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 | `upgrade_cmd` | 升级命令 | `codegraph upgrade` |
 | Windows 提示 | detect_platform `*` 分支中填写 Windows 安装命令 | `irm ... \| iex` |
 
+## 安装作用域生成规则（必须逐库选择）
+
+不要把下方骨架中的 flag 当成固定接口；只保留官方能力和为正确传递目标目录所必需的封装参数。脚本顶部注释、`--help`、运行时错误和下一步提示均使用中文。
+
+| 分类 | 安装器行为 |
+|---|---|
+| `A` 仅全局 | 直接执行官方全局命令。不得伪造项目目录参数、`--local` 或 `--target`。帮助必须说明写入的用户级范围。 |
+| `B` 项目本地／CWD 敏感 | 接受项目目录位置参数（默认 `.`），先解析为绝对路径并验证为目录；本地命令只能在 `( cd "$ABS_TARGET_DIR" && command )` 子 shell 中运行，绝不改变调用端 CWD。若官方另有全局模式，作为显式 `--global` 分支。 |
+| `C` 原生路径参数 | 接受项目目录位置参数（默认 `.`），先解析和验证；优先执行官方的 `command --project "$ABS_TARGET_DIR"`（或等效原生 flag），不得用自行 `cd` 代替已支持的原生路径。 |
+| `D` 双模式 | 分别实现全局和项目分支。默认值必须与官方命令默认一致；只有官方默认项目模式时，才可默认目标目录 `.`。项目分支再按 `B` 或 `C` 的规则实现；全局分支不得悄悄消费或忽略项目目录。 |
+
+### 目录与参数规则
+
+1. 项目模式的接口必须显式表达模式和目录：`D` 且官方默认全局时用 `install.sh --local 项目目录`（或等效明确接口），不能把裸项目目录隐含解释为 local；`B` 才可在帮助中明确声明位置参数默认 `.`；`C` 使用实际需要的 `--project DIR` 或等效原生路径接口。
+2. 通过 `pwd -P` 或等效 POSIX 方式取得 `ABS_TARGET_DIR`，并在运行任何会写入项目的命令前检查 `[ -d "$ABS_TARGET_DIR" ]`。
+3. `B` 的 `cd` 必须在子 shell；不要使用裸 `cd`，也不要在支持包目录下执行后假称写入用户项目。
+4. 全局模式和项目模式有不同副作用时，在运行前 `printf` 说明实际写入范围；未知目录、冲突 flag、或 global 模式携带项目目录必须非零退出。
+5. 只接受官方明确支持的模式。官方事实不足时返回 `NEEDS_CLARIFICATION`，不要凭经验指定 `--location=local`。
+
 ## 脚本骨架模板
 
 ```sh
@@ -94,14 +125,14 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 # install.sh — {LibraryName} 安装脚本
 # 仓库：https://github.com/{owner}/{repo}
 #
-# 用法：
-#   ./install.sh [OPTIONS]
+# 用法（以下是 D 类「官方默认全局、--local 为 CWD 敏感项目模式」的安全范例；必须按实际分类替换）：
+#   ./install.sh
+#   ./install.sh --local /绝对/项目/目录
 #
 # 选项：
-#   --target=TARGETS     Agent 目标（如库支持，否则删除此 flag）
-#   --location=local     项目级配置（默认）
-#   --location=global    全局配置（需显式指定）
-#   --help               显示帮助
+#   --local 项目目录     显式项目级安装（仅 D 的项目分支示例；目标目录必须存在）
+#   --global             显式全局安装（仅官方支持且非默认时保留）
+#   --help               显示中文帮助
 # =============================================================================
 
 set -eu
@@ -109,23 +140,31 @@ set -eu
 # --- [库特定] 安装源 ---
 INSTALL_URL="..."           # 官方 curl 脚本 URL
 
-# --- 默认值（按库实际支持的选项调整，无关 flag 可删除） ---
-TARGET="auto"
-LOCATION="local"
+# --- 作用域默认值：D 的官方默认全局范例；A/B/C 必须按 Part 2 事实替换 ---
+MODE="global"
+TARGET_DIR=""
+SCOPE_SET=0
 
 # --- flag 解析 ---
-for arg in "$@"; do
-  case "$arg" in
-    --target=*)        TARGET="${arg#--target=}" ;;
-    --location=local)  LOCATION="local" ;;
-    --location=global) LOCATION="global" ;;
-    --help|-h)         sed -n '/^# 用法/,/^# ===/p' "$0" | sed 's/^# \?//'; exit 0 ;;
-    *)
-      printf 'Error: 未知选项 "%s"\n运行 "%s --help" 查看用法\n' "$arg" "$0" >&2
-      exit 1
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --local)
+      [ "$#" -ge 2 ] || { printf '%s\n' '错误：--local 需要项目目录。' >&2; exit 1; }
+      [ "$SCOPE_SET" -eq 0 ] || { printf '%s\n' '错误：不能同时指定多个安装范围。' >&2; exit 1; }
+      MODE="local"; TARGET_DIR=$2; SCOPE_SET=1; shift
       ;;
+    --global) [ "$SCOPE_SET" -eq 0 ] || { printf '%s\n' '错误：不能同时指定多个安装范围。' >&2; exit 1; }; MODE="global"; SCOPE_SET=1 ;;
+    --help|-h) sed -n '/^# 用法/,/^# ===/p' "$0" | sed 's/^# \?//'; exit 0 ;;
+    --*) printf '错误：未知选项 "%s"。运行 "%s --help" 查看用法。\n' "$1" "$0" >&2; exit 1 ;;
+    *) printf '错误：未知参数 "%s"。运行 "%s --help" 查看用法。\n' "$1" "$0" >&2; exit 1 ;;
   esac
+  shift
 done
+
+if [ "$MODE" = "local" ]; then
+  [ -d "$TARGET_DIR" ] || { printf '错误：项目目录不存在：%s\n' "$TARGET_DIR" >&2; exit 1; }
+  ABS_TARGET_DIR=$(CDPATH= cd -- "$TARGET_DIR" && pwd -P)
+fi
 
 # =============================================================================
 # 平台检测（通用，直接复用）
@@ -178,9 +217,9 @@ install_cli() {
 # [库特定] 接入 / 配置（若库无此步骤，整块删除）
 # =============================================================================
 configure() {
-  printf '→ 配置 Agent（target=%s，location=%s）...\n' "$TARGET" "$LOCATION"
-  # 替换为库的实际配置命令，例如：
-  # {binary} install --target="$TARGET" --location="$LOCATION" --yes
+  # 仅在官方有配置步骤时保留。项目分支必须遵循上方 B/C 规则。
+  # B/D-local 示例：( cd "$ABS_TARGET_DIR" && {binary} install --local --yes )
+  # C 示例：{binary} install --project "$ABS_TARGET_DIR" --yes
 }
 
 # =============================================================================
@@ -234,5 +273,11 @@ main
 - [ ] `refresh_path` 中的 `{binary}` 已替换为实际命令名
 - [ ] 无关的 flag 和函数块已删除（如库没有 configure 步骤）
 - [ ] `--help` 有用法说明和示例
+- [ ] 顶部注释、帮助、错误和提示均为中文
+- [ ] 已从 Part 2 记录 A/B/C/D 分类、官方默认、目录机制和官方证据
+- [ ] `B` 项目安装先验证绝对目标目录，并只在 `( cd "$ABS_TARGET_DIR" && command )` 中执行
+- [ ] `C` 项目安装优先传递官方原生路径参数，不以 `cd` 模拟
+- [ ] `D` 的默认值与官方一致，global/project 分支不会静默混用目录
+- [ ] `SCOPE-CONTRACT-CASES.md` 的相应用例已逐项审查
 - [ ] `print_next_steps` 告知用户安装后该做什么
 - [ ] 未默认加入删除、卸载或清理配置等破坏性逻辑；如支持 `--uninstall`，已确认官方依据和用户要求
