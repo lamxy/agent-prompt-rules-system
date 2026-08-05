@@ -69,7 +69,7 @@ If this workflow is explicitly selected, the workflow agent must not use externa
 按顺序执行五个阶段：
 
 1. `repo_readme_summary`：串行派发阶段子代理，在 contract 中引用 `.copilot-skills/ost-repo-readme-summary/SKILL.md`，产出 `repo_readme_summary.md`
-2. `install_script`：串行派发阶段子代理，在 contract 中引用 `.copilot-skills/ost-install-script/SKILL.md`，产出 `scripts_for_install/install.*`
+2. `install_script`：先从 Part 2 读取 A/B/C/D 安装作用域契约并写入状态，再串行派发阶段子代理，在 contract 中引用 `.copilot-skills/ost-install-script/SKILL.md`，产出 `scripts_for_install/install.*`
 3. `skill_for_setup`：串行派发阶段子代理，在 contract 中引用 `.copilot-skills/ost-skill-for-setup/SKILL.md`，产出 `skill_for_setup/README.md` 和 `skill_for_setup/ost_*_install/SKILL.md`
 4. `optional_usage_examples`：按 checklist 判断是否建议生成；用户同意后串行派发阶段子代理，在 contract 中引用 `.copilot-skills/ost-usage-examples/SKILL.md`，产出 `usage_examples.md`
 5. `optional_test_install`：询问用户是否测试运行安装脚本并验证安装成功
@@ -97,8 +97,15 @@ If this workflow is explicitly selected, the workflow agent must not use externa
   "package_dir": "open_supports/ost_owner_repo",
   "stage_skill_path": "open_supports/.copilot-skills/ost-install-script/SKILL.md",
   "required_inputs": [
-    "repo_readme_summary.md"
+    "repo_readme_summary.md（包含安装作用域契约：分类、官方默认、目标目录机制、证据）"
   ],
+  "installation_scope_contract": {
+    "classification": "A | B | C | D",
+    "official_default": "以官方命令为准",
+    "target_directory_requirement": "无 / CWD 敏感 / 原生路径参数",
+    "execution_mechanism": "direct / subshell_cd / native_path_flag",
+    "evidence": ["官方一手文档 URL"]
+  },
   "clarification_answers": [],
   "allowed_outputs": [
     "DONE",
@@ -132,6 +139,14 @@ If this workflow is explicitly selected, the workflow agent must not use externa
 ```sh
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh contract OWNER/REPO install_script open_supports/ost_owner_repo open_supports/.copilot-skills/ost-install-script/SKILL.md repo_readme_summary.md DONE,NEEDS_CLARIFICATION,FAILED
 ```
+
+在 `repo_readme_summary` 完成、`install_script` 开始前，主 workflow 必须读取 Part 2 的安装作用域表。若无法提取完整契约，标记当前阶段 `blocked` 并只向用户询问缺失事实；不得派发脚本阶段。可提取时，先写入状态再派发：
+
+```sh
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh scope-contract OWNER/REPO D global "仅 --local 时需要明确项目目录" subshell_cd "https://官方文档.example/install"
+```
+
+参数含义必须对应摘要中的真实事实：`CLASSIFICATION` 仅为 `A`、`B`、`C`、`D`；`OFFICIAL_DEFAULT` 不得由 workflow 猜测。阶段 dispatch contract 也必须携带同一份值。`skill_for_setup` 与 `optional_usage_examples` 的 contract 必须引用该已记录的契约，作为一致性输入。
 
 阶段子代理只能返回：
 
@@ -212,6 +227,13 @@ open_supports/.ost-workflow-state/{OwnerName}_{RepoName}.json
     "matched_criteria": [],
     "result": null
   },
+  "installation_scope": {
+    "classification": null,
+    "official_default": null,
+    "target_directory_requirement": null,
+    "execution_mechanism": null,
+    "evidence": []
+  },
   "execution": {
     "mode": "subagent_preferred",
     "fallback": "inline",
@@ -247,6 +269,7 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh show OWNE
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh set-stage OWNER/REPO STAGE STATUS
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh block OWNER/REPO STAGE REASON QUESTION [SUGGESTED_DEFAULT]
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh answer OWNER/REPO ANSWER
+sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh scope-contract OWNER/REPO CLASSIFICATION OFFICIAL_DEFAULT TARGET_DIRECTORY_REQUIREMENT EXECUTION_MECHANISM EVIDENCE
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh contract OWNER/REPO STAGE PACKAGE_DIR STAGE_SKILL_PATH REQUIRED_INPUTS ALLOWED_OUTPUTS
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh agent-run OWNER/REPO STAGE STATUS SUMMARY
 sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh inline-run OWNER/REPO STAGE STATUS SUMMARY FALLBACK_REASON
@@ -396,7 +419,7 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-exa
 用户同意：
 
 - 将 `optional_test_install` 标记为 `in_progress`
-- 运行安装脚本
+- 只在隔离 Docker 容器中运行安装脚本和验证命令；将测试项目目录挂载为容器内临时路径。不得在宿主机真实 CLI、用户配置目录或真实项目中安装／配置，即使脚本默认全局模式也不例外。
 - 运行验证命令
 - 记录执行命令、结果和关键输出摘要
 
@@ -420,3 +443,5 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-exa
 - `complete` 会验证 `optional_usage_examples` 为 `done` 或 `skipped`；legacy state 缺少该 stage 时会补为 `skipped`
 - `complete` 会验证 `optional_test_install` 为 `skipped`，或 `test_install.result` 为 `passed` 且 stage 状态为 `done`
 - `workflow_status` 为 `done`
+- `installation_scope` 已包含 A/B/C/D 分类、官方默认、目标目录机制和至少一条官方证据
+- 摘要 Part 2、脚本 `--help`、setup Skill、以及存在时的 usage examples 对该契约一致；B 使用子 shell CWD，C 使用原生路径参数，D 保留官方默认

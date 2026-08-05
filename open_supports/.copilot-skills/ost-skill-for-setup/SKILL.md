@@ -17,6 +17,8 @@ argument-hint: 'GitHub owner/repo of the target library, e.g. colbymchenry/codeg
 2. `scripts_for_install/install.*` 的实际内容 — 了解脚本支持的 flag 和排除的平台
 3. `.ost-refs/` 目录（如存在）
 
+从摘要 Part 2 提取 A/B/C/D 安装作用域契约，并逐字与实际脚本的帮助和参数比对。分类、官方默认、目标目录机制或证据缺失，或任一产物不一致时，返回 `NEEDS_CLARIFICATION`，不得自行选择 local/global。
+
 ## GitHub Source Policy
 
 读取 GitHub 仓库事实、README、目录、release、issue、PR 或文件内容时，优先使用 GitHub connector / GitHub app 的结构化工具；若工具不可见，先通过 `tool_search` 搜索 GitHub 工具。仍不可用时，再考虑 `gh` CLI、GitHub 官方 API 或官方文档网站。
@@ -78,6 +80,7 @@ setup Skill 聚焦安装、配置、验证和升级入口，不负责生成详�
 | 主路径平台说明 | 脚本实际支持的平台 |
 | 兜底路径触发条件 | 脚本实际排除的场景 |
 | 验证命令 | 库安装后的验证命令 |
+| 安装作用域契约 | 摘要 Part 2 的 A/B/C/D 分类、官方默认、目标目录机制和证据链接 |
 | 安装完成后提示 | 用户安装后需手动执行的下一步 |
 | Troubleshooting 表 | 按库的实际常见问题填写 |
 
@@ -112,6 +115,8 @@ argument-hint: '[可传参数说明]'
 | 信息 | 默认值 | 说明 |
 |------|--------|------|
 | 操作系统 | — | 影响走主路径还是兜底路径 |
+| 安装范围 | 摘要中的官方默认 | 明确全局或项目模式；双模式时让用户选择，不假设 local |
+| 项目目录 | 以作用域契约为准 | B/C 只有在官方默认项目模式时才可默认 `.`；D 的全局默认没有项目目录，用户显式选择项目分支后才确认目录 |
 | [其他需要确认的信息] | [默认值] | [说明] |
 
 ## Procedure
@@ -128,6 +133,20 @@ sh scripts_for_install/install.* [flags]
 
 ​```sh
 [按库实际支持的 flag 填写示例]
+​```
+
+先在本节写出与 `repo_readme_summary.md` Part 2 和脚本 `--help` 一致的作用域说明：
+
+- `A`：只执行全局安装，明确会写入用户级目录。
+- `B`：项目安装必须把确认后的目标目录传给脚本；脚本在子 shell 中切换目录，调用端 CWD 不变。
+- `C`：项目安装必须把确认后的目标目录传给脚本，由脚本传入官方原生路径参数。
+- `D`：先说明官方默认；只有用户明确选择非默认分支时才附加对应 flag 与目标目录。
+
+示例必须使用明确目录，不能依赖支持包根目录或 Agent 当前 CWD：
+
+​```sh
+# 仅当 D 类库的实际脚本要求显式 local 时；接口必须与脚本 --help 一致
+sh scripts_for_install/install.sh --local /work/app
 ​```
 
 ### 兜底路径：参考 repo_readme_summary.md
@@ -198,6 +217,9 @@ sh scripts_for_install/install.* [flags]
 - [ ] skill `name` 符合规范：全小写，连字符分隔，无下划线
 - [ ] 主路径的脚本扩展名与实际文件一致（`.sh` / `.js` / `.py`）
 - [ ] 兜底路径明确列出了触发条件
+- [ ] Pre-checks、主路径、兜底路径和 README.md 均复用了摘要 Part 2 的 A/B/C/D 作用域契约
+- [ ] 项目模式示例传入已确认的明确项目目录；没有依赖支持包目录或调用端 CWD
+- [ ] 双模式库明确官方默认；全局分支不携带项目目录，项目分支使用脚本实际的目录接口
 - [ ] 兜底路径指向 `repo_readme_summary.md` 第 2 部分（而非重复安装命令）
 - [ ] 验证命令来自官方文档或 `repo_readme_summary.md`
 - [ ] README.md 中 `/ost-...` 触发词与 `name` frontmatter 一致

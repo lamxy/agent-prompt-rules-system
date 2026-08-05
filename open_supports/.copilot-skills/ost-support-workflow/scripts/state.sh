@@ -14,6 +14,7 @@ Usage:
   state.sh set-stage OWNER/REPO STAGE STATUS
   state.sh block OWNER/REPO STAGE REASON QUESTION [SUGGESTED_DEFAULT]
   state.sh answer OWNER/REPO ANSWER
+  state.sh scope-contract OWNER/REPO CLASSIFICATION OFFICIAL_DEFAULT TARGET_DIRECTORY_REQUIREMENT EXECUTION_MECHANISM EVIDENCE
   state.sh contract OWNER/REPO STAGE PACKAGE_DIR STAGE_SKILL_PATH REQUIRED_INPUTS ALLOWED_OUTPUTS
   state.sh agent-run OWNER/REPO STAGE STATUS SUMMARY
   state.sh inline-run OWNER/REPO STAGE STATUS SUMMARY FALLBACK_REASON
@@ -144,6 +145,13 @@ cmd_init() {
         optional_test_install: "pending"
       },
       clarifications: [],
+      installation_scope: {
+        classification: null,
+        official_default: null,
+        target_directory_requirement: null,
+        execution_mechanism: null,
+        evidence: []
+      },
       usage_examples: {
         offered: false,
         decision: "pending",
@@ -252,6 +260,39 @@ cmd_answer() {
         | .updated_at = $now
       end
   ' --arg answer "$answer" --arg now "$now"
+}
+
+cmd_scope_contract() {
+  require_owner_repo "$1"
+  classification=$2
+  official_default=$3
+  target_directory_requirement=$4
+  execution_mechanism=$5
+  evidence=$6
+  case "$classification" in
+    A|B|C|D) ;;
+    *) die "installation scope classification must be A, B, C, or D" ;;
+  esac
+  state_file=$(state_file_for "$1")
+  ensure_state_exists
+  now=$(now_utc)
+
+  write_jq '
+    .installation_scope = {
+      classification: $classification,
+      official_default: $official_default,
+      target_directory_requirement: $target_directory_requirement,
+      execution_mechanism: $execution_mechanism,
+      evidence: (if $evidence == "" then [] else [$evidence] end)
+    }
+    | .updated_at = $now
+  ' \
+    --arg classification "$classification" \
+    --arg official_default "$official_default" \
+    --arg target_directory_requirement "$target_directory_requirement" \
+    --arg execution_mechanism "$execution_mechanism" \
+    --arg evidence "$evidence" \
+    --arg now "$now"
 }
 
 cmd_agent_run() {
@@ -517,6 +558,18 @@ cmd_complete() {
       ;;
   esac
 
+  scope_complete=$(jq -r '
+    (.installation_scope // {}) as $scope
+    | if (
+        ($scope.classification | IN("A", "B", "C", "D"))
+        and (($scope.official_default // "") != "")
+        and (($scope.target_directory_requirement // "") != "")
+        and (($scope.execution_mechanism // "") != "")
+        and (($scope.evidence // []) | length > 0)
+      ) then "yes" else "no" end
+  ' "$state_file")
+  [ "$scope_complete" = "yes" ] || die "installation_scope must record classification, official default, target-directory requirement, execution mechanism, and official evidence before complete"
+
   write_jq '
     .stages.optional_usage_examples //= "skipped"
     | .usage_examples //= {
@@ -556,6 +609,10 @@ case "$cmd" in
   answer)
     [ "$#" -eq 2 ] || { usage >&2; exit 2; }
     cmd_answer "$1" "$2"
+    ;;
+  scope-contract)
+    [ "$#" -eq 6 ] || { usage >&2; exit 2; }
+    cmd_scope_contract "$1" "$2" "$3" "$4" "$5" "$6"
     ;;
   contract)
     [ "$#" -eq 6 ] || { usage >&2; exit 2; }
