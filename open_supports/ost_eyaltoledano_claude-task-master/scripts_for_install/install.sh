@@ -18,8 +18,8 @@
 #   --location=global     全局 npm 安装
 #   --global              --location=global 的别名
 #   --local               --location=local 的别名
-#   --project-dir=DIR     项目目录（默认：当前目录）
-#   TARGET_DIR            --project-dir 的位置参数别名（仅本地安装或 --init-project 时使用）
+#   --project-dir=DIR     项目目录（默认：当前目录；本地安装、--init-project 或 project MCP scope 时使用）
+#   TARGET_DIR            --project-dir 的位置参数别名（本地安装、--init-project 或 project MCP scope 时使用）
 #   --claude-mcp          同时配置 Claude Code MCP server（会修改 Claude 配置）
 #   --mcp-scope=SCOPE     Claude MCP scope，默认 user；透传给 claude mcp add --scope
 #   --tools=MODE          MCP 工具加载模式，如 core、standard、all、lean 或逗号列表
@@ -233,10 +233,17 @@ add_claude_mcp() {
   fi
 }
 
+warn_legacy_claude_mcp() {
+  if claude mcp get taskmaster-ai >/dev/null 2>&1; then
+    printf '%s\n' 'Warning: legacy Claude MCP entry "taskmaster-ai" detected. Verify it points to Taskmaster; run "claude mcp remove taskmaster-ai" from that project to avoid duplicate tools.' >&2
+  fi
+}
+
 configure_claude_mcp() {
   [ "$CLAUDE_MCP" = "yes" ] || return 0
   require_command "claude" "配置 Claude Code MCP 前，请先安装并登录 Claude Code CLI。"
 
+  warn_legacy_claude_mcp
   printf '%s\n' "-> 配置 Claude Code MCP server（scope=$MCP_SCOPE）..."
   if [ "$MCP_SCOPE" = "project" ]; then
     (cd "$PROJECT_DIR" && add_claude_mcp)
@@ -260,7 +267,8 @@ print_summary() {
   printf 'Node.js：%s\n' "$NODE_VERSION"
   printf 'npm：%s\n' "$NPM_VERSION"
   printf '安装范围：%s\n' "$LOCATION"
-  if [ "$LOCATION" = "local" ] || [ "$INIT_PROJECT" = "yes" ]; then
+  if [ "$LOCATION" = "local" ] || [ "$INIT_PROJECT" = "yes" ] || \
+    { [ "$CLAUDE_MCP" = "yes" ] && [ "$MCP_SCOPE" = "project" ]; }; then
     printf '项目目录：%s\n' "$PROJECT_DIR"
   fi
   printf 'Claude MCP：%s\n' "$CLAUDE_MCP"

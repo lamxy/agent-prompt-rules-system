@@ -66,6 +66,10 @@ write_stub npx \
 write_stub claude \
   '#!/bin/sh' \
   'printf "claude cwd=%s args=%s\\n" "$PWD" "$*" >> "$TEST_LOG"' \
+  'if [ "${1:-}" = "mcp" ] && [ "${2:-}" = "get" ] && [ "${3:-}" = "taskmaster-ai" ]; then' \
+  '  [ "${CLAUDE_STUB_LEGACY:-no}" = "yes" ] && exit 0' \
+  '  exit 1' \
+  'fi' \
   'scope=""' \
   'while [ "$#" -gt 0 ]; do' \
   '  case "$1" in' \
@@ -352,6 +356,38 @@ assert_exit "$RUN_STATUS" 0
 [ ! -e "$taskmaster_no_tools_invocation/.mcp.json" ] || fail 'Taskmaster no-tools wrote MCP config in invocation directory'
 [ -f "$taskmaster_no_tools_project/.mcp.json" ] || fail 'Taskmaster no-tools did not write MCP config in target project directory'
 assert_contains "$TEST_LOG" "claude cwd=$taskmaster_no_tools_project args=mcp add task-master-ai --scope project -- npx -y task-master-ai"
+
+: > "$TEST_LOG"
+taskmaster_legacy_invocation="$tmp/taskmaster-legacy-invocation"
+taskmaster_legacy_project="$tmp/taskmaster-legacy-project"
+mkdir -p "$taskmaster_legacy_invocation" "$taskmaster_legacy_project"
+run_capture "$tmp/taskmaster-legacy-mcp.out" \
+  env CLAUDE_STUB_LEGACY=yes \
+    sh -c 'cd "$1" && shift && exec "$@"' sh "$taskmaster_legacy_invocation" \
+    sh "$ROOT/open_supports/ost_eyaltoledano_claude-task-master/scripts_for_install/install.sh" \
+      --local --claude-mcp --mcp-scope=project \
+      --project-dir="$taskmaster_legacy_project"
+assert_exit "$RUN_STATUS" 0
+assert_contains "$tmp/taskmaster-legacy-mcp.out" \
+  'Warning: legacy Claude MCP entry "taskmaster-ai" detected. Verify it points to Taskmaster; run "claude mcp remove taskmaster-ai" from that project to avoid duplicate tools.'
+assert_contains "$TEST_LOG" "claude cwd=$taskmaster_legacy_invocation args=mcp get taskmaster-ai"
+assert_contains "$TEST_LOG" "claude cwd=$taskmaster_legacy_project args=mcp add task-master-ai --scope project -- npx -y task-master-ai"
+if grep -F -- 'mcp remove taskmaster-ai' "$TEST_LOG" >/dev/null 2>&1; then
+  fail 'Taskmaster removed a legacy Claude MCP entry'
+fi
+[ ! -e "$taskmaster_legacy_invocation/.mcp.json" ] || fail 'Taskmaster legacy check wrote MCP config in invocation directory'
+[ -f "$taskmaster_legacy_project/.mcp.json" ] || fail 'Taskmaster legacy check did not register canonical MCP in target project directory'
+
+: > "$TEST_LOG"
+taskmaster_missing_project="$tmp/taskmaster-missing-project"
+run_capture "$tmp/taskmaster-missing-project.out" \
+  sh open_supports/ost_eyaltoledano_claude-task-master/scripts_for_install/install.sh \
+    --global --claude-mcp --mcp-scope=project \
+    --project-dir="$taskmaster_missing_project"
+assert_exit "$RUN_STATUS" 1
+assert_contains "$tmp/taskmaster-missing-project.out" \
+  "Target project directory does not exist: $taskmaster_missing_project"
+[ ! -s "$TEST_LOG" ] || fail 'missing Taskmaster project directory invoked npm or Claude'
 
 : > "$TEST_LOG"
 run_capture "$tmp/openspec.out" \

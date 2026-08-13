@@ -1,6 +1,6 @@
 # Taskmaster 安装 Skill — 使用说明
 
-> **目录契约**：本地 npm 安装依赖 CWD。调用脚本时传 `TARGET_DIR`（位置参数或 `--project-dir`）；脚本在子 Shell 中切换目录。`--global` 不传项目目录。
+> **目录契约**：本地 npm 安装依赖 CWD。调用脚本时传 `TARGET_DIR`（位置参数或 `--project-dir`）；脚本在子 Shell 中切换目录。`--global` 通常不传项目目录，但 `--claude-mcp --mcp-scope=project` 必须提供现有项目目录，并从该目录注册 MCP。
 
 ## 触发词
 
@@ -25,7 +25,7 @@
 |------|------|------|
 | `--location=local` / `--local` | 默认 | 在目标项目内执行 `npm install task-master-ai@latest` |
 | `--location=global` / `--global` | 无 | 执行 `npm install -g task-master-ai@latest` |
-| `--project-dir=DIR` | 当前目录 | 项目目录；本地安装和 `--init-project` 会在此目录执行 |
+| `--project-dir=DIR` | 当前目录 | 项目目录；本地安装、`--init-project` 和 `--claude-mcp --mcp-scope=project` 会使用并规范化此目录 |
 | `--claude-mcp` | 无 | 同时运行 `claude mcp add ...` 注册 Taskmaster MCP server |
 | `--mcp-scope=SCOPE` | `user` | Claude MCP scope，支持 `user`、`project`、`local` |
 | `--tools=MODE` | 未设置 | MCP 工具加载模式，如 `core`、`standard`、`all`、`lean` 或逗号列表 |
