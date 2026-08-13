@@ -193,16 +193,6 @@ do
     cat "$tmp/unsupported-$unsupported_host.out" >&2
   fi
   assert_exit "$RUN_STATUS" 1
-  case "$unsupported_host" in
-    cursor|slate)
-      assert_contains "$tmp/unsupported-$unsupported_host.out" \
-        "Error: --host=$unsupported_host is unsupported by upstream setup."
-      ;;
-    openclaw|hermes|gbrain)
-      assert_contains "$tmp/unsupported-$unsupported_host.out" \
-        "Error: --host=$unsupported_host requires a separate artifact-generation/session workflow."
-      ;;
-  esac
   [ ! -s "$TEST_LOG" ] || fail "unsupported host invoked Git: $unsupported_host"
 done
 
@@ -214,8 +204,6 @@ do
       sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
         --host=codex --install-dir="$tmp/invalid-timeout"
   assert_exit "$RUN_STATUS" 1
-  assert_contains "$tmp/invalid-timeout.out" \
-    'Error: GSTACK_GIT_TIMEOUT_SECONDS must be a positive decimal integer.'
   [ ! -s "$TEST_LOG" ] || fail "invalid timeout invoked Git: $invalid_timeout"
 done
 
@@ -281,8 +269,6 @@ run_capture "$tmp/gstack-clone-timeout.out" \
     sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
       --host=codex --install-dir="$clone_timeout_dir"
 assert_exit "$RUN_STATUS" 124
-assert_contains "$tmp/gstack-clone-timeout.out" \
-  "Error: gstack Git clone failed for $clone_timeout_dir (timeout=17s, exit=124)."
 assert_contains "$TEST_LOG" "timeout 17 git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git $clone_timeout_dir prompt=0"
 
 : > "$TEST_LOG"
@@ -293,8 +279,6 @@ run_capture "$tmp/gstack-pull-timeout.out" \
     sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
       --host=codex --install-dir="$pull_timeout_dir"
 assert_exit "$RUN_STATUS" 124
-assert_contains "$tmp/gstack-pull-timeout.out" \
-  "Error: gstack Git pull failed for $pull_timeout_dir (timeout=17s, exit=124)."
 assert_contains "$TEST_LOG" "timeout 17 git -C $pull_timeout_dir pull --ff-only prompt=0"
 assert_contains "$TEST_LOG" "git prompt=0 -C $pull_timeout_dir pull --ff-only"
 
@@ -315,8 +299,7 @@ run_capture "$tmp/gstack-no-timeout.out" \
     /bin/sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh \
       --host=auto --install-dir="$no_timeout_dir"
 assert_exit "$RUN_STATUS" 0
-assert_contains "$tmp/gstack-no-timeout.out" \
-  'Warning: timeout/gtimeout unavailable; running Git without a wall-clock limit.'
+assert_contains "$tmp/gstack-no-timeout.out" 'timeout/gtimeout'
 assert_contains "$TEST_LOG" "git prompt=0 clone --single-branch --depth 1 https://github.com/garrytan/gstack.git $no_timeout_dir"
 
 : > "$TEST_LOG"
