@@ -191,7 +191,8 @@ check_node_runtime() {
 }
 
 normalize_project_dir() {
-  if [ "$LOCATION" = "local" ] || [ "$INIT_PROJECT" = "yes" ]; then
+  if [ "$LOCATION" = "local" ] || [ "$INIT_PROJECT" = "yes" ] || \
+    { [ "$CLAUDE_MCP" = "yes" ] && [ "$MCP_SCOPE" = "project" ]; }; then
     [ -d "$PROJECT_DIR" ] || {
       printf 'Target project directory does not exist: %s\n' "$PROJECT_DIR" >&2
       exit 1
@@ -221,17 +222,26 @@ verify_cli() {
   fi
 }
 
-configure_claude_mcp() {
-  [ "$CLAUDE_MCP" = "yes" ] || return 0
-  require_command "claude" "配置 Claude Code MCP 前，请先安装并登录 Claude Code CLI。"
-
-  printf '%s\n' "-> 配置 Claude Code MCP server（scope=$MCP_SCOPE）..."
+add_claude_mcp() {
   if [ -n "$TOOLS_MODE" ]; then
     claude mcp add task-master-ai --scope "$MCP_SCOPE" \
       --env TASK_MASTER_TOOLS="$TOOLS_MODE" \
       -- npx -y "$PACKAGE_NAME@latest"
   else
-    claude mcp add taskmaster-ai -- npx -y "$PACKAGE_NAME"
+    claude mcp add task-master-ai --scope "$MCP_SCOPE" \
+      -- npx -y "$PACKAGE_NAME"
+  fi
+}
+
+configure_claude_mcp() {
+  [ "$CLAUDE_MCP" = "yes" ] || return 0
+  require_command "claude" "配置 Claude Code MCP 前，请先安装并登录 Claude Code CLI。"
+
+  printf '%s\n' "-> 配置 Claude Code MCP server（scope=$MCP_SCOPE）..."
+  if [ "$MCP_SCOPE" = "project" ]; then
+    (cd "$PROJECT_DIR" && add_claude_mcp)
+  else
+    add_claude_mcp
   fi
 }
 

@@ -63,6 +63,18 @@ write_stub npx \
   '#!/bin/sh' \
   'printf "npx %s\\n" "$*" >> "$TEST_LOG"'
 
+write_stub claude \
+  '#!/bin/sh' \
+  'printf "claude cwd=%s args=%s\\n" "$PWD" "$*" >> "$TEST_LOG"' \
+  'scope=""' \
+  'while [ "$#" -gt 0 ]; do' \
+  '  case "$1" in' \
+  '    --scope) scope="${2:-}"; shift 2 ;;' \
+  '    *) shift ;;' \
+  '  esac' \
+  'done' \
+  'if [ "$scope" = "project" ]; then : > "$PWD/.mcp.json"; fi'
+
 write_stub openspec \
   '#!/bin/sh' \
   'printf "openspec %s\\n" "$*" >> "$TEST_LOG"' \
@@ -312,6 +324,34 @@ run_capture "$tmp/taskmaster.out" \
 assert_exit "$RUN_STATUS" 0
 assert_contains "$TEST_LOG" 'npm install task-master-ai@latest'
 assert_contains "$TEST_LOG" 'npx task-master --version'
+
+: > "$TEST_LOG"
+taskmaster_invocation="$tmp/taskmaster-invocation"
+taskmaster_mcp_project="$tmp/taskmaster-mcp-project"
+mkdir -p "$taskmaster_invocation" "$taskmaster_mcp_project"
+run_capture "$tmp/taskmaster-project-mcp.out" \
+  sh -c 'cd "$1" && shift && exec "$@"' sh "$taskmaster_invocation" \
+  sh "$ROOT/open_supports/ost_eyaltoledano_claude-task-master/scripts_for_install/install.sh" \
+    --local --claude-mcp --tools=standard --mcp-scope=project \
+    --project-dir="$taskmaster_mcp_project"
+assert_exit "$RUN_STATUS" 0
+[ ! -e "$taskmaster_invocation/.mcp.json" ] || fail 'Taskmaster wrote MCP config in invocation directory'
+[ -f "$taskmaster_mcp_project/.mcp.json" ] || fail 'Taskmaster did not write MCP config in target project directory'
+assert_contains "$TEST_LOG" "claude cwd=$taskmaster_mcp_project args=mcp add task-master-ai --scope project --env TASK_MASTER_TOOLS=standard -- npx -y task-master-ai@latest"
+
+: > "$TEST_LOG"
+taskmaster_no_tools_invocation="$tmp/taskmaster-no-tools-invocation"
+taskmaster_no_tools_project="$tmp/taskmaster-no-tools-project"
+mkdir -p "$taskmaster_no_tools_invocation" "$taskmaster_no_tools_project"
+run_capture "$tmp/taskmaster-no-tools-mcp.out" \
+  sh -c 'cd "$1" && shift && exec "$@"' sh "$taskmaster_no_tools_invocation" \
+  sh "$ROOT/open_supports/ost_eyaltoledano_claude-task-master/scripts_for_install/install.sh" \
+    --local --claude-mcp --mcp-scope=project \
+    --project-dir="$taskmaster_no_tools_project"
+assert_exit "$RUN_STATUS" 0
+[ ! -e "$taskmaster_no_tools_invocation/.mcp.json" ] || fail 'Taskmaster no-tools wrote MCP config in invocation directory'
+[ -f "$taskmaster_no_tools_project/.mcp.json" ] || fail 'Taskmaster no-tools did not write MCP config in target project directory'
+assert_contains "$TEST_LOG" "claude cwd=$taskmaster_no_tools_project args=mcp add task-master-ai --scope project -- npx -y task-master-ai"
 
 : > "$TEST_LOG"
 run_capture "$tmp/openspec.out" \
