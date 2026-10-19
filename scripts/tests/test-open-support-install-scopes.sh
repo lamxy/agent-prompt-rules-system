@@ -2,7 +2,7 @@
 # Validate local-install target handling without allowing installers to write.
 set -eu
 
-ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 MISSING_TARGET=/tmp/ost-missing-target
 
 assert_missing_target_fails() {
@@ -14,7 +14,7 @@ assert_missing_target_fails() {
     return 1
   }
 
-  printf '%s\n' "$output" | grep -F 'Target project directory does not exist' >/dev/null || {
+  printf '%s\n' "$output" | grep -E 'Target project directory does not exist|目录不存在' >/dev/null || {
     printf 'Expected missing-target error from %s, got:\n%s\n' "$package" "$output" >&2
     return 1
   }
@@ -49,4 +49,4 @@ do
   assert_help_works "$package"
 done
 
-printf 'All project-local installers reject a nonexistent target before installation.\n'
+printf 'PASS: all project-local installers reject a nonexistent target before installation.\n'

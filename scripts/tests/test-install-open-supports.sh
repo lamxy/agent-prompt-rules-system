@@ -2,7 +2,7 @@
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 INSTALLER="$REPO_ROOT/scripts/install-open-supports.sh"
 
 fail() {
@@ -162,6 +162,23 @@ test_default_mode_generates_wrapper_and_runs_script() {
   pass "default mode generates wrapper and runs script"
 }
 
+test_project_dir_placeholder_is_replaced() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/my project"
+  make_support_root "$source_root"
+  new_target "$target"
+  printf 'acme/widget --local {PROJECT_DIR} --out={PROJECT_DIR}/x\n' > "$target/.claude/open_supports_name_list.txt"
+  abs_target="$(cd "$target" && pwd -P)"
+
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --no-skills > "$tmp/out.log" 2>&1)
+
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "count=3"
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "arg2=$abs_target"
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "arg3=--out=$abs_target/x"
+  pass "{PROJECT_DIR} is replaced with the absolute project path"
+}
+
 test_reuse_existing_vendor_without_force() {
   tmp="$(mktemp -d)"
   source_root="$tmp/open_supports"
@@ -254,7 +271,7 @@ test_unsafe_support_name_is_rejected() {
     fail "unsafe support name should return non-zero"
   fi
 
-  assert_contains "$tmp/out.log" "invalid support name"
+  assert_contains "$tmp/out.log" "无效的支持包名称"
   assert_contains "$tmp/out.log" "missing=2"
   assert_not_exists "$target/.claude/open_supports"
   assert_not_exists "$target/.claude/skills"
@@ -405,7 +422,7 @@ test_missing_manifest_fails_immediately() {
     fail "missing manifest should fail"
   fi
 
-  assert_contains "$tmp/out.log" "list file not found"
+  assert_contains "$tmp/out.log" "列表文件不存在"
   pass "missing manifest fails immediately"
 }
 
@@ -421,13 +438,125 @@ test_mutually_exclusive_modes_fail() {
     fail "mutually exclusive modes should fail"
   fi
 
-  assert_contains "$tmp/out.log" "mutually exclusive"
+  assert_contains "$tmp/out.log" "不可同时使用"
   pass "mutually exclusive modes fail"
+}
+
+test_install_script_cannot_consume_list() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/project"
+  make_support_root "$source_root"
+  mkdir -p "$source_root/ost_acme_reader/scripts_for_install"
+  printf '# Reader\n' > "$source_root/ost_acme_reader/repo_readme_summary.md"
+  printf '#!/bin/sh\ncat > /dev/null\n' > "$source_root/ost_acme_reader/scripts_for_install/install.sh"
+  new_target "$target"
+  {
+    printf 'acme/reader\n'
+    printf 'acme/widget --after-reader\n'
+  } > "$target/.claude/open_supports_name_list.txt"
+
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --no-skills < /dev/null > "$tmp/out.log" 2>&1)
+
+  assert_contains "$tmp/out.log" "total=2"
+  assert_contains "$target/.claude/open_supports/ost_acme_widget/install-args.log" "arg1=--after-reader"
+  pass "an install script reading stdin does not consume later list entries"
+}
+
+test_wrapper_records_every_entry_command() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/project"
+  make_support_root "$source_root"
+  new_target "$target"
+  {
+    printf 'acme/widget --client=one --location=local {PROJECT_DIR}\n'
+    printf 'acme/widget --client=two --out={PROJECT_DIR}/x\n'
+  } > "$target/.claude/open_supports_name_list.txt"
+
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > "$tmp/out.log" 2>&1)
+
+  skill="$target/.claude/skills/ost_acme_widget_install/SKILL.md"
+  assert_contains "$skill" 'PROJECT_ROOT="$(pwd)"'
+  assert_contains "$skill" '(cd .claude/open_supports/ost_acme_widget && sh scripts_for_install/install.sh --client=one --location=local "${PROJECT_ROOT}")'
+  assert_contains "$skill" '(cd .claude/open_supports/ost_acme_widget && sh scripts_for_install/install.sh --client=two "--out=${PROJECT_ROOT}/x")'
+  assert_not_contains "$skill" "$target"
+  assert_contains "$tmp/out.log" "vendored=1 reused=0"
+  assert_contains "$tmp/out.log" "skill_generated=1 skill_reused=0"
+  pass "wrapper Skill records every list entry with a portable project path; a repeated package is vendored once"
+}
+
+test_generated_wrapper_follows_list_and_manual_wrapper_is_kept() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/project"
+  make_support_root "$source_root"
+  new_target "$target"
+  skill="$target/.claude/skills/ost_acme_widget_install/SKILL.md"
+
+  printf 'acme/widget --first\n' > "$target/.claude/open_supports_name_list.txt"
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > /dev/null 2>&1)
+  printf 'acme/widget --second\n' > "$target/.claude/open_supports_name_list.txt"
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > /dev/null 2>&1)
+  assert_contains "$skill" "--second"
+  assert_not_contains "$skill" "--first"
+
+  grep -v -F 'generated by scripts/install-open-supports.sh' "$skill" > "$tmp/manual.md"
+  printf 'my note\n' >> "$tmp/manual.md"
+  cp "$tmp/manual.md" "$skill"
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > "$tmp/out.log" 2>&1)
+  assert_contains "$skill" "my note"
+  assert_contains "$tmp/out.log" "skill_reused=1"
+  pass "generated wrapper Skill follows the list; a wrapper without the marker is kept"
+}
+
+test_force_backs_up_vendored_package() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/project"
+  make_support_root "$source_root"
+  new_target "$target"
+  printf 'acme/widget\n' > "$target/.claude/open_supports_name_list.txt"
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > /dev/null 2>&1)
+  printf 'project note\n' > "$target/.claude/open_supports/ost_acme_widget/.ost-refs/project.md"
+
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only -F > "$tmp/out.log" 2>&1)
+
+  assert_not_exists "$target/.claude/open_supports/ost_acme_widget/.ost-refs/project.md"
+  backup="$(find "$target/.claude" -maxdepth 1 -name 'open_supports.backup-*')"
+  [ -n "$backup" ] || fail "expected a backup directory"
+  assert_contains "$backup/packages/ost_acme_widget/.ost-refs/project.md" "project note"
+  assert_contains "$tmp/out.log" "[BACKUP]"
+  pass "-F backs up the vendored package before replacing it"
+}
+
+test_reused_package_reports_stale() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/project"
+  make_support_root "$source_root"
+  new_target "$target"
+  printf 'acme/widget\n' > "$target/.claude/open_supports_name_list.txt"
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > /dev/null 2>&1)
+
+  # Files added to the vendored copy (by install scripts or the user) are not staleness.
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --no-skills > /dev/null 2>&1)
+  printf 'note\n' > "$target/.claude/open_supports/ost_acme_widget/.ost-refs/project.md"
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > "$tmp/same.log" 2>&1)
+  assert_contains "$tmp/same.log" "stale=0"
+
+  printf '# Widget Summary v2\n' > "$source_root/ost_acme_widget/repo_readme_summary.md"
+  (cd "$tmp" && sh "$INSTALLER" -t "$target" -s "$source_root" --skills-only > "$tmp/stale.log" 2>&1)
+  assert_contains "$tmp/stale.log" "[STALE]"
+  assert_contains "$tmp/stale.log" "stale=1"
+  assert_not_contains "$target/.claude/open_supports/ost_acme_widget/repo_readme_summary.md" "v2"
+  pass "a reused package that differs from the source is reported as stale"
 }
 
 test_skills_only_vendors_and_generates_wrapper
 test_no_skills_runs_vendored_script_without_wrapper
 test_default_mode_generates_wrapper_and_runs_script
+test_project_dir_placeholder_is_replaced
 test_reuse_existing_vendor_without_force
 test_force_replaces_existing_vendor
 test_dry_run_writes_nothing
@@ -442,5 +571,11 @@ test_no_script_fails_when_scripts_enabled
 test_failing_script_continues_and_returns_nonzero
 test_missing_manifest_fails_immediately
 test_mutually_exclusive_modes_fail
+
+test_install_script_cannot_consume_list
+test_wrapper_records_every_entry_command
+test_generated_wrapper_follows_list_and_manual_wrapper_is_kept
+test_force_backs_up_vendored_package
+test_reused_package_reports_stale
 
 printf '\nAll install-open-supports tests passed.\n'

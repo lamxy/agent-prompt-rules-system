@@ -2,7 +2,7 @@
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 INSTALLER="$REPO_ROOT/scripts/multi_client_support/codex.sh"
 
 fail() {
@@ -51,7 +51,7 @@ test_user_default_writes_to_codex_home() {
   CODEX_HOME="$tmp/codex-home" sh "$INSTALLER" -l user > "$tmp/out.log"
 
   assert_file "$tmp/codex-home/AGENTS.codex.md"
-  assert_contains "$tmp/codex-home/AGENTS.codex.md" "Codex 全域指令"
+  assert_contains "$tmp/codex-home/AGENTS.codex.md" "Codex 全局指令"
   assert_contains "$tmp/codex-home/AGENTS.codex.md" ".agent-rules/claude/"
   assert_contains "$tmp/out.log" "[CREATED]"
   pass "user default writes AGENTS.codex.md under CODEX_HOME"
@@ -63,7 +63,7 @@ test_user_rejects_project_path() {
     fail "user target with -p should fail"
   fi
 
-  assert_contains "$tmp/out.log" "-p is only valid with -l project"
+  assert_contains "$tmp/out.log" "-p 仅在 -l project 时有效"
   assert_not_exists "$tmp/codex-home/AGENTS.codex.md"
   pass "user target rejects -p"
 }
@@ -76,8 +76,8 @@ test_project_default_writes_codex_filename() {
   sh "$INSTALLER" -l project -p "$target" > "$tmp/out.log"
 
   assert_file "$target/AGENTS.codex.md"
-  assert_contains "$target/AGENTS.codex.md" "Codex 專案指令"
-  assert_contains "$target/AGENTS.codex.md" "使用最小且足夠的指令層。"
+  assert_contains "$target/AGENTS.codex.md" "Codex 项目指令"
+  assert_contains "$target/AGENTS.codex.md" "使用最小且足够的指令层。"
   assert_not_exists "$target/.agent-rules/claude"
   assert_contains "$tmp/out.log" "[CREATED]"
   pass "project default writes AGENTS.codex.md without vendoring"
@@ -91,7 +91,7 @@ test_project_custom_name() {
   sh "$INSTALLER" -l project -p "$target" -n AGENTS.md > "$tmp/out.log"
 
   assert_file "$target/AGENTS.md"
-  assert_contains "$target/AGENTS.md" "Codex 專案指令"
+  assert_contains "$target/AGENTS.md" "Codex 项目指令"
   assert_contains "$tmp/out.log" "[CREATED]"
   pass "project custom filename is honored"
 }
@@ -106,8 +106,8 @@ test_project_vendor_copies_dot_claude_source() {
   assert_file "$target/AGENTS.codex.md"
   assert_dir "$target/.agent-rules/claude"
   assert_file "$target/.agent-rules/claude/CLAUDE.md"
-  assert_dir "$target/.agent-rules/claude/rules"
-  assert_dir "$target/.agent-rules/claude/expandable"
+  assert_file "$target/.agent-rules/claude/commands/analyze-github-repo.md"
+  assert_not_exists "$target/.agent-rules/claude/rules"
   assert_contains "$tmp/out.log" "[VENDORED]"
   pass "project vendor copies dot_claude source"
 }
@@ -135,7 +135,7 @@ test_force_overwrites_output() {
 
   sh "$INSTALLER" -l project -p "$target" -F > "$tmp/out.log"
 
-  assert_contains "$target/AGENTS.codex.md" "Codex 專案指令"
+  assert_contains "$target/AGENTS.codex.md" "Codex 项目指令"
   assert_not_contains "$target/AGENTS.codex.md" "OLD-CODEX-CONTENT-MARKER"
   assert_contains "$tmp/out.log" "[FORCE]"
   pass "force overwrites output file"
@@ -182,7 +182,7 @@ test_force_vendor_preserves_extra_files() {
 
   assert_contains "$target/.agent-rules/claude/marker.txt" "keep"
   assert_file "$target/.agent-rules/claude/CLAUDE.md"
-  assert_dir "$target/.agent-rules/claude/rules"
+  assert_dir "$target/.agent-rules/claude/commands"
   assert_contains "$tmp/out.log" "[FORCE]"
   assert_contains "$tmp/out.log" "[VENDORED]"
   pass "force vendor copies source and preserves extra files"
@@ -227,17 +227,17 @@ test_invalid_option_combinations() {
   if sh "$INSTALLER" -l user -v > "$tmp/user-v.log" 2>&1; then
     fail "-v with user should fail"
   fi
-  assert_contains "$tmp/user-v.log" "-v is only valid with -l project"
+  assert_contains "$tmp/user-v.log" "-v 仅在 -l project 时有效"
 
   if sh "$INSTALLER" -l project > "$tmp/project-missing-p.log" 2>&1; then
     fail "project without -p should fail"
   fi
-  assert_contains "$tmp/project-missing-p.log" "-p <target_dir> is required when -l project"
+  assert_contains "$tmp/project-missing-p.log" "-l project 时 -p <target_dir> 为必填项"
 
   if sh "$INSTALLER" -l project -p "$tmp/missing" > "$tmp/missing-target.log" 2>&1; then
     fail "missing project target should fail"
   fi
-  assert_contains "$tmp/missing-target.log" "target directory does not exist"
+  assert_contains "$tmp/missing-target.log" "目标目录不存在"
 
   pass "invalid option combinations fail clearly"
 }
