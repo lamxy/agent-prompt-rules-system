@@ -553,6 +553,102 @@ test_reused_package_reports_stale() {
   pass "a reused package that differs from the source is reported as stale"
 }
 
+test_single_install_runs_one_package() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/my project"
+  make_support_root "$source_root"
+  new_target "$target"
+
+  sh "$INSTALLER" -t "$target" -s "$source_root" -n acme/widget -- --location=local '{PROJECT_DIR}' > "$tmp/out.log"
+
+  log="$target/.claude/open_supports/ost_acme_widget/install-args.log"
+  assert_contains "$log" "count=2"
+  assert_contains "$log" "arg2=$(cd "$target" && pwd -P)"
+  assert_file "$target/.claude/skills/ost_acme_widget_install/SKILL.md"
+  assert_not_exists "$target/.claude/open_supports_name_list.txt"
+
+  printf 'manual\n' > "$target/.claude/skills/ost_acme_widget_install/note.md"
+  printf 'acme/widget --a\nacme/widget --b\n' > "$tmp/list.txt"
+  sh "$INSTALLER" -t "$target" -s "$source_root" -l "$tmp/list.txt" --skills-only > /dev/null
+  sh "$INSTALLER" -t "$target" -s "$source_root" -n acme/widget -- --c > "$tmp/single.log"
+  assert_contains "$tmp/single.log" "单独安装不覆盖已有的 wrapper Skill"
+  assert_contains "$target/.claude/skills/ost_acme_widget_install/SKILL.md" "install.sh --b"
+  assert_not_contains "$target/.claude/skills/ost_acme_widget_install/SKILL.md" "install.sh --c"
+  rm -rf "$tmp"
+  pass "-n installs one package and keeps an existing wrapper Skill"
+}
+
+test_scope_and_source_options_are_exclusive() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  make_support_root "$source_root"
+  new_target "$tmp/p"
+  printf 'acme/widget\n' > "$tmp/list.txt"
+
+  for args in "-g -t $tmp/p" "-t $tmp/p -n acme/widget -l $tmp/list.txt" "-g -F -l $tmp/list.txt" "-g --skills-only -l $tmp/list.txt" "-t $tmp/p -- --x"; do
+    # shellcheck disable=SC2086
+    if sh "$INSTALLER" $args -s "$source_root" > /dev/null 2>&1; then
+      rm -rf "$tmp"
+      fail "expected failure for: $args"
+    fi
+  done
+  assert_not_exists "$tmp/p/.claude/open_supports"
+  rm -rf "$tmp"
+  pass "-t/-g and -n/-l are exclusive; -F, --skills-only and stray -- are rejected"
+}
+
+test_global_runs_from_source_without_vendoring() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  make_support_root "$source_root"
+  mkdir -p "$tmp/home/.claude"
+  printf '# global\nacme/widget --global --x\n' > "$tmp/home/.claude/open_supports_name_list.txt"
+
+  (cd "$tmp" && HOME="$tmp/home" OPEN_SUPPORTS_TEST_SENTINEL="$tmp/sentinel.log" sh "$INSTALLER" -g -s "$source_root" > "$tmp/out.log")
+
+  assert_contains "$tmp/out.log" "[GLOBAL]"
+  assert_contains "$tmp/out.log" "mode=global"
+  assert_contains "$tmp/sentinel.log" "ran:$source_root/ost_acme_widget"
+  assert_contains "$source_root/ost_acme_widget/install-args.log" "arg1=--global"
+  assert_not_exists "$tmp/home/.claude/open_supports"
+  assert_not_exists "$tmp/home/.claude/skills"
+  rm -rf "$tmp"
+  pass "-g reads ~/.claude list and runs scripts in the source package without vendoring"
+}
+
+test_global_rejects_project_level_entries() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  make_support_root "$source_root"
+  for bad in '{PROJECT_DIR}' '--local' '--location=local'; do
+    printf 'acme/widget --ok\nacme/widget %s\n' "$bad" > "$tmp/list.txt"
+    if HOME="$tmp/home" OPEN_SUPPORTS_TEST_SENTINEL="$tmp/sentinel.log" sh "$INSTALLER" -g -s "$source_root" -l "$tmp/list.txt" > /dev/null 2> "$tmp/err.log"; then
+      rm -rf "$tmp"
+      fail "global list with $bad should fail"
+    fi
+    assert_contains "$tmp/err.log" "[REJECTED]"
+    assert_not_exists "$tmp/sentinel.log"
+  done
+  rm -rf "$tmp"
+  pass "-g rejects the whole list when an entry has project-level arguments"
+}
+
+test_project_warns_about_global_entries() {
+  tmp="$(mktemp -d)"
+  source_root="$tmp/open_supports"
+  target="$tmp/project"
+  make_support_root "$source_root"
+  new_target "$target"
+  printf 'acme/widget --global\n' > "$target/.claude/open_supports_name_list.txt"
+
+  sh "$INSTALLER" -t "$target" -s "$source_root" > /dev/null 2> "$tmp/err.log"
+  assert_contains "$tmp/err.log" "[WARN]"
+  assert_file "$target/.claude/open_supports/ost_acme_widget/install-ran.log"
+  rm -rf "$tmp"
+  pass "project install warns about user-level entries but still installs them"
+}
+
 test_skills_only_vendors_and_generates_wrapper
 test_no_skills_runs_vendored_script_without_wrapper
 test_default_mode_generates_wrapper_and_runs_script
@@ -577,5 +673,11 @@ test_wrapper_records_every_entry_command
 test_generated_wrapper_follows_list_and_manual_wrapper_is_kept
 test_force_backs_up_vendored_package
 test_reused_package_reports_stale
+
+test_single_install_runs_one_package
+test_scope_and_source_options_are_exclusive
+test_global_runs_from_source_without_vendoring
+test_global_rejects_project_level_entries
+test_project_warns_about_global_entries
 
 printf '\nAll install-open-supports tests passed.\n'
