@@ -1,44 +1,78 @@
 #!/bin/sh
+# install-settings.sh - 安装 settings/ 下的 Claude Code 设定模板
+#
+# 功能：
+#   按作用域把一份设定模板写入目标目录：
+#   - user     settings/settings.user.json         -> ~/.claude/settings.json
+#   - project  settings/settings.project-<场景>.json -> <dir>/settings.json
+#   - local    settings/settings.local-<场景>.json   -> <dir>/settings.local.json
+#   目标不存在时直接创建；已存在时按 -m 覆盖（先备份）、合并插件字段或从终端询问。
+#   源文件与已存在的目标都会做 JSON 校验，需要 Python 3（python3、python 或 py）。
+#
+# 只安装 settings 这一个维度；整个场景的完整配置见 install-claude-project.sh。
 set -eu
 
 usage() {
-  printf '%s\n' \
-    '用法：' \
-    '  sh ./scripts/install-settings.sh -l <user|project|local> [-s <scenario>] [--src <source_settings_json>] -m <overwrite|merge|ask> [-p <target_dir>]' \
-    '' \
-    '选项：' \
-    '  -l  配置作用域：' \
-    '      user     操作用户级配置' \
-    '      project  操作项目级共享配置' \
-    '      local    操作本地项目配置' \
-    '' \
-    '  --src  可选，显式指定源配置文件路径。' \
-    '         提供时忽略 -s。' \
-    '' \
-    '  -s  场景名，用于解析 ./settings/ 下的默认源模板。' \
-    '      解析规则：' \
-    '      user 不带 -s     -> settings/settings.user.json（user 级只有这一份）' \
-    '      project 带 -s foo -> settings/settings.project-foo.json' \
-    '      local 带 -s foo   -> settings/settings.local-foo.json' \
-    '      找不到模板时会列出可用的场景名。' \
-    '' \
-    '  -m  目标配置已存在时的操作模式：' \
-    '      overwrite  备份后替换目标文件' \
-    '      merge      将 enabledPlugins 和 extraKnownMarketplaces 合并到目标' \
-    '      ask        从终端询问是否覆盖、合并或跳过（非交互环境会报错退出）' \
-    '' \
-    '  -p, --dst  精确目标目录。' \
-    '             用户级默认 ~/.claude。' \
-    '             project 和 local 级必填。' \
-    '' \
-    '  -h, --help  显示此帮助信息' \
-    '' \
-    '注意：' \
-    '  - merge 仅影响 enabledPlugins 和 extraKnownMarketplaces；源文件中的其他字段' \
-    '    （如 permissions、hooks、sandbox）不会写入，脚本会以 [WARN] 列出。' \
-    '    安装完整的用户级设定请用 overwrite。' \
-    '  - 源文件名必须与所选作用域匹配。' \
-    '  - 覆盖或合并写入前，会自动备份已有目标文件。'
+  cat <<'USAGE'
+用法：
+  sh ./scripts/install-settings.sh -l <user|project|local> -m <overwrite|merge|ask> [-s <场景>] [--src <文件>] [-p <target_dir>]
+
+必选：
+  -l <作用域>       user | project | local，决定默认模板与目标文件名：
+                      user     -> <target_dir>/settings.json（默认 ~/.claude）
+                      project  -> <target_dir>/settings.json
+                      local    -> <target_dir>/settings.local.json
+  -m <模式>         目标文件已存在时的处理方式（不存在时总是直接创建）：
+                      overwrite  备份为 <文件>.bak.<时间戳> 后整体替换
+                      merge      只把 enabledPlugins、extraKnownMarketplaces 合并进目标
+                                 （先备份）；源文件其他字段不写入，以 [WARN] 列出
+                      ask        从终端询问覆盖、合并或跳过；非交互环境报错退出
+
+条件必选：
+  -s <场景>         场景名，用来解析 settings/ 下的默认模板：
+                      project -s foo -> settings/settings.project-foo.json
+                      local   -s foo -> settings/settings.local-foo.json
+                      user 不带 -s   -> settings/settings.user.json
+                    project / local 未给 --src 时必填；找不到模板时列出可用场景
+  -p, --dst <目录>  目标目录（不存在时自动创建，可用 ~ 开头）。
+                    project / local 必填；user 默认 ~/.claude
+
+可选：
+  --src <文件>      显式指定源模板，提供时忽略 -s。文件名仍须与作用域匹配
+                    （settings.user*.json / settings.project-*.json / settings.local-*.json）
+  -h, --help        显示此帮助信息
+
+当前可用场景：
+  project：prd-design、frontend-dev、backend-dev、dev-ops、fullstack-dev
+  local：  prd-design、frontend-dev、backend-dev、dev-ops
+
+注意：
+  - 安装完整的用户级设定（含 permissions、hooks、sandbox）请用 overwrite
+  - 含 permissions 的项目模板（backend-dev、dev-ops、fullstack-dev）也应使用 overwrite
+  - 每次覆盖或合并前都会备份，同一秒内多次执行也不会覆盖之前的备份
+
+示例：
+  # 安装推荐的全局基础设定到 ~/.claude（先备份已有设定）
+  sh ./scripts/install-settings.sh -l user -m overwrite
+
+  # 只把全局插件与市场合并进已有的 ~/.claude/settings.json
+  sh ./scripts/install-settings.sh -l user -m merge
+
+  # 为项目安装后端场景设定（含数据库破坏性命令的 deny 规则）
+  sh ./scripts/install-settings.sh -l project -s backend-dev -m overwrite -p ~/my-project/.claude
+
+  # 已有项目设定时，只追加前端场景的插件
+  sh ./scripts/install-settings.sh -l project -s frontend-dev -m merge -p ~/my-project/.claude
+
+  # 安装本地级可选插件（写入 settings.local.json），已存在时询问
+  sh ./scripts/install-settings.sh -l local -s dev-ops -m ask -p ~/my-project/.claude
+
+  # 使用自定义模板
+  sh ./scripts/install-settings.sh -l project --src ~/templates/settings.project-mine.json -m overwrite -p ~/my-project/.claude
+
+  # 场景名写错时会列出可用场景
+  sh ./scripts/install-settings.sh -l project -s backend -m overwrite -p ~/my-project/.claude
+USAGE
 }
 
 expand_path() {

@@ -1,4 +1,14 @@
 #!/bin/sh
+# install-agent-pkg.sh - 安装 agents/ 下的场景 agent 包
+#
+# 功能：
+#   把 agents/agents-<FLAG>/ 中的 *.md agent 定义逐个复制到目标 agents 目录。
+#   - 同名文件已存在时默认跳过（[MANUAL]）
+#   - -F 时先把同名旧文件移到 <target>.backup-<时间戳>/ 再复制；备份放在目标目录
+#     旁边而不是里面，Claude Code 不会把旧文件当成 agent 载入
+#   - 目标中包里没有的 agent 文件一律保留
+#
+# 只安装 agents 这一个维度；整个场景的完整配置见 install-claude-project.sh。
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -9,16 +19,29 @@ usage() {
 用法：
   sh scripts/install-agent-pkg.sh -f <FLAG> -t <target_agents_dir> [-s <agents_root>] [-F]
 
-选项：
-  -f  Agent 包标识符（如 frontend-dev → agents-frontend-dev/）
-  -t  目标 agents 目录（如 /path/to/project/.claude/agents）
-  -s  源 agents 根目录（默认：<repo>/agents）
-  -F  强制覆盖：先把同名 .md 文件移到 <target>.backup-<时间戳>/，再重新复制
-  -h  显示此帮助信息
+必选：
+  -f <FLAG>   agent 包标识，对应 <agents_root>/agents-<FLAG>/，
+              例如 prd-design、frontend-dev、backend-dev、dev-ops
+  -t <目录>   目标 agents 目录，必须已存在，
+              例如 <project>/.claude/agents（项目级）或 ~/.claude/agents（用户级）
+
+可选：
+  -s <目录>   源 agents 根目录（默认：<repo>/agents）
+  -F          同名文件已存在时先备份到 <target>.backup-<时间戳>/ 再覆盖
+  -h          显示此帮助信息
 
 示例：
-  sh scripts/install-agent-pkg.sh -f frontend-dev -t ~/.claude/agents
-  sh scripts/install-agent-pkg.sh -f frontend-dev -t /my/project/.claude/agents -F
+  # 为项目安装后端场景的 agent
+  sh scripts/install-agent-pkg.sh -f backend-dev -t ~/my-project/.claude/agents
+
+  # 用仓库版本更新已安装的同名 agent（旧文件先备份）
+  sh scripts/install-agent-pkg.sh -f backend-dev -t ~/my-project/.claude/agents -F
+
+  # 安装到用户级，所有项目可用
+  sh scripts/install-agent-pkg.sh -f prd-design -t ~/.claude/agents
+
+  # 从其他 agents 根目录安装
+  sh scripts/install-agent-pkg.sh -f my-team -t ~/my-project/.claude/agents -s ~/shared/agents
 USAGE
 }
 

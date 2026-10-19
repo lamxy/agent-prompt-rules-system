@@ -1,4 +1,14 @@
 #!/bin/sh
+# codex.sh - 为 Codex 生成指令文件，可选内嵌本仓库的 dot_claude/
+#
+# 功能：
+#   按层级把 templates/ 下的模板复制为 Codex 指令文件（默认 AGENTS.codex.md）：
+#   - user     templates/AGENTS.codex-user.md    -> ${CODEX_HOME:-~/.codex}/<文件名>
+#   - project  templates/AGENTS.codex-project.md -> <project>/<文件名>
+#   -v 时把 dot_claude/ 整个复制到 <project>/.agent-rules/claude/，供项目指令引用。
+#   - 输出文件或内嵌目录已存在时默认中止（[MANUAL]）；-F 时覆盖输出文件，
+#     并更新内嵌目录中与源同名的文件，保留其他额外文件
+#   - 写入前先检查所有目标路径，类型冲突时不写入任何文件
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -11,21 +21,40 @@ usage() {
 用法：
   sh scripts/multi_client_support/codex.sh -l <user|project> [-p <target_dir>] [-n <filename>] [-F] [-v]
 
-选项：
-  -l  目标层级：
-      user     写入 ${CODEX_HOME:-$HOME/.codex}
-      project  写入目标项目目录
-  -p  目标项目目录。-l project 时必填；-l user 时不可使用。
-  -n  输出文件名（默认：AGENTS.codex.md）
-  -F  强制覆盖已有输出文件。与 -v 一同使用时，更新匹配的内嵌文件，同时保留无关的额外文件。
-  -v  将本仓库的 dot_claude/ 内嵌到 <target>/.agent-rules/claude/。仅 -l project 时有效。
-  -h  显示此帮助信息
+必选：
+  -l <层级>     user     写入 ${CODEX_HOME:-$HOME/.codex}
+                project  写入 -p 指定的项目目录
+
+条件必选：
+  -p <目录>     目标项目目录。-l project 时必填，目录必须已存在；-l user 时不可使用
+
+可选：
+  -n <文件名>   输出文件名（默认：AGENTS.codex.md），只能是文件名；
+                想让 Codex 直接载入时用 AGENTS.md
+  -v            把本仓库的 dot_claude/ 内嵌到 <project>/.agent-rules/claude/；
+                仅 -l project 有效
+  -F            输出文件已存在时覆盖；与 -v 一起使用时更新内嵌目录中与源同名的文件，
+                保留其他额外文件
+  -h            显示此帮助信息
 
 示例：
+  # 生成用户级 Codex 指令（写入 ~/.codex/AGENTS.codex.md）
   sh scripts/multi_client_support/codex.sh -l user
-  sh scripts/multi_client_support/codex.sh -l project -p /path/to/project
-  sh scripts/multi_client_support/codex.sh -l project -p /path/to/project -v
-  sh scripts/multi_client_support/codex.sh -l project -p /path/to/project -n AGENTS.md -F
+
+  # 使用自定义 CODEX_HOME
+  CODEX_HOME=~/codex-alt sh scripts/multi_client_support/codex.sh -l user
+
+  # 为项目生成 AGENTS.codex.md
+  sh scripts/multi_client_support/codex.sh -l project -p ~/my-project
+
+  # 为项目生成并内嵌 dot_claude/ 规则来源
+  sh scripts/multi_client_support/codex.sh -l project -p ~/my-project -v
+
+  # 直接输出为 Codex 默认载入的 AGENTS.md，覆盖已有文件
+  sh scripts/multi_client_support/codex.sh -l project -p ~/my-project -n AGENTS.md -F
+
+  # 仓库的 dot_claude/ 更新后，同步内嵌副本
+  sh scripts/multi_client_support/codex.sh -l project -p ~/my-project -v -F
 USAGE
 }
 

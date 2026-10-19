@@ -48,11 +48,29 @@ usage() {
   - 目标文件已存在且未加 -F 时标记 [MANUAL] 跳过，支持包仍按目标上的清单安装
 
 示例：
+  # 预演：列出要复制的文件与支持包安装计划，不写入
   sh scripts/install-claude-project.sh -f backend-dev -t ~/my-project -d
+
+  # 安装后端场景的完整配置，并安装清单中的支持包
   sh scripts/install-claude-project.sh -f backend-dev -t ~/my-project
+
+  # 只复制配置，支持包稍后再装
+  sh scripts/install-claude-project.sh -f frontend-dev -t ~/my-project -N
+
+  # 用仓库版本更新已安装的场景配置（被覆盖的文件先备份），不重装支持包
   sh scripts/install-claude-project.sh -f backend-dev -t ~/my-project -F -N
+
+  # 预演全局支持包安装（复制清单到 ~/.claude/，再全局安装）
   sh scripts/install-claude-project.sh -g -d
+
+  # 安装全局支持包；~/.claude/ 已有清单时沿用它
   sh scripts/install-claude-project.sh -g
+
+  # 用仓库的全局清单替换 ~/.claude/ 上的清单（先备份）再安装
+  sh scripts/install-claude-project.sh -g -F
+
+  # 使用其他配置包与支持包根目录
+  sh scripts/install-claude-project.sh -f my-team -t ~/my-project -s ~/shared/dot_claude_projects -o ~/shared/open_supports
 USAGE
 }
 

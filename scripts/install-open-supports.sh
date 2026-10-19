@@ -60,10 +60,32 @@ wrapper Skill（仅项目级）：
   只在 Skill 不存在时创建，不覆盖已有的 Skill。
 
 示例：
+  # 预演：按项目清单列出计划操作
   sh scripts/install-open-supports.sh -t ~/proj --dry-run
+
+  # 按项目清单安装（复制支持包、生成 wrapper Skill、运行安装脚本）
+  sh scripts/install-open-supports.sh -t ~/proj
+
+  # 用其他清单文件为项目批量安装
+  sh scripts/install-open-supports.sh -t ~/proj -l ~/lists/frontend.txt
+
+  # 只给项目单独安装一个支持包（参数中的 {PROJECT_DIR} 会替换为项目路径）
   sh scripts/install-open-supports.sh -t ~/proj -n colbymchenry/codegraph -- --target=claude --location=local {PROJECT_DIR}
+
+  # 只复制支持包并生成 wrapper Skill，暂不运行安装脚本
+  sh scripts/install-open-supports.sh -t ~/proj --skills-only
+
+  # 用仓库版本更新项目里已复制的支持包与 wrapper Skill（旧版先备份）
+  sh scripts/install-open-supports.sh -t ~/proj -F
+
+  # 预演全局安装（读取 ~/.claude/open_supports_name_list.txt）
   sh scripts/install-open-supports.sh -g --dry-run
-  sh scripts/install-open-supports.sh -g -n garrytan/gstack
+
+  # 直接用仓库的全局清单安装，不先复制到 ~/.claude/
+  sh scripts/install-open-supports.sh -g -l dot_claude_projects/.claude/open_supports_name_list.txt
+
+  # 全局单独安装一个支持包
+  sh scripts/install-open-supports.sh -g -n eyaltoledano/claude-task-master -- --global --claude-mcp --tools=core
 USAGE
 }
 

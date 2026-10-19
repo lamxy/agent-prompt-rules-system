@@ -182,3 +182,4 @@ FLAG 在所有场景目录中一致：
 | 2026-10-19 | install-open-supports.sh 审查 | 修复安装脚本吞掉清单后续行；wrapper Skill 记录带参数的完整命令（以前缺参数，重装会装错位置）并随清单更新；`-F` 改为备份；新增 `[STALE]`；同一支持包多行只复制一次；新增 5 项测试 | 旧测试的临时目录未清理（既有问题） |
 | 2026-10-19 | 已知问题处理 | cognee 移出全局工具（暂不启用，记忆类只保留 `remember`）；重叠 skill 改为手动调用；删除 `docs/superpowers/` 历史计划与设计 | — |
 | 2026-10-20 | 安装脚本分工与场景包聚合 | `install-claude-project.sh` 管复制、`install-open-supports.sh` 管安装；两者新增 `-g`；`install-open-supports.sh` 新增 `-n`；场景包聚合 settings、`CLAUDE.md`、`.mcp.json`、agents；新增全局清单 `dot_claude_projects/.claude/`；脚本顶部功能说明与选项必选／可选注释；新增 8 项测试 | 场景包与各维度目录分开维护，不同步；场景 skill 仍待编写 |
+| 2026-10-20 | 脚本注释与示例 | `scripts/` 下 8 个安装脚本与 `codex.sh` 顶部补功能说明；`-h` 选项按必选／条件必选／可选分组并补示例；修复 `install.sh -e '*.md'` 被当前目录文件展开而失效，新增测试 | — |

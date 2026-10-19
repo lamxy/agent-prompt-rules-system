@@ -1,4 +1,13 @@
 #!/bin/sh
+# install-claude-md.sh - 安装 claude_mds/ 下的场景 CLAUDE.md
+#
+# 功能：
+#   把 claude_mds/CLAUDE-<FLAG>.md 复制到目标目录，默认命名为 CLAUDE.md，
+#   也可用 -n 输出为 AGENTS.md、GEMINI.md 等其他客户端的指令文件名。
+#   - 模板为空文件（尚未填写）时跳过，不写入空文件
+#   - 目标已存在时默认跳过（[MANUAL]）；-F 时先备份为 <文件>.bak.<时间戳> 再覆盖
+#
+# 只安装 CLAUDE.md 这一个维度；整个场景的完整配置见 install-claude-project.sh。
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -9,20 +18,33 @@ usage() {
 用法：
   sh scripts/install-claude-md.sh -f <FLAG> -t <target_dir> [-n <filename>] [-s <claude_mds_root>] [-F]
 
-选项：
-  -f  与源目录中 CLAUDE-<FLAG>.md 匹配的标识符
-  -t  目标项目目录（文件将放置于此）
-  -n  输出文件名（默认：CLAUDE.md，如 AGENTS.md、GEMINI.md）
-  -s  源 claude_mds 根目录（默认：<repo>/claude_mds）
-  -F  目标文件已存在时强制覆盖（先备份为 <文件>.bak.<时间戳>）
-  -h  显示此帮助信息
+必选：
+  -f <FLAG>     场景标识，对应 <claude_mds_root>/CLAUDE-<FLAG>.md，
+                例如 prd-design、frontend-dev、backend-dev、dev-ops
+  -t <目录>     目标目录（通常是项目根目录），必须已存在
 
-源文件为空（模板尚未填写）时跳过，不会写入空文件。
+可选：
+  -n <文件名>   输出文件名（默认：CLAUDE.md），只能是文件名，不能含路径，
+                例如 AGENTS.md、GEMINI.md
+  -s <目录>     源 claude_mds 根目录（默认：<repo>/claude_mds）
+  -F            目标文件已存在时先备份为 <文件>.bak.<时间戳> 再覆盖
+  -h            显示此帮助信息
 
 示例：
-  sh scripts/install-claude-md.sh -f frontend-dev -t ~/my-project
-  sh scripts/install-claude-md.sh -f prd-design -t ~/my-project -n AGENTS.md
+  # 为项目安装后端场景的 CLAUDE.md
+  sh scripts/install-claude-md.sh -f backend-dev -t ~/my-project
+
+  # 用仓库版本覆盖已有的 CLAUDE.md（先备份）
   sh scripts/install-claude-md.sh -f backend-dev -t ~/my-project -F
+
+  # 同一份场景约定输出为 Codex 使用的 AGENTS.md
+  sh scripts/install-claude-md.sh -f backend-dev -t ~/my-project -n AGENTS.md
+
+  # 输出为 Gemini CLI 使用的 GEMINI.md
+  sh scripts/install-claude-md.sh -f frontend-dev -t ~/my-project -n GEMINI.md
+
+  # 从其他模板目录安装
+  sh scripts/install-claude-md.sh -f my-team -t ~/my-project -s ~/shared/claude_mds
 USAGE
 }
 

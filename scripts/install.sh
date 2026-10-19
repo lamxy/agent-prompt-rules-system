@@ -1,34 +1,73 @@
 #!/bin/sh
+# install.sh - 把本仓库的 dot_claude/ 同步到 Claude Code 配置目录
+#
+# 功能：
+#   逐个文件复制 dot_claude/（个人用户级配置：CLAUDE.md、commands/、settings.json）
+#   到 ~/.claude（-l user）或指定的 .claude 目录（-l project / local）。
+#   - 目标文件不存在时直接创建；已存在时按 -m 覆盖、追加或逐个询问
+#   - 已存在的 .json 文件在 overwrite/append 时一律跳过（[MANUAL-JSON]），需手动合并
+#   - 默认不安装 README.md；project/local 默认不安装 settings.json（-S 启用）
+#   - 检测目标中的旧版（dot_claude_legacy）规则文件：默认只警告，-C 移到备份目录
+#
+# 场景化的项目配置（settings、CLAUDE.md、agents 等）不由本脚本安装，
+# 见 install-claude-project.sh 与各维度的 install-*.sh。
 set -eu
 
 usage() {
   cat <<'USAGE'
 用法：
-  sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask> [-e <file>] [-E <dir>] [-S] [-C]
+  sh ./scripts/install.sh -l <user|project|local> -m <overwrite|append|ask> [-p <target_path>] [选项]
 
-选项：
-  -l  目标层级：
-      user    同步到用户级默认配置路径 ~/.claude（忽略 -p）
-      project 同步到 -p 指定的目标路径（路径必须已存在）
-      local   同步到 -p 指定的目标路径（路径必须已存在）
-  -p  目标 .claude 目录路径（project/local 必填）
-  -m  目标文件已存在时的同步模式：
-      overwrite  覆盖目标文件
-      append     将源文件内容追加到目标文件
-      ask        逐文件交互询问
-      注意：选择 overwrite/append 时，已有 .json 文件自动跳过，
-            需手动合并以保持合法 JSON 结构。
-  -e  排除匹配指定文件名或 glob 模式的文件（可重复）
-      示例：-e CLAUDE.md -e settings.json
-  -E  排除相对于源 dot_claude/ 根目录的指定目录（可重复）
-      示例：-E commands
-  -S  在 project/local 层级同时安装 settings.json
-      （默认跳过：它是个人用户级设定，项目设定建议用 install-settings.sh）
-  -C  将目标中检测到的旧版（dot_claude_legacy）文件移至
-      <target>/legacy-backup-<时间戳>/；不加 -C 时只列出并警告
-  -h  显示此帮助信息
+必选：
+  -l <层级>    目标层级：
+                 user     同步到 ~/.claude（忽略 -p；目录不存在时自动创建）
+                 project  同步到 -p 指定的项目 .claude 目录
+                 local    同步到 -p 指定的目录（行为与 project 相同）
+  -m <模式>    目标文件已存在时的处理方式（不存在的文件总是直接创建）：
+                 overwrite  用源文件覆盖目标文件
+                 append     把源文件内容追加到目标文件末尾
+                 ask        逐个文件从终端询问：[o] 覆盖  [a] 追加  [s] 跳过
+               已存在的 .json 文件在 overwrite/append 时一律跳过（[MANUAL-JSON]），
+               需手动合并以保持合法 JSON 结构。
 
-默认不安装 README.md（仓库说明文件）。
+条件必选：
+  -p <路径>    目标 .claude 目录。-l project / local 时必填，目录必须已存在；
+               可用 ~ 开头。-l user 时忽略。
+
+可选：
+  -e <模式>    排除文件名等于该名称或匹配该 glob 的文件，可重复（glob 请加引号）
+  -E <目录>    排除相对 dot_claude/ 根目录的目录，可重复
+  -S           project/local 层级也安装 settings.json（默认跳过：它是个人用户级设定，
+               项目设定建议用 install-settings.sh）
+  -C           把目标中检测到的旧版（dot_claude_legacy）文件移到
+               <target>/legacy-backup-<时间戳>/；不加时只列出并警告
+  -h           显示此帮助信息
+
+默认行为：
+  - README.md 不安装（仓库说明文件）
+  - 目标中的旧版 CLAUDE.md、旧版 SubagentStop hook 只警告，不自动修改
+
+示例：
+  # 首次同步到 ~/.claude，已有文件逐个询问
+  sh ./scripts/install.sh -l user -m ask
+
+  # 用仓库版本覆盖 ~/.claude 中的同名文件（已有 .json 仍跳过），并把旧版规则移到备份
+  sh ./scripts/install.sh -l user -m overwrite -C
+
+  # 只更新 commands/，不碰 CLAUDE.md 与 settings.json
+  sh ./scripts/install.sh -l user -m overwrite -e CLAUDE.md -e settings.json
+
+  # 把 CLAUDE.md 追加到已有的用户级 CLAUDE.md 之后，不同步 commands/
+  sh ./scripts/install.sh -l user -m append -E commands
+
+  # 同步到项目的 .claude（默认不装 settings.json）
+  sh ./scripts/install.sh -l project -p ~/my-project/.claude -m ask
+
+  # 项目也安装个人 settings.json
+  sh ./scripts/install.sh -l project -p ~/my-project/.claude -m overwrite -S
+
+  # 排除所有 Markdown 文件（glob 加引号，避免被 shell 展开）
+  sh ./scripts/install.sh -l local -p ~/my-project/.claude -m ask -e '*.md'
 USAGE
 }
 
