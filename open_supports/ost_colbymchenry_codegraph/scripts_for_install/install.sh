@@ -6,7 +6,8 @@
 # 功能：
 #   1. 检测平台（macOS / Linux / WSL），不支持 Windows native（见下方提示）
 #   2. 若已安装：显示版本并执行 codegraph upgrade
-#   3. 若未安装：通过官方 curl 脚本安装 CLI，然后接入目标 Agent
+#   3. 若未安装：通过官方 curl 脚本安装 CLI
+#   4. 无论首次安装还是升级，都接入目标 Agent（幂等，可对多个项目重复执行）
 #
 # 注意：
 #   - 本脚本只负责 CLI 安装 + Agent 接入，不执行 codegraph init
@@ -17,7 +18,8 @@
 #
 # 选项：
 #   --target=TARGETS     Agent 目标，逗号分隔：auto、claude、codex、cursor 等
-#                        默认：auto（自动检测已安装的 Agent）
+#                        默认：auto（自动检测本机已安装的 Agent；项目级时
+#                        按 claude / codex 命令或全局配置目录解析）
 #   --location=local     仅为当前项目配置 Agent（默认，推荐）
 #   --location=global    为所有项目全局配置 Agent（需显式指定）
 #   --global             --location=global 的别名
@@ -140,6 +142,29 @@ install_cli() {
 }
 
 # =============================================================================
+# 解析 --target=auto（仅项目级）
+# codegraph 的项目级 auto 只检查项目内 .claude/、.mcp.json、.codex/ 等标记，
+# 新项目一律回退为 claude；因此按本机已安装的客户端解析为显式列表。
+# 全局 auto 检测的就是用户级配置目录，直接交给 codegraph。
+# =============================================================================
+resolve_target() {
+  [ "$TARGET" = "auto" ] && [ "$LOCATION" = "local" ] || return 0
+  _resolved=""
+  if command -v claude >/dev/null 2>&1 || [ -d "$HOME/.claude" ]; then
+    _resolved="claude"
+  fi
+  if command -v codex >/dev/null 2>&1 || [ -d "${CODEX_HOME:-$HOME/.codex}" ]; then
+    _resolved="${_resolved:+$_resolved,}codex"
+  fi
+  if [ -z "$_resolved" ]; then
+    printf '⚠ 未检测到 Claude Code / Codex，交由 codegraph auto 处理（无结果时默认 claude）\n'
+    return 0
+  fi
+  printf 'ℹ auto 检测到本机客户端：%s\n' "$_resolved"
+  TARGET="$_resolved"
+}
+
+# =============================================================================
 # Agent 接入
 # =============================================================================
 wire_agents() {
@@ -171,6 +196,7 @@ print_next_steps() {
 # =============================================================================
 main() {
   detect_platform
+  resolve_target
 
   printf '平台：%s\n' "$PLATFORM"
   printf 'Agent 目标：%s\n' "$TARGET"
@@ -186,24 +212,22 @@ main() {
     # codegraph upgrade 内置"已是最新"判断，无需额外处理退出码
     codegraph upgrade || true
     printf '\n'
-    printf '提示：如需重新配置 Agent，运行：\n'
-    printf '  %s --target=<agent>\n' "$0"
-    exit 0
+  else
+    # --- 首次安装 ---
+    printf '=== CodeGraph 首次安装 ===\n'
+    install_cli
+
+    # 验证 CLI 可用
+    if ! command -v codegraph >/dev/null 2>&1; then
+      printf '\n'
+      printf 'Error: 安装后仍找不到 codegraph 命令。\n' >&2
+      printf '请重新打开终端后重试，或手动安装：\n' >&2
+      printf '  npm i -g @colbymchenry/codegraph\n' >&2
+      exit 1
+    fi
   fi
 
-  # --- 首次安装 ---
-  printf '=== CodeGraph 首次安装 ===\n'
-  install_cli
-
-  # 验证 CLI 可用
-  if ! command -v codegraph >/dev/null 2>&1; then
-    printf '\n'
-    printf 'Error: 安装后仍找不到 codegraph 命令。\n' >&2
-    printf '请重新打开终端后重试，或手动安装：\n' >&2
-    printf '  npm i -g @colbymchenry/codegraph\n' >&2
-    exit 1
-  fi
-
+  # --- Agent 接入：升级后同样执行，保证新项目获得配置 ---
   wire_agents
   print_next_steps
 }

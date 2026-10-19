@@ -13,10 +13,13 @@ usage() {
   -f  与源目录中 .claude-<FLAG>/ 匹配的标识符
   -t  目标项目根目录（文件直接放置于此）
   -s  源 dot_claude_projects 根目录（默认：<repo>/dot_claude_projects）
-  -F  目标文件/目录已存在时强制覆盖
+  -F  启动包中的文件在目标已存在时强制覆盖；被覆盖的文件先备份到
+      <target_dir>/.claude-project-backup-<时间戳>/
   -h  显示此帮助信息
 
-将 .claude/、.mcp.json 和 CLAUDE.md 从 .claude-<FLAG>/ 复制到 <target_dir>。
+将 .claude-<FLAG>/ 中的 .claude/、.mcp.json 和 CLAUDE.md 逐个文件复制到 <target_dir>。
+目标中启动包没有的文件（如 settings.local.json、已安装的 skills）一律保留。
+空文件（模板尚未填写）和 .gitkeep 会被跳过；.mcp.json 不是合法 JSON 时也会跳过。
 
 示例：
   sh scripts/install-claude-project.sh -f frontend-dev -t ~/my-project
@@ -29,20 +32,6 @@ FLAG=""
 TARGET=""
 SOURCE_ROOT=""
 FORCE=0
-
-# Long-option shim
-ARGS=""
-for arg in "$@"; do
-  case "$arg" in
-    --flag)   ARGS="$ARGS -f" ;;
-    --target) ARGS="$ARGS -t" ;;
-    --source) ARGS="$ARGS -s" ;;
-    --force)  ARGS="$ARGS -F" ;;
-    --help)   ARGS="$ARGS -h" ;;
-    *)        ARGS="$ARGS $arg" ;;
-  esac
-done
-eval "set -- $ARGS"
 
 while getopts "f:t:s:Fh" opt; do
   case "$opt" in
@@ -77,67 +66,124 @@ if [ ! -d "$TARGET" ]; then
   exit 1
 fi
 
+TARGET="${TARGET%/}"
+BACKUP_DIR=""
+
 COPIED=0
 SKIPPED=0
 FORCED=0
+EMPTY=0
+INVALID=0
 
-# Helper: copy a single file
-copy_file() {
-  src="$1"; dest="$2"; label="$3"
+# Returns 2 when no Python is available, so the caller can warn instead of fail.
+validate_json() {
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c 'import json, sys; json.load(open(sys.argv[1], encoding="utf-8"))' "$1" >/dev/null 2>&1
+  else
+    return 2
+  fi
+}
+
+# Moves an existing target file into the backup tree, keeping its relative path.
+backup_file() {
+  rel="$1"
+
+  if [ -z "$BACKUP_DIR" ]; then
+    base_path="$TARGET/.claude-project-backup-$(date +%Y%m%d-%H%M%S)"
+    BACKUP_DIR="$base_path"
+    counter=1
+    while [ -e "$BACKUP_DIR" ]; do
+      BACKUP_DIR="${base_path}.${counter}"
+      counter=$((counter + 1))
+    done
+  fi
+
+  mkdir -p "$BACKUP_DIR/$(dirname "$rel")"
+  cp "$TARGET/$rel" "$BACKUP_DIR/$rel"
+  printf '[BACKUP] %s\n' "$BACKUP_DIR/$rel"
+}
+
+install_file() {
+  rel="$1"
+  src="$PKG_DIR/$rel"
+  dest="$TARGET/$rel"
+
+  case "$(basename "$rel")" in
+    .gitkeep) return 0 ;;
+  esac
+
+  if [ ! -s "$src" ]; then
+    printf '[SKIP] 模板尚未填写（空文件）：%s\n' "$rel"
+    EMPTY=$((EMPTY + 1))
+    return 0
+  fi
+
+  case "$rel" in
+    *.json)
+      json_status=0
+      validate_json "$src" || json_status=$?
+      case "$json_status" in
+        0) ;;
+        2) printf '[WARN] 未找到 python3，跳过 JSON 校验：%s\n' "$rel" >&2 ;;
+        *)
+          printf '[INVALID] 模板不是合法 JSON，已跳过：%s\n' "$rel" >&2
+          INVALID=$((INVALID + 1))
+          return 0
+          ;;
+      esac
+      ;;
+  esac
+
+  if [ -e "$dest" ] && [ ! -f "$dest" ]; then
+    printf '[MANUAL] 目标路径已存在且不是文件，请手动处理：%s\n' "$dest"
+    SKIPPED=$((SKIPPED + 1))
+    return 0
+  fi
+
   if [ -f "$dest" ]; then
-    if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] 覆盖写入：%s\n' "$dest"
-      cp "$src" "$dest"
-      printf '[COPIED] %s\n' "$label"
-      FORCED=$((FORCED + 1))
-    else
+    if [ "$FORCE" -ne 1 ]; then
       printf '[MANUAL] 文件已存在，请手动处理：%s\n' "$dest"
       SKIPPED=$((SKIPPED + 1))
+      return 0
     fi
-  else
+    backup_file "$rel"
     cp "$src" "$dest"
-    printf '[COPIED] %s\n' "$label"
-    COPIED=$((COPIED + 1))
+    printf '[COPIED] %s\n' "$rel"
+    FORCED=$((FORCED + 1))
+    return 0
   fi
+
+  mkdir -p "$(dirname "$dest")"
+  cp "$src" "$dest"
+  printf '[COPIED] %s\n' "$rel"
+  COPIED=$((COPIED + 1))
 }
 
-# Helper: copy a directory
-copy_dir() {
-  src="$1"; dest="$2"; label="$3"
-  if [ -d "$dest" ]; then
-    if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] 删除并重新复制：%s\n' "$dest"
-      rm -rf "$dest"
-      cp -r "$src" "$dest"
-      printf '[COPIED] %s\n' "$label"
-      FORCED=$((FORCED + 1))
-    else
-      printf '[MANUAL] 目录已存在，请手动处理：%s\n' "$dest"
-      SKIPPED=$((SKIPPED + 1))
+# Relative paths of every file the bundle provides.
+BUNDLE_FILES="$(
+  cd "$PKG_DIR"
+  for entry in .claude .mcp.json CLAUDE.md; do
+    if [ -e "$entry" ]; then
+      find "$entry" -type f
     fi
-  else
-    cp -r "$src" "$dest"
-    printf '[COPIED] %s\n' "$label"
-    COPIED=$((COPIED + 1))
-  fi
-}
+  done
+)"
 
-# Copy .claude/
-if [ -d "$PKG_DIR/.claude" ]; then
-  copy_dir "$PKG_DIR/.claude" "$TARGET/.claude" ".claude/"
+if [ -n "$BUNDLE_FILES" ]; then
+  while IFS= read -r rel; do
+    install_file "$rel"
+  done <<EOF
+$BUNDLE_FILES
+EOF
 fi
 
-# Copy .mcp.json
-if [ -f "$PKG_DIR/.mcp.json" ]; then
-  copy_file "$PKG_DIR/.mcp.json" "$TARGET/.mcp.json" ".mcp.json"
-fi
-
-# Copy CLAUDE.md
-if [ -f "$PKG_DIR/CLAUDE.md" ]; then
-  copy_file "$PKG_DIR/CLAUDE.md" "$TARGET/CLAUDE.md" "CLAUDE.md"
-fi
-
-printf '\nDone. copied=%d  forced=%d  manual=%d\n' "$COPIED" "$FORCED" "$SKIPPED"
+printf '\nDone. copied=%d  forced=%d  manual=%d  empty=%d  invalid=%d\n' "$COPIED" "$FORCED" "$SKIPPED" "$EMPTY" "$INVALID"
 if [ "$SKIPPED" -gt 0 ]; then
-  printf '标记为 [MANUAL] 的项目已跳过。请删除或重命名后重新运行；或使用 -F 强制覆盖。\n'
+  printf '标记为 [MANUAL] 的文件已跳过。请删除或重命名后重新运行；或使用 -F 强制覆盖（会先备份）。\n'
+fi
+if [ -n "$BACKUP_DIR" ]; then
+  printf '被覆盖的文件已备份到：%s\n' "$BACKUP_DIR"
+fi
+if [ "$((COPIED + FORCED + SKIPPED))" -eq 0 ]; then
+  printf '此启动包尚无可安装的内容：%s\n' "$PKG_DIR"
 fi

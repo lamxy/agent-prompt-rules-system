@@ -17,15 +17,15 @@ usage() {
     '' \
     '  -s  场景名，用于解析 ./settings/ 下的默认源模板。' \
     '      解析规则：' \
-    '      user 不带 -s    -> settings/settings.user.json' \
-    '      user 带 -s foo  -> settings/settings.user-foo.json' \
-    '      project 带 -s foo-> settings/settings.project-foo.json' \
-    '      local 带 -s foo  -> settings/settings.local-foo.json' \
+    '      user 不带 -s     -> settings/settings.user.json（user 级只有这一份）' \
+    '      project 带 -s foo -> settings/settings.project-foo.json' \
+    '      local 带 -s foo   -> settings/settings.local-foo.json' \
+    '      找不到模板时会列出可用的场景名。' \
     '' \
     '  -m  目标配置已存在时的操作模式：' \
     '      overwrite  备份后替换目标文件' \
     '      merge      将 enabledPlugins 和 extraKnownMarketplaces 合并到目标' \
-    '      ask        询问是否覆盖、合并或跳过' \
+    '      ask        从终端询问是否覆盖、合并或跳过（非交互环境会报错退出）' \
     '' \
     '  -p, --dst  精确目标目录。' \
     '             用户级默认 ~/.claude。' \
@@ -34,7 +34,9 @@ usage() {
     '  -h, --help  显示此帮助信息' \
     '' \
     '注意：' \
-    '  - merge 仅影响 enabledPlugins 和 extraKnownMarketplaces。' \
+    '  - merge 仅影响 enabledPlugins 和 extraKnownMarketplaces；源文件中的其他字段' \
+    '    （如 permissions、hooks、sandbox）不会写入，脚本会以 [WARN] 列出。' \
+    '    安装完整的用户级设定请用 overwrite。' \
     '  - 源文件名必须与所选作用域匹配。' \
     '  - 覆盖或合并写入前，会自动备份已有目标文件。'
 }
@@ -150,9 +152,43 @@ result["extraKnownMarketplaces"] = dict(target_marketplaces)
 result["extraKnownMarketplaces"].update(source_marketplaces)
 
 with open(output_path, "w", encoding="utf-8") as output_handle:
-    json.dump(result, output_handle, ensure_ascii=True, indent=2)
+    json.dump(result, output_handle, ensure_ascii=False, indent=4)
     output_handle.write("\n")
+
+# Report source keys that merge does not carry over, so the caller can warn.
+merged_keys = {"$schema", "enabledPlugins", "extraKnownMarketplaces"}
+print(", ".join(key for key in source if key not in merged_keys))
 ' "$source_file" "$target_file" "$output_file"
+}
+
+list_scenarios() {
+  level="$1"
+
+  for scenario_file in "$DEFAULT_SETTINGS_DIR"/settings."$level"-*.json; do
+    [ -f "$scenario_file" ] || continue
+    scenario_name="${scenario_file##*/settings.$level-}"
+    printf '  %s\n' "${scenario_name%.json}"
+  done
+}
+
+fail_with_scenarios() {
+  printf 'Error: %s\n' "$1" >&2
+  printf '%s 级可用的 -s 场景：\n' "$LEVEL" >&2
+  list_scenarios "$LEVEL" >&2
+  exit 1
+}
+
+unique_path() {
+  base_path="$1"
+  candidate_path="$base_path"
+  counter=1
+
+  while [ -e "$candidate_path" ]; do
+    candidate_path="${base_path}.${counter}"
+    counter=$((counter + 1))
+  done
+
+  printf '%s\n' "$candidate_path"
 }
 
 validate_source_name_matches_level() {
@@ -179,6 +215,14 @@ prompt_existing_file_action() {
   target_file="$1"
   allow_merge="$2"
 
+  # Read answers from the terminal, not stdin, so a redirected or closed stdin
+  # fails loudly instead of exiting silently. Tests point this at a file.
+  prompt_input="${INSTALL_SETTINGS_TTY:-/dev/tty}"
+  if ! { : < "$prompt_input"; } 2>/dev/null; then
+    printf '无法从终端读取输入（%s）。非交互环境请改用 -m overwrite 或 -m merge。\n' "$prompt_input" >&2
+    return 1
+  fi
+
   while true; do
     printf '目标文件已存在：%s\n' "$target_file" >&2
     if [ "$allow_merge" = "yes" ]; then
@@ -187,7 +231,10 @@ prompt_existing_file_action() {
       printf '选择操作：[o] 覆盖  [s] 跳过：' >&2
     fi
 
-    IFS= read -r answer
+    if ! IFS= read -r answer; then
+      printf '\n未读取到输入，已取消。\n' >&2
+      return 1
+    fi
     case "$answer" in
       o|O|overwrite|OVERWRITE)
         printf 'overwrite\n'
@@ -212,13 +259,14 @@ prompt_existing_file_action() {
         fi
         ;;
     esac
-  done
+  done < "$prompt_input"
 }
 
 backup_target_file() {
   target_file="$1"
   timestamp="$(date +%Y%m%d-%H%M%S)"
-  backup_path="${target_file}.bak.${timestamp}"
+  # Two runs within the same second must not overwrite the earlier backup.
+  backup_path="$(unique_path "${target_file}.bak.${timestamp}")"
   cp "$target_file" "$backup_path"
   printf '[BACKUP] %s\n' "$backup_path"
 }
@@ -296,7 +344,7 @@ case "$LEVEL" in
   user|project|local)
     ;;
   *)
-    fail "无效的作用域：$LEVEL。请使用 user、project 或 local。"
+    fail "无效的作用域：${LEVEL}。请使用 user、project 或 local。"
     ;;
 esac
 
@@ -304,7 +352,7 @@ case "$MODE" in
   overwrite|merge|ask)
     ;;
   *)
-    fail "无效的模式：$MODE。请使用 overwrite、merge 或 ask。"
+    fail "无效的模式：${MODE}。请使用 overwrite、merge 或 ask。"
     ;;
 esac
 
@@ -333,17 +381,22 @@ else
       fi
       ;;
     project)
-      [ -n "$SCENARIO" ] || fail "未提供 --src 时，project 级必须指定 -s。"
+      [ -n "$SCENARIO" ] || fail_with_scenarios "未提供 --src 时，project 级必须指定 -s。"
       RESOLVED_SOURCE_PATH="$DEFAULT_SETTINGS_DIR/settings.project-$SCENARIO.json"
       ;;
     local)
-      [ -n "$SCENARIO" ] || fail "未提供 --src 时，local 级必须指定 -s。"
+      [ -n "$SCENARIO" ] || fail_with_scenarios "未提供 --src 时，local 级必须指定 -s。"
       RESOLVED_SOURCE_PATH="$DEFAULT_SETTINGS_DIR/settings.local-$SCENARIO.json"
       ;;
   esac
 fi
 
-[ -f "$RESOLVED_SOURCE_PATH" ] || fail "源配置文件不存在：$RESOLVED_SOURCE_PATH"
+if [ ! -f "$RESOLVED_SOURCE_PATH" ]; then
+  if [ -n "$SOURCE_PATH" ] || [ -z "$SCENARIO" ]; then
+    fail "源配置文件不存在：$RESOLVED_SOURCE_PATH"
+  fi
+  fail_with_scenarios "源配置文件不存在：$RESOLVED_SOURCE_PATH"
+fi
 
 SOURCE_BASENAME="$(basename "$RESOLVED_SOURCE_PATH")"
 validate_source_name_matches_level "$SOURCE_BASENAME" "$LEVEL" || fail "源配置文件与作用域 $LEVEL 不匹配：$SOURCE_BASENAME"
@@ -391,10 +444,10 @@ fi
 CURRENT_MODE="$MODE"
 if [ "$MODE" = "ask" ]; then
   if [ "$TARGET_JSON_VALID" = "yes" ]; then
-    CURRENT_MODE="$(prompt_existing_file_action "$TARGET_FILE" "yes")"
+    CURRENT_MODE="$(prompt_existing_file_action "$TARGET_FILE" "yes")" || exit 1
   else
     printf '目标配置文件不是合法 JSON，合并不可用：%s\n' "$TARGET_FILE" >&2
-    CURRENT_MODE="$(prompt_existing_file_action "$TARGET_FILE" "no")"
+    CURRENT_MODE="$(prompt_existing_file_action "$TARGET_FILE" "no")" || exit 1
   fi
 fi
 
@@ -408,12 +461,16 @@ case "$CURRENT_MODE" in
     [ "$TARGET_JSON_VALID" = "yes" ] || fail "目标配置文件不是合法 JSON，无法合并：$TARGET_FILE"
     TMP_MERGED_FILE="$(create_temp_file "$RESOLVED_TARGET_DIR")"
     trap 'rm -f "$TMP_MERGED_FILE"' EXIT HUP INT TERM
-    merge_json_files "$RESOLVED_SOURCE_PATH" "$TARGET_FILE" "$TMP_MERGED_FILE" || fail "settings JSON 合并失败"
+    IGNORED_KEYS="$(merge_json_files "$RESOLVED_SOURCE_PATH" "$TARGET_FILE" "$TMP_MERGED_FILE")" || fail "settings JSON 合并失败"
     backup_target_file "$TARGET_FILE"
     cp "$TMP_MERGED_FILE" "$TARGET_FILE"
     rm -f "$TMP_MERGED_FILE"
     trap - EXIT HUP INT TERM
     printf '[MERGE] %s\n' "$TARGET_FILE"
+    if [ -n "$IGNORED_KEYS" ]; then
+      printf '[WARN] merge 只合并 enabledPlugins 和 extraKnownMarketplaces，以下源字段未写入：%s\n' "$IGNORED_KEYS" >&2
+      printf '[WARN] 需要这些字段时请改用 -m overwrite（会先备份），或手动合并。\n' >&2
+    fi
     ;;
   skip)
     printf '[SKIP] %s\n' "$TARGET_FILE"

@@ -21,7 +21,7 @@
 
 | 参数 | 默认 | 说明 |
 |------|------|------|
-| `--target=` | `auto` | 目标 Agent：`auto`、`claude`、`codex`、`cursor` 等，逗号分隔多个 |
+| `--target=` | `auto` | 目标 Agent：`auto`、`claude`、`codex`、`cursor` 等，逗号分隔多个；项目级 `auto` 按本机已安装的 claude / codex 解析，其他 Agent 需显式指定 |
 | `--location=` | `local` | 配置范围：`local`（当前项目）或 `global`（所有项目） |
 
 ## 范围说明

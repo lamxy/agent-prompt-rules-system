@@ -13,7 +13,7 @@ usage() {
   -f  Agent 包标识符（如 frontend-dev → agents-frontend-dev/）
   -t  目标 agents 目录（如 /path/to/project/.claude/agents）
   -s  源 agents 根目录（默认：<repo>/agents）
-  -F  强制覆盖：删除同名 .md 文件后重新复制
+  -F  强制覆盖：先把同名 .md 文件移到 <target>.backup-<时间戳>/，再重新复制
   -h  显示此帮助信息
 
 示例：
@@ -60,6 +60,24 @@ if [ ! -d "$TARGET" ]; then
   exit 1
 fi
 
+TARGET="${TARGET%/}"
+BACKUP_DIR=""
+
+# Backups live next to the target, not inside it, so Claude Code does not load
+# the old copies as agents.
+ensure_backup_dir() {
+  [ -z "$BACKUP_DIR" ] || return 0
+
+  base_path="${TARGET}.backup-$(date +%Y%m%d-%H%M%S)"
+  BACKUP_DIR="$base_path"
+  counter=1
+  while [ -e "$BACKUP_DIR" ]; do
+    BACKUP_DIR="${base_path}.${counter}"
+    counter=$((counter + 1))
+  done
+  mkdir -p "$BACKUP_DIR"
+}
+
 COPIED=0
 SKIPPED=0
 FORCED=0
@@ -73,8 +91,9 @@ for src_file in "$PKG_DIR"/*.md; do
 
   if [ -f "$dest" ]; then
     if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] 删除已有文件：%s\n' "$dest"
-      rm -f "$dest"
+      ensure_backup_dir
+      mv "$dest" "$BACKUP_DIR/$file_name"
+      printf '[BACKUP] %s -> %s\n' "$dest" "$BACKUP_DIR/$file_name"
       cp "$src_file" "$dest"
       printf '[COPIED] %s\n' "$file_name"
       FORCED=$((FORCED + 1))
@@ -91,5 +110,8 @@ done
 
 printf '\nDone. copied=%d  forced=%d  manual=%d\n' "$COPIED" "$FORCED" "$SKIPPED"
 if [ "$SKIPPED" -gt 0 ]; then
-  printf '标记为 [MANUAL] 的文件已跳过。请在目标目录中删除或重命名后重新运行；或使用 -F 强制覆盖。\n'
+  printf '标记为 [MANUAL] 的文件已跳过。请在目标目录中删除或重命名后重新运行；或使用 -F 强制覆盖（旧文件会先备份）。\n'
+fi
+if [ -n "$BACKUP_DIR" ]; then
+  printf '被覆盖的 Agent 文件已备份到：%s\n' "$BACKUP_DIR"
 fi

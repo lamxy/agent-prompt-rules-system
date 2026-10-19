@@ -11,10 +11,13 @@ usage() {
 
 选项：
   -f  Skill 包标识符（如 frontend-dev → skills-frontend-dev/）
-  -t  目标 skills 目录（如 /path/to/project/.claude/skills）
+  -t  目标 skills 目录（如 /path/to/project/.claude/skills），不存在时自动创建
   -s  源 skills 根目录（默认：<repo>/skills）
-  -F  强制覆盖：删除同名 skill 目录后重新复制
+  -F  强制覆盖：先把同名 skill 目录移到 <target>.backup-<时间戳>/，再重新复制
   -h  显示此帮助信息
+
+说明：
+  只安装包内含 SKILL.md 的子目录；包内的 README.md、.gitkeep 等文件不会被安装。
 
 示例：
   sh scripts/install-skill-pkg.sh -f frontend-dev -t ~/.claude/skills
@@ -55,27 +58,59 @@ if [ ! -d "$PKG_DIR" ]; then
   exit 1
 fi
 
-if [ ! -d "$TARGET" ]; then
-  printf '错误：目标目录不存在：%s\n' "$TARGET" >&2
+if [ -e "$TARGET" ] && [ ! -d "$TARGET" ]; then
+  printf '错误：目标路径不是目录：%s\n' "$TARGET" >&2
   exit 1
 fi
+
+if [ ! -d "$TARGET" ]; then
+  mkdir -p "$TARGET"
+  printf '[MKDIR] %s\n' "$TARGET"
+fi
+
+TARGET="${TARGET%/}"
+BACKUP_DIR=""
+
+# Backups live next to the target, not inside it, so Claude Code does not load
+# the old copies as skills.
+ensure_backup_dir() {
+  [ -z "$BACKUP_DIR" ] || return 0
+
+  base_path="${TARGET}.backup-$(date +%Y%m%d-%H%M%S)"
+  BACKUP_DIR="$base_path"
+  counter=1
+  while [ -e "$BACKUP_DIR" ]; do
+    BACKUP_DIR="${base_path}.${counter}"
+    counter=$((counter + 1))
+  done
+  mkdir -p "$BACKUP_DIR"
+}
 
 COPIED=0
 SKIPPED=0
 FORCED=0
+INVALID=0
 
 for skill_dir in "$PKG_DIR"/*/; do
   # Skip if no subdirs exist
   [ -d "$skill_dir" ] || continue
 
+  skill_dir="${skill_dir%/}"
   skill_name="$(basename "$skill_dir")"
   dest="$TARGET/$skill_name"
 
-  if [ -d "$dest" ]; then
+  if [ ! -f "$skill_dir/SKILL.md" ]; then
+    printf '[WARN] 缺少 SKILL.md，已跳过：%s\n' "$skill_dir"
+    INVALID=$((INVALID + 1))
+    continue
+  fi
+
+  if [ -e "$dest" ]; then
     if [ "$FORCE" -eq 1 ]; then
-      printf '[FORCE] 删除已有目录：%s\n' "$dest"
-      rm -rf "$dest"
-      cp -r "$skill_dir" "$dest"
+      ensure_backup_dir
+      mv "$dest" "$BACKUP_DIR/$skill_name"
+      printf '[BACKUP] %s -> %s\n' "$dest" "$BACKUP_DIR/$skill_name"
+      cp -R "$skill_dir" "$dest"
       printf '[COPIED] %s\n' "$skill_name"
       FORCED=$((FORCED + 1))
     else
@@ -83,13 +118,19 @@ for skill_dir in "$PKG_DIR"/*/; do
       SKIPPED=$((SKIPPED + 1))
     fi
   else
-    cp -r "$skill_dir" "$dest"
+    cp -R "$skill_dir" "$dest"
     printf '[COPIED] %s\n' "$skill_name"
     COPIED=$((COPIED + 1))
   fi
 done
 
-printf '\nDone. copied=%d  forced=%d  manual=%d\n' "$COPIED" "$FORCED" "$SKIPPED"
+printf '\nDone. copied=%d  forced=%d  manual=%d  invalid=%d\n' "$COPIED" "$FORCED" "$SKIPPED" "$INVALID"
+if [ $((COPIED + FORCED + SKIPPED + INVALID)) -eq 0 ]; then
+  printf '此包尚无 skill（只有占位文件）：%s\n' "$PKG_DIR"
+fi
 if [ "$SKIPPED" -gt 0 ]; then
-  printf '标记为 [MANUAL] 的 Skill 已跳过。请在目标目录中删除或重命名后重新运行；或使用 -F 强制覆盖。\n'
+  printf '标记为 [MANUAL] 的 Skill 已跳过。请在目标目录中删除或重命名后重新运行；或使用 -F 强制覆盖（旧目录会先备份）。\n'
+fi
+if [ -n "$BACKUP_DIR" ]; then
+  printf '被覆盖的 Skill 已备份到：%s\n' "$BACKUP_DIR"
 fi

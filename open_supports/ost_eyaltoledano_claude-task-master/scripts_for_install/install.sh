@@ -206,7 +206,7 @@ install_cli() {
     printf '%s\n' "-> 安装 / 更新全局 $PACKAGE_NAME..."
     npm install -g "$PACKAGE_NAME@latest"
   else
-    printf '%s\n' "-> 在项目目录安装 / 更新 $PACKAGE_NAME：$PROJECT_DIR"
+    printf '%s\n' "-> 在项目目录安装 / 更新 ${PACKAGE_NAME}：$PROJECT_DIR"
     (cd "$PROJECT_DIR" && npm install "$PACKAGE_NAME@latest")
   fi
 }
@@ -244,7 +244,7 @@ configure_claude_mcp() {
   require_command "claude" "配置 Claude Code MCP 前，请先安装并登录 Claude Code CLI。"
 
   warn_legacy_claude_mcp
-  printf '%s\n' "-> 配置 Claude Code MCP server（scope=$MCP_SCOPE）..."
+  printf '%s\n' "-> 配置 Claude Code MCP server（scope=${MCP_SCOPE}）..."
   if [ "$MCP_SCOPE" = "project" ]; then
     (cd "$PROJECT_DIR" && add_claude_mcp)
   else
