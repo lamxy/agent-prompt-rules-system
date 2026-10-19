@@ -8,6 +8,12 @@ sh scripts_for_install/install.sh --client=opencode --local /path/to/project
 
 # 用户级 skills-only 复制
 sh scripts_for_install/install.sh --client=opencode --global
+
+# Claude Code 项目级插件：以 --scope project 写入 /path/to/project/.claude/settings.json
+sh scripts_for_install/install.sh --client=claude-code --location=local --plugins=pm-product-discovery,pm-execution /path/to/project
+
+# Claude Code 用户级插件（默认，与官方命令一致）
+sh scripts_for_install/install.sh --client=claude-code --plugins=pm-execution
 ```
 
 > 来源：官方 README / 文档；本文件只保留 open_supports 使用者最常见的入口。

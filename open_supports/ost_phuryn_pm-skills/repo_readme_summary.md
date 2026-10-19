@@ -1,6 +1,6 @@
 # PM Skills Marketplace — 仓库核心介绍
 
-> **安装作用域（模式 D / 本地为 B）**：Claude/Codex marketplace 是用户级路径；Gemini、OpenCode、Cursor、Kiro 的本地 skills 目录相对 CWD。支持包本地复制必须传 `TARGET_DIR`，并在子 Shell 中切换目录：`sh scripts_for_install/install.sh --client=opencode --local /path/to/project`；全局复制使用 `--global`。依据：[官方 README](https://github.com/phuryn/pm-skills#other-ai-assistants-skills-only)。
+> **安装作用域（模式 D / 本地为 B）**：Claude/Codex marketplace 默认是用户级路径；Claude Code 另可显式加 `--location=local`，脚本在子 Shell 中进入 `TARGET_DIR` 并以 `claude plugin marketplace add/install --scope project` 写入该项目的 `.claude/settings.json`：`sh scripts_for_install/install.sh --client=claude-code --location=local --plugins=pm-execution /path/to/project`（依据：本机 `claude plugin install --help` 的 `--scope user|project|local`，默认 `user`）。Gemini、OpenCode、Cursor、Kiro 的本地 skills 目录相对 CWD。支持包本地复制必须传 `TARGET_DIR`，并在子 Shell 中切换目录：`sh scripts_for_install/install.sh --client=opencode --local /path/to/project`；全局复制使用 `--global`。依据：[官方 README](https://github.com/phuryn/pm-skills#other-ai-assistants-skills-only)。
 
 > 官方仓库：[phuryn/pm-skills](https://github.com/phuryn/pm-skills)
 

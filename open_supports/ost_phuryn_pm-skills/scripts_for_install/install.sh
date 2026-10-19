@@ -8,7 +8,7 @@
 #
 # 选项：
 #   --client=codex        使用 Codex CLI 插件命令安装（默认）
-#   --client=claude-code  使用 Claude Code 插件命令安装
+#   --client=claude-code  使用 Claude Code 插件命令安装（默认用户级，与官方一致）
 #   --client=cowork       输出 Claude Cowork 图形界面安装步骤
 #   --client=gemini       将 skills 复制到 Gemini CLI skills 目录
 #   --client=opencode     将 skills 复制到 OpenCode skills 目录
@@ -16,9 +16,10 @@
 #   --client=kiro         将 skills 复制到 Kiro skills 目录
 #   --plugins=all         安装/复制全部 PM 插件（默认）
 #   --plugins=a,b,c       安装/复制指定插件名
-#   --location=local      复制客户端使用项目级 skills 目录（默认）
-#   --location=global     复制客户端使用用户级 skills 目录
-#   --project-dir=PATH    本地复制客户端的项目根目录（默认：.）
+#   --location=local      复制客户端：项目级 skills 目录（默认）；
+#                         claude-code：显式指定时以 --scope project 安装到项目
+#   --location=global     复制客户端：用户级 skills 目录；claude-code：用户级（默认）
+#   --project-dir=PATH    项目级安装的项目根目录（默认：.）
 #   TARGET_DIR            --project-dir 的位置参数别名
 #   --repo-dir=PATH       复制客户端使用的既有 phuryn/pm-skills 检出目录
 #   --verify-only         不安装，只运行验证检查
@@ -27,9 +28,12 @@
 # 示例：
 #   ./install.sh --client=codex
 #   ./install.sh --client=claude-code --plugins=pm-toolkit,pm-execution
+#   ./install.sh --client=claude-code --location=local --plugins=pm-execution /path/to/project
 #   ./install.sh --client=opencode --location=local --repo-dir=/path/to/pm-skills
 # =============================================================================
-# 安装模式：双模。marketplace 命令为用户/全局级；本地复制客户端从 CWD 推导目标，并在 TARGET_DIR 内运行。
+# 安装模式：双模。marketplace 命令默认为用户/全局级；claude-code 加 --location=local 时，
+# 在 TARGET_DIR 的子 Shell 中以 --scope project 安装，写入该项目的 .claude/settings.json。
+# 本地复制客户端从 CWD 推导目标，并在 TARGET_DIR 内运行。
 
 set -eu
 
@@ -41,6 +45,7 @@ DEFAULT_PLUGINS="pm-toolkit pm-product-strategy pm-product-discovery pm-market-r
 CLIENT="codex"
 PLUGINS="all"
 LOCATION="local"
+LOCATION_SET="no"
 REPO_DIR=""
 VERIFY_ONLY="no"
 TMP_DIR=""
@@ -51,8 +56,8 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --client=*) CLIENT="${1#--client=}" ;;
     --plugins=*) PLUGINS="${1#--plugins=}" ;;
-    --location=local|--local) LOCATION="local" ;;
-    --location=global|--global) LOCATION="global" ;;
+    --location=local|--local) LOCATION="local"; LOCATION_SET="yes" ;;
+    --location=global|--global) LOCATION="global"; LOCATION_SET="yes" ;;
     --project-dir=*) PROJECT_DIR="${1#--project-dir=}"; PROJECT_DIR_SET="yes" ;;
     --repo-dir=*) REPO_DIR="${1#--repo-dir=}" ;;
     --verify-only) VERIFY_ONLY="yes" ;;
@@ -210,6 +215,55 @@ verify_skills_client() {
   return 1
 }
 
+# claude-code is user scope unless --location=local was given explicitly.
+claude_scope() {
+  if [ "$LOCATION_SET" = "yes" ] && [ "$LOCATION" = "local" ]; then
+    printf 'project\n'
+  else
+    printf 'user\n'
+  fi
+}
+
+# Project scope is checked in the project's settings file, so a user-level
+# install of the same plugin is not mistaken for a project-level one.
+project_plugin_enabled() {
+  grep -F "\"$1@$MARKETPLACE\": true" .claude/settings.json >/dev/null 2>&1
+}
+
+install_claude_code_project() {
+  printf 'Adding Claude marketplace %s to project scope...\n' "$REPO"
+  if claude plugin marketplace add "$REPO" --scope project; then
+    printf 'Marketplace add completed.\n'
+  else
+    printf 'Marketplace add returned non-zero; continuing because it may already exist.\n'
+  fi
+
+  for plugin in $(plugin_names); do
+    printf 'Installing Claude plugin to project scope: %s\n' "$plugin"
+    if ! claude plugin install "$plugin@$MARKETPLACE" --scope project; then
+      if project_plugin_enabled "$plugin"; then
+        printf 'Plugin already enabled in project settings: %s\n' "$plugin"
+      else
+        printf 'Error: failed to install Claude plugin: %s\n' "$plugin" >&2
+        exit 1
+      fi
+    fi
+  done
+}
+
+verify_claude_code_project() {
+  failed=0
+  for plugin in $(plugin_names); do
+    if project_plugin_enabled "$plugin"; then
+      printf 'Verified project plugin: %s\n' "$plugin"
+    else
+      printf 'Verification failed: %s is not enabled in %s/.claude/settings.json\n' "$plugin" "$PROJECT_DIR" >&2
+      failed=1
+    fi
+  done
+  return "$failed"
+}
+
 install_claude_code() {
   require_cmd claude
 
@@ -331,6 +385,13 @@ print_summary() {
   printf '  plugins: %s\n' "$PLUGINS"
   case "$CLIENT" in
     gemini|opencode|cursor|kiro) printf '  location: %s\n' "$(target_dir_for_client)" ;;
+    claude-code)
+      if [ "$(claude_scope)" = "project" ]; then
+        printf '  scope: project (%s/.claude/settings.json)\n' "$PROJECT_DIR"
+      else
+        printf '  scope: user (~/.claude)\n'
+      fi
+      ;;
     *) ;;
   esac
 }
@@ -345,16 +406,36 @@ main() {
       ;;
   esac
 
+  if [ "$CLIENT" = "claude-code" ]; then
+    if [ "$(claude_scope)" = "project" ]; then
+      normalize_project_dir
+    elif [ "$PROJECT_DIR_SET" = "yes" ]; then
+      printf '错误：claude-code 默认为用户级安装，不接受项目目录；项目级安装请加 --location=local\n' >&2
+      exit 1
+    fi
+  fi
+
   printf 'Platform: %s\n' "$PLATFORM"
   print_summary
   printf '\n'
 
   case "$CLIENT" in
     claude-code)
-      if [ "$VERIFY_ONLY" = "no" ]; then
-        install_claude_code
+      if [ "$(claude_scope)" = "project" ]; then
+        (
+          cd "$PROJECT_DIR" || exit 1
+          require_cmd claude
+          if [ "$VERIFY_ONLY" = "no" ]; then
+            install_claude_code_project
+          fi
+          verify_claude_code_project
+        )
+      else
+        if [ "$VERIFY_ONLY" = "no" ]; then
+          install_claude_code
+        fi
+        verify_claude_code
       fi
-      verify_claude_code
       ;;
     codex)
       if [ "$VERIFY_ONLY" = "no" ]; then

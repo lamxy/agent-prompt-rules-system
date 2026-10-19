@@ -7,7 +7,10 @@
 #   OwnerName/RepoName
 #   ost_OwnerName_RepoName
 #
+# {PROJECT_DIR} in args is replaced with the absolute project path. Install
+# scripts run inside the vendored package, so project-level installs need it.
+#
 # Examples:
-# colbymchenry/codegraph --target=claude --location=local
-# open-gsd/gsd-core --claude --local
+# colbymchenry/codegraph --target=claude --location=local {PROJECT_DIR}
+# open-gsd/gsd-core --claude --local {PROJECT_DIR}
 # ost_garrytan_gstack

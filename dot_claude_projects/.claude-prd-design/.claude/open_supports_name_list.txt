@@ -1,0 +1,16 @@
+# open_supports_name_list.txt — PRD 与原型设计（prd-design）
+#
+# 格式：每行 <支持包名称> [安装参数...]；只支持整行注释。
+# {PROJECT_DIR} 会被替换为目标项目的绝对路径（安装脚本在支持包目录中运行，项目级安装必须带上）。
+# 安装：sh scripts/install-open-supports.sh -t /path/to/project
+#
+# 全局工具（task-master、mattpocock-skills、cognee、gstack）不在此清单，
+# 安装方式见 open_supports/INDEX.md「全局工具」。
+
+# PM Skills（ost_phuryn_pm-skills）：以 --scope project 安装为本项目的 Claude Code 插件，
+# 写入项目 .claude/settings.json，不影响其他项目。默认只装 PRD 场景常用的 5 个插件；
+# 需要 GTM、增长等其他插件时，在 --plugins 中追加（pm-go-to-market、pm-marketing-growth、
+# pm-toolkit、pm-ai-shipping）。
+phuryn/pm-skills --client=claude-code --location=local --plugins=pm-product-discovery,pm-product-strategy,pm-execution,pm-market-research,pm-data-analytics {PROJECT_DIR}
+
+# gstack 已全局安装，其中的产品类命令（/office-hours、/plan-ceo-review）可直接使用。

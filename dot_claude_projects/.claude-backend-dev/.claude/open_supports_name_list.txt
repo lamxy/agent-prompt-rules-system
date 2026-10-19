@@ -1,0 +1,15 @@
+# open_supports_name_list.txt — 后端开发（backend-dev）
+#
+# 格式：每行 <支持包名称> [安装参数...]；只支持整行注释。
+# {PROJECT_DIR} 会被替换为目标项目的绝对路径（安装脚本在支持包目录中运行，项目级安装必须带上）。
+# 安装：sh scripts/install-open-supports.sh -t /path/to/project
+#
+# 全局工具（task-master、mattpocock-skills、cognee、gstack）不在此清单，
+# 安装方式见 open_supports/INDEX.md「全局工具」。
+
+# 代码知识图谱：项目级 MCP，前后端都需要；安装后在项目中执行 codegraph init 建立索引。
+colbymchenry/codegraph --target=claude --location=local {PROJECT_DIR}
+
+# 可选的规格／工作流框架：同一项目最多启用一个，取消注释后再安装。
+# Fission-AI/OpenSpec --init-project --tools=claude {PROJECT_DIR}
+# open-gsd/gsd-core --claude --local {PROJECT_DIR}

@@ -27,7 +27,7 @@
 | Parameter | Default | Notes |
 |-----------|---------|-------|
 | `--client=codex` | `codex` | Use Codex CLI plugin commands. |
-| `--client=claude-code` | | Use Claude Code plugin commands. |
+| `--client=claude-code` | | Use Claude Code plugin commands; user scope by default. |
 | `--client=cowork` | | Print Claude Cowork GUI setup steps. |
 | `--client=gemini` | | Copy skills to Gemini CLI skills directory. |
 | `--client=opencode` | | Copy skills to OpenCode skills directory. |
@@ -35,7 +35,7 @@
 | `--client=kiro` | | Copy skills to Kiro skills directory. |
 | `--plugins=all` | `all` | Install or copy all nine PM plugins. |
 | `--plugins=a,b,c` | | Install or copy selected PM plugin names. |
-| `--location=local` | `local` | Project-level skills directory for skills-only clients. |
+| `--location=local` | `local` | Project-level skills directory for skills-only clients; for `claude-code`, an explicit `--location=local` installs with `--scope project` into the given project. |
 | `--location=global` | | User-level skills directory for skills-only clients. |
 | `--repo-dir=PATH` | | Existing `phuryn/pm-skills` checkout for skills-only copy mode. |
 | `--verify-only` | | Run verification without installing or copying. |

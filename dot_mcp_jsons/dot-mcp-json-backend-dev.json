@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "mysql": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@toolbox-sdk/server",
+        "--prebuilt=mysql",
+        "--stdio"
+      ],
+      "env": {
+        "MYSQL_HOST": "${MYSQL_HOST:-127.0.0.1}",
+        "MYSQL_PORT": "${MYSQL_PORT:-3306}",
+        "MYSQL_DATABASE": "${MYSQL_DATABASE}",
+        "MYSQL_USER": "${MYSQL_USER}",
+        "MYSQL_PASSWORD": "${MYSQL_PASSWORD}"
+      }
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@toolbox-sdk/server",
+        "--prebuilt=postgres",
+        "--stdio"
+      ],
+      "env": {
+        "POSTGRES_HOST": "${POSTGRES_HOST:-127.0.0.1}",
+        "POSTGRES_PORT": "${POSTGRES_PORT:-5432}",
+        "POSTGRES_DATABASE": "${POSTGRES_DATABASE}",
+        "POSTGRES_USER": "${POSTGRES_USER}",
+        "POSTGRES_PASSWORD": "${POSTGRES_PASSWORD}"
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+# kubernetes-mcp-server 只读配置
+# 复制到 ~/.config/kubernetes-mcp-server.toml；dot-mcp-json-dev-ops.json 通过 --config 读取它。
+# 新版不再接受 --read-only 命令行参数，只读模式必须写在配置文件中。
+
+read_only = true
+
+# 禁止读取 Secret，避免凭据进入对话上下文。
+[[denied_resources]]
+group = ""
+version = "v1"
+kind = "Secret"

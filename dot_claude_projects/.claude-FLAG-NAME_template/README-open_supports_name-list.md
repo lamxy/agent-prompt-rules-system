@@ -29,6 +29,8 @@ sh scripts/install-open-supports.sh -t /path/to/project
 
 支持名称后的参数将传递给该包内包含的 `scripts_for_install/install.*` 脚本。
 
+参数中的 `{PROJECT_DIR}` 会被替换为目标项目的绝对路径。安装脚本在 vendor 后的支持包目录中运行，默认目标 `.` 指向支持包目录而不是项目，所以项目级安装必须带上 `{PROJECT_DIR}`。
+
 版本 1 不支持行内注释，也不支持包含空格的参数值。
 请改用整行注释。
 
@@ -36,10 +38,10 @@ sh scripts/install-open-supports.sh -t /path/to/project
 
 ```text
 # 在项目范围内为 Claude Code 安装 CodeGraph。
-colbymchenry/codegraph --target=claude --location=local
+colbymchenry/codegraph --target=claude --location=local {PROJECT_DIR}
 
 # 在项目范围内为 Claude Code 安装 GSD Core。
-open-gsd/gsd-core --claude --local
+open-gsd/gsd-core --claude --local {PROJECT_DIR}
 
 # 内部的 ost_* 名称同样有效。
 ost_garrytan_gstack

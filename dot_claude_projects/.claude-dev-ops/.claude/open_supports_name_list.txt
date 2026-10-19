@@ -1,0 +1,10 @@
+# open_supports_name_list.txt — DevOps（dev-ops）
+#
+# 格式：每行 <支持包名称> [安装参数...]；只支持整行注释。
+# {PROJECT_DIR} 会被替换为目标项目的绝对路径（安装脚本在支持包目录中运行，项目级安装必须带上）。
+# 安装：sh scripts/install-open-supports.sh -t /path/to/project
+#
+# 全局工具（task-master、mattpocock-skills、cognee、gstack）不在此清单，
+# 安装方式见 open_supports/INDEX.md「全局工具」。
+
+# 目前没有专属于 DevOps 场景的支持包；task-master 等全局工具已覆盖任务跟踪。

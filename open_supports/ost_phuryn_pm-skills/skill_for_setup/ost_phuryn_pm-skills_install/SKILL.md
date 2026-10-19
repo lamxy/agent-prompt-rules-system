@@ -6,7 +6,7 @@ argument-hint: '--client=codex|claude-code|cowork|gemini|opencode|cursor|kiro [-
 
 # PM Skills Marketplace Install
 
-> **Installation scope**: mode D. Local skills-only clients are CWD-sensitive; the AI Agent must pass `TARGET_DIR` last (or `--project-dir`) so the wrapper can enter it in a sub-shell. Marketplace and `--global` paths do not take a project directory.
+> **Installation scope**: mode D. Local skills-only clients are CWD-sensitive; the AI Agent must pass `TARGET_DIR` last (or `--project-dir`) so the wrapper can enter it in a sub-shell. `--client=claude-code` defaults to user scope like the official command; with an explicit `--location=local` it enters `TARGET_DIR` in a sub-shell and installs with `--scope project`, writing that project's `.claude/settings.json`. Codex, default Claude Code, and `--global` paths do not take a project directory.
 
 > Reference: [`repo_readme_summary.md`](../../repo_readme_summary.md)  
 > Script: [`scripts_for_install/install.sh`](../../scripts_for_install/install.sh)  
@@ -57,6 +57,7 @@ Common examples:
 ```sh
 sh scripts_for_install/install.sh --client=codex
 sh scripts_for_install/install.sh --client=claude-code --plugins=pm-toolkit,pm-execution
+sh scripts_for_install/install.sh --client=claude-code --location=local --plugins=pm-execution /path/to/project
 sh scripts_for_install/install.sh --client=cowork
 sh scripts_for_install/install.sh --client=opencode --location=local --repo-dir=/path/to/pm-skills /path/to/project
 sh scripts_for_install/install.sh --client=gemini --location=global --repo-dir=/path/to/pm-skills
@@ -68,7 +69,7 @@ Supported script flags:
 | Flag | Purpose |
 |------|---------|
 | `--client=codex` | Install or verify through Codex CLI plugin commands. |
-| `--client=claude-code` | Install or update through Claude Code plugin commands. |
+| `--client=claude-code` | Install or update through Claude Code plugin commands; user scope unless `--location=local` is given. |
 | `--client=cowork` | Print Claude Cowork GUI install steps. |
 | `--client=gemini` | Copy skills to Gemini CLI skills directory. |
 | `--client=opencode` | Copy skills to OpenCode skills directory. |
