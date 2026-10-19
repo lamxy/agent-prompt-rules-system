@@ -21,7 +21,7 @@
 - **配置**：Claude Code 用户级配置、settings 模板、项目级 `CLAUDE.md`、`.mcp.json` 与场景包
 - **能力包**：按场景分组的 agent 定义与 skill
 - **工具接入**：Agent 编程相关开源库的本地化支持包（摘要、幂等安装脚本、setup Skill）
-- **多客户端**：把同一套规则来源适配给 Codex
+- **多客户端**：把个人差异规则同步到 Codex，并说明场景配置与 skill 如何复用
 
 内容以自用为主，公开供参考或 fork。其中 `dot_claude/settings.json` 等文件带有本机环境假设（代理、`rtk`、`myhandoff` 等），直接使用前请先阅读对应 README。
 
@@ -60,7 +60,7 @@
 | 能力包 | `agents/` | 按场景分组的 agent 定义（`agents-<FLAG>/`） | `install-agent-pkg.sh` |
 | 能力包 | `skills/` | 按场景分组的 skill（`skills-<FLAG>/`） | `install-skill-pkg.sh` |
 | 工具接入 | `open_supports/` | 开源库本地化支持包（`ost_{Owner}_{Repo}/`）；可单独或按清单安装 | `install-open-supports.sh` |
-| 多客户端 | `scripts/multi_client_support/` | 为 Codex 生成 `AGENTS.codex.md`，可内嵌 `dot_claude/` | `codex.sh` |
+| 多客户端 | `scripts/multi_client_support/` | 把 `dot_claude/CLAUDE.md` 的差异规则写入 Codex 的 `~/.codex/AGENTS.md`（标记区块，保留原有内容） | `codex.sh` |
 | 文档 | `docs/recommend_repos/` | 推荐仓库与详细中文教程 | — |
 | 平台 | `src/` | 预留给「Agent 技能与工具包标准体系」管理平台（MVP 已在其他仓库实现，后续迁入） | — |
 | 归档 | `dot_claude_legacy/` | 2026-10-19 前的分层规则系统备份 | 不安装 |
@@ -100,8 +100,8 @@ sh ./scripts/install-claude-project.sh -f frontend-dev -t /path/to/project -d
 sh ./scripts/install-settings.sh -l project -s frontend-dev -m overwrite -p /path/to/project/.claude
 sh ./scripts/install-skill-pkg.sh -f frontend-dev -t /path/to/project/.claude/skills
 
-# 5. 为 Codex 生成项目指令并内嵌规则来源
-sh scripts/multi_client_support/codex.sh -l project -p /path/to/project -v
+# 5. 把个人差异规则同步到 Codex 的 ~/.codex/AGENTS.md（先预演）
+sh scripts/multi_client_support/codex.sh -d
 ```
 
 注意：
@@ -152,7 +152,7 @@ sh scripts/multi_client_support/codex.sh -l project -p /path/to/project -v
 - [x] `open_supports/` 支持包体系与 `ost-support-workflow` 编排流程，已收录 10 个支持包
 - [x] `install-open-supports.sh`：单一或按清单安装支持包，项目级 vendor 并生成 wrapper Skill，全局（`-g`）直接运行安装脚本
 - [x] `dot_claude_projects/` 场景包聚合各维度配置，`.claude/` 全局清单由 `install-claude-project.sh -g` 安装（2026-10-20）
-- [x] Codex 多客户端适配（`codex.sh`）
+- [x] Codex 多客户端适配（`codex.sh`）；2026-10-20 改为写入 `~/.codex/AGENTS.md` 标记区块，移除项目级与内嵌
 - [x] 转型：分层提示词规则系统归档至 `dot_claude_legacy/`，`dot_claude/` 精简为个人配置（2026-10-19）
 - [x] 四个场景的基础配置：全局与场景插件分层、各场景的 `CLAUDE.md`、`.mcp.json`、agent 包与 `open_supports` 清单，见 `settings/README.md`（2026-10-19）
 - [x] 清理 `settings/` 模板中过时或无效的设置：写死的模型、无作用的 PreCompact hook 与 `DISABLE_AUTOUPDATER: "0"`、会关闭 thinking 的 `alwaysThinkingEnabled: false`、过宽的管道权限规则（2026-10-19）

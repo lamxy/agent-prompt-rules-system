@@ -11,6 +11,8 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 | `settings.json` | 個人使用者層級設定（權限、沙箱、hooks、外掛），與本機 `~/.claude/settings.json` 同步 |
 | `README.md` | 本說明，不會被載入為指令 |
 
+`CLAUDE.md` 的差異規則另有一份 Codex 版本：`scripts/multi_client_support/templates/AGENTS.codex-user.md`（加回覆語言、去掉 LSP、工具名改通用說法），由 `codex.sh` 寫入 `~/.codex/AGENTS.md`。修改 `CLAUDE.md` 時需同步該模板。
+
 ## 安裝注意
 
 - `settings.json` 是個人使用者層級設定：其中 `autoMode`、`skillOverrides` 等鍵與依賴 `~/.claude/skills/myhandoff/`、`rtk` 的 hooks 不適合放進專案。`install.sh` 在 project/local 層級預設不安裝它（`-S` 可強制安裝），專案請改用 `settings/` 下的範本。

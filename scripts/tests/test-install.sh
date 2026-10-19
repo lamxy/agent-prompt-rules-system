@@ -160,15 +160,7 @@ test_installers_resolve_dot_claude_source() {
   mkdir -p "$target"
   HOME="$TMP_DIR/home" sh "$INSTALLER" -l project -p "$target" -m overwrite > /dev/null
   assert_same_file "$REPO_ROOT/dot_claude/CLAUDE.md" "$target/CLAUDE.md"
-
-  codex_target="$TMP_DIR/codex-project"
-  mkdir -p "$codex_target"
-  HOME="$TMP_DIR/home" sh "$REPO_ROOT/scripts/multi_client_support/codex.sh" -l project -p "$codex_target" -v > /dev/null
-  assert_same_file "$REPO_ROOT/dot_claude/CLAUDE.md" "$codex_target/.agent-rules/claude/CLAUDE.md"
-  assert_dir "$codex_target/.agent-rules/claude/commands"
-  assert_not_exists "$codex_target/.agent-rules/claude/rules"
-  assert_not_exists "$codex_target/.claude"
-  pass "install.sh and codex.sh resolve the dot_claude source"
+  pass "install.sh resolves the dot_claude source"
 }
 
 test_exclude_glob_is_not_expanded_against_cwd() {

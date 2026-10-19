@@ -144,6 +144,7 @@ FLAG 在所有场景目录中一致：
 
 ### 待办
 
+- [ ] 把 `dot_claude/commands/analyze-github-repo.md` 转成 Codex skill（Codex custom prompts 已于 2026-01 弃用）
 - [ ] 为四个场景编写自定义 skill，例如 PRD 模板、API 契约、上线检查清单（`skills/skills-<FLAG>/`）
 - [ ] 在真实项目中验证四个场景的配置
 - [ ] 由用户决定是否在本机采用新的全局设定（`install-settings.sh -l user`）
@@ -156,7 +157,8 @@ FLAG 在所有场景目录中一致：
 - **第三方市场的插件名无法离线校验**：`pm-skills`、`anthropic-agent-skills` 未缓存在本机，`test-settings-templates.sh` 跳过其名称检查；名称取自上游 `marketplace.json`
 - **数据库 MCP 可写**：MCP Toolbox 没有只读开关，只能靠只读账号
 - **全局工具重叠**：mattpocock-skills 与 superpowers 都有 TDD、需求追问类 skill；不用 `skillOverrides` 关闭，由用户按需手动调用
-- **Codex 不在场景清单范围内**：由用户自行运行 `open_supports/` 下各支持包的安装脚本（如 `--target=codex`、`--client=codex`、`--codex`）
+- **Codex 适配范围**（2026-10-20）：`codex.sh` 只把个人差异规则写入 `~/.codex/AGENTS.md` 的标记区块；场景 `CLAUDE.md` 用 `project_doc_fallback_filenames`（用户自行改本机 Codex 配置）或 `install-claude-md.sh -n AGENTS.md`；skill 装到 `.agents/skills`；支持包由用户自行运行安装脚本带 Codex 参数；agents、settings、hooks、MCP 不转换。`templates/AGENTS.codex-user.md` 与 `dot_claude/CLAUDE.md` 分开维护，需手动同步
+- **本机 `~/.codex/AGENTS.md` 首行 `@/Users/zz/.codex/RTK.md`**：`@` 引用是 Claude Code 语法，Codex 文件未提及支持，可能不生效（未验证，未改动）
 - **`typescript-native-lsp`** 来自内置插件目录（`@anthropic-plugin-directory`）；TypeScript 6 以下需另装 `typescript-language-server`
 
 ---
@@ -183,3 +185,4 @@ FLAG 在所有场景目录中一致：
 | 2026-10-19 | 已知问题处理 | cognee 移出全局工具（暂不启用，记忆类只保留 `remember`）；重叠 skill 改为手动调用；删除 `docs/superpowers/` 历史计划与设计 | — |
 | 2026-10-20 | 安装脚本分工与场景包聚合 | `install-claude-project.sh` 管复制、`install-open-supports.sh` 管安装；两者新增 `-g`；`install-open-supports.sh` 新增 `-n`；场景包聚合 settings、`CLAUDE.md`、`.mcp.json`、agents；新增全局清单 `dot_claude_projects/.claude/`；脚本顶部功能说明与选项必选／可选注释；新增 8 项测试 | 场景包与各维度目录分开维护，不同步；场景 skill 仍待编写 |
 | 2026-10-20 | 脚本注释与示例 | `scripts/` 下 8 个安装脚本与 `codex.sh` 顶部补功能说明；`-h` 选项按必选／条件必选／可选分组并补示例；修复 `install.sh -e '*.md'` 被当前目录文件展开而失效，新增测试 | — |
+| 2026-10-20 | Codex 适配按新架构改造 | `codex.sh` 只写 `${CODEX_HOME:-~/.codex}/AGENTS.md` 的标记区块（保留区块外内容、先备份、重复执行不变、`-d`、损坏需 `-F`）；模板改为 `dot_claude/CLAUDE.md` 差异规则的 Codex 版并加回复语言；移除项目级、`-n`、`-v`、`.agent-rules/` 与项目模板（旧分层规则时代的设计）；README 说明场景 `CLAUDE.md` 与 skill 的复用方式；测试重写 | `analyze-github-repo` 转 Codex skill |
