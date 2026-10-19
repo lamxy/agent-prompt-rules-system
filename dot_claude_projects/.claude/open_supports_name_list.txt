@@ -1,0 +1,17 @@
+# 全局 open_supports 支持包清单（用户级，所有项目共用）
+#
+# 安装：sh scripts/install-claude-project.sh -g
+#   先把本文件复制到 ~/.claude/open_supports_name_list.txt（已存在时不覆盖，-F 先备份），
+#   再按 ~/.claude/ 上的清单调用 install-open-supports.sh -g。
+#   支持包不复制到任何目录，直接在本仓库的 open_supports/<ost>/ 中运行安装脚本。
+#
+# 格式：<支持包> [安装参数...]，与场景清单相同。
+# 只放用户级安装的条目；含 {PROJECT_DIR}、--local、--location=local 的条目会让整份清单被拒绝。
+
+# Think → Plan → Build → Review → Test → Ship 编码工作流，安装到 ~/.claude/skills/gstack
+garrytan/gstack
+
+# Taskmaster：把 PRD 拆成任务；注册用户级 MCP，只加载核心工具
+eyaltoledano/claude-task-master --global --claude-mcp --tools=core
+
+# mattpocock-skills 以插件形式在 settings/settings.user.json 启用，不在此安装。

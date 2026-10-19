@@ -154,11 +154,13 @@ test_scenario_bundles() {
   for flag in prd-design frontend-dev backend-dev dev-ops; do
     target="$TMP_DIR/bundle-$flag"
     mkdir -p "$target"
-    sh "$PROJECT_INSTALLER" -f "$flag" -t "$target" > /dev/null
+    sh "$PROJECT_INSTALLER" -f "$flag" -t "$target" -N > /dev/null
 
     list="$target/.claude/open_supports_name_list.txt"
     assert_file "$list"
-    [ "$(find "$target" -type f | wc -l | tr -d ' ')" -eq 1 ] || fail "$flag bundle should install only the open_supports list"
+    assert_file "$target/.claude/settings.json"
+    assert_file "$target/CLAUDE.md"
+    [ -n "$(find "$target/.claude/agents" -name '*.md')" ] || fail "$flag bundle should install agents"
 
     # Scripts run inside the vendored package, so project-level lines must name the project.
     if grep -v '^[[:space:]]*#' "$list" | grep -E -e '--local|--location=local' | grep -v -F '{PROJECT_DIR}' > /dev/null; then
@@ -166,7 +168,80 @@ test_scenario_bundles() {
     fi
   done
 
-  pass "scenario bundles install their open_supports list with {PROJECT_DIR} on project-level entries"
+  pass "scenario bundles install settings, CLAUDE.md, agents and an open_supports list with {PROJECT_DIR}"
+}
+
+# A fake support package whose install script records its arguments.
+OST="$TMP_DIR/open_supports"
+mkdir -p "$OST/ost_acme_widget/scripts_for_install"
+cat > "$OST/ost_acme_widget/scripts_for_install/install.sh" <<'EOF_INSTALL'
+#!/bin/sh
+printf '%s|%s\n' "$PWD" "$*" >> "$PROJECT_TEST_LOG"
+EOF_INSTALL
+mkdir -p "$SRC/projects/.claude-ost/.claude" "$SRC/projects/.claude"
+printf 'acme/widget --location=local {PROJECT_DIR}\n' > "$SRC/projects/.claude-ost/.claude/open_supports_name_list.txt"
+printf 'acme/widget --global\n' > "$SRC/projects/.claude/open_supports_name_list.txt"
+printf 'not copied\n' > "$SRC/projects/.claude/other.md"
+
+test_project_installs_support_packages() {
+  target="$TMP_DIR/ost-project"
+  mkdir -p "$target"
+  log="$TMP_DIR/ost-project.log"
+
+  PROJECT_TEST_LOG="$log" sh "$PROJECT_INSTALLER" -f ost -t "$target" -s "$SRC/projects" -o "$OST" -N > /dev/null
+  assert_file "$target/.claude/open_supports_name_list.txt"
+  assert_not_exists "$log"
+
+  # A list already on the target wins over the bundle's list.
+  printf 'acme/widget --mine {PROJECT_DIR}\n' > "$target/.claude/open_supports_name_list.txt"
+  PROJECT_TEST_LOG="$log" sh "$PROJECT_INSTALLER" -f ost -t "$target" -s "$SRC/projects" -o "$OST" > "$TMP_DIR/ost-project.out"
+  assert_contains "$TMP_DIR/ost-project.out" "[MANUAL]"
+  assert_contains "$log" "--mine $(cd "$target" && pwd -P)"
+  assert_file "$target/.claude/open_supports/ost_acme_widget/scripts_for_install/install.sh"
+
+  pass "project install copies the bundle, then installs the target's list; -N skips installing"
+}
+
+test_project_dry_run_writes_nothing() {
+  target="$TMP_DIR/dry-project"
+  mkdir -p "$target"
+  log="$TMP_DIR/dry-project.log"
+
+  PROJECT_TEST_LOG="$log" sh "$PROJECT_INSTALLER" -f ost -t "$target" -s "$SRC/projects" -o "$OST" -d > "$TMP_DIR/dry.out"
+  assert_contains "$TMP_DIR/dry.out" "[DRY-RUN] copy"
+  assert_contains "$TMP_DIR/dry.out" "[DRY-RUN] run"
+  [ -z "$(find "$target" -mindepth 1)" ] || fail "dry run should not write into $target"
+  assert_not_exists "$log"
+
+  pass "-d previews copying and installing without writing"
+}
+
+test_global_copies_only_the_list() {
+  home="$TMP_DIR/home"
+  mkdir -p "$home"
+  log="$TMP_DIR/global.log"
+
+  for bad in "-g -f ost" "-g -t $TMP_DIR"; do
+    # shellcheck disable=SC2086
+    if HOME="$home" sh "$PROJECT_INSTALLER" $bad -s "$SRC/projects" -o "$OST" > /dev/null 2>&1; then
+      fail "expected failure for: $bad"
+    fi
+  done
+
+  HOME="$home" PROJECT_TEST_LOG="$log" sh "$PROJECT_INSTALLER" -g -s "$SRC/projects" -o "$OST" > "$TMP_DIR/global.out"
+  assert_contains "$TMP_DIR/global.out" "[GLOBAL]"
+  assert_contains "$home/.claude/open_supports_name_list.txt" "acme/widget --global"
+  assert_not_exists "$home/.claude/other.md"
+  assert_not_exists "$home/.claude/open_supports"
+  assert_contains "$log" "$OST/ost_acme_widget|--global"
+
+  printf 'acme/widget --mine\n' > "$home/.claude/open_supports_name_list.txt"
+  HOME="$home" PROJECT_TEST_LOG="$log" sh "$PROJECT_INSTALLER" -g -s "$SRC/projects" -o "$OST" -F > /dev/null
+  assert_contains "$home/.claude/open_supports_name_list.txt" "acme/widget --global"
+  grep -l -e '--mine' "$home"/.claude/open_supports_name_list.txt.backup-* > /dev/null || fail "global -F should back up the old list"
+  [ "$(find "$home" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" -eq 1 ] || fail "global install should only touch ~/.claude"
+
+  pass "-g copies only the list to ~/.claude, backs it up on -F, and installs globally"
 }
 
 test_arguments_are_not_evaluated
@@ -174,3 +249,6 @@ test_claude_md_skips_empty_and_backs_up
 test_dot_mcp_skips_empty_rejects_invalid_and_backs_up
 test_project_force_keeps_unrelated_files
 test_scenario_bundles
+test_project_installs_support_packages
+test_project_dry_run_writes_nothing
+test_global_copies_only_the_list

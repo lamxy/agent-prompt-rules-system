@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "kubernetes": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "kubernetes-mcp-server@latest",
+        "--config",
+        "${HOME}/.config/kubernetes-mcp-server.toml"
+      ]
+    }
+  }
+}
