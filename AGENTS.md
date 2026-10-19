@@ -2,7 +2,9 @@
 
 ## Project Structure & Module Organization
 
-This repository maintains Claude Code prompt, rule, agent, skill, MCP, and settings templates. Reusable shared configuration lives in `dot_claude/`, including rules, hooks, commands, settings, and base guidance.
+Read `docs/HANDOFF.md` first: it records the current plan, confirmed decisions, user constraints (never modify the local machine's configuration unless asked), open items, and a change log to append to after each requirement.
+
+This is a personal agent configuration, skill, and tool management repository (Claude Code first, with a Codex adapter). It was converted from a layered prompt-rule system in 2026-10; see the "转型说明" section of `README.md`. The minimal Claude Code configuration source lives in `dot_claude/` (a short `CLAUDE.md`, `commands/`, and a personal user-level `settings.json`); see `dot_claude/README.md` for why it was slimmed down. `dot_claude_legacy/` is a read-only archive of the previous layered rule system and is not used by any installer.
 
 Package-style assets are grouped by target:
 
@@ -26,11 +28,13 @@ sh ./scripts/install-skill-pkg.sh -f frontend-dev -t /path/to/project/.claude/sk
 sh ./scripts/install-claude-project.sh -f frontend-dev -t /path/to/project
 ```
 
-Before changing shell scripts, run:
+Before and after changing shell scripts, run the syntax checks and every test in `scripts/tests/`:
 
 ```sh
-sh -n scripts/*.sh
+sh scripts/tests/run-all.sh
 ```
+
+Add new tests as `scripts/tests/test-<subject>.sh`; `run-all.sh` picks them up automatically.
 
 For installer behavior, use temporary directories for smoke tests. Do not test against real user configuration unless explicitly requested.
 
@@ -38,7 +42,9 @@ For installer behavior, use temporary directories for smoke tests. Do not test a
 
 Shell scripts should use POSIX `sh`, `set -eu`, two-space indentation, small helper functions, and `printf` for output. Avoid Bash-only syntax.
 
-Markdown should be concise, task-oriented, and easy to scan. Preserve existing naming patterns: `agents-<FLAG>`, `skills-<FLAG>`, `CLAUDE-<FLAG>.md`, `dot-mcp-json-<FLAG>.json`, and `*-min.md` for minimal rule files.
+Markdown should be concise, task-oriented, and easy to scan. Preserve existing naming patterns: `agents-<FLAG>`, `skills-<FLAG>`, `CLAUDE-<FLAG>.md`, and `dot-mcp-json-<FLAG>.json`. Content under `dot_claude/` is written in Traditional Chinese.
+
+Only add a line to `dot_claude/CLAUDE.md` when it changes Claude's behavior compared with the Claude Code defaults. Enforce hard boundaries with `settings.json` permissions, sandbox, or hooks instead of prompt text, and put scenario-specific guidance in a skill or a path-scoped rule.
 
 ## Testing Guidelines
 

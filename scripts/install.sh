@@ -4,7 +4,7 @@ set -eu
 usage() {
   cat <<'USAGE'
 用法：
-  sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask> [-e <file>] [-E <dir>]
+  sh ./scripts/install.sh -l <user|project|local> [-p <target_path>] -m <overwrite|append|ask> [-e <file>] [-E <dir>] [-S] [-C]
 
 选项：
   -l  目标层级：
@@ -19,11 +19,82 @@ usage() {
       注意：选择 overwrite/append 时，已有 .json 文件自动跳过，
             需手动合并以保持合法 JSON 结构。
   -e  排除匹配指定文件名或 glob 模式的文件（可重复）
-      示例：-e CLAUDE.md -e "*.local.json"
+      示例：-e CLAUDE.md -e settings.json
   -E  排除相对于源 dot_claude/ 根目录的指定目录（可重复）
-      示例：-E expandable -E "rules/preferences"
+      示例：-E commands
+  -S  在 project/local 层级同时安装 settings.json
+      （默认跳过：它是个人用户级设定，项目设定建议用 install-settings.sh）
+  -C  将目标中检测到的旧版（dot_claude_legacy）文件移至
+      <target>/legacy-backup-<时间戳>/；不加 -C 时只列出并警告
   -h  显示此帮助信息
+
+默认不安装 README.md（仓库说明文件）。
 USAGE
+}
+
+# Paths (relative to the target .claude directory) installed by the
+# pre-2026-10-19 layered rule system. RTK.md is intentionally absent: rtk itself
+# generates ~/.claude/RTK.md, so its presence is not evidence of a legacy install.
+LEGACY_PATHS="expandable audi_reports audit-reports
+commands/auditrules.md
+hooks/subagent_stop_gate.py hooks/artifact_read_gate.py
+rules/task/general-task-rule-min.md rules/task/sub-agent-rule-min.md
+rules/task/tool-call-rule-min.md rules/task/design-first-rule-min.md
+rules/preferences/instruction-writing-style-min.md
+rules/preferences/network-degraded-preference-min.md
+rules/preferences/skill-trigger-constraint-min.md
+rules/preferences/source-verification-min.md"
+
+# Prints legacy paths that exist under the target, one per line.
+find_legacy_paths() {
+  for _path in $LEGACY_PATHS; do
+    if [ -e "$TARGET_DIR/$_path" ]; then
+      printf '%s\n' "$_path"
+    fi
+  done
+}
+
+# Moves legacy paths into a timestamped backup directory, then removes
+# directories the move left empty. rmdir only succeeds on empty directories.
+move_legacy_paths() {
+  _backup_dir="$TARGET_DIR/legacy-backup-$(date +%Y%m%d-%H%M%S)"
+  for _path in $1; do
+    mkdir -p "$(dirname "$_backup_dir/$_path")"
+    mv "$TARGET_DIR/$_path" "$_backup_dir/$_path"
+    printf '[LEGACY-MOVED] %s -> %s\n' "$_path" "$_backup_dir/$_path"
+  done
+  for _dir in rules/task rules/preferences rules hooks commands; do
+    rmdir "$TARGET_DIR/$_dir" 2>/dev/null || true
+  done
+}
+
+# Warns about legacy content that is never moved automatically.
+warn_legacy_references() {
+  if [ -f "$TARGET_DIR/CLAUDE.md" ] && grep -q 'general-task-rule-min.md' "$TARGET_DIR/CLAUDE.md"; then
+    LEGACY_WARN_COUNT=$((LEGACY_WARN_COUNT + 1))
+    printf '[LEGACY-WARN] %s 是旧版内容；overwrite 会替换它，append 会与新内容并存，请确认。\n' "$TARGET_DIR/CLAUDE.md"
+  fi
+  if [ -f "$TARGET_DIR/settings.json" ] && grep -q 'subagent_stop_gate' "$TARGET_DIR/settings.json"; then
+    LEGACY_WARN_COUNT=$((LEGACY_WARN_COUNT + 1))
+    printf '[LEGACY-WARN] %s 仍注册旧版 SubagentStop hook（subagent_stop_gate.py），请手动移除该 hook。\n' "$TARGET_DIR/settings.json"
+  fi
+}
+
+# Returns 0 for source files that are skipped unless explicitly requested.
+is_default_skipped() {
+  case "$1" in
+    README.md)
+      SKIP_REASON='仓库说明文件'
+      return 0
+      ;;
+    settings.json)
+      if [ "$LEVEL" != "user" ] && [ "$INCLUDE_SETTINGS" -eq 0 ]; then
+        SKIP_REASON='个人用户级设定，project/local 默认跳过；需要时加 -S，项目设定建议用 install-settings.sh'
+        return 0
+      fi
+      ;;
+  esac
+  return 1
 }
 
 expand_path() {
@@ -64,7 +135,8 @@ prompt_existing_file_action() {
   while true; do
     printf '文件已存在：%s\n' "$target_file" >&2
     printf '选择操作：[o] 覆盖  [a] 追加  [s] 跳过：' >&2
-    IFS= read -r answer
+    # Read from the terminal: stdin is the file list being iterated.
+    IFS= read -r answer < /dev/tty
     case "$answer" in
       o|O|overwrite|OVERWRITE)
         printf 'overwrite\n'
@@ -91,14 +163,20 @@ MODE=""
 EXCLUDE_FILES=""
 EXCLUDE_DIRS=""
 MANUAL_JSON_COUNT=0
+INCLUDE_SETTINGS=0
+MOVE_LEGACY=0
+LEGACY_WARN_COUNT=0
+SKIP_REASON=""
 
-while getopts "l:p:m:e:E:h" opt; do
+while getopts "l:p:m:e:E:SCh" opt; do
   case "$opt" in
     l) LEVEL="$OPTARG" ;;
     p) TARGET_PATH="$OPTARG" ;;
     m) MODE="$OPTARG" ;;
     e) EXCLUDE_FILES="${EXCLUDE_FILES:+$EXCLUDE_FILES }$OPTARG" ;;
     E) EXCLUDE_DIRS="${EXCLUDE_DIRS:+$EXCLUDE_DIRS }$OPTARG" ;;
+    S) INCLUDE_SETTINGS=1 ;;
+    C) MOVE_LEGACY=1 ;;
     h)
       usage
       exit 0
@@ -180,6 +258,22 @@ if [ "$LEVEL" = "user" ] && [ ! -d "$TARGET_DIR" ]; then
   mkdir -p "$TARGET_DIR"
 fi
 
+LEGACY_FOUND="$(find_legacy_paths)"
+LEGACY_LEFT=0
+if [ -n "$LEGACY_FOUND" ]; then
+  if [ "$MOVE_LEGACY" -eq 1 ]; then
+    move_legacy_paths "$LEGACY_FOUND"
+  else
+    for _path in $LEGACY_FOUND; do
+      LEGACY_LEFT=$((LEGACY_LEFT + 1))
+      printf '[LEGACY] %s\n' "$TARGET_DIR/$_path"
+    done
+    printf '  以上为旧版（dot_claude_legacy）文件，rules/ 下的规则会在每次启动时载入并与新版冲突。\n'
+    printf '  请手动处理，或加 -C 移至备份目录。\n'
+  fi
+fi
+warn_legacy_references
+
 TMP_FILE_LIST="$(mktemp)"
 trap 'rm -f "$TMP_FILE_LIST"' EXIT HUP INT TERM
 find "$SOURCE_DIR" -type f > "$TMP_FILE_LIST"
@@ -194,6 +288,11 @@ while IFS= read -r src_file; do
 
   if is_excluded_file "$src_file"; then
     printf '[EXCLUDED-FILE] %s\n' "$relative_path"
+    continue
+  fi
+
+  if is_default_skipped "$relative_path"; then
+    printf '[SKIPPED-DEFAULT] %s（%s）\n' "$relative_path" "$SKIP_REASON"
     continue
   fi
 
@@ -243,8 +342,9 @@ while IFS= read -r src_file; do
   esac
 done < "$TMP_FILE_LIST"
 
-if [ "$MANUAL_JSON_COUNT" -gt 0 ]; then
-  printf '同步完成（含警告）：%s 个已有 .json 文件需要手动合并。\n' "$MANUAL_JSON_COUNT"
+if [ "$MANUAL_JSON_COUNT" -gt 0 ] || [ "$LEGACY_LEFT" -gt 0 ] || [ "$LEGACY_WARN_COUNT" -gt 0 ]; then
+  printf '同步完成（含警告）：%s 个已有 .json 文件需要手动合并；%s 个旧版路径未处理；%s 项旧版内容需确认。\n' \
+    "$MANUAL_JSON_COUNT" "$LEGACY_LEFT" "$LEGACY_WARN_COUNT"
 else
   printf '同步完成。\n'
 fi

@@ -1,7 +1,24 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
+    "DISABLE_FEEDBACK_COMMAND": "1",
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_ERROR_REPORTING": "1",
+    "DO_NOT_TRACK": "1",
+    "ENABLE_TOOL_SEARCH": "true",
+    "CLAUDE_CODE_NEW_INIT": "1",
+    "ENABLE_PROMPT_CACHING_1H": "1",
+    "CLAUDE_STREAM_IDLE_TIMEOUT_MS": "300000",
+    "BASH_DEFAULT_TIMEOUT_MS": "300000",
+    "BASH_MAX_TIMEOUT_MS": "1200000",
+    "CLAUDE_CODE_PROXY_RESOLVES_HOSTS": "1"
+  },
+  "includeGitInstructions": false,
   "permissions": {
     "allow": [
+      "Bash(set -e)",
+      "Bash(set -e *)",
       "Bash(pwd)",
       "Bash(ls)",
       "Bash(ls *)",
@@ -111,6 +128,7 @@
       "Bash(docker ps *)",
       "Bash(docker images)",
       "Bash(docker images *)",
+      "Bash(docker exec *)",
       "Bash(docker logs *)",
       "Bash(docker inspect *)",
       "Bash(docker compose ps)",
@@ -130,109 +148,14 @@
       "Bash(kubectl get *)",
       "Bash(kubectl describe *)",
       "Bash(adb devices)",
-      "Bash(xcrun simctl list)"
-    ],
-    "deny": [
-      "Bash(env)",
-      "Bash(exec *)",
-      "Bash(*|*curl*)",
-      "Bash(*|*wget*)",
-      "Bash(*|*sudo*)",
-      "Bash(*|*bash*)",
-      "Bash(*|*sh*)",
-      "Bash(rm -rf *)",
-      "Bash(rm -fr *)",
-      "Bash(rm -r *)",
-      "Bash(dd if=* of=*)",
-      "Bash(mkfs.*)",
-      "Bash(shred *)",
-      "Bash(sudo *)",
-      "Bash(su *)",
-      "Bash(doas *)",
-      "Bash(chmod 777 *)",
-      "Bash(chmod -R 777 *)",
-      "Bash(bash -c *)",
-      "Bash(sh -c *)",
-      "Bash(eval *)",
-      "Bash(git reset --hard *)",
-      "Bash(git clean -fd *)",
-      "Bash(git clean -fdx *)",
-      "Bash(redis-cli flush*)",
-      "Bash(redis-cli FLUSH*)",
-      "Bash(mysql *-e *DROP*)",
-      "Bash(mysql *-e *DELETE*)",
-      "Bash(mysql *-e *TRUNCATE*)",
-      "Bash(mysql *-e *ALTER*)",
-      "Bash(mysql *-e *UPDATE*)",
-      "Bash(psql *-c *DROP*)",
-      "Bash(psql *-c *DELETE*)",
-      "Bash(psql *-c *TRUNCATE*)",
-      "Bash(psql *-c *ALTER*)",
-      "Bash(psql *-c *UPDATE*)",
-      "Bash(mongo *--eval *drop*)",
-      "Bash(mongo *--eval *deleteMany*)",
-      "Bash(mongo *--eval *remove*)",
-      "Bash(mongo *--eval *updateMany*)",
-      "Bash(rm *.db)",
-      "Bash(rm *.sqlite)",
-      "Bash(rm *.sqlite3)",
-      "Bash(npm publish)",
-      "Bash(pnpm publish)",
-      "Bash(yarn publish)",
-      "Bash(twine upload *)",
-      "Bash(pip upload *)",
-      "Bash(docker system prune *)",
-      "Bash(docker volume prune *)",
-      "Bash(docker image prune *)",
-      "Bash(docker container prune *)",
-      "Bash(docker compose rm *)",
-      "Bash(docker-compose rm *)",
-      "Bash(docker rm *)",
-      "Bash(docker rmi *)",
-      "Bash(docker volume rm *)",
-      "Bash(docker network rm *)",
-      "Bash(kubectl delete *)",
-      "Bash(kubectl apply *)",
-      "Bash(kubectl patch *)",
-      "Bash(kubectl edit *)",
-      "Bash(helm upgrade *)",
-      "Bash(helm install *)",
-      "Bash(helm uninstall *)",
-      "Bash(terraform apply *)",
-      "Bash(terraform destroy *)",
-      "Bash(ansible-playbook *)",
-      "Bash(aws *)",
-      "Bash(gcloud *)",
-      "Bash(az *)",
-      "Bash(ssh *)",
-      "Bash(scp *)",
-      "Bash(rsync *)",
-      "Bash(fastlane *)",
-      "Bash(bundle exec fastlane *)",
-      "Bash(xcodebuild -exportArchive *)",
-      "Bash(./gradlew publish*)",
-      "Bash(gradlew publish*)",
-      "Bash(adb uninstall *)",
-      "Bash(keytool *)",
-      "Bash(codesign *)",
-      "Bash(security import *)",
-      "Bash(security export *)",
-      "Bash(notarytool *)"
-    ],
-    "ask": [
-      "Bash(*&&*)",
-      "Bash(*;*)",
-      "Bash(*>*)",
-      "Bash(*>>*)",
-      "Bash(*|*xargs*)",
-      "Bash(*|*tee*)",
-      "Bash(*|*python*)",
-      "Bash(*|*python3*)",
-      "Bash(*|*node*)",
-      "Bash(*|*perl*)",
-      "Bash(*|*ruby*)",
-      "Bash(*|*pwsh*)",
-      "Bash(*|*zsh*)",
+      "Bash(xcrun simctl list)",
+      "mcp__codegraph__*",
+      "Bash(python3 *)",
+      "Bash(/usr/bin/git status *)",
+      "Bash(/usr/bin/git diff *)",
+      "Bash(/usr/bin/git --version *)",
+      "Bash(git status *)",
+      "Bash(echo \"exit=$?\")",
       "Bash(curl *)",
       "Bash(wget *)",
       "Bash(nc *)",
@@ -330,7 +253,6 @@
       "Bash(docker build *)",
       "Bash(docker pull *)",
       "Bash(docker run *)",
-      "Bash(docker exec *)",
       "Bash(docker compose up *)",
       "Bash(docker compose down *)",
       "Bash(docker compose exec *)",
@@ -357,23 +279,92 @@
       "Bash(npx cap copy *)",
       "Bash(npx cap open *)",
       "Bash(npx cap run *)",
-      "Bash(terraform plan *)"
+      "Bash(terraform plan *)",
+      "Bash(npx gsd-core *)",
+      "Read(.planning/*)",
+      "Edit(.planning/*)",
+      "Read(STATE.md)",
+      "Edit(STATE.md)"
     ],
-    "defaultMode": "acceptEdits"
+    "deny": [
+      "Read(./config/*.yaml)",
+      "Read(./config/*.toml)",
+      "Read(~/.ssh/*)",
+      "Read(~/.aws/*)",
+      "Bash(*DROP DATABASE*)",
+      "Bash(*DROP TABLE*)",
+      "Bash(*mysqldump*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(env)",
+      "Bash(exec *)",
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)",
+      "Bash(rm -r *)",
+      "Bash(rm -r -f *)",
+      "Bash(rm -f -r *)",
+      "Bash(sudo *)",
+      "Bash(su *)",
+      "Bash(chmod 777 *)",
+      "Bash(chmod -R 777 *)",
+      "Bash(bash -c *)",
+      "Bash(sh -c *)",
+      "Bash(zsh -c *)",
+      "Bash(eval *)",
+      "Bash(git clean -fd *)",
+      "Bash(git clean -fdx *)",
+      "Bash(redis-cli flush*)",
+      "Bash(redis-cli FLUSH*)",
+      "Bash(mysql *-e *DROP*)",
+      "Bash(mysql *-e *DELETE*)",
+      "Bash(mysql *-e *TRUNCATE*)",
+      "Bash(mysql *-e *ALTER*)",
+      "Bash(mysql *-e *UPDATE*)",
+      "Bash(psql *-c *DROP*)",
+      "Bash(psql *-c *DELETE*)",
+      "Bash(psql *-c *TRUNCATE*)",
+      "Bash(psql *-c *ALTER*)",
+      "Bash(psql *-c *UPDATE*)",
+      "Bash(mongo *--eval *drop*)",
+      "Bash(mongo *--eval *deleteMany*)",
+      "Bash(mongo *--eval *remove*)",
+      "Bash(mongo *--eval *updateMany*)",
+      "Bash(rm *.db)",
+      "Bash(rm *.sqlite)",
+      "Bash(rm *.sqlite3)",
+      "Bash(docker system prune *)",
+      "Bash(docker volume prune *)",
+      "Bash(docker image prune *)",
+      "Bash(docker container prune *)",
+      "Bash(docker compose rm *)",
+      "Bash(docker-compose rm *)",
+      "Bash(docker rm *)",
+      "Bash(docker rmi *)",
+      "Bash(docker volume rm *)",
+      "Bash(docker network rm *)",
+      "Bash(ansible-playbook *)",
+      "Bash(az *)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(rsync *)",
+      "Read(.secrets)",
+      "Bash(git reset --hard *)"
+    ],
+    "defaultMode": "auto"
   },
-  "includeGitInstructions": false,
-  "env": {
-    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
-    "DISABLE_AUTOUPDATER": "0",
-    "DISABLE_FEEDBACK_COMMAND": "1",
-    "DISABLE_TELEMETRY": "1",
-    "DISABLE_ERROR_REPORTING": "1",
-    "ENABLE_TOOL_SEARCH": "true",
-    "CLAUDE_CODE_NEW_INIT": "1",
-    "ENABLE_PROMPT_CACHING_1H": "1"
-  },
-  "model": "claude-sonnet-4-6",
+  "model": "opus",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "zsh -c '. ~/.zshrc'"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
@@ -385,71 +376,92 @@
         ]
       }
     ],
-    "SubagentStop": [
+    "Stop": [
       {
-        "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c 'python3 -u ~/.claude/hooks/subagent_stop_gate.py 2>/tmp/subagent_hook_err.log || printf \"{\\\"decision\\\":\\\"approve\\\",\\\"reason\\\":\\\"hook skipped: python3 unavailable or crashed, see /tmp/subagent_hook_err.log\\\"}\"'"
+            "command": "sh \"$HOME/.claude/skills/myhandoff/scripts/handoff-hook\" claude stop",
+            "timeout": 10
           }
         ]
       }
     ],
-    "PreCompact": [
+    "StopFailure": [
       {
-        "matcher": "*",
         "hooks": [
           {
-            "type": "prompt",
-            "timeout": 15,
-            "prompt": "Before compaction, preserve only minimal verified state. Never block. Generate at most three short lines in systemMessage with this exact key style: keep.result=<...>; keep.risk=<low|medium|high|unknown>; keep.next=<...>. Include only if clearly supported by the latest verified context. If insufficient evidence, return JSON exactly: {}."
+            "type": "command",
+            "command": "sh \"$HOME/.claude/skills/myhandoff/scripts/handoff-hook\" claude stop-failure",
+            "timeout": 10
           }
         ]
       }
     ]
   },
   "enabledPlugins": {
-    "github@claude-plugins-official": true,
     "andrej-karpathy-skills@karpathy-skills": true,
-    "superpowers@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true,
-    "hookify@claude-plugins-official": true,
-    "playground@claude-plugins-official": true,
-    "optibot@claude-plugins-official": true,
     "commit-commands@claude-code-plugins": true,
     "context7@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true,
+    "playground@claude-plugins-official": true,
     "ralph-loop@claude-plugins-official": true,
-    "session-report@claude-plugins-official": true
+    "session-report@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "gopls-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": false,
+    "open-code-review@open-code-review": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "chrome-devtools-mcp@claude-plugins-official": true,
+    "typescript-native-lsp@anthropic-plugin-directory": true,
+    "skill-creator@anthropic-plugin-directory": true,
+    "claude-md-management@anthropic-plugin-directory": true,
+    "security-guidance@anthropic-plugin-directory": true,
+    "remember@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
-    "claude-plugins-official": {
-      "source": {
-        "source": "github",
-        "repo": "anthropics/claude-plugins-official"
-      }
-    },
     "claude-code-plugins": {
       "source": {
         "source": "github",
         "repo": "anthropics/claude-code"
       }
     },
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
     "karpathy-skills": {
       "source": {
         "source": "github",
         "repo": "forrestchang/andrej-karpathy-skills"
+      },
+      "autoUpdate": true
+    },
+    "open-code-review": {
+      "source": {
+        "source": "github",
+        "repo": "alibaba/open-code-review"
       }
     }
   },
+  "language": "traditional chinese",
   "sandbox": {
     "enabled": true,
     "failIfUnavailable": true,
     "autoAllowBashIfSandboxed": true,
     "allowUnsandboxedCommands": false,
     "network": {
-      "allowedDomains": ["*"],
-      "deniedDomains": ["gist.github.com"]
+      "allowedDomains": [
+        "*"
+      ],
+      "deniedDomains": [
+        "gist.github.com"
+      ]
     },
     "filesystem": {
       "allowWrite": [
@@ -465,13 +477,13 @@
         "~/.cache/pip",
         "~/.local/share/virtualenvs",
         "~/go/pkg",
-        "~/go/bin",
-        "~/.kube"
+        "~/go/bin"
       ],
       "denyRead": [
         "~/.docker",
         "~/.bashrc",
         "~/.zshrc",
+        "~/.oh-my-zsh",
         "~/.profile",
         "~/.bash_profile",
         "~/.zprofile",
@@ -491,14 +503,35 @@
         "~/.ssh/config",
         "~/.kube/config",
         "~/.nvm",
-        "~/.config/pypoetry",
-        "~/.kube/config"
+        "~/.config/pypoetry"
       ]
     },
-    "excludedCommands": ["docker *"]
+    "excludedCommands": [
+      "docker *"
+    ]
   },
-  "alwaysThinkingEnabled": false,
   "effortLevel": "medium",
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "medium"
+    }
+  },
+  "dialogExpiry": "5m",
   "pluginConfigs": {},
-  "skippedPlugins": []
+  "tui": "fullscreen",
+  "theme": "dark",
+  "verbose": true,
+  "autoMode": {
+    "environment": [
+      "Allow frontend development workflows using npm, pnpm, or yarn, including TypeScript type-checking (tsc), Vite/Vue-CLI builds, and running local frontend dev servers.",
+      "Allow Go backend development tasks including module management (go mod tidy), code linting/formatting, running unit tests (go test), and executing local Go API servers (go run, air).",
+      "Allow executing database migration tools (golang-migrate, GORM auto-migration) and managing local MySQL containers via Docker/docker-compose for local development and testing only.",
+      "Allow file reading, writing, and code refactoring strictly within the active project root directory. Do not exfiltrate sensitive files or env credentials."
+    ],
+    "classifyAllShell": true
+  },
+  "skippedPlugins": [],
+  "skillOverrides": {
+    "claude-api": "user-invocable-only"
+  }
 }

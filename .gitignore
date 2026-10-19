@@ -39,9 +39,6 @@ temp/
 # long claude.md
 dot_claude/CLAUDE-long.md
 
-# audit reporter
-dot_claude/audit-reports/*
-!dot_claude/audit-reports/.gitkeep
 */.ost-refs
 
 # open_supports workflow runtime state

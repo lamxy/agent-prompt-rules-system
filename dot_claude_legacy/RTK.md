@@ -8,7 +8,7 @@
 rtk gain              # Show token savings analytics
 rtk gain --history    # Show command usage history with savings
 rtk discover          # Analyze Claude Code history for missed opportunities
-rtk proxy <cmd>       # Execute raw command without filtering (for debugging)
+rtk bypass <cmd>      # Execute raw command without filtering (for debugging; rtk 1.0+ renamed proxy to bypass)
 ```
 
 ## Installation Verification

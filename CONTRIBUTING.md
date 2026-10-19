@@ -2,14 +2,14 @@
 
 感谢你对本项目的关注。
 
-本仓库用于维护一套面向 Claude Code 的仓库级规则系统。  
+本仓库是以个人使用为主的 Agent 配置、技能与工具管理仓库（2026-10 由提示词规则系统转型，原因见 README「转型说明」），不主动征集贡献；发现问题欢迎开 issue。  
 在提交改动前，请先理解本仓库的核心原则：
 
-- 最小优先
-- 按需加载
-- 够用即停
-- 避免 prompt 膨胀
-- 优先稳定性，而不是规则数量
+- 只写与默认行为不同的约束
+- 需要强制的边界用 settings、hook，而不是提示词
+- 场景化指引做成 skill
+- 工具接入可复现：安装脚本幂等、可验证
+- 安装脚本不覆盖需要人工合并的内容
 
 ---
 
@@ -17,10 +17,10 @@
 
 在提交 PR 之前，请先自问：
 
-1. 这条规则是否必须进入常驻主文件？
-2. 能否放到一个更小的外部规约文件里？
-3. 它是在减少重复，还是引入更多重复？
-4. 它会提升长期稳定性吗？
+1. 删掉这条规则后，Claude Code 的默认行为会不会改变？不会就不该写。
+2. 它需要强制执行吗？需要就用 `settings.json` 的权限、沙箱或 hook，而不是提示词。
+3. 它只在部分场景需要吗？是就做成 skill 或带 `paths` frontmatter 的 rule。
+4. 它会和现有规则或设定冲突吗？
 5. 它是否会增加上下文膨胀风险？
 
 如果这些问题里有多个答案偏负面，建议先不要把变更并入主文件。
@@ -33,9 +33,8 @@
 
 - 修正文档错误、链接错误、命名错误
 - 优化 `dot_claude/CLAUDE.md` 的表达，使其更稳定、简洁、可执行
-- 增加新的极简规约文件
-- 增加新的输出模板
-- 提出更清晰的分层方式
+- 删除已被 Claude Code 默认行为覆盖的规则
+- 把软约束改为 settings、hook 或 skill 等更可靠的机制
 - 改进 examples 示例
 - 改进项目结构与可维护性
 
@@ -58,22 +57,15 @@
 ### 修改 `dot_claude/CLAUDE.md` 前
 请优先判断：
 
-- 这是否属于高频、稳定、高杠杆规则？
-- 这是否应该放到 `dot_claude/rules/task/`？
-- 这是否应该放到 `dot_claude/rules/templates/`？
-- 这是否应该放到 `dot_claude/rules/preferences/`？
+- 这是否与 Claude Code 默认行为不同，且确有需要？
+- 需要强制执行时，是否应改放 `dot_claude/settings.json`（权限、沙箱、hook）？
+- 只在特定场景需要时，是否应做成 skill，或放入带 `paths` frontmatter 的 `.claude/rules/` 文件？
 
-主文件应尽量保持短、小、稳。
+主文件应尽量保持短、小、稳；`dot_claude/` 下的内容使用繁体中文。修改后可执行 `/doctor prompt-audit` 检查过时或冲突的指令。
 
-### 新增规则文件时
-请尽量遵循：
+### 关于 `dot_claude_legacy/`
 
-- 文件职责单一
-- 规则数量少
-- 用语清晰
-- 不依赖长背景
-- 可以独立被引用
-- 命名保持 `*-min.md`
+`dot_claude_legacy/` 是 2026-10-19 之前分层规约系统的只读备份，不被任何安装脚本使用。请勿在其中新增内容；替换原因与迁移对照见 `dot_claude/README.md`。
 
 ---
 
@@ -82,9 +74,8 @@
 建议提交信息清晰说明改动意图，例如：
 
 - `docs: refine README wording`
-- `rules: add sub-agent preference minimal rule`
-- `templates: add multi-agent summary template`
 - `refactor: reduce duplication in CLAUDE.md`
+- `settings: move claude-api trigger rule to skillOverrides`
 
 ---
 

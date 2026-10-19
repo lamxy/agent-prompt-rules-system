@@ -57,15 +57,12 @@ target-project/
   .agent-rules/
     claude/
       CLAUDE.md
-      RTK.md
-      rules/
-      expandable/
-      hooks/
+      README.md
+      commands/
       settings.json
-      ...
 ```
 
-此内嵌目录树为摘要示意；`codex.sh` 会递归复制本仓库 `dot_claude/` 下的所有文件与目录。
+`codex.sh` 会递归复制本仓库 `dot_claude/` 下的所有文件与目录。2026-10-19 起 `dot_claude/` 改为精简版，不再包含 `rules/`、`expandable/`、`hooks/`；原分层规约备份在 `dot_claude_legacy/`，不会被内嵌。
 
 `AGENTS.codex.md` 是 Codex-native 入口。内嵌的 `.agent-rules/claude/` 目录是参考材料。除非已另行安装 Codex-native 设定，否则 Claude 专用 settings、hooks、plugins 与 `SendMessage` references 不是生效中的 Codex 执行时设定。
 
@@ -75,7 +72,7 @@ target-project/
 
 ```sh
 sh -n scripts/multi_client_support/codex.sh
-sh scripts/test-multi-client-codex.sh
+sh scripts/tests/test-multi-client-codex.sh
 ```
 
 ## 未来方向

@@ -28,20 +28,13 @@ Claude 规则来源是参考材料。不要盲目加载或遵循整份 `CLAUDE.m
 使用最小且足够的指令层。
 
 1. 先应用此 `AGENTS` 文件。
-2. 对一般任务，除非需要更多细节，否则使用上方核心行为。
-3. 当任务符合"场景提示"列出的场景时，只读取生效中规则来源下列出的路径。列出的路径具有权威性，可能位于 `rules/` 或 `expandable/`。
-4. 当没有适用的场景提示时，只读取当前任务最相关的本地规则文件。
-5. 只有在输出结构必须稳定时，才使用 `expandable/templates/` 下的模板。
-6. 不要仅因规则存在就加载无关规则。
+2. 对一般任务，使用上方核心行为。
+3. 涉及外部资料、弱网环境或符号级代码操作时，读取生效中规则来源下的 `CLAUDE.md`；其中的 RTK、LSP 等工具说明仅在 Codex 环境具备对应工具时适用。
+4. 不要仅因规则存在就加载无关规则。
 
 ## 场景提示
 
-- 一般任务：`rules/task/general-task-rule-min.md`
-- 工具使用：`rules/task/tool-call-rule-min.md`
-- 子代理任务：`rules/task/sub-agent-rule-min.md`
-- 设计、规划、架构或头脑风暴：`expandable/task/design-first-rule-min.md`
-- 循环、cron 或重复监控：`expandable/task/loop-cron-rule-min.md`
-- Agent 团队工作流程：`expandable/task/agent-team-rule-min.md`
-- 输出格式：`expandable/templates/`
+- 外部资料验证、弱网降级：`CLAUDE.md`
+- 分析单个 GitHub 仓库：`commands/analyze-github-repo.md`（作为流程参考，不是 Codex 命令）
 
 当被引用的文件不存在时，使用可用的最佳本地指令继续，不要因此阻塞。
