@@ -227,11 +227,14 @@ esac
 # Returns 0 if the given file path should be excluded based on -e patterns.
 is_excluded_file() {
   _fname="$(basename "$1")"
+  # Split the patterns without expanding them against the current directory.
+  set -f
   for _pattern in $EXCLUDE_FILES; do
     case "$_fname" in
-      $_pattern) return 0 ;;
+      $_pattern) set +f; return 0 ;;
     esac
   done
+  set +f
   return 1
 }
 

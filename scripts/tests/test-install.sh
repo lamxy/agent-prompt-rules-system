@@ -171,6 +171,20 @@ test_installers_resolve_dot_claude_source() {
   pass "install.sh and codex.sh resolve the dot_claude source"
 }
 
+test_exclude_glob_is_not_expanded_against_cwd() {
+  target="$TMP_DIR/glob/.claude"
+  mkdir -p "$target" "$TMP_DIR/glob-cwd"
+  # A matching file in the current directory used to replace the pattern.
+  : > "$TMP_DIR/glob-cwd/a.md"
+
+  (cd "$TMP_DIR/glob-cwd" && HOME="$TMP_DIR/home" sh "$INSTALLER" -l project -p "$target" -m overwrite -e '*.md' > "$TMP_DIR/glob.log")
+
+  assert_not_exists "$target/CLAUDE.md"
+  assert_not_exists "$target/commands/analyze-github-repo.md"
+  assert_contains "$TMP_DIR/glob.log" "[EXCLUDED-FILE] CLAUDE.md"
+  pass "-e glob patterns match source file names, not files in the current directory"
+}
+
 test_installers_resolve_dot_claude_source
 test_project_skips_settings_and_readme
 test_project_include_settings_flag
@@ -178,3 +192,4 @@ test_user_installs_settings_and_keeps_rtk
 test_legacy_warns_without_moving
 test_legacy_move_with_flag
 test_legacy_reference_warnings
+test_exclude_glob_is_not_expanded_against_cwd
