@@ -1,6 +1,6 @@
 # 交接文档
 
-本文件记录仓库转型与四场景配置的规划、决策和当前状态，供后续会话或协作者接手并继续追加需求。最后更新：2026-10-19。
+本文件记录仓库转型与四场景配置的规划、决策和当前状态，供后续会话或协作者接手并继续追加需求。最后更新：2026-10-20。
 
 **接手时先读**：本文件 → 根目录 `README.md` → `AGENTS.md` → 要改动的目录自己的 `README.md`。新需求完成后，在文末「变更日志」追加一条。
 
@@ -57,7 +57,7 @@ FLAG 在所有场景目录中一致：
 | PRD 工具 | 以技能为主：pm-skills、mattpocock-skills、gstack；Figma、Notion 等只作为可选 |
 | 主工作流框架 | **不设**。全局只有 superpowers；OpenSpec、gsd-core 在前后端清单中以注释提供，按需启用其一 |
 | gstack | 保持全局生效 |
-| 全局工具 | task-master、mattpocock-skills、cognee、gstack |
+| 全局工具 | task-master、mattpocock-skills、gstack；记忆类只保留 `remember` 插件，cognee 暂不启用 |
 
 ---
 
@@ -92,9 +92,13 @@ FLAG 在所有场景目录中一致：
 
 ### `dot_claude_projects/`（`install-claude-project.sh`）
 
-启动包**只放** `.claude/open_supports_name_list.txt`，只为 Claude Code 配置；settings、`CLAUDE.md`、`.mcp.json` 由各自目录维护，避免重复。PRD 清单安装 pm-skills；前后端清单安装 codegraph，并注释提供 OpenSpec、gsd-core；DevOps 无专属支持包。
+两个脚本分工（2026-10-20 确认）：`install-claude-project.sh` 负责**复制配置**（对应 `dot_claude_projects/`），复制后调用 `install-open-supports.sh`；`install-open-supports.sh` 负责**安装支持包**（对应 `open_supports/`），支持 `-n` 单一安装或按清单批量安装，作用域 `-t` 项目级 / `-g` 全局。
 
-**安装顺序**：settings 模板必须在 `install-open-supports.sh` 之前安装，否则 pm-skills 写入的项目 settings 条目会被覆盖。完整命令见 `dot_claude_projects/README.md`。
+- **场景包** `.claude-<FLAG>/`：settings（`.claude/settings.json`）、`CLAUDE.md`、`.mcp.json`（后端、DevOps）、`.claude/agents/`、支持包清单的**完整聚合**。2026-10-20 由各维度目录复制初始化，**之后与各维度目录分开维护，不做同步**；覆盖时一律备份或拒绝。四个场景都还没有自定义 skill，`.claude/skills/` 暂缺
+- **全局包** `.claude/`：只有 `open_supports_name_list.txt`（gstack、task-master）。`install-claude-project.sh -g` 只复制这一个文件到 `~/.claude/`，再 `install-open-supports.sh -g`：不复制支持包、不生成 wrapper Skill，清单含项目级参数时整份拒绝
+- 目标上已有清单时按目标清单安装（保留本机修改）；`-N` 只复制，`-d` 预演
+- PRD 清单安装 pm-skills；前后端清单安装 codegraph，并注释提供 OpenSpec、gsd-core；DevOps 无专属支持包
+- **安装顺序**已内建：场景包先复制 `settings.json`，再安装 pm-skills，不会被覆盖。单独用 `install-settings.sh -m overwrite` 重装 settings 时，需重新运行支持包安装
 
 ### `claude_mds/`、`dot_mcp_jsons/`、`agents/`、`skills/`
 
@@ -114,6 +118,8 @@ FLAG 在所有场景目录中一致：
 | `install-settings.sh` | 备份不再同秒覆盖；merge 列出未写入的字段；ask 从 `/dev/tty` 读取；找不到场景时列出可用场景 |
 | `install-skill-pkg.sh` / `install-agent-pkg.sh` | `-F` 先备份到 `<target>.backup-<时间戳>/`；skill 只装含 `SKILL.md` 的目录；目标不存在时自动创建 |
 | `install-claude-md.sh` / `install-dot-mcp.sh` / `install-claude-project.sh` | 去掉 `eval`（曾可注入命令、路径含空格会失败）；`-F` 先备份；跳过空模板；`.mcp.json` 校验 JSON；项目包 `-F` 不再删除整个 `.claude/` |
+| `install-claude-project.sh`（2026-10-20） | 新增 `-g` 全局（只复制清单到 `~/.claude/`）；复制后自动调用 `install-open-supports.sh`；`-N` 不安装、`-d` 预演、`-o` 指定 open_supports 根目录；FLAG 字符校验 |
+| `install-open-supports.sh`（2026-10-20） | 新增 `-g` 全局（不复制、不生成 wrapper Skill、拒绝项目级条目）与 `-n` 单一安装；默认清单随作用域；项目清单中的用户级条目给 `[WARN]` |
 | `install-open-supports.sh` | 新增 `{PROJECT_DIR}` 占位符（以前项目级安装会装进支持包目录）；清单改用 fd 3 读取（以前安装脚本读 stdin 会吞掉后续条目且结束码为 0）；wrapper Skill 记录全部安装命令并随清单重新生成；`[STALE]` 提示；`-F` 先备份 |
 | `scripts/tests/` | 所有测试集中于此，`run-all.sh` 一次执行（含 `sh -n`）；当前 10 个测试文件全部通过 |
 
@@ -123,10 +129,11 @@ FLAG 在所有场景目录中一致：
 
 | 需求 | 步骤 |
 |------|------|
-| 新增场景 | 在 `settings/`、`claude_mds/`、`dot_mcp_jsons/`、`agents/`、`skills/`、`dot_claude_projects/` 使用相同 FLAG 新建；更新根目录 `README.md`「四个场景」与本文件 |
+| 新增场景 | 在 `settings/`、`claude_mds/`、`dot_mcp_jsons/`、`agents/`、`skills/` 使用相同 FLAG 新建，再把它们复制进 `dot_claude_projects/.claude-<FLAG>/`（对应关系见该目录 README）；更新根目录 `README.md`「四个场景」与本文件 |
 | 场景增减插件 | 改 `settings/settings.project-<FLAG>.json`，第三方市场要在 `extraKnownMarketplaces` 声明；同步 `settings/README.md`；跑 `test-settings-templates.sh` |
 | 新增全局插件 | 改 `settings/settings.user.json` 与 `settings/README.md`；确认与已有全局插件无功能重叠或指令冲突 |
-| 新增支持包 | 按 `open_supports/README.md` 贡献指南或 `ost-support-workflow`；在 `INDEX.md` 两张表登记（含建议场景）；项目级安装写进对应场景清单并带 `{PROJECT_DIR}`；跑 `test-open-supports-index.sh` |
+| 新增支持包 | 按 `open_supports/README.md` 贡献指南或 `ost-support-workflow`；在 `INDEX.md` 两张表登记（含建议场景）；项目级安装写进对应场景清单并带 `{PROJECT_DIR}`，用户级写进 `dot_claude_projects/.claude/` 全局清单；跑 `test-open-supports-index.sh` |
+| 改场景配置 | 只改各维度目录不会影响场景包，反之亦然；需要两边一致时手动复制 |
 | 新增 MCP | 先确认场景插件没有提供；凭据用 `${VAR}`；更新 `dot_mcp_jsons/README.md` |
 | 新增 agent | 从 `agents-agency-agent-based-dev/` 复制到场景包，去掉文件名前缀，`name` 改为与文件名一致 |
 | 修改脚本 | 前后都执行 `sh scripts/tests/run-all.sh`；新测试命名为 `scripts/tests/test-<对象>.sh` |
@@ -140,33 +147,23 @@ FLAG 在所有场景目录中一致：
 - [ ] 为四个场景编写自定义 skill，例如 PRD 模板、API 契约、上线检查清单（`skills/skills-<FLAG>/`）
 - [ ] 在真实项目中验证四个场景的配置
 - [ ] 由用户决定是否在本机采用新的全局设定（`install-settings.sh -l user`）
-- [ ] 按主题拆分提交（见下文）
-- [ ] 可选：一条命令初始化场景项目的脚本，串起 `dot_claude_projects/README.md` 中的 7 条命令
+- [x] 按主题拆分提交（见第 7 节）
+- [x] 一条命令初始化场景项目：`install-claude-project.sh -f <FLAG> -t <project>`（场景包聚合 + 自动安装支持包）
 - [ ] 将其他仓库中的技能与工具包管理平台 MVP 迁入 `src/`（根目录 Roadmap）
 
 ### 已知问题与注意事项
 
 - **第三方市场的插件名无法离线校验**：`pm-skills`、`anthropic-agent-skills` 未缓存在本机，`test-settings-templates.sh` 跳过其名称检查；名称取自上游 `marketplace.json`
-- **cognee 前置条件**：需要 Python 3.10～3.14 与 `LLM_API_KEY`；本机系统 `python3` 为 3.9.6
 - **数据库 MCP 可写**：MCP Toolbox 没有只读开关，只能靠只读账号
-- **全局工具重叠**：mattpocock-skills 与 superpowers 都有 TDD、需求追问类 skill；cognee 与 remember 都是记忆类。出现重复时用 `skillOverrides` 关闭其一
+- **全局工具重叠**：mattpocock-skills 与 superpowers 都有 TDD、需求追问类 skill；不用 `skillOverrides` 关闭，由用户按需手动调用
 - **Codex 不在场景清单范围内**：由用户自行运行 `open_supports/` 下各支持包的安装脚本（如 `--target=codex`、`--client=codex`、`--codex`）
 - **`typescript-native-lsp`** 来自内置插件目录（`@anthropic-plugin-directory`）；TypeScript 6 以下需另装 `typescript-language-server`
-- `docs/superpowers/plans/` 中两份 2026-08 计划仍引用已删除的 Docker 测试，属于历史记录，未修改
 
 ---
 
-## 7. 未提交的改动与建议的提交拆分
+## 7. 提交状态
 
-截至本文件更新时，所有改动都**未提交**。建议按主题拆成以下提交，每个提交前跑一次 `run-all.sh`：
-
-1. `refactor:` 转型：`dot_claude/` 精简、原目录归档为 `dot_claude_legacy/`（含 hook 与 settings 修正）、根目录 README / AGENTS / CONTRIBUTING
-2. `refactor:` `settings/` 收敛为四场景、清理过时设定
-3. `fix:` 安装脚本修复（settings、skill/agent/claude-md/dot-mcp/claude-project 的备份与 `eval`、open-supports 的 `{PROJECT_DIR}`），`install-settings.sh` 中包含用户自己的修改
-4. `test:` 测试迁入 `scripts/tests/`、新增测试与 `run-all.sh`
-5. `docs:` `open_supports/INDEX.md`、快速教程改名
-6. `feat:` 四场景基础配置：settings 插件分层、`claude_mds/`、`dot_mcp_jsons/`、`agents/` 场景包、`dot_claude_projects/` 清单、`ost_phuryn_pm-skills` 项目级安装
-7. `docs:` 本交接文档
+2026-10-19 已按主题拆成 8 个提交（`cdfb63e`～`2e7dea7`），未推送。`scripts/install-settings.sh` 中用户自己的修改随 `fix:` 提交一并提交。
 
 ---
 
@@ -183,3 +180,5 @@ FLAG 在所有场景目录中一致：
 | 2026-10-19 | pm-skills 走支持包 | `ost_phuryn_pm-skills` 支持 `--scope project`；PRD settings 移除 pm-skills | — |
 | 2026-10-19 | 场景清单支持 Codex（已撤销） | 曾为清单加入 Codex 参数，随后按用户决定回退；Codex 改由用户手动运行支持包脚本 | — |
 | 2026-10-19 | install-open-supports.sh 审查 | 修复安装脚本吞掉清单后续行；wrapper Skill 记录带参数的完整命令（以前缺参数，重装会装错位置）并随清单更新；`-F` 改为备份；新增 `[STALE]`；同一支持包多行只复制一次；新增 5 项测试 | 旧测试的临时目录未清理（既有问题） |
+| 2026-10-19 | 已知问题处理 | cognee 移出全局工具（暂不启用，记忆类只保留 `remember`）；重叠 skill 改为手动调用；删除 `docs/superpowers/` 历史计划与设计 | — |
+| 2026-10-20 | 安装脚本分工与场景包聚合 | `install-claude-project.sh` 管复制、`install-open-supports.sh` 管安装；两者新增 `-g`；`install-open-supports.sh` 新增 `-n`；场景包聚合 settings、`CLAUDE.md`、`.mcp.json`、agents；新增全局清单 `dot_claude_projects/.claude/`；脚本顶部功能说明与选项必选／可选注释；新增 8 项测试 | 场景包与各维度目录分开维护，不同步；场景 skill 仍待编写 |

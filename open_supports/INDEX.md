@@ -36,20 +36,19 @@
 | `ost_msitarzewski_agency-agents` | [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents) | 多角色专业 agent 与安装脚本（本仓库 `agents/agents-agency-agent-based-dev/` 的来源） | D（项目分支 B） | 不直接安装，已挑选到 `agents/` | ✅ |
 | `ost_open-gsd_gsd-core` | [open-gsd/gsd-core](https://github.com/open-gsd/gsd-core) | discuss → plan → execute → verify → ship 的 spec-driven 工作流 | D（本地 B） | 前端、后端（可选框架） | ✅ |
 | `ost_phuryn_pm-skills` | [phuryn/pm-skills](https://github.com/phuryn/pm-skills) | PM Skills 插件市场：68 个 PM skills、42 个工作流 | D（本地 B） | PRD（项目级插件） | ✅ |
-| `ost_topoteretes_cognee` | [topoteretes/cognee](https://github.com/topoteretes/cognee) | Agent 长期记忆平台：知识图谱 + 向量记忆 | D（本地 C） | **全局**（MCP 按需启用） | ✅ |
+| `ost_topoteretes_cognee` | [topoteretes/cognee](https://github.com/topoteretes/cognee) | Agent 长期记忆平台：知识图谱 + 向量记忆 | D（本地 C） | 暂不启用（记忆类由全局 `remember` 插件承担） | ✅ |
 
 ---
 
 ## 全局工具
 
-以下工具在所有项目中都生效，按用户级方式安装一次即可，不写进任何项目的 `open_supports_name_list.txt`。场景分配见 [`settings/README.md`](../settings/README.md)。
+以下工具在所有项目中都生效，按用户级方式安装一次即可，不写进任何项目的 `open_supports_name_list.txt`。gstack、task-master 已登记在全局清单 `dot_claude_projects/.claude/open_supports_name_list.txt`，统一用 `sh scripts/install-claude-project.sh -g` 安装（先加 `-d` 预演）；下表的单独命令供参考。场景分配见 [`settings/README.md`](../settings/README.md)。
 
 | 工具 | 安装方式 | 前置条件与注意 |
 |------|---------|---------------|
-| mattpocock-skills | 已在 `settings/settings.user.json` 以插件启用（`mattpocock-skills@claude-plugins-official`），无需运行脚本 | 与全局 superpowers 都含 TDD、需求追问类 skill，出现重复时用 `skillOverrides` 关闭其一 |
+| mattpocock-skills | 已在 `settings/settings.user.json` 以插件启用（`mattpocock-skills@claude-plugins-official`），无需运行脚本 | 与全局 superpowers 都含 TDD、需求追问类 skill；重复的 skill 由用户手动调用，不自动关闭 |
 | gstack | `sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh` | 安装到 `~/.claude/skills/gstack`，所有项目可见；skill 数量多，只常用其中几个命令时可用 `skillOverrides` 隐藏其余 |
 | task-master | `sh open_supports/ost_eyaltoledano_claude-task-master/scripts_for_install/install.sh --global --claude-mcp --tools=core` | 需要模型 API key，或使用已认证的 Claude Code provider；`--tools=core` 只加载核心工具，减少上下文 |
-| cognee | `sh open_supports/ost_topoteretes_cognee/scripts_for_install/install.sh --global` | 需要 Python 3.10～3.14 与 `LLM_API_KEY`；与全局 `remember` 插件同属记忆类，MCP 默认不注册，需要长期知识图谱时再启用 |
 
 ---
 
@@ -70,7 +69,13 @@
 | `ost_phuryn_pm-skills` | `sh scripts_for_install/install.sh --client=claude-code` | `sh scripts_for_install/install.sh --client=claude-code --location=local --plugins=pm-execution /path/to/project` | Claude Code 默认用户级，`--location=local` 以 `--scope project` 写入项目 settings；Codex 只有用户级；`--client=opencode` 等为 skills-only 复制 |
 | `ost_topoteretes_cognee` | `sh scripts_for_install/install.sh --global` | `sh scripts_for_install/install.sh --local /path/to/project` | 本地模式安装到 `/path/to/project/.venv` |
 
-按项目批量安装：在项目的 `.claude/open_supports_name_list.txt` 中列出支持包，再执行 `sh scripts/install-open-supports.sh -t /path/to/project`，详见 [`README.md`](README.md)。
+统一入口 `scripts/install-open-supports.sh`：
+
+- 按项目批量安装：在项目的 `.claude/open_supports_name_list.txt` 中列出支持包，执行 `sh scripts/install-open-supports.sh -t /path/to/project`
+- 单一安装：`sh scripts/install-open-supports.sh -t /path/to/project -n <Owner/Repo> -- <参数...>`，全局则把 `-t <dir>` 换成 `-g`
+- 全局批量安装：`sh scripts/install-open-supports.sh -g`（读取 `~/.claude/open_supports_name_list.txt`，不复制支持包）
+
+详见 [`README.md`](README.md) 与 `scripts/README.md`。
 
 ---
 

@@ -18,7 +18,7 @@
 
 这是我个人使用的 Agent 配置与能力管理仓库，集中维护：
 
-- **配置**：Claude Code 用户级配置、settings 模板、项目级 `CLAUDE.md`、`.mcp.json` 与项目启动包
+- **配置**：Claude Code 用户级配置、settings 模板、项目级 `CLAUDE.md`、`.mcp.json` 与场景包
 - **能力包**：按场景分组的 agent 定义与 skill
 - **工具接入**：Agent 编程相关开源库的本地化支持包（摘要、幂等安装脚本、setup Skill）
 - **多客户端**：把同一套规则来源适配给 Codex
@@ -56,10 +56,10 @@
 | 配置 | `settings/` | 全局基础插件 + 项目级四个场景（PRD、前端、后端、DevOps）与全栈组合 + 本地级可选插件 | `install-settings.sh` |
 | 配置 | `claude_mds/` | 按场景分类的 `CLAUDE-<FLAG>.md` | `install-claude-md.sh` |
 | 配置 | `dot_mcp_jsons/` | 按场景分类的 `.mcp.json` 模板 | `install-dot-mcp.sh` |
-| 配置 | `dot_claude_projects/` | 场景启动包：声明该场景需要的 `open_supports` 支持包 | `install-claude-project.sh` |
+| 配置 | `dot_claude_projects/` | 场景包：各维度配置的完整聚合（settings、`CLAUDE.md`、`.mcp.json`、agents、skills、支持包清单）；`.claude/` 为全局支持包清单 | `install-claude-project.sh` |
 | 能力包 | `agents/` | 按场景分组的 agent 定义（`agents-<FLAG>/`） | `install-agent-pkg.sh` |
 | 能力包 | `skills/` | 按场景分组的 skill（`skills-<FLAG>/`） | `install-skill-pkg.sh` |
-| 工具接入 | `open_supports/` | 开源库本地化支持包（`ost_{Owner}_{Repo}/`） | `install-open-supports.sh` |
+| 工具接入 | `open_supports/` | 开源库本地化支持包（`ost_{Owner}_{Repo}/`）；可单独或按清单安装 | `install-open-supports.sh` |
 | 多客户端 | `scripts/multi_client_support/` | 为 Codex 生成 `AGENTS.codex.md`，可内嵌 `dot_claude/` | `codex.sh` |
 | 文档 | `docs/recommend_repos/` | 推荐仓库与详细中文教程 | — |
 | 平台 | `src/` | 预留给「Agent 技能与工具包标准体系」管理平台（MVP 已在其他仓库实现，后续迁入） | — |
@@ -90,16 +90,15 @@
 # 1. 同步个人用户级配置到 ~/.claude（已有 CLAUDE.md 时会询问；检测到旧版残留会警告）
 sh ./scripts/install.sh -l user -m ask
 
-# 2. 为项目安装 settings 场景模板
+# 2. 安装全局支持包（gstack、task-master）：清单复制到 ~/.claude/ 后全局安装
+sh ./scripts/install-claude-project.sh -g -d   # 预演，确认后去掉 -d
+
+# 3. 一次安装一个场景的完整项目配置，并安装其清单中的支持包
+sh ./scripts/install-claude-project.sh -f frontend-dev -t /path/to/project -d
+
+# 4. 或者只安装某一个维度，例如 settings、skills
 sh ./scripts/install-settings.sh -l project -s frontend-dev -m overwrite -p /path/to/project/.claude
-
-# 3. 安装场景化 agent / skill 包
-sh ./scripts/install-agent-pkg.sh -f frontend-dev -t /path/to/project/.claude/agents
 sh ./scripts/install-skill-pkg.sh -f frontend-dev -t /path/to/project/.claude/skills
-
-# 4. 一次性初始化项目启动包，再安装它声明的开源支持包
-sh ./scripts/install-claude-project.sh -f frontend-dev -t /path/to/project
-sh ./scripts/install-open-supports.sh -t /path/to/project --dry-run
 
 # 5. 为 Codex 生成项目指令并内嵌规则来源
 sh scripts/multi_client_support/codex.sh -l project -p /path/to/project -v
@@ -151,7 +150,8 @@ sh scripts/multi_client_support/codex.sh -l project -p /path/to/project -v
 - [x] 场景化 settings 模板体系（user / project / local）
 - [x] Agent 包、Skill 包、CLAUDE.md、`.mcp.json`、项目启动包的脚本化安装
 - [x] `open_supports/` 支持包体系与 `ost-support-workflow` 编排流程，已收录 10 个支持包
-- [x] `install-open-supports.sh`：按项目清单 vendor 支持包、生成 wrapper Skill、执行安装脚本
+- [x] `install-open-supports.sh`：单一或按清单安装支持包，项目级 vendor 并生成 wrapper Skill，全局（`-g`）直接运行安装脚本
+- [x] `dot_claude_projects/` 场景包聚合各维度配置，`.claude/` 全局清单由 `install-claude-project.sh -g` 安装（2026-10-20）
 - [x] Codex 多客户端适配（`codex.sh`）
 - [x] 转型：分层提示词规则系统归档至 `dot_claude_legacy/`，`dot_claude/` 精简为个人配置（2026-10-19）
 - [x] 四个场景的基础配置：全局与场景插件分层、各场景的 `CLAUDE.md`、`.mcp.json`、agent 包与 `open_supports` 清单，见 `settings/README.md`（2026-10-19）

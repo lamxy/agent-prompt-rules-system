@@ -9,6 +9,7 @@
 #
 # {PROJECT_DIR} in args is replaced with the absolute project path. Install
 # scripts run inside the vendored package, so project-level installs need it.
+# User-level (global) packages belong in dot_claude_projects/.claude/ instead.
 #
 # Examples:
 # colbymchenry/codegraph --target=claude --location=local {PROJECT_DIR}

@@ -116,31 +116,36 @@ sh ./scripts/install-dot-mcp.sh -f <FLAG> -t /path/to/project [-F]
 
 ---
 
-### `install-claude-project.sh` — 安装项目级完整配置包
+### `install-claude-project.sh` — 分发 `dot_claude_projects/` 的配置包
 
 ```sh
-sh ./scripts/install-claude-project.sh -f <FLAG> -t /path/to/project [-F]
+sh ./scripts/install-claude-project.sh -f <FLAG> -t /path/to/project [-F] [-N] [-d]   # 项目级
+sh ./scripts/install-claude-project.sh -g [-F] [-N] [-d]                              # 全局
 ```
 
-将 `dot_claude_projects/.claude-<FLAG>/` 下的 `.claude/`、`.mcp.json`、`CLAUDE.md` 逐个文件复制到目标项目根目录，适合快速初始化新项目。
+负责**复制配置**，复制后调用 `install-open-supports.sh` 安装清单中的支持包。
 
-- 只处理启动包中实际存在的文件；目标中其他文件（如 `settings.local.json`、已安装的 skills）一律保留
-- `-F` 覆盖前把被覆盖的文件备份到 `<target>/.claude-project-backup-<时间戳>/`（保留相对路径）
-- 空文件（模板尚未填写）、`.gitkeep` 与不合法的 JSON 会被跳过
+- 项目级：把场景包 `.claude-<FLAG>/` 的 `.claude/`、`.mcp.json`、`CLAUDE.md` 逐个文件复制到项目根目录；场景包是 settings、`CLAUDE.md`、`.mcp.json`、agents、skills 的完整聚合
+- 全局：只把 `dot_claude_projects/.claude/open_supports_name_list.txt` 复制到 `~/.claude/`，再以 `-g` 安装全局支持包
+- 目标文件已存在时标记 `[MANUAL]` 跳过，支持包仍按目标上的清单安装；`-F` 先备份（项目级到 `<project>/.claude-project-backup-<时间戳>/`，全局为清单旁的 `.backup-<时间戳>`）
+- `-N` 只复制不安装；`-d` 预演，不写入任何文件；`-o` 指定 open_supports 根目录
+- 空文件、`.gitkeep` 与不合法的 JSON 会被跳过
 
 ---
 
-### `install-open-supports.sh` — 安装项目声明的 open_supports 支持包
+### `install-open-supports.sh` — 安装 `open_supports/` 支持包
 
 ```sh
-sh ./scripts/install-open-supports.sh -t /path/to/project [--dry-run] [--skills-only] [--no-skills] [-F]
+sh ./scripts/install-open-supports.sh -t /path/to/project [-n <支持包> [-- 参数...] | -l <清单>] [--dry-run] [--skills-only] [--no-skills] [-F]
+sh ./scripts/install-open-supports.sh -g [-n <支持包> [-- 参数...] | -l <清单>] [--dry-run]
 ```
 
-读取目标项目 `.claude/open_supports_name_list.txt` 中声明的支持包并执行安装。
+负责**安装支持包**：用 `-n` 安装单一支持包，或按清单批量安装；都不给时读默认清单（`-t` 为 `<project>/.claude/open_supports_name_list.txt`，`-g` 为 `~/.claude/open_supports_name_list.txt`）。
 
-- 参数中的 `{PROJECT_DIR}` 替换为目标项目的绝对路径；同一支持包可写多行，每行运行一次安装脚本，支持包只复制一次
+- 项目级（`-t`）：支持包复制到 `<project>/.claude/open_supports/<ost>/` 后运行安装脚本；`{PROJECT_DIR}` 替换为项目绝对路径；同一支持包可写多行，只复制一次
+- 全局（`-g`）：不复制、不生成 wrapper Skill，直接在本仓库的支持包目录中运行安装脚本；清单含 `{PROJECT_DIR}`、`--local`、`--location=local` 时整份拒绝；不接受 `-F`、`--skills-only`
 - 安装脚本保留调用端的 stdin，读取输入的脚本不会吞掉清单的后续行
-- wrapper Skill（`.claude/skills/<ost_name>_install/`）记录清单中该支持包的全部安装命令，项目路径写成运行时的 `$PROJECT_ROOT`；带生成标记的每次按清单重新生成，删除标记行即视为手动维护
+- wrapper Skill（仅项目级，`.claude/skills/<ost_name>_install/`）记录该支持包的全部安装命令，带生成标记的每次按清单重新生成；`-n` 单独安装只在 Skill 不存在时创建
 - 已安装的支持包与源不一致时提示 `[STALE]`；`-F` 替换前把旧的支持包与 wrapper Skill 备份到 `.claude/open_supports.backup-<时间戳>/`
 
 详细说明见 `open_supports/README.md`。
@@ -159,9 +164,9 @@ sh ./scripts/tests/run-all.sh
 |------|------|
 | `test-install.sh` | `install.sh` 与 `codex.sh` 从 `dot_claude/` 取源；默认跳过 `README.md`、project 层级跳过 `settings.json`（`-S` 可安装）；`RTK.md` 不视为旧版；旧版残留只警告、`-C` 移至备份且保留用户文件；旧版 `CLAUDE.md` 与 hook 注册的提示 |
 | `test-install-settings.sh` | 所有场景模板可安装；错误场景名列出可用场景；源文件名与作用域匹配；连续执行不丢备份；用户级 merge 列出未写入的字段；merge 保留非 ASCII 与四格缩进；ask 模式的读取与无终端报错 |
-| `test-install-templates.sh` | `install-claude-md.sh`、`install-dot-mcp.sh`、`install-claude-project.sh`：路径含空格、参数不被执行、空模板跳过、不合法 JSON、`-F` 备份、`-n` 拒绝路径、项目 `-F` 保留无关文件；四个场景启动包只安装 `open_supports` 清单，项目级条目都带 `{PROJECT_DIR}` |
+| `test-install-templates.sh` | `install-claude-md.sh`、`install-dot-mcp.sh`、`install-claude-project.sh`：路径含空格、参数不被执行、空模板跳过、不合法 JSON、`-F` 备份、`-n` 拒绝路径、项目 `-F` 保留无关文件；四个场景包安装 settings、`CLAUDE.md`、agents 与清单，项目级条目都带 `{PROJECT_DIR}`；复制后按目标清单安装支持包、`-N` 不安装、`-d` 不写入；`-g` 只复制清单到 `~/.claude/` 并全局安装 |
 | `test-install-pkg.sh` | `install-skill-pkg.sh` 自动创建目标、跳过缺少 `SKILL.md` 的目录与 `README.md`、占位包提示、冲突处理与 `-F` 备份；`install-agent-pkg.sh` 的 `-F` 备份 |
-| `test-install-open-supports.sh` | `install-open-supports.sh`：vendor、wrapper Skill（记录全部命令、按清单重新生成、保留手动维护版本）、安装脚本执行、`{PROJECT_DIR}` 替换、安装脚本读 stdin 不吞清单、`[STALE]` 提示、`-F` 备份、不安全的支持包名称、冲突 |
+| `test-install-open-supports.sh` | `install-open-supports.sh`：vendor、wrapper Skill（记录全部命令、按清单重新生成、保留手动维护版本）、安装脚本执行、`{PROJECT_DIR}` 替换、安装脚本读 stdin 不吞清单、`[STALE]` 提示、`-F` 备份、不安全的支持包名称、冲突；`-n` 单一安装、`-t`/`-g` 与 `-n`/`-l` 互斥、`-g` 不复制且拒绝项目级条目、项目清单中用户级条目的警告 |
 | `test-settings-templates.sh` | `settings/*.json` 合法；启用插件引用的第三方市场已声明；插件名称存在于本机已缓存的市场目录（只读，未缓存的市场跳过） |
 | `test-pm-skills-claude-scope.sh` | `ost_phuryn_pm-skills` 的 `--client=claude-code`：`--location=local` 在项目目录的子 shell 中以 `--scope project` 安装、默认保持用户级、未加 `--location=local` 时拒绝项目目录（以替身 `claude` 执行，不改动真实配置） |
 | `test-open-supports-index.sh` | `open_supports/INDEX.md` 登记了每个支持包，且分类与各包 `repo_readme_summary.md` 的「模式 X」一致 |

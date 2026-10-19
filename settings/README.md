@@ -59,7 +59,7 @@ local > project > user
 
 `dot_claude/settings.json` 仍是本机设定的镜像，未做上述调整；要在本机采用新的全局设定，需手动执行 `install-settings.sh -l user`（会先备份）。这份设定还包含 `autoMode`、`skillOverrides`、沙箱路径，以及依赖本机 `rtk`、`~/.claude/skills/myhandoff/` 的 hooks，在其他机器上使用前请先确认这些依赖存在，或删除对应的 hook。
 
-全局工具中，gstack、task-master、cognee 不是插件，需运行各自的安装脚本，见 [`open_supports/INDEX.md`](../open_supports/INDEX.md)「全局工具」。
+全局工具中，gstack、task-master 不是插件，登记在全局清单 `dot_claude_projects/.claude/open_supports_name_list.txt`，用 `sh scripts/install-claude-project.sh -g` 安装，见 [`open_supports/INDEX.md`](../open_supports/INDEX.md)「全局工具」。场景的 settings 也已聚合进 `dot_claude_projects/.claude-<FLAG>/.claude/settings.json`，两处分开维护。
 
 ### 项目级（`-l project`）
 

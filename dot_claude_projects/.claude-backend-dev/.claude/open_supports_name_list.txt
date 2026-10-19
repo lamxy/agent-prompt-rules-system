@@ -2,10 +2,10 @@
 #
 # 格式：每行 <支持包名称> [安装参数...]；只支持整行注释。
 # {PROJECT_DIR} 会被替换为目标项目的绝对路径（安装脚本在支持包目录中运行，项目级安装必须带上）。
-# 安装：sh scripts/install-open-supports.sh -t /path/to/project
+# 安装：install-claude-project.sh -f <FLAG> -t <project> 复制后自动安装；只重装支持包用 install-open-supports.sh -t <project>
 #
-# 全局工具（task-master、mattpocock-skills、cognee、gstack）不在此清单，
-# 安装方式见 open_supports/INDEX.md「全局工具」。
+# 全局工具（task-master、gstack）在 dot_claude_projects/.claude/ 的全局清单，
+# 用 sh scripts/install-claude-project.sh -g 安装；mattpocock-skills 为全局插件。
 
 # 代码知识图谱：项目级 MCP，前后端都需要；安装后在项目中执行 codegraph init 建立索引。
 colbymchenry/codegraph --target=claude --location=local {PROJECT_DIR}

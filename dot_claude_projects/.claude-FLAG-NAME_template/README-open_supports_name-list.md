@@ -8,11 +8,13 @@
 .claude/open_supports_name_list.txt
 ```
 
-请从规则源仓库单独安装列表中指定的包：
+安装场景包时，`install-claude-project.sh` 复制清单后会自动安装其中的包。只重装支持包时，从规则源仓库执行：
 
 ```sh
 sh scripts/install-open-supports.sh -t /path/to/project
 ```
+
+用户级（全局）支持包不写进场景清单，而是写进 `dot_claude_projects/.claude/open_supports_name_list.txt`，用 `sh scripts/install-claude-project.sh -g` 安装；全局清单中不能出现 `{PROJECT_DIR}`、`--local`、`--location=local`。
 
 ## 格式
 
