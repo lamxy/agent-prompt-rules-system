@@ -17,7 +17,8 @@
 ```
 open_supports/
 ├── README.md                       # 本文件：体系说明 + 待办事项
-├── workflow-quickstart.md          # workflow Skill 快速使用教程
+├── INDEX.md                        # 已收录支持包索引与 A～D 安装作用域分类
+├── README-workflow-quickstart.md   # workflow Skill 快速使用教程
 ├── .ost-workflow-state/            # workflow 运行时状态目录（JSON 状态默认不提交）
 ├── ost_{OwnerName}_{RepoName}/    # 每个开源库一个支持包目录
 │   ├── .ost-refs/                  # （可选）手动引用文档，大模型操作前优先阅读
@@ -122,21 +123,13 @@ open_supports/
 4. 编写 `skill_for_setup/ost_{OwnerName}_{RepoName}_install/SKILL.md`（优先覆盖 Claude Code / Codex）
 5. 更新 `skill_for_setup/README.md` 说明触发词与使用方式
 6. 可选：workflow 的 `optional_usage_examples` checklist 命中且用户同意时，生成 `usage_examples.md`；用户明确要求时，也可单独使用 `ost-usage-examples` 生成
-7. 在本文件下方 TODO 列表中登记状态
+7. 在 [`INDEX.md`](INDEX.md) 登记（用途、A～D 分类、安装命令），并运行 `sh scripts/tests/test-open-supports-index.sh` 检查
 
 ---
 
 ## 已收录库
 
-| 支持包目录 | 库名 | 脚本 | Skill | 状态 |
-|-----------|------|------|-------|------|
-| `ost_colbymchenry_codegraph` | [codegraph](https://github.com/colbymchenry/codegraph) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
-| `ost_deanpeters_Product-Manager-Skills` | [Product-Manager-Skills](https://github.com/deanpeters/Product-Manager-Skills) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
-| `ost_eyaltoledano_claude-task-master` | [claude-task-master](https://github.com/eyaltoledano/claude-task-master) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
-| `ost_garrytan_gstack` | [gstack](https://github.com/garrytan/gstack) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
-| `ost_msitarzewski_agency-agents` | [agency-agents](https://github.com/msitarzewski/agency-agents) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
-| `ost_open-gsd_gsd-core` | [gsd-core](https://github.com/open-gsd/gsd-core) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
-| `ost_topoteretes_cognee` | [cognee](https://github.com/topoteretes/cognee) | ✅ 已填充 | ✅ 已填充 | ✅ 已完成 |
+当前收录的支持包、用途、安装作用域分类（A～D）与安装命令速查，统一维护在 [`INDEX.md`](INDEX.md)。
 
 ---
 

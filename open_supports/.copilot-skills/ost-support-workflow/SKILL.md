@@ -23,7 +23,7 @@ argument-hint: 'GitHub owner/repo, e.g. colbymchenry/codegraph'
 
 主 workflow 不得预读：
 
-- `open_supports/workflow-quickstart.md` 等设计/教程文档
+- `open_supports/README-workflow-quickstart.md` 等设计/教程文档
 - 任何阶段 Skill 全文，例如 `.copilot-skills/ost-repo-readme-summary/SKILL.md`
 - 官方 README、官方文档长文、npm package metadata、API 文档长文
 - 阶段产物草稿的完整内容，除非用于最终轻量审查
@@ -445,3 +445,4 @@ sh open_supports/.copilot-skills/ost-support-workflow/scripts/state.sh usage-exa
 - `workflow_status` 为 `done`
 - `installation_scope` 已包含 A/B/C/D 分类、官方默认、目标目录机制和至少一条官方证据
 - 摘要 Part 2、脚本 `--help`、setup Skill、以及存在时的 usage examples 对该契约一致；B 使用子 shell CWD，C 使用原生路径参数，D 保留官方默认
+- 已在 `open_supports/INDEX.md` 的「已收录支持包」与「安装命令速查」两张表各追加一行，分类首字母与摘要一致；在仓库根目录运行 `sh scripts/tests/test-open-supports-index.sh` 通过
