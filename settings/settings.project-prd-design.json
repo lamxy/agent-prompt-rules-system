@@ -1,0 +1,21 @@
+{
+    "$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "enabledPlugins": {
+        "playground@claude-plugins-official": true,
+        "document-skills@anthropic-agent-skills": true
+    },
+    "extraKnownMarketplaces": {
+        "claude-plugins-official": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/claude-plugins-official"
+            }
+        },
+        "anthropic-agent-skills": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/skills"
+            }
+        }
+    }
+}

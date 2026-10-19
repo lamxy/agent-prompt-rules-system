@@ -1,0 +1,18 @@
+{
+    "$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "enabledPlugins": {
+        "datadog@claude-plugins-official": false,
+        "pagerduty@claude-plugins-official": false,
+        "incident-io@claude-plugins-official": false,
+        "cloudflare@claude-plugins-official": false,
+        "aws-core@claude-plugins-official": false
+    },
+    "extraKnownMarketplaces": {
+        "claude-plugins-official": {
+            "source": {
+                "source": "github",
+                "repo": "anthropics/claude-plugins-official"
+            }
+        }
+    }
+}

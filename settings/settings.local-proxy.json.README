@@ -12,10 +12,8 @@
         "gemini-3.1-flash-image",
         "gemini-3.1-pro-low",
         "gemini-3-flash",
-        "gemini-3.1-pro-low",
         "claude-sonnet-4-6",
         "claude-opus-4-6-thinking",
-        "gemini-3-flash",
         "claude-haiku-4.6",
         "claude-opus-4.6",
         "claude-sonnet-4.6",
@@ -35,8 +33,8 @@
         "ANTHROPIC_DEFAULT_OPUS_MODEL": "gemini-3.1-pro-low", # 指定默认的Opus模型为gemini-3.1-pro-low
         "ANTHROPIC_DEFAULT_SONNET_MODEL": "anthropic/claude-sonnet-4.6", # 指定默认的Sonnet模型为anthropic/claude-sonnet-4.6
         "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",  # 禁用Claude Code的归属头部信息，提升缓存命中率
-        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "0", # 是否禁用非必要的网络流量，设置该参数，表示下述4项参数同时禁止，同时禁止自动更新cli版本。否则去除该参数
-        "DISABLE_AUTOUPDATER": "0", # 是否禁用自动更新功能，设置为"0"表示启用自动更新
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1", # 禁用非必要的网络流量，等同于同时设置自动更新、反馈命令、错误报告、遥测的禁用变量（含禁止自动更新 cli 版本）。官方说明：设为 "0" 或 "false" 仍会禁用，要恢复必须删除该参数
+        # 不再设置 DISABLE_AUTOUPDATER："0" 等于未设置；且上面的 CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC 已禁用自动更新。需要自动更新时，删除 CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
         "DISABLE_FEEDBACK_COMMAND": "1", # 是否禁用反馈命令，设置为"1"表示禁用用户提供反馈的命令
         "DISABLE_TELEMETRY": "1", # 是否禁用遥测数据收集，设置为"1"表示禁用收集用户使用数据的功能
         "DISABLE_ERROR_REPORTING": "1", # 是否禁用错误报告功能，设置为"1"表示禁用自动发送错误报告
@@ -102,8 +100,7 @@
                 "~/.cache/pip",
                 "~/.local/share/virtualenvs",
                 "~/go/pkg",
-                "~/go/bin",
-                "~/.kube"
+                "~/go/bin"
             ],
             "denyRead": [
                 "~/.docker",
@@ -128,13 +125,12 @@
                 "~/.ssh/config",
                 "~/.kube/config",
                 "~/.nvm",
-                "~/.config/pypoetry",
-                "~/.kube/config"
+                "~/.config/pypoetry"
             ]
         },
         "excludedCommands": ["docker *"]
     },
-    "alwaysThinkingEnabled": false,
+    # 不设置 alwaysThinkingEnabled：官方定义 false 会在所有会话关闭 extended thinking，true 无作用
     "effortLevel": "medium",
     "pluginConfigs": {},
     "skippedPlugins": []
