@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 8b3ff01
+head: 7b7ef74
 status: active
 updated: 2026-10-20
 ---
@@ -12,8 +12,8 @@ updated: 2026-10-20
 ## 摘要
 
 - 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交，已推送并发布 v2.0.1（Latest）；已制定「场景配置评估、优化与验证」待办计划，尚未开始执行
-- 停在：待办计划已写入本文件「当前状态」与 `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`，等待用户确认试用项目、模型组合与预算
-- 下一步：执行计划阶段 1 的第一项——为四个场景写「典型任务清单」（见「建议的下一步」）
+- 停在：`backend-dev` 改为 Go 参考实现，第一批（CLAUDE.md、`rules/go/`、`rules/framework/`、`go-new-module` skill、gofmt hook）已提交（`7b7ef74`），未推送
+- 下一步：`backend-dev` 第二批——数据库规则与 `db-schema-design` skill，完成后从 CLAUDE.md 移除「数据库」段落；第三批为 Redis、MQ、RPC（见「建议的下一步」）。评估计划的「典型任务清单」仍待开始
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -188,7 +188,15 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 <!-- section: next -->
 ## 建议的下一步
 
-为四个场景写「典型任务清单」，每场景 5～8 个，写入 `docs/evaluation/2026-10-baseline.md` 的开头一节。它同时用于阶段 1 的覆盖度评估、阶段 2 的调研问题聚焦和阶段 3 的标准任务。可参考计划文件 3.3 的示例，写完请用户确认后再进入其余评估项。
+**backend-dev Go 参考实现（进行中）**：用户已确认分三批实现，目录分层以 [FiberHouse](https://github.com/lamxy/fiberhouse) 的 `example_application/` 为准（`transport → service → repository → model`）。
+
+1. 第一批（已完成，`7b7ef74`）：CLAUDE.md、`rules/go/{code-style,layering,testing}.md`、`rules/framework/{fiberhouse,fiber,gin}.md`、`go-new-module` skill、`hooks/go-fmt.sh`；移除 TS LSP 与 prisma
+2. 第二批：`rules/database/{sql,mongodb}.md`（paths：`migrations/**`、`**/*.sql`、`model`/`repository`）+ `db-schema-design` skill；完成后删除 CLAUDE.md「数据库」段落
+3. 第三批：`rules/redis.md`、`rules/mq.md`（RocketMQ）、`rules/rpc.md` + `cache-design`、`mq-design` skill
+
+约定：rules 一律带 `paths`（`test-backend-dev-bundle.sh` 检查）；skill 在 `skills/skills-backend-dev/` 与场景包各放一份并保持一致；规范内容先读原始来源（Uber Go Style Guide、FiberHouse 文档）再写。path rules 与 skill 的实际触发效果尚未在真实项目中验证。
+
+**评估计划**：为四个场景写「典型任务清单」，每场景 5～8 个，写入 `docs/evaluation/2026-10-baseline.md` 的开头一节。它同时用于阶段 1 的覆盖度评估、阶段 2 的调研问题聚焦和阶段 3 的标准任务。可参考计划文件 3.3 的示例，写完请用户确认后再进入其余评估项。
 
 前置条件：已满足（无需外部资源）。试用项目、模型组合与预算只在阶段 3 才需要。
 
@@ -229,3 +237,5 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-20 | README 定位文案与 v2.0.1 | 根目录 `README.md` 改为「个人开发者的 agent 配置与技能管理工具」语气（`6a31aee`），推送并发布 v2.0.1（Latest） | — |
 | 2026-10-20 | myhandoff 技能纳入 `dot_claude/` | 本机 `~/.claude/skills/myhandoff/` 复制到 `dot_claude/skills/myhandoff/`（`c68cf9c`），`install.sh -l user` 随之安装；append 模式跳过已存在的技能文件（`[SKIP-APPEND]`）；新增 2 项测试 | 副本需手动与本机同步 |
 | 2026-10-20 | 仓库根 `.claude/` 设定入库 | `claudeMdExcludes` 移到可提交的 `.claude/settings.json`，sandbox 开关留在 `settings.local.json`；`.gitignore` 排除 `.claude/settings.local.json`、`.claude/.cc-writes/`（`8b3ff01`）；`.codex` 本机不存在，维持忽略 | — |
+| 2026-10-20 | 仓库范围说明 | 根目录与 `dot_claude_projects/` README 说明只维护四个场景的参考实现，其他场景由使用者复制场景包或切分支自行实现（`791dabf`） | — |
+| 2026-10-20 | backend-dev Go 参考实现（第一批） | 按 FiberHouse 分层重写 CLAUDE.md；新增 6 个 path rules、`go-new-module` skill、`go-fmt.sh` PostToolUse hook；移除 `typescript-native-lsp`、`prisma`；新增 `test-backend-dev-bundle.sh`，11 个测试文件全过（`7b7ef74`） | 第二、三批待做；未推送 |
