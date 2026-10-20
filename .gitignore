@@ -38,9 +38,6 @@ temp/
 # smoke test
 .tmp/
 
-# long claude.md
-dot_claude/CLAUDE-long.md
-
 */.ost-refs
 
 # open_supports workflow runtime state
