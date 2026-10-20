@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 4d611a6
+head: 3d33e81
 status: active
 updated: 2026-10-21
 ---
@@ -13,7 +13,7 @@ updated: 2026-10-21
 
 - 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交，已推送并发布 v2.0.1（Latest）；已制定「场景配置评估、优化与验证」待办计划，尚未开始执行
 - 停在：用户交来首批技术规范（本机 `~/workspace/documents/技術規範--檔案夾/`，含企业原规范，**不入库**），已去企业化重组为 backend-dev 的存储与中间件 rules、4 个 skill 和 dev-ops 的 `middleware-ops` skill（`2ac1c49`、`4d611a6`），12 个测试文件全过，已推送到 `origin/main`
-- 下一步：RPC 规范等用户下一批规范；或开始评估计划的「典型任务清单」
+- 下一步：**优先**——接手时先向用户列出「数据库设计强化」待办（见「建议的下一步」第一项），询问教学案例是否已备好；其次 RPC 规范（等用户下一批规范）或评估计划的「典型任务清单」
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -24,6 +24,7 @@ updated: 2026-10-21
 
 | 任务 | 状态 | 说明 |
 |---|---|---|
+| **数据库设计强化（优先）** | 等用户提供材料 | 用户将提供数据库设计教学案例：互联网商城数据库设计、反经典范式设计思想、AI 开发技能平台的失败设计反面案例；用于强化 backend-dev 的 MySQL / MongoDB 设计能力，见「建议的下一步」 |
 | backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；RPC 待用户规范 |
 | 场景配置评估、优化与验证 | 待开始 | 三个阶段，清单见下方；方法论细节见 `docs/plans/2026-10-20-scenario-config-evaluation-plan.md` |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
@@ -207,6 +208,16 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 <!-- section: next -->
 ## 建议的下一步
 
+**数据库设计强化（优先，接手时先列出）**：用户 2026-10-21 要求加入。用户将提供一份数据库设计教学案例，内容包括：
+
+1. 互联网商城的数据库设计（MySQL、MongoDB 为主）
+2. 反经典范式的设计思想（有意的反范式：冗余字段、宽表、内嵌文档等的取舍）
+3. 一个 AI 开发技能平台的失败数据库设计（反面案例）
+
+用途：优化 backend-dev 场景的数据库设计能力。预计落点（材料到手后再与用户确认）：`db-schema-design` skill 新增 `references/` 案例文件（正例、反范式取舍、反面案例与教训），必要时补充 `rules/database/{mysql,mongodb}.md`；skill 在 `skills/skills-backend-dev/` 与场景包保持一致（`test-scenario-skills.sh` 校验）。
+
+前置条件：**未满足**——等用户提供教学案例。材料若含企业或真实项目元素，与技术规范一样先去企业化再入库，源文件不入库。
+
 **backend-dev Go 参考实现（进行中）**：用户已确认分三批实现，目录分层以 [FiberHouse](https://github.com/lamxy/fiberhouse) 的 `example_application/` 为准（`transport → service → repository → model`）。
 
 1. 第一批（已完成，`7b7ef74`）：CLAUDE.md、`rules/go/{code-style,layering,testing}.md`、`rules/framework/{fiberhouse,fiber,gin}.md`、`go-new-module` skill、`hooks/go-fmt.sh`；移除 TS LSP 与 prisma
@@ -261,3 +272,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-20 | 仓库范围说明 | 根目录与 `dot_claude_projects/` README 说明只维护四个场景的参考实现，其他场景由使用者复制场景包或切分支自行实现（`791dabf`） | — |
 | 2026-10-20 | backend-dev Go 参考实现（第一批） | 按 FiberHouse 分层重写 CLAUDE.md；新增 6 个 path rules、`go-new-module` skill、`go-fmt.sh` PostToolUse hook；移除 `typescript-native-lsp`、`prisma`；新增 `test-backend-dev-bundle.sh`，11 个测试文件全过（`7b7ef74`） | 第二、三批待做；未推送 |
 | 2026-10-21 | 技术规范融入（存储与中间件） | 用户首批规范去企业化后重组：backend-dev 7 个 rules、4 个 skill，dev-ops `middleware-ops` skill；新增 `test-scenario-skills.sh`，12 个测试文件全过 | RPC 待规范 |
+| 2026-10-21 | 新增数据库设计强化待办 | 交接文件登记优先待办：等用户提供商城设计、反范式思想、AI 技能平台反面案例的教学材料 | 等材料 |
