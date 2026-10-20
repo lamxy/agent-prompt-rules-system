@@ -49,7 +49,6 @@ open_supports/.ost-workflow-state/*.json
 
 # superpowers
 docs/superpowers/*
-docs/superpowers-bak
 
 # src web dev
 src/agent-kits-system-management-platform-web/*
