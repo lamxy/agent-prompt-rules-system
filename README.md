@@ -71,8 +71,15 @@
 |------|------|------|
 | `prd-design` | PRD 与原型设计 | 需求说明书、PRD、线框图与基础原型；以 pm-skills、mattpocock-skills、gstack 等技能为主 |
 | `frontend-dev` | 前端开发 | UI 设计与实现、前端交互、对接后端 API |
-| `backend-dev` | 后端开发 | 系统规格与架构设计、技术与框架选型、数据库设计；Go 与 Node.js，MongoDB、Redis、MySQL、PostgreSQL |
+| `backend-dev` | 后端开发 | 系统规格与架构设计、技术与框架选型、数据库设计；以 Go 技术栈为参考实现：Gin、Fiber、自定义框架、RPC，MySQL、PostgreSQL、MongoDB、Redis、RocketMQ 等消息队列 |
 | `dev-ops` | DevOps | CI/CD、上线、可观测性；Kubernetes、Prometheus/Grafana、Sentry |
+
+仓库只维护以上四个场景，每个场景是一份**参考实现**，不追求覆盖该领域的所有技术栈（例如 `backend-dev` 只以 Go 为主）。其他场景、其他技术栈或特定项目由使用者自行实现，常见做法有两种：
+
+- **复制场景包**：复制最接近的场景（例如 `dot_claude_projects/.claude-backend-dev/`），以项目名或技术栈作为新 FLAG（例如 `.claude-order-service/`），再改写其中内容
+- **切分支修改**：在自己的 fork 中切出分支，直接修改现有场景包
+
+详见 [`dot_claude_projects/README.md`](dot_claude_projects/README.md) 的「范围与自定义场景」。
 
 每个场景在 `settings/`、`claude_mds/`、`dot_mcp_jsons/`、`agents/`、`skills/`、`dot_claude_projects/` 中使用相同的 FLAG。插件分层与选择理由见 `settings/README.md`，一次初始化一个场景项目的命令见 `dot_claude_projects/README.md`。
 

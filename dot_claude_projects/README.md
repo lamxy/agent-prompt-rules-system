@@ -14,6 +14,24 @@
 | `.claude-dev-ops/` | settings、`CLAUDE.md`、`.mcp.json`（Kubernetes 只读）、5 个 agent；清单无专属支持包 | 项目根目录 |
 | `.claude-FLAG-NAME_template/` | 命名模板与清单格式说明 | — |
 
+## 范围与自定义场景
+
+仓库只维护上表四个场景包，每个都是该场景的**参考实现**，不提供覆盖所有技术栈的模板。以 `backend-dev` 为例：只以 Go 技术栈实现（Gin、Fiber、自定义框架、RPC，MySQL、PostgreSQL、MongoDB、Redis、RocketMQ 等消息队列），Java、Python 等其他后端技术栈不在仓库范围内。
+
+其他场景、其他技术栈或特定项目，由使用者自行实现：
+
+- **复制场景包**：复制最接近的场景包，以项目名或技术栈作为新 FLAG，再改写内容。例如：
+
+  ```sh
+  cp -R dot_claude_projects/.claude-backend-dev dot_claude_projects/.claude-order-service
+  # 改写 CLAUDE.md、.claude/rules/、.claude/skills/ 中与技术栈、目录结构有关的内容
+  sh scripts/install-claude-project.sh -f order-service -t /path/to/project -d   # 预演
+  ```
+
+  FLAG 只需在 `dot_claude_projects/` 中存在即可安装整包；要用各维度脚本单独安装时，再在对应维度目录建立同名 FLAG（见「新增场景」）。
+
+- **切分支修改**：在自己的 fork 中切出分支，直接修改现有场景包，主分支保持与上游一致，方便日后合并更新。
+
 ## 场景包与各维度目录的关系
 
 场景包是各维度配置的**完整聚合**，初次由以下来源复制而来，之后**与来源目录分开维护**，不自动同步：
