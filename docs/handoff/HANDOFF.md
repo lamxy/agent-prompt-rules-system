@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 0d0dc05
+head: 8b3ff01
 status: active
 updated: 2026-10-20
 ---
@@ -11,7 +11,7 @@ updated: 2026-10-20
 <!-- section: summary -->
 ## 摘要
 
-- 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交；已制定「场景配置评估、优化与验证」待办计划，尚未开始执行
+- 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交，已推送并发布 v2.0.1（Latest）；已制定「场景配置评估、优化与验证」待办计划，尚未开始执行
 - 停在：待办计划已写入本文件「当前状态」与 `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`，等待用户确认试用项目、模型组合与预算
 - 下一步：执行计划阶段 1 的第一项——为四个场景写「典型任务清单」（见「建议的下一步」）
 
@@ -62,6 +62,8 @@ updated: 2026-10-20
 ## 已完成内容
 
 **仓库定位**：个人 Agent 配置与工具／技能管理仓库（Claude Code 为主，兼顾 Codex），公开供参考。2026-10-19 从「分层提示词规则系统」转型而来，设计原则与原因见根目录 `README.md`。
+
+**版本**：本地 `main` 与 `origin/main` 同步；GitHub release v2.0.0（tag 指向 `a0783b3`）、v2.0.1（tag 指向 `6a31aee`，标为 Latest）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
 
 **四个场景**（FLAG 在所有维度目录中一致；另有 `fullstack-dev` 只存在于 `settings/`）：
 
@@ -134,7 +136,7 @@ sh scripts/multi_client_support/codex.sh -d
 |---|---|
 | 不改动本机配置 | 只修改本仓库。`~/.claude/`、`~/.codex/` 等本机文件只读，除非用户明确下指令 |
 | 改动前先确认 | 涉及取舍的事项先列方案与理由，用户确认后再实现 |
-| 提交 | 用户确认后才提交；不推送 |
+| 提交 | 用户确认后才提交；推送与发布 release 需用户明确指示（2026-10-20 已按指示推送并发布 v2.0.0、v2.0.1） |
 | 测试 | 一律在临时目录或 scratchpad 执行，不对真实配置测试 |
 | 不使用中国大陆的工具 | 例如飞书、钉钉、阿里云、腾讯云 |
 | 语言 | 与用户沟通用繁体中文；`dot_claude/` 与 Codex 模板为繁体中文；其他仓库文档为简体中文 |
@@ -223,3 +225,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-20 | Codex 适配按新架构改造 | `codex.sh` 只写 `~/.codex/AGENTS.md` 标记区块；模板改为 `CLAUDE.md` 的 Codex 版；移除项目级、`-v`、`.agent-rules/` | `analyze-github-repo` 转 Codex skill |
 | 2026-10-20 | 评估与验证待办计划 | 新增 `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`，清单同步写入本文件「当前状态」 | 待用户确认试用项目、模型组合与预算 |
 | 2026-10-20 | 交接文件迁移 | `docs/HANDOFF.md` 迁至 `docs/handoff/HANDOFF.md`，按 myhandoff 模板重组（frontmatter、章节锚点），使 handoff 技能与 hook 能识别 | — |
+| 2026-10-20 | 推送与发布 v2.0.0 | 推送 `main` 至 `a0783b3`，发布 v2.0.0；GitHub 仓库描述与 topics 改为个人开发者工具定位 | — |
+| 2026-10-20 | README 定位文案与 v2.0.1 | 根目录 `README.md` 改为「个人开发者的 agent 配置与技能管理工具」语气（`6a31aee`），推送并发布 v2.0.1（Latest） | — |
+| 2026-10-20 | myhandoff 技能纳入 `dot_claude/` | 本机 `~/.claude/skills/myhandoff/` 复制到 `dot_claude/skills/myhandoff/`（`c68cf9c`），`install.sh -l user` 随之安装；append 模式跳过已存在的技能文件（`[SKIP-APPEND]`）；新增 2 项测试 | 副本需手动与本机同步 |
+| 2026-10-20 | 仓库根 `.claude/` 设定入库 | `claudeMdExcludes` 移到可提交的 `.claude/settings.json`，sandbox 开关留在 `settings.local.json`；`.gitignore` 排除 `.claude/settings.local.json`、`.claude/.cc-writes/`（`8b3ff01`）；`.codex` 本机不存在，维持忽略 | — |
