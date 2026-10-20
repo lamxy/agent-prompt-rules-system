@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 7b7ef74
+head: 42a14f8
 status: active
 updated: 2026-10-20
 ---
@@ -12,8 +12,8 @@ updated: 2026-10-20
 ## 摘要
 
 - 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交，已推送并发布 v2.0.1（Latest）；已制定「场景配置评估、优化与验证」待办计划，尚未开始执行
-- 停在：`backend-dev` 改为 Go 参考实现，第一批（CLAUDE.md、`rules/go/`、`rules/framework/`、`go-new-module` skill、gofmt hook）已提交（`7b7ef74`），未推送
-- 下一步：`backend-dev` 第二批——数据库规则与 `db-schema-design` skill，完成后从 CLAUDE.md 移除「数据库」段落；第三批为 Redis、MQ、RPC（见「建议的下一步」）。评估计划的「典型任务清单」仍待开始
+- 停在：`backend-dev` 改为 Go 参考实现，第一批已提交（`7b7ef74`）；本地 `main` 领先 `origin/main` 3 个提交（`791dabf`、`7b7ef74`、`42a14f8`），用户要求暂不推送。**用户正在整理后端技术规范，交来之前不开始第二批**
+- 下一步：等用户提供技术规范后，以其为来源做 `backend-dev` 第二批（数据库规则 + `db-schema-design` skill），再做第三批（Redis、MQ、RPC），见「建议的下一步」。推送需用户另行指示
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -24,8 +24,9 @@ updated: 2026-10-20
 
 | 任务 | 状态 | 说明 |
 |---|---|---|
-| 场景配置评估、优化与验证 | **待开始（下一个）** | 三个阶段，清单见下方；方法论细节见 `docs/plans/2026-10-20-scenario-config-evaluation-plan.md` |
-| 四个场景的自定义 skill | 待开始 | `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
+| backend-dev Go 参考实现 | **进行中（暂停）** | 第一批完成（`7b7ef74`）；第二、三批等用户整理的技术规范，见「建议的下一步」 |
+| 场景配置评估、优化与验证 | 待开始 | 三个阶段，清单见下方；方法论细节见 `docs/plans/2026-10-20-scenario-config-evaluation-plan.md` |
+| 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 待用户决定 | `sh scripts/install-settings.sh -l user -m overwrite`；`dot_claude/settings.json` 仍是本机设定镜像，未做插件分层调整 |
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
@@ -193,6 +194,8 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 1. 第一批（已完成，`7b7ef74`）：CLAUDE.md、`rules/go/{code-style,layering,testing}.md`、`rules/framework/{fiberhouse,fiber,gin}.md`、`go-new-module` skill、`hooks/go-fmt.sh`；移除 TS LSP 与 prisma
 2. 第二批：`rules/database/{sql,mongodb}.md`（paths：`migrations/**`、`**/*.sql`、`model`/`repository`）+ `db-schema-design` skill；完成后删除 CLAUDE.md「数据库」段落
 3. 第三批：`rules/redis.md`、`rules/mq.md`（RocketMQ）、`rules/rpc.md` + `cache-design`、`mq-design` skill
+
+前置条件：**未满足**——用户在整理后端技术规范（代码风格、框架、项目结构、数据库、Redis、MQ 等），交来后以其为主要来源，与第一批已写的 rules 对照合并，冲突处先问用户。
 
 约定：rules 一律带 `paths`（`test-backend-dev-bundle.sh` 检查）；skill 在 `skills/skills-backend-dev/` 与场景包各放一份并保持一致；规范内容先读原始来源（Uber Go Style Guide、FiberHouse 文档）再写。path rules 与 skill 的实际触发效果尚未在真实项目中验证。
 
