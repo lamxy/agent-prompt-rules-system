@@ -10,8 +10,8 @@
 |------|------|------|
 | `prd-design` | PRD 设计 | 自定义 skill 待补充；PM 类 skill 由 `open_supports/ost_phuryn_pm-skills` 以项目级插件提供 |
 | `frontend-dev` | 前端开发 | 自定义 skill 待补充；外部 skills 安装方式见 `skills-frontend-dev/README.md` |
-| `backend-dev` | 后端开发 | 自定义 skill 待补充 |
-| `dev-ops` | DevOps | 自定义 skill 待补充 |
+| `backend-dev` | 后端开发 | `go-new-module`、`db-schema-design`、`cache-design`、`mq-design`、`system-design-doc`（与场景包 `.claude/skills/` 保持一致） |
+| `dev-ops` | DevOps | `middleware-ops`（中间件部署、调优、迁移与监控基线） |
 
 场景所需的第三方 skill 优先使用 `open_supports/` 收录的支持包（如 pm-skills、mattpocock-skills）或 `settings/` 中启用的插件（如 document-skills），本目录只放它们没有覆盖、需要自己编写的 skill。
 

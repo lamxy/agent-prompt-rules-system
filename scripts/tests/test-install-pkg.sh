@@ -68,7 +68,7 @@ test_skill_install_creates_target_and_filters() {
 test_skill_placeholder_package() {
   target="$TMP_DIR/skill-placeholder"
 
-  for flag in prd-design frontend-dev dev-ops; do
+  for flag in prd-design frontend-dev; do
     sh "$SKILL_INSTALLER" -f "$flag" -t "$target" > "$TMP_DIR/skill-placeholder.log"
     assert_contains "$TMP_DIR/skill-placeholder.log" "此包尚无 skill"
   done

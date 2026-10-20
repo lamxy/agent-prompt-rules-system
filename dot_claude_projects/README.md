@@ -10,13 +10,13 @@
 | `.claude/` | `open_supports_name_list.txt`：gstack、task-master（用户级） | `~/.claude/` |
 | `.claude-prd-design/` | settings、`CLAUDE.md`、6 个 agent；清单：pm-skills 以 `--scope project` 安装为项目插件 | 项目根目录 |
 | `.claude-frontend-dev/` | settings、`CLAUDE.md`、5 个 agent；清单：codegraph（项目级），OpenSpec、gsd-core 为可选框架（注释状态） | 项目根目录 |
-| `.claude-backend-dev/` | Go 参考实现：settings（含 gofmt hook）、`CLAUDE.md`、`.mcp.json`（MySQL、PostgreSQL）、6 个 agent、path rules、`go-new-module` skill；清单同前端 | 项目根目录 |
-| `.claude-dev-ops/` | settings、`CLAUDE.md`、`.mcp.json`（Kubernetes 只读）、5 个 agent；清单无专属支持包 | 项目根目录 |
+| `.claude-backend-dev/` | Go 参考实现：settings（含 gofmt hook）、`CLAUDE.md`、`.mcp.json`（MySQL、PostgreSQL）、6 个 agent、path rules（Go、框架、存储与中间件）、5 个 skill；清单同前端 | 项目根目录 |
+| `.claude-dev-ops/` | settings、`CLAUDE.md`、`.mcp.json`（Kubernetes 只读）、5 个 agent、`middleware-ops` skill；清单无专属支持包 | 项目根目录 |
 | `.claude-FLAG-NAME_template/` | 命名模板与清单格式说明 | — |
 
 ## 范围与自定义场景
 
-仓库只维护上表四个场景包，每个都是该场景的**参考实现**，不提供覆盖所有技术栈的模板。以 `backend-dev` 为例：只以 Go 技术栈实现（Gin、Fiber、自定义框架、RPC，MySQL、PostgreSQL、MongoDB、Redis、RocketMQ 等消息队列），Java、Python 等其他后端技术栈不在仓库范围内。
+仓库只维护上表四个场景包，每个都是该场景的**参考实现**，不提供覆盖所有技术栈的模板。以 `backend-dev` 为例：只以 Go 技术栈实现（Gin、Fiber、自定义框架、RPC，MySQL、PostgreSQL、MongoDB、Elasticsearch、Redis、Kafka、RabbitMQ），Java、Python 等其他后端技术栈不在仓库范围内。
 
 其他场景、其他技术栈或特定项目，由使用者自行实现：
 
@@ -38,13 +38,17 @@
 
 | 位置 | 加载时机 | 内容 |
 |---|---|---|
-| `CLAUDE.md` | 每次会话 | 技术栈、目录与依赖方向、设计文档、API、验证命令 |
-| `.claude/rules/go/` | 编辑匹配的 `.go` 文件时 | `code-style.md`（错误、并发、context）、`layering.md`（分层职责与类型转换）、`testing.md` |
+| `CLAUDE.md` | 每次会话 | 技术栈、目录与依赖方向、设计文档、API、存储与中间件规范索引、验证命令 |
+| `.claude/rules/go/` | 编辑匹配的 `.go` 文件时 | `code-style.md`（错误、并发、context）、`layering.md`（分层职责与类型转换）、`testing.md`、`logging.md`（日志级别与字段） |
 | `.claude/rules/framework/` | 编辑 handler、路由、Provider 时 | `fiberhouse.md`、`fiber.md`、`gin.md` |
-| `.claude/skills/go-new-module/` | 调用或判断相关时 | 按分层新增业务模块的流程 |
+| `.claude/rules/database/` | 编辑 SQL、migration、`model` / `repository` / `entity` 等目录时 | `mysql.md`、`mongodb.md`、`elasticsearch.md` |
+| `.claude/rules/redis.md`、`.claude/rules/mq/` | 编辑缓存、Kafka、RabbitMQ 相关代码时 | key 与 value 设计、命令限制；`kafka.md`、`rabbitmq.md`（命名、确认、幂等、连接） |
+| `.claude/skills/` | 调用或判断相关时 | `go-new-module`（新增业务模块）、`db-schema-design`、`cache-design`、`mq-design`、`system-design-doc`（上下文图与结构图）；理由与参数表在各自的 `references/` |
 | `.claude/hooks/go-fmt.sh` | 每次 Edit / Write `.go` 文件后 | goimports 或 gofmt；语法错误时回报给 Claude |
 
-安装到项目后按实际技术栈删减 `rules/framework/`：使用 FiberHouse 时保留 `fiberhouse.md` 与所用内核的 `fiber.md` 或 `gin.md`；只用原生框架时删除 `fiberhouse.md`。path rules 按目录匹配，无法区分框架，多留的文件会在编辑 handler 时一并载入。数据库、Redis、消息队列与 RPC 的规范将陆续补充。
+安装到项目后按实际技术栈删减 `rules/framework/`：使用 FiberHouse 时保留 `fiberhouse.md` 与所用内核的 `fiber.md` 或 `gin.md`；只用原生框架时删除 `fiberhouse.md`。path rules 按目录匹配，无法区分框架，多留的文件会在编辑 handler 时一并载入。不使用的存储或中间件，删除对应的 rules 文件即可。RPC 规范尚未补充。
+
+中间件的部署、调优、迁移与监控基线属于运维面，放在 `.claude-dev-ops/` 的 `middleware-ops` skill。
 
 ## 场景包与各维度目录的关系
 
@@ -56,7 +60,7 @@
 | `CLAUDE.md` | `claude_mds/CLAUDE-<FLAG>.md` | `install-claude-md.sh -f <FLAG>` |
 | `.mcp.json` | `dot_mcp_jsons/dot-mcp-json-<FLAG>.json`（空模板不复制） | `install-dot-mcp.sh -f <FLAG>` |
 | `.claude/agents/*.md` | `agents/agents-<FLAG>/` | `install-agent-pkg.sh -f <FLAG>` |
-| `.claude/skills/<name>/` | `skills/skills-<FLAG>/` 中含 `SKILL.md` 的目录（目前四个场景都还没有） | `install-skill-pkg.sh -f <FLAG>` |
+| `.claude/skills/<name>/` | `skills/skills-<FLAG>/` 中含 `SKILL.md` 的目录（目前有 `backend-dev`、`dev-ops`） | `install-skill-pkg.sh -f <FLAG>` |
 | `.claude/open_supports_name_list.txt` | 只存在于场景包 | `install-open-supports.sh -t <project>` |
 | `.claude/rules/`、`.claude/hooks/` | 只存在于场景包（目前只有 `backend-dev`） | 随场景包安装 |
 
