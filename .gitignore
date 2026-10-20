@@ -10,6 +10,8 @@ Thumbs.db
 
 # Claude local files
 dot_claude/settings.local.json
+.claude/settings.local.json
+.claude/.cc-writes/
 
 # Environment / secrets
 .env

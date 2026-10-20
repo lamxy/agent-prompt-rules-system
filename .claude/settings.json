@@ -1,0 +1,6 @@
+{
+  "claudeMdExcludes": [
+    "**/dot_claude_legacy/**",
+    "**/dot_claude_projects/**/CLAUDE.md"
+  ]
+}
