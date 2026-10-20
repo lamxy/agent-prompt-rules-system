@@ -12,7 +12,7 @@
 
 ## 技术栈
 
-Go；HTTP 框架为 FiberHouse（可切换 Fiber、Gin、Hertz 内核）或原生 Gin、Fiber；RPC；MySQL、PostgreSQL、MongoDB、Redis、RocketMQ 等消息队列。项目实际使用哪些，以 `go.mod` 为准。
+Go；HTTP 框架为 FiberHouse（可切换 Fiber、Gin、Hertz 内核）或原生 Gin、Fiber；RPC；MySQL、PostgreSQL、MongoDB、Elasticsearch、Redis、Kafka、RabbitMQ。项目实际使用哪些，以 `go.mod` 为准。
 
 ## 目录结构
 
@@ -44,16 +44,12 @@ Go；HTTP 框架为 FiberHouse（可切换 Fiber、Gin、Hertz 内核）或原�
 - 先改契约（`apivo/`、OpenAPI 注解或 proto），再写实现；破坏性变更走新版本，不直接修改已发布的接口。
 - 写操作接口要考虑幂等；列表接口必须分页；对外部依赖设置超时，重试只用于幂等操作。
 
-## 数据库
+## 存储与中间件
 
-- MySQL / PostgreSQL 的 schema 变更只通过 migration 文件，并附回滚步骤；不直接在库上执行 DDL。
-- MongoDB 的索引与集合变更同样写成迁移脚本；查询需有对应索引。
-- Redis key 按 `<服务>:<实体>:<id>` 命名，并设置 TTL；不使用 `KEYS *` 这类阻塞命令。
+- MySQL、MongoDB、Elasticsearch、Redis、Kafka、RabbitMQ 的规范在 `.claude/rules/`，编辑对应代码时自动加载；日志规范在 `.claude/rules/go/logging.md`。
+- 设计新表或集合用 `/db-schema-design`，缓存用 `/cache-design`，消息用 `/mq-design`，系统架构图用 `/system-design-doc`。
+- schema 变更只通过 migration 文件并附回滚步骤，不直接在库上执行 DDL。
 - 数据库 MCP 只连开发或测试库，使用只读账号。
-
-## 可观测性
-
-日志使用结构化格式并带 trace id；新接口补充耗时与错误率指标。
 
 ## 验证
 

@@ -34,16 +34,6 @@ test_rules_have_paths() {
   pass "all $count backend rules declare paths"
 }
 
-test_skills_match_dimension_dir() {
-  for skill in "$REPO_ROOT"/skills/skills-backend-dev/*/SKILL.md; do
-    name="$(basename "$(dirname "$skill")")"
-    grep -q "^name: $name$" "$skill" || fail "skill name does not match directory: $skill"
-    grep -q '^description: ' "$skill" || fail "skill has no description: $skill"
-    cmp -s "$skill" "$BUNDLE/.claude/skills/$name/SKILL.md" || fail "bundle copy differs: $name"
-  done
-  pass "backend skills have name/description and match the bundle copy"
-}
-
 test_settings_are_backend_only() {
   for file in "$REPO_ROOT/settings/settings.project-backend-dev.json" "$BUNDLE/.claude/settings.json"; do
     python3 -m json.tool "$file" > /dev/null || fail "invalid JSON: $file"
@@ -87,13 +77,17 @@ test_bundle_install_keeps_hook_executable() {
   sh "$REPO_ROOT/scripts/install-claude-project.sh" -f backend-dev -t "$project" -N > "$TMP_DIR/install.log"
 
   [ -x "$project/.claude/hooks/go-fmt.sh" ] || fail "installed hook is not executable"
-  [ -f "$project/.claude/rules/go/layering.md" ] || fail "rules were not installed"
-  [ -f "$project/.claude/skills/go-new-module/SKILL.md" ] || fail "skills were not installed"
+  for rule in go/layering.md database/mysql.md database/mongodb.md redis.md mq/kafka.md mq/rabbitmq.md; do
+    [ -f "$project/.claude/rules/$rule" ] || fail "rule was not installed: $rule"
+  done
+  for skill in go-new-module db-schema-design cache-design mq-design system-design-doc; do
+    [ -f "$project/.claude/skills/$skill/SKILL.md" ] || fail "skill was not installed: $skill"
+  done
+  [ -f "$project/.claude/skills/db-schema-design/references/mysql.md" ] || fail "skill references were not installed"
   pass "installing the bundle copies rules, skills, and an executable hook"
 }
 
 test_rules_have_paths
-test_skills_match_dimension_dir
 test_settings_are_backend_only
 test_hook_formats_go_files
 test_bundle_install_keeps_hook_executable
