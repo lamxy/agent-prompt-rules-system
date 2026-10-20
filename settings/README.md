@@ -67,7 +67,7 @@ local > project > user
 |------|-----------|------|------|
 | `settings.project-prd-design.json` | `prd-design` | `playground`、`document-skills`（docx/pptx/xlsx/pdf） | 声明 `anthropic-agent-skills` 市场。PM Skills 由 `open_supports/ost_phuryn_pm-skills` 以项目级插件安装，见下方说明 |
 | `settings.project-frontend-dev.json` | `frontend-dev` | `typescript-native-lsp`、`frontend-design`、`playwright`、`chrome-devtools-mcp`、`modern-web-guidance`、`playground`、`pr-review-toolkit`、`sentry` | — |
-| `settings.project-backend-dev.json` | `backend-dev` | `gopls-lsp`、`typescript-native-lsp`、`postman`、`mongodb`、`redis-development`、`semgrep`、`sentry`、`pr-review-toolkit` | `permissions.deny`：MySQL、PostgreSQL、MongoDB（含 `mongosh`）、Redis 的破坏性命令 |
+| `settings.project-backend-dev.json` | `backend-dev` | `gopls-lsp`、`postman`、`mongodb`、`redis-development`、`semgrep`、`sentry`、`pr-review-toolkit` | `permissions.deny`：MySQL、PostgreSQL、MongoDB（含 `mongosh`）、Redis 的破坏性命令；`PostToolUse` hook 在编辑 `.go` 文件后执行 `.claude/hooks/go-fmt.sh`（脚本只在场景包中提供） |
 | `settings.project-dev-ops.json` | `dev-ops` | `terraform`、`grafana-mcp`（可查询 Prometheus、Loki）、`sentry`、`semgrep`、`sonatype-guide`、`pr-review-toolkit` | `permissions.ask`：`terraform apply/destroy/import/state`、`kubectl apply/delete/scale/rollout/patch/edit/drain/cordon`、`helm install/upgrade/uninstall/rollback` |
 | `settings.project-fullstack-dev.json` | `fullstack-dev` | 前端 + 后端去重 | 与后端相同的 `permissions.deny` |
 
@@ -84,7 +84,7 @@ local > project > user
 |------|-----------|---------|
 | `settings.local-prd-design.json` | `prd-design` | `figma`、`notion`、`miro` |
 | `settings.local-frontend-dev.json` | `frontend-dev` | `figma`、`vercel` |
-| `settings.local-backend-dev.json` | `backend-dev` | `supabase`、`neon`、`prisma`、`mongodb-atlas`（托管数据库） |
+| `settings.local-backend-dev.json` | `backend-dev` | `supabase`、`neon`、`mongodb-atlas`（托管数据库） |
 | `settings.local-dev-ops.json` | `dev-ops` | `datadog`、`pagerduty`、`incident-io`、`cloudflare`、`aws-core` |
 
 ### 参考文件

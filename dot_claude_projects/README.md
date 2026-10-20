@@ -10,7 +10,7 @@
 | `.claude/` | `open_supports_name_list.txt`：gstack、task-master（用户级） | `~/.claude/` |
 | `.claude-prd-design/` | settings、`CLAUDE.md`、6 个 agent；清单：pm-skills 以 `--scope project` 安装为项目插件 | 项目根目录 |
 | `.claude-frontend-dev/` | settings、`CLAUDE.md`、5 个 agent；清单：codegraph（项目级），OpenSpec、gsd-core 为可选框架（注释状态） | 项目根目录 |
-| `.claude-backend-dev/` | settings、`CLAUDE.md`、`.mcp.json`（MySQL、PostgreSQL）、6 个 agent；清单同前端 | 项目根目录 |
+| `.claude-backend-dev/` | Go 参考实现：settings（含 gofmt hook）、`CLAUDE.md`、`.mcp.json`（MySQL、PostgreSQL）、6 个 agent、path rules、`go-new-module` skill；清单同前端 | 项目根目录 |
 | `.claude-dev-ops/` | settings、`CLAUDE.md`、`.mcp.json`（Kubernetes 只读）、5 个 agent；清单无专属支持包 | 项目根目录 |
 | `.claude-FLAG-NAME_template/` | 命名模板与清单格式说明 | — |
 
@@ -32,6 +32,20 @@
 
 - **切分支修改**：在自己的 fork 中切出分支，直接修改现有场景包，主分支保持与上游一致，方便日后合并更新。
 
+## backend-dev：Go 参考实现
+
+目录结构以 [FiberHouse](https://github.com/lamxy/fiberhouse) 的 `example_application/` 为准（`apivo/`、`command/`、`module/<名称>-module/{api,service,repository,model,entity,dto}/`、`providers/`），同样适用于原生 Gin、Fiber 项目。
+
+| 位置 | 加载时机 | 内容 |
+|---|---|---|
+| `CLAUDE.md` | 每次会话 | 技术栈、目录与依赖方向、设计文档、API、验证命令 |
+| `.claude/rules/go/` | 编辑匹配的 `.go` 文件时 | `code-style.md`（错误、并发、context）、`layering.md`（分层职责与类型转换）、`testing.md` |
+| `.claude/rules/framework/` | 编辑 handler、路由、Provider 时 | `fiberhouse.md`、`fiber.md`、`gin.md` |
+| `.claude/skills/go-new-module/` | 调用或判断相关时 | 按分层新增业务模块的流程 |
+| `.claude/hooks/go-fmt.sh` | 每次 Edit / Write `.go` 文件后 | goimports 或 gofmt；语法错误时回报给 Claude |
+
+安装到项目后按实际技术栈删减 `rules/framework/`：使用 FiberHouse 时保留 `fiberhouse.md` 与所用内核的 `fiber.md` 或 `gin.md`；只用原生框架时删除 `fiberhouse.md`。path rules 按目录匹配，无法区分框架，多留的文件会在编辑 handler 时一并载入。数据库、Redis、消息队列与 RPC 的规范将陆续补充。
+
 ## 场景包与各维度目录的关系
 
 场景包是各维度配置的**完整聚合**，初次由以下来源复制而来，之后**与来源目录分开维护**，不自动同步：
@@ -44,6 +58,7 @@
 | `.claude/agents/*.md` | `agents/agents-<FLAG>/` | `install-agent-pkg.sh -f <FLAG>` |
 | `.claude/skills/<name>/` | `skills/skills-<FLAG>/` 中含 `SKILL.md` 的目录（目前四个场景都还没有） | `install-skill-pkg.sh -f <FLAG>` |
 | `.claude/open_supports_name_list.txt` | 只存在于场景包 | `install-open-supports.sh -t <project>` |
+| `.claude/rules/`、`.claude/hooks/` | 只存在于场景包（目前只有 `backend-dev`） | 随场景包安装 |
 
 两种方式都不会静默覆盖：目标文件已存在时默认跳过（`[MANUAL]`），加 `-F` 时先备份再覆盖。`settings.local.json`、本地级插件等个人设定不放进场景包。
 

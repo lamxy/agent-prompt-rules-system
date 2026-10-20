@@ -68,13 +68,22 @@ test_skill_install_creates_target_and_filters() {
 test_skill_placeholder_package() {
   target="$TMP_DIR/skill-placeholder"
 
-  for flag in prd-design frontend-dev backend-dev dev-ops; do
+  for flag in prd-design frontend-dev dev-ops; do
     sh "$SKILL_INSTALLER" -f "$flag" -t "$target" > "$TMP_DIR/skill-placeholder.log"
     assert_contains "$TMP_DIR/skill-placeholder.log" "此包尚无 skill"
   done
   [ -z "$(ls -A "$target")" ] || fail "placeholder packages should install nothing"
 
   pass "scenario placeholder packages install nothing and say so"
+}
+
+test_skill_backend_dev_package() {
+  target="$TMP_DIR/skill-backend"
+
+  sh "$SKILL_INSTALLER" -f backend-dev -t "$target" > "$TMP_DIR/skill-backend.log"
+
+  [ -f "$target/go-new-module/SKILL.md" ] || fail "expected backend-dev to install go-new-module"
+  pass "backend-dev package installs its skills"
 }
 
 test_skill_conflict_without_force() {
@@ -153,6 +162,7 @@ test_agent_force_backs_up() {
 
 test_skill_install_creates_target_and_filters
 test_skill_placeholder_package
+test_skill_backend_dev_package
 test_skill_conflict_without_force
 test_skill_force_backs_up
 test_skill_target_is_file

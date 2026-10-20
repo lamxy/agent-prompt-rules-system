@@ -3,7 +3,6 @@
     "enabledPlugins": {
         "supabase@claude-plugins-official": false,
         "neon@claude-plugins-official": false,
-        "prisma@claude-plugins-official": false,
         "mongodb-atlas@claude-plugins-official": false
     },
     "extraKnownMarketplaces": {
