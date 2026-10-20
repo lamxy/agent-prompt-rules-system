@@ -1,7 +1,7 @@
 # Agent Prompt Rules System
 
 <p align="center">
-  个人 Agent 配置、技能与工具管理仓库<br />
+  面向个人开发者的 Agent 配置与技能管理工具<br />
   <strong>以 Claude Code 为主，兼顾 Codex；配置可同步、技能可安装、工具接入可复现。</strong>
 </p>
 
@@ -16,14 +16,14 @@
 
 ## 项目简介
 
-这是我个人使用的 Agent 配置与能力管理仓库，集中维护：
+这是一套帮助个人开发者管理 Agent 配置与能力的工具，按工作场景集中维护：
 
 - **配置**：Claude Code 用户级配置、settings 模板、项目级 `CLAUDE.md`、`.mcp.json` 与场景包
 - **能力包**：按场景分组的 agent 定义与 skill
 - **工具接入**：Agent 编程相关开源库的本地化支持包（摘要、幂等安装脚本、setup Skill）
 - **多客户端**：把个人差异规则同步到 Codex，并说明场景配置与 skill 如何复用
 
-内容以自用为主，公开供参考或 fork。其中 `dot_claude/settings.json` 等文件带有本机环境假设（代理、`rtk`、`myhandoff` 等），直接使用前请先阅读对应 README。
+可以直接 fork 后按自己的工作流改造。注意 `dot_claude/settings.json` 等文件带有作者的本机环境假设（代理、`rtk`、`myhandoff` 等），直接使用前请先阅读对应 README。
 
 > 仓库名 `agent-prompt-rules-system` 沿用早期「提示词规则系统」时期的名称，定位已在 2026-10 转型，见下方「转型说明」。
 
@@ -41,7 +41,7 @@
 4. **规则互相冲突**：如「同一工具最多重试 1 次」与全局 curl 重试规则矛盾；两条指令矛盾时模型可能任选其一。
 5. **hook 存在语义错误**：修复后收益仍低，新版不再采用。
 
-规则系统消失后，仓库真正持续产出价值的部分是**配置同步、技能与 agent 包、开源工具接入**，因此转型为个人 Agent 配置与工具／技能管理仓库。原路线图中的规约层、决策层、披露层与串联协议不再推进。
+规则系统消失后，仓库真正持续产出价值的部分是**配置同步、技能与 agent 包、开源工具接入**，因此转型为面向个人开发者的 Agent 配置与工具／技能管理工具。原路线图中的规约层、决策层、披露层与串联协议不再推进。
 
 - 原规则系统完整备份于 `dot_claude_legacy/`（已修正其中的 hook 与 settings 错误，不被任何安装脚本使用）
 - 逐项迁移对照、settings 调整与提炼的经验见 `dot_claude/README.md`
@@ -170,7 +170,7 @@ sh scripts/multi_client_support/codex.sh -d
 
 ## 贡献
 
-本仓库以个人使用为主，不主动征集贡献。发现问题欢迎开 issue；提交 PR 前请阅读 `CONTRIBUTING.md`。
+本仓库按作者的工作流演进，暂不主动征集贡献。发现问题欢迎开 issue；提交 PR 前请阅读 `CONTRIBUTING.md`。
 
 ---
 
