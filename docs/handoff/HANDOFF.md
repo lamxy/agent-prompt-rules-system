@@ -1,8 +1,8 @@
 ---
 branch: main
-head: 42a14f8
+head: 4d611a6
 status: active
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 # 进度交接
 
@@ -12,8 +12,8 @@ updated: 2026-10-20
 ## 摘要
 
 - 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交，已推送并发布 v2.0.1（Latest）；已制定「场景配置评估、优化与验证」待办计划，尚未开始执行
-- 停在：`backend-dev` 改为 Go 参考实现，第一批已提交（`7b7ef74`）；本地 `main` 领先 `origin/main` 3 个提交（`791dabf`、`7b7ef74`、`42a14f8`），用户要求暂不推送。**用户正在整理后端技术规范，交来之前不开始第二批**
-- 下一步：等用户提供技术规范后，以其为来源做 `backend-dev` 第二批（数据库规则 + `db-schema-design` skill），再做第三批（Redis、MQ、RPC），见「建议的下一步」。推送需用户另行指示
+- 停在：用户交来首批技术规范（本机 `~/workspace/documents/技術規範--檔案夾/`，含企业原规范，**不入库**），已去企业化重组为 backend-dev 的存储与中间件 rules、4 个 skill 和 dev-ops 的 `middleware-ops` skill（`2ac1c49`、`4d611a6`），12 个测试文件全过，已推送到 `origin/main`
+- 下一步：RPC 规范等用户下一批规范；或开始评估计划的「典型任务清单」
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -24,7 +24,7 @@ updated: 2026-10-20
 
 | 任务 | 状态 | 说明 |
 |---|---|---|
-| backend-dev Go 参考实现 | **进行中（暂停）** | 第一批完成（`7b7ef74`）；第二、三批等用户整理的技术规范，见「建议的下一步」 |
+| backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；RPC 待用户规范 |
 | 场景配置评估、优化与验证 | 待开始 | 三个阶段，清单见下方；方法论细节见 `docs/plans/2026-10-20-scenario-config-evaluation-plan.md` |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
@@ -64,7 +64,7 @@ updated: 2026-10-20
 
 **仓库定位**：个人 Agent 配置与工具／技能管理仓库（Claude Code 为主，兼顾 Codex），公开供参考。2026-10-19 从「分层提示词规则系统」转型而来，设计原则与原因见根目录 `README.md`。
 
-**版本**：本地 `main` 与 `origin/main` 同步；GitHub release v2.0.0（tag 指向 `a0783b3`）、v2.0.1（tag 指向 `6a31aee`，标为 Latest）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
+**版本**：本地 `main` 与 `origin/main` 同步（2026-10-21 推送至交接提交）；GitHub release v2.0.0（tag 指向 `a0783b3`）、v2.0.1（tag 指向 `6a31aee`，标为 Latest）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
 
 **四个场景**（FLAG 在所有维度目录中一致；另有 `fullstack-dev` 只存在于 `settings/`）：
 
@@ -126,7 +126,7 @@ sh scripts/install-claude-project.sh -g -d
 sh scripts/multi_client_support/codex.sh -d
 ```
 
-最后一次完整验证结果：2026-10-20，10 个测试文件全部通过（含 `sh -n` 语法检查）。
+最后一次完整验证结果：2026-10-21，12 个测试文件全部通过（含 `sh -n` 语法检查）。
 
 <!-- section: gotchas -->
 ## 续作时必须知道的事
@@ -166,6 +166,24 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 `scripts/multi_client_support/templates/AGENTS.codex-user.md` 是 `dot_claude/CLAUDE.md` 的 Codex 版（加回复语言、去掉 LSP、工具名改通用说法），两份分开维护。修改 `CLAUDE.md` 时同步模板。Codex 只自动读取 `AGENTS.override.md`、`AGENTS.md` 与 `project_doc_fallback_filenames`，其他文件名不会生效。
 
+### 2026-10-21 技术规范融入的改动范围
+
+已提交（`2ac1c49`、`4d611a6`）并推送；文件分布如下，补充规范时照此放置：
+
+- `dot_claude_projects/.claude-backend-dev/.claude/rules/`：`database/{mysql,mongodb,elasticsearch}.md`、`redis.md`、`mq/{kafka,rabbitmq}.md`、`go/logging.md`
+- `dot_claude_projects/.claude-backend-dev/.claude/skills/`：`db-schema-design`、`cache-design`、`mq-design`、`system-design-doc`（含 `references/`），并复制到 `skills/skills-backend-dev/`
+- `dot_claude_projects/.claude-dev-ops/.claude/skills/middleware-ops/`，并复制到 `skills/skills-dev-ops/`（删除其 `.gitkeep`）
+- backend-dev `CLAUDE.md`（两份）技术栈改为 Kafka、RabbitMQ，「数据库」段改为「存储与中间件」索引；根 `README.md`、`dot_claude_projects/README.md`、`skills/README.md` 同步
+- 测试：新增 `scripts/tests/test-scenario-skills.sh`（四场景 skill 与场景包 `diff -r`）；`test-backend-dev-bundle.sh` 改查新 rules/skills；`test-install-pkg.sh` 的占位包去掉 `dev-ops`
+
+### 技术规范来源不入库
+
+现象：用户的技术规范源文件含原企业的系统名、key 示例、内部流程与路径。
+
+原因：本仓库公开，源文件只在本机 `~/workspace/documents/技術規範--檔案夾/`。
+
+正确做法：只以重组后的内容入库，不复制、不引用源文件路径；之后补充规范时，同样替换示例中的系统名、key 前缀、日志路径、工单系统、内部工具名，提交前用临时关键词清单扫描改动文件（清单不入库）。Go 客户端参数（mongo-go-driver、go-redis、kafka-go、amqp091-go、GORM）已按 context7 官方文档核对；middleware-ops 中少量补充的通用经验值（ES 堆约 31GB、`vm.max_map_count`、quorum 队列等）未在本次逐条核对原文。
+
 ### 其他已知问题
 
 - 第三方市场插件名无法离线校验：`pm-skills`、`anthropic-agent-skills` 未缓存在本机，`test-settings-templates.sh` 跳过其名称检查
@@ -195,7 +213,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 2. 第二批：`rules/database/{sql,mongodb}.md`（paths：`migrations/**`、`**/*.sql`、`model`/`repository`）+ `db-schema-design` skill；完成后删除 CLAUDE.md「数据库」段落
 3. 第三批：`rules/redis.md`、`rules/mq.md`（RocketMQ）、`rules/rpc.md` + `cache-design`、`mq-design` skill
 
-前置条件：**未满足**——用户在整理后端技术规范（代码风格、框架、项目结构、数据库、Redis、MQ 等），交来后以其为主要来源，与第一批已写的 rules 对照合并，冲突处先问用户。
+第二、三批已按用户首批技术规范合并完成（`2ac1c49`、`4d611a6`），范围调整：MQ 改为 Kafka + RabbitMQ（不做 RocketMQ）；Redis key 采用五段式 `<系统>:<模块>:<用途>:<数据类型>:<标识>`；运维面内容放 dev-ops 的 `middleware-ops`；RPC 延后到用户下一批规范。
 
 约定：rules 一律带 `paths`（`test-backend-dev-bundle.sh` 检查）；skill 在 `skills/skills-backend-dev/` 与场景包各放一份并保持一致；规范内容先读原始来源（Uber Go Style Guide、FiberHouse 文档）再写。path rules 与 skill 的实际触发效果尚未在真实项目中验证。
 
@@ -242,3 +260,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-20 | 仓库根 `.claude/` 设定入库 | `claudeMdExcludes` 移到可提交的 `.claude/settings.json`，sandbox 开关留在 `settings.local.json`；`.gitignore` 排除 `.claude/settings.local.json`、`.claude/.cc-writes/`（`8b3ff01`）；`.codex` 本机不存在，维持忽略 | — |
 | 2026-10-20 | 仓库范围说明 | 根目录与 `dot_claude_projects/` README 说明只维护四个场景的参考实现，其他场景由使用者复制场景包或切分支自行实现（`791dabf`） | — |
 | 2026-10-20 | backend-dev Go 参考实现（第一批） | 按 FiberHouse 分层重写 CLAUDE.md；新增 6 个 path rules、`go-new-module` skill、`go-fmt.sh` PostToolUse hook；移除 `typescript-native-lsp`、`prisma`；新增 `test-backend-dev-bundle.sh`，11 个测试文件全过（`7b7ef74`） | 第二、三批待做；未推送 |
+| 2026-10-21 | 技术规范融入（存储与中间件） | 用户首批规范去企业化后重组：backend-dev 7 个 rules、4 个 skill，dev-ops `middleware-ops` skill；新增 `test-scenario-skills.sh`，12 个测试文件全过 | RPC 待规范 |
