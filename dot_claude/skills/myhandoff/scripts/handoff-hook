@@ -1,0 +1,64 @@
+#!/bin/sh
+# handoff 客戶端 hook 的前置判斷，Claude Code 與 Codex 共用。
+# hook 定義固定呼叫本腳本；判斷邏輯的變更只改這裡或 handoff-check，
+# 不改 hook 定義（Codex 的 hook 定義一改就要重新審核信任）。
+# 只在需要時才啟動 Python，非開發場景只花一次檔案檢查。
+#
+# 用法：handoff-hook <claude|codex> <session-start|stop|stop-failure|pre-compact>
+
+client="$1"
+event="$2"
+checker="${0%/*}/handoff-check"
+audit_flag="${HANDOFF_AUDIT_FLAG:-$HOME/.local/state/handoff/audit-on}"
+audit_log="$HOME/.local/state/handoff/audit.jsonl"
+
+HANDOFF_CLIENT="$client"
+export HANDOFF_CLIENT
+if [ -f "$audit_flag" ]; then
+  HANDOFF_AUDIT_START=$(date +%s%N)
+  export HANDOFF_AUDIT_START
+fi
+
+run() {
+  exec python3 "$checker" hook "$1"
+}
+
+skip() {
+  if [ -n "${HANDOFF_AUDIT_START:-}" ]; then
+    end=$(date +%s%N)
+    printf '{"ts":%s,"client":"%s","event":"%s","cwd":"%s","verdict":"skip","outcome":"none","us":%s}\n' \
+      "$((end / 1000000000))" "$client" "$event" "$PWD" "$(((end - HANDOFF_AUDIT_START) / 1000))" >> "$audit_log"
+  fi
+  exit 0
+}
+
+case "$event" in
+  session-start)
+    [ -f docs/handoff/HANDOFF.md ] && run session-start
+    # 以下只為偵測「開錯位置」：子目錄或父目錄。/mnt 走 9p，git 探測很慢，略過。
+    case "$PWD" in /mnt/*) skip ;; esac
+    top=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [ -n "$top" ]; then
+      [ -f "$top/docs/handoff/HANDOFF.md" ] && run misplaced
+      # 巢狀參考倉庫：倉庫自己沒有交接文件，但上層某目錄有，例如 dify_works/dify/。
+      # hook 不受客戶端沙箱限制，看得到上層；技能的 where 在沙箱內可能看不到，所以由這裡偵測。
+      dir=${top%/*}
+      while [ -n "$dir" ] && [ "$dir" != "$HOME" ]; do
+        [ -f "$dir/docs/handoff/HANDOFF.md" ] && run misplaced
+        dir=${dir%/*}
+      done
+      skip
+    fi
+    for candidate in ./*/docs/handoff/HANDOFF.md; do
+      [ -f "$candidate" ] && run misplaced
+    done
+    skip
+    ;;
+  stop|stop-failure|pre-compact)
+    [ -f docs/handoff/HANDOFF.md ] && run "$event"
+    skip
+    ;;
+  *)
+    skip
+    ;;
+esac

@@ -177,6 +177,36 @@ test_exclude_glob_is_not_expanded_against_cwd() {
   pass "-e glob patterns match source file names, not files in the current directory"
 }
 
+test_user_installs_skills_with_exec_bits() {
+  home="$TMP_DIR/skill-home"
+  mkdir -p "$home/.claude"
+
+  HOME="$home" sh "$INSTALLER" -l user -m overwrite > "$TMP_DIR/skill.log"
+
+  skill="$home/.claude/skills/myhandoff"
+  assert_same_file "$REPO_ROOT/dot_claude/skills/myhandoff/SKILL.md" "$skill/SKILL.md"
+  assert_file "$skill/README.md"
+  assert_file "$skill/templates/HANDOFF.md"
+  [ -x "$skill/scripts/handoff-check" ] || fail "expected executable: $skill/scripts/handoff-check"
+  [ -x "$skill/scripts/handoff-hook" ] || fail "expected executable: $skill/scripts/handoff-hook"
+  pass "user install copies skills/myhandoff and keeps script exec bits"
+}
+
+test_append_skips_existing_skill_files() {
+  target="$TMP_DIR/skill-append/.claude"
+  mkdir -p "$target/skills/myhandoff"
+  printf 'old skill\n' > "$target/skills/myhandoff/SKILL.md"
+  printf 'old claude\n' > "$target/CLAUDE.md"
+
+  HOME="$TMP_DIR/home" sh "$INSTALLER" -l project -p "$target" -m append > "$TMP_DIR/skill-append.log"
+
+  [ "$(cat "$target/skills/myhandoff/SKILL.md")" = "old skill" ] || fail "skill file was modified by append"
+  assert_contains "$TMP_DIR/skill-append.log" "[SKIP-APPEND] $target/skills/myhandoff/SKILL.md"
+  assert_contains "$TMP_DIR/skill-append.log" "[APPEND] $target/CLAUDE.md"
+  assert_file "$target/skills/myhandoff/scripts/handoff-check"
+  pass "append mode leaves existing skill files untouched and still creates missing ones"
+}
+
 test_installers_resolve_dot_claude_source
 test_project_skips_settings_and_readme
 test_project_include_settings_flag
@@ -185,3 +215,5 @@ test_legacy_warns_without_moving
 test_legacy_move_with_flag
 test_legacy_reference_warnings
 test_exclude_glob_is_not_expanded_against_cwd
+test_user_installs_skills_with_exec_bits
+test_append_skips_existing_skill_files

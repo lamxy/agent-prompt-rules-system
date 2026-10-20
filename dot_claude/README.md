@@ -8,6 +8,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 |---|---|
 | `CLAUDE.md` | 約 30 行，只寫與 Claude Code 預設行為不同的約束：資訊來源驗證、弱網降級、LSP 優先、RTK 原始輸出 |
 | `commands/analyze-github-repo.md` | `/analyze-github-repo`：輕量探測優先的單一 GitHub 倉庫分析 |
+| `skills/myhandoff/` | `myhandoff` 技能：讀寫 `docs/handoff/HANDOFF.md` 的進度交接；`settings.json` 的 `Stop`、`StopFailure` hook 依賴其 `scripts/` |
 | `settings.json` | 個人使用者層級設定（權限、沙箱、hooks、外掛），與本機 `~/.claude/settings.json` 同步 |
 | `README.md` | 本說明，不會被載入為指令 |
 
@@ -17,6 +18,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 
 - `settings.json` 是個人使用者層級設定：其中 `autoMode`、`skillOverrides` 等鍵與依賴 `~/.claude/skills/myhandoff/`、`rtk` 的 hooks 不適合放進專案。`install.sh` 在 project/local 層級預設不安裝它（`-S` 可強制安裝），專案請改用 `settings/` 下的範本。
 - `README.md`（本檔）預設不會被 `install.sh` 安裝。
+- `skills/myhandoff/` 是本機 `~/.claude/skills/myhandoff/` 的副本（2026-10-20 同步），在本機修改技能後需再複製回本目錄。技能內的 `README.md` 會一併安裝；`-m append` 時 `skills/` 下已存在的檔案一律跳過（`[SKIP-APPEND]`），更新技能請用 `-m overwrite`。
 - 目標若裝過舊版，`install.sh` 會以 `[LEGACY]` 列出殘留檔案；`rules/` 下的舊規則每次啟動都會載入並與本版衝突。加 `-C` 會移至 `<target>/legacy-backup-<時間戳>/`，不會刪除。
 - 以 `-l user` 安裝時，`CLAUDE.md` 會覆蓋現有的 `~/.claude/CLAUDE.md`；若其中有本機專屬規則（例如 Homebrew、curl 重試、`@RTK.md` 匯入），需先手動合併。已存在的 `settings.json` 會被安裝腳本跳過，需手動合併。
 
@@ -85,7 +87,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 
 - `SessionStart` hook `zsh -c '. ~/.zshrc'`：在子 shell 中執行，對 Claude 的環境沒有作用；依使用者決定保留。
 - `Bash(docker run *)`、`Bash(docker exec *)` 在 allow 中，`docker *` 在 `sandbox.excludedCommands` 中；官方明言排除「不是安全邊界」。auto 模式加上 `autoMode.classifyAllShell: true` 時，shell allow 規則會暫停並交由分類器判斷，切到其他模式時則直接放行。
-- `Stop`、`StopFailure` hook 依賴 `~/.claude/skills/myhandoff/`，`PreToolUse` 依賴 `rtk`；在未安裝它們的機器上會報錯。
+- `Stop`、`StopFailure` hook 依賴 `~/.claude/skills/myhandoff/`（`-l user` 安裝時隨 `skills/` 一起安裝），`PreToolUse` 依賴 `rtk`；在未安裝 `rtk` 的機器上會報錯。
 - `typescript-native-lsp` 是第三方外掛；TypeScript 6 以下的專案需在專案內或全域安裝 `typescript-language-server`。
 - `DO_NOT_TRACK` 與 `DISABLE_TELEMETRY` 效果重複，無害。
 

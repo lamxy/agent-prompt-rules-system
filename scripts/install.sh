@@ -2,10 +2,11 @@
 # install.sh - 把本仓库的 dot_claude/ 同步到 Claude Code 配置目录
 #
 # 功能：
-#   逐个文件复制 dot_claude/（个人用户级配置：CLAUDE.md、commands/、settings.json）
+#   逐个文件复制 dot_claude/（个人用户级配置：CLAUDE.md、commands/、skills/、settings.json）
 #   到 ~/.claude（-l user）或指定的 .claude 目录（-l project / local）。
 #   - 目标文件不存在时直接创建；已存在时按 -m 覆盖、追加或逐个询问
 #   - 已存在的 .json 文件在 overwrite/append 时一律跳过（[MANUAL-JSON]），需手动合并
+#   - skills/ 下已存在的文件在 append 时跳过（[SKIP-APPEND]），追加会损坏技能文件
 #   - 默认不安装 README.md；project/local 默认不安装 settings.json（-S 启用）
 #   - 检测目标中的旧版（dot_claude_legacy）规则文件：默认只警告，-C 移到备份目录
 #
@@ -29,6 +30,7 @@ usage() {
                  ask        逐个文件从终端询问：[o] 覆盖  [a] 追加  [s] 跳过
                已存在的 .json 文件在 overwrite/append 时一律跳过（[MANUAL-JSON]），
                需手动合并以保持合法 JSON 结构。
+               skills/ 下已存在的文件在 append 时跳过（[SKIP-APPEND]），需要更新请用 overwrite。
 
 条件必选：
   -p <路径>    目标 .claude 目录。-l project / local 时必填，目录必须已存在；
@@ -54,11 +56,14 @@ usage() {
   # 用仓库版本覆盖 ~/.claude 中的同名文件（已有 .json 仍跳过），并把旧版规则移到备份
   sh ./scripts/install.sh -l user -m overwrite -C
 
+  # 只更新 skills/（例如 myhandoff），其他目录与文件不动
+  sh ./scripts/install.sh -l user -m overwrite -E commands -e CLAUDE.md -e settings.json
+
   # 只更新 commands/，不碰 CLAUDE.md 与 settings.json
   sh ./scripts/install.sh -l user -m overwrite -e CLAUDE.md -e settings.json
 
-  # 把 CLAUDE.md 追加到已有的用户级 CLAUDE.md 之后，不同步 commands/
-  sh ./scripts/install.sh -l user -m append -E commands
+  # 把 CLAUDE.md 追加到已有的用户级 CLAUDE.md 之后，不同步 commands/ 与 skills/
+  sh ./scripts/install.sh -l user -m append -E commands -E skills
 
   # 同步到项目的 .claude（默认不装 settings.json）
   sh ./scripts/install.sh -l project -p ~/my-project/.claude -m ask
@@ -368,6 +373,12 @@ while IFS= read -r src_file; do
         print_json_manual_message "$dest_file"
         continue
       fi
+      case "$relative_path" in
+        skills/*)
+          printf '[SKIP-APPEND] %s（技能文件不追加，需要更新请用 overwrite）\n' "$dest_file"
+          continue
+          ;;
+      esac
       if [ -s "$dest_file" ] && [ "$(tail -c 1 "$dest_file" | wc -l)" -eq 0 ]; then
         printf '\n' >> "$dest_file"
       fi

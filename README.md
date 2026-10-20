@@ -52,7 +52,7 @@
 
 | 类别 | 目录 | 内容 | 安装方式 |
 |------|------|------|---------|
-| 配置 | `dot_claude/` | 个人 Claude Code 用户级配置：约 30 行 `CLAUDE.md`、`commands/`、`settings.json`（繁体中文） | `install.sh` |
+| 配置 | `dot_claude/` | 个人 Claude Code 用户级配置：约 30 行 `CLAUDE.md`、`commands/`、`skills/`（myhandoff）、`settings.json`（繁体中文） | `install.sh` |
 | 配置 | `settings/` | 全局基础插件 + 项目级四个场景（PRD、前端、后端、DevOps）与全栈组合 + 本地级可选插件 | `install-settings.sh` |
 | 配置 | `claude_mds/` | 按场景分类的 `CLAUDE-<FLAG>.md` | `install-claude-md.sh` |
 | 配置 | `dot_mcp_jsons/` | 按场景分类的 `.mcp.json` 模板 | `install-dot-mcp.sh` |
