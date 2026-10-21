@@ -10,7 +10,7 @@ description: 部署、调优、迁移或检查 Redis、Kafka、RabbitMQ、Elasti
 | 任务 | 参考 |
 |---|---|
 | 业务系统与中间件的监控告警基线 | `references/monitoring.md` |
-| Redis 架构选择、内存策略、数据迁移 | `references/redis.md` |
+| Redis 架构选择、内存与淘汰、持久化、巡检、数据迁移 | `references/redis.md` |
 | Kafka 集群参数、topic 管理、安全加固 | `references/kafka.md` |
 | RabbitMQ vhost / 队列管理、内存水位 | `references/rabbitmq.md` |
 | Elasticsearch 系统参数、分片与索引设置 | `references/elasticsearch.md` |

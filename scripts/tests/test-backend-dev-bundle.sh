@@ -84,6 +84,7 @@ test_bundle_install_keeps_hook_executable() {
     [ -f "$project/.claude/skills/$skill/SKILL.md" ] || fail "skill was not installed: $skill"
   done
   [ -f "$project/.claude/skills/db-schema-design/references/mysql.md" ] || fail "skill references were not installed"
+  [ -f "$project/.claude/skills/cache-design/references/patterns.md" ] || fail "cache-design patterns were not installed"
   pass "installing the bundle copies rules, skills, and an executable hook"
 }
 

@@ -8,7 +8,7 @@ paths:
 
 # Redis
 
-适用于 go-redis；不用 Redis 的项目删除本文件。设计缓存时用 `cache-design` skill，条目理由见其 `references/redis.md`。
+适用于 go-redis v9；不用 Redis 的项目删除本文件。设计缓存时用 `cache-design` skill，理由、实测与模板见其 `references/`。
 
 ## key
 
@@ -20,18 +20,24 @@ paths:
 
 - 不写 bigkey：`string` 不超过 10KB；`hash`、`list`、`set`、`zset` 不超过 10000 个元素。超出时拆分 key 或改用其他存储；超过 25KB 的文本先压缩。
 - 读取频繁的 key 更要控制大小（hot bigkey 会打满带宽与单线程）。
-- 每个 key 都设 TTL，并加随机偏移，避免同时过期。
+- 每个 key 都设 TTL，并加随机偏移，避免同时过期。删除可能很大的 key 用 `Unlink`，不用 `Del`。
 
 ## 命令
 
-- 线上代码不用 `KEYS`、`FLUSHALL`、`FLUSHDB`、`MONITOR`；遍历用 `SCAN` / `HSCAN` / `SSCAN` / `ZSCAN` 并限制 `COUNT`。
+- 线上代码不用 `KEYS`、`FLUSHALL`、`FLUSHDB`、`MONITOR`；遍历用 `SCAN` / `HSCAN` / `SSCAN` / `ZSCAN` 并限制 `COUNT`。集群遍历用 `ForEachMaster` 逐个主节点 `Scan`。
 - 不对大集合用 O(N) 命令（`HGETALL`、`SMEMBERS`、`LRANGE 0 -1`、`ZRANGE 0 -1` 等），单次处理的元素不超过 1000 个；`MGET` / pipeline 每批不超过 120 个 key。
-- 分布式锁用 `SetNX(ctx, key, token, ttl)`（单条 `SET NX EX`），释放时校验 token；不用 `SETNX` 后再 `EXPIRE` 的两步写法。
+- 分布式锁用 `SetNX(ctx, key, token, ttl)`（单条 `SET NX EX`；`ttl` 为 0 时不过期），释放时校验 token；不用 `SETNX` 后再 `EXPIRE` 的两步写法。扣款、库存等由数据库唯一约束或版本号兜底。
 - 不用 `MULTI` / `EXEC` 事务；`EVAL` / Lua 只在必须原子执行时使用，脚本里用到的 key 全部通过 `KEYS` 参数传入（集群路由需要）。
+- 集群中 `MGet`、`MSet`、多 key `Del`、Lua 的 key 不在同一 slot 时报 `CROSSSLOT`，go-redis 不自动拆分；跨 slot 的批量读写用 pipeline。
+
+## go-redis 调用
+
+- `redis.Nil` 是未命中，其他 err 是故障（不当未命中写回缓存）。`MGet` 未命中返回 nil 元素、`HGetAll` 返回空 map；pipeline 中有 `Get` 未命中时 `Exec` 返回 `redis.Nil`，逐条检查各命令的 `Err()`。
+- `MaxRetries` 为 0 即默认 3 次，`-1` 才关闭。读超时后的自动重试会让 `INCR` 等非幂等写重复执行（超时不等于未执行）；非幂等写用关闭重试的客户端或做成幂等。
 
 ## 用途与连接
 
 - Redis 只当缓存，数据源仍在数据库；不当消息队列用（用 Kafka 或 RabbitMQ），不把全部数据或冷数据放进 Redis。
 - 只用 db0（集群不支持其他 db）。
-- 一个进程共享一个 `*redis.Client` / `*redis.ClusterClient` 并复用连接池，不按请求新建连接；设置 `DialTimeout`、`ReadTimeout`、`WriteTimeout`、`PoolSize`。
+- 一个进程共享一个 `*redis.Client` / `*redis.ClusterClient` 并复用连接池，不按请求新建连接；设置 `DialTimeout`、`ReadTimeout`、`WriteTimeout`、`PoolSize`、`PoolTimeout`，并开启 `ContextTimeoutEnabled`（否则 ctx 的 deadline 不生效）。
 - Redis 出错时降级读数据库，不让缓存故障变成整体故障；重试用指数退避并设上限，关键路径加限流或熔断。

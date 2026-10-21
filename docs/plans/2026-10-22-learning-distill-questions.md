@@ -32,4 +32,19 @@
 
 ## Redis
 
-（待处理）
+落点：`rules/redis.md`、`skills/cache-design/`（`references/redis.md` 改写并加实测记录，新增 `references/patterns.md` 场景模板）、dev-ops `middleware-ops/references/redis.md`（内存与淘汰、持久化、巡检）。实测环境 Redis 8.10.2（`redis:8`，单机与 3 主集群）、7.4.11 对照，go-redis v9.22.0（集群另以 v9.17.3 对照），Go 1.25.14。
+
+1. **key 禁止 `}` 与集群 hash tag 冲突**。原规则禁止 `}`，`cache-design` 却建议必要时用 `{...}` 让相关 key 同 slot；实测跨 slot 的 `MGet` / `MSet` / 多 key `Del` / Lua 均报 `CROSSSLOT`。暂行（交叉审查改回）：rule 维持原条款，skill 维持原写法，reference 注明冲突。建议改为：五段式不变，`{ }` 只允许包住标识段（`shop:cart:items:zset:{2001}`），只用于必须原子操作或一起 `MGET` 的一组 key。选项：A 按建议放开 / B hash tag 用独立前缀段 / C 禁止 hash tag，跨 key 原子操作改设计。
+2. **是否继续禁止 `MULTI` / `EXEC`**。实测运行期错误不回滚（语法错误才整体丢弃）；go-redis `TxPipelined` 一次往返；`Watch` 乐观锁正确但高竞争下重试多（20 并发各加 50 次，冲突 5649 次）。暂行：rule 维持原条款，原子操作用 Lua。选项：A 维持 / B 允许 `TxPipelined` 做同 slot、无条件判断的原子批量写 / C 另允许低竞争场景用 `Watch`。
+3. **go-redis 默认重试与非幂等写**（复测确认）。服务端被慢脚本占住 0.4s、`ReadTimeout` 300ms 时，默认重试下 `INCR` 返回成功但计数器为 2；`MaxRetries: -1` 返回超时、计数器为 1。`MaxRetries: 0` 即默认 3 次。暂行：rule 要求非幂等写用关闭重试的客户端或做成幂等。选项：A 维持 / B 全局 `MaxRetries: -1`，由调用方按幂等性自行重试 / C 只写在 reference。
+4. **`ContextTimeoutEnabled` 是否强制开启**（复测确认）。关闭时 200ms 的 ctx 超时无效（服务端阻塞 1.5s 就等 1.5s），开启后 200ms 返回。暂行：rule 要求开启。选项：A 强制 / B 只在有请求级 deadline 的服务开启。
+5. **淘汰策略默认值**。现行 ops 规范默认 `volatile-lru`；实测无 TTL key 时写入直接 OOM、不淘汰。参考资料主张纯缓存用 `allkeys-lru` / `allkeys-lfu`。暂行：维持 `volatile-lru`，补 OOM 现象、应急切换，注明服务端内置默认是 `noeviction`。选项：A 维持 / B 纯缓存实例 `allkeys-lfu`、混存实例 `volatile-lru` / C 一律 `allkeys-lru`。
+6. **Redis Stream 是否允许**。Stream 有消费者组、确认与重投，但积压占内存。暂行（交叉审查收紧）：与 rule、`mq-design`「Redis 不作为消息队列」一致，`patterns.md` 只列对比，不给适用场景；Pub/Sub 只用于可丢的信号（实测无订阅者时直接丢失）。选项：A 维持 / B 允许已有 Redis 的内部轻量任务用 Stream，需在设计文档说明理由。
+7. **分布式锁的边界**。暂行：`SET NX PX` + Lua 校验释放 / 续期；rule 新增「扣款、库存等由数据库唯一约束或版本号兜底」；不用 Redlock。选项：A 维持 / B 正确性关键的互斥改用 etcd 等 CP 存储并写入 rule / C 允许 Redlock。
+8. **rule 的 paths 覆盖不到 repository 层**（与 gRPC 第 5 条同类）。Redis 调用常写在 `repository/` 下，文件名不含 cache / redis 时 `rules/redis.md` 不加载。暂行未改。选项：A 约定 Redis 访问代码放 `cache/` 目录或以 `_cache.go` 结尾 / B paths 加 `**/repository/**/*.go`（约 3.1KB）/ C 不改，靠 `cache-design` skill。
+9. **单实例内存上限**。现行经验值「25GB 以内」；参考资料以 fork 耗时为由主张 8～16GB，但只测到 132MB，大内存为外推（未验证）。暂行：保留 25GB，补「开启持久化时偏向更小实例」与 `latest_fork_usec` 监控。选项：A 维持 / B 改为 16GB / C 按是否开启持久化给两个值。
+10. **交叉审查修正记录**（无需决定）：rule 由 3.6KB 压到 3.1KB（原 2.2KB），改回第 1、2 条原条款，删去与 reference 重复的理由括注，`ClusterClient.Scan` 说明移回 reference。锁模板原续期循环在网络持续失败时不会中止业务（注释与代码不符），改为按本地记录的有效期在剩余不足 `ttl/2` 时取消 ctx，复测：续期正常、锁被改写、续期全部失败（200ms 取消，锁剩余约 100ms）三种情况均符合预期。独立复测确认：第 3、4 条；`PoolTimeout` 200ms 在默认重试下约 970ms 才返回、`-1` 时 200ms；pipeline 有未命中时 `Exec` 返回 `redis.Nil`、其他命令正常；`ClusterClient.Scan` 结果不完整且每次不同（原记录 199，复测 150 / 300），`ForEachMaster` 完整；7.4.11 与 8.10.2 的 `hash-max-listpack-entries` 均为 512、`zset` / `set` listpack 为 128；`MaxRetries`、`ErrPoolTimeout` 重试已核对 v9.22.0 源码。
+11. **go-redis 版本**（无需决定）：v9.23.0 要求 `go` ≥ 1.26，`go` 1.25 的模块最高 v9.22.0；v9.17 → v9.22 默认 `ReadTimeout` 由 3s 改为 5s、重试退避由 8ms～512ms 改为 10ms～1s；实测 v9.22.0 的 `MGet` 与 `Do("MGET")` 跨 slot 仍报错，v9.23 未测。
+12. **参考资料中推翻或修正的说法**（无需决定）：「`hash-max-listpack-entries` 默认 128」——不带配置文件启动时为 512，128 来自 `redis.conf` 示例；「八种淘汰策略」——8.10 多了 `allkeys-lrm`、`volatile-lrm`；「`MULTI` 不减少往返」——`TxPipelined` 一次发送；「逐条 `INCR` 比 pipeline 慢 462 倍」——主要是每次新建 `redis-cli` 进程与连接的开销；「淘汰一次触发 16035 个 key」——由一次性压低 `maxmemory` 造成，不代表常态。
+13. **未写入的内容**：单线程与 I/O 多路复用、slot 数由来、跳表、RESP、MOVED / ASK、过期抽样算法等属原理或面试知识；RedisBloom 只在穿透一行提及；`KEYS` 在千万级 key 上的耗时、大实例 fork 秒级为外推，未写入；「主库无持久化自动重启会清空从库」「关闭 THP」来自官方文档，未实测。
+14. **本机残留**：原代理的 docker 网络 `redislab-net`、交叉审查的 `redisrev-net` 删除命令均被权限拒绝；镜像 `redis:8`、`redis:7.4` 保留。需要时手动 `docker network rm redislab-net redisrev-net && docker rmi redis:8 redis:7.4`。容器均以 `--rm` 运行并已停止；实测代码与模块缓存在 scratchpad 的 `redis/`、`redis-review/` 子目录，随 scratchpad 清理。

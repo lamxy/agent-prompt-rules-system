@@ -5,7 +5,7 @@ description: 为 Go 后端设计 Redis 缓存：key 命名、数据类型、TTL�
 
 # 缓存设计
 
-逐条规则在 `.claude/rules/redis.md`，编辑缓存相关文件时自动加载；理由与命令复杂度见 `references/redis.md`。
+逐条规则在 `.claude/rules/redis.md`，编辑缓存相关文件时自动加载；理由、内存编码、go-redis 参数与实测见 `references/redis.md`；读写、锁、限流、排行榜、队列取舍的 Go 模板见 `references/patterns.md`。
 
 ## 1. 先确认需要缓存
 
@@ -21,7 +21,7 @@ description: 为 Go 后端设计 Redis 缓存：key 命名、数据类型、TTL�
 | 去重集合、标签、推荐候选 | `set` |
 | 排行榜、按分数或时间排序 | `zset` |
 
-单个 key 的元素会持续增长时，按业务维度或哈希取模拆成多个 key。
+单个 key 的元素会持续增长时，按业务维度或哈希取模拆成多个 key。对象整体读写用 `string` 存序列化值；只改个别字段或计数用 `hash`，字段多（超过 listpack 阈值）时 `hash` 反而更占内存（见 `references/redis.md`）。
 
 ## 3. 设计 key 与 TTL
 
@@ -35,13 +35,15 @@ description: 为 Go 后端设计 Redis 缓存：key 命名、数据类型、TTL�
 - 读：查缓存 → 未命中查数据库 → 写回缓存。
 - 写：先更新数据库，再删除缓存（不是更新缓存）；删除失败时重试或依靠 TTL 兜底。
 
-同时说明以下问题的处理方式：
+同时说明以下问题的处理方式（Go 模板见 `references/patterns.md` 第 1、2 节）：
 
 | 问题 | 常用做法 |
 |---|---|
 | 穿透（查询不存在的数据） | 缓存空值并设较短 TTL，或布隆过滤器 |
-| 击穿（热点 key 过期） | `singleflight` 合并回源请求，或热点 key 逻辑过期后异步刷新 |
+| 击穿（热点 key 过期） | `singleflight` 合并回源请求；多实例仍压垮数据库时加分布式互斥或逻辑过期 |
 | 雪崩（大量 key 同时过期或 Redis 不可用） | TTL 随机偏移；客户端熔断后直接读数据库并限流 |
+
+涉及分布式锁、计数器、限流、排行榜、延时任务或用 Redis 传递消息时，按 `references/patterns.md` 第 3～5 节选型，并写明锁失效时由什么保证正确性。
 
 ## 5. 容量与架构
 
