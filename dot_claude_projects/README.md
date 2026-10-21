@@ -39,12 +39,12 @@
 | 位置 | 加载时机 | 内容 |
 |---|---|---|
 | `CLAUDE.md` | 每次会话 | 技术栈、目录与依赖方向、设计文档、API、存储与中间件规范索引、验证命令 |
-| `.claude/rules/go/` | 编辑匹配的 `.go` 文件时 | `code-style.md`（错误、并发、context）、`layering.md`（分层职责与类型转换）、`testing.md`、`logging.md`（日志级别与字段） |
+| `.claude/rules/go/` | 编辑匹配的 `.go` 文件时 | `code-style.md`（错误、panic 与退出）、`concurrency.md`（context、goroutine 生命周期、定时器、锁、出站 HTTP、容器运行时参数）、`layering.md`（分层职责与类型转换）、`testing.md`、`logging.md`（日志级别与字段） |
 | `.claude/rules/framework/` | 编辑 handler、路由、Provider 时 | `fiberhouse.md`、`fiber.md`、`gin.md` |
 | `.claude/rules/database/` | 编辑 SQL、migration、`model` / `repository` / `entity` 等目录时 | `mysql.md`、`mongodb.md`、`elasticsearch.md` |
 | `.claude/rules/redis.md`、`.claude/rules/mq/` | 编辑缓存、Kafka、RabbitMQ 相关代码时 | key 与 value 设计、命令限制；`kafka.md`、`rabbitmq.md`（命名、确认、幂等、连接） |
 | `.claude/rules/rpc/` | 编辑 `.proto`、`buf.yaml`、gRPC 传输层代码时 | `proto.md`（命名、兼容性、字段语义）、`grpc-go.md`（错误映射、deadline、拦截器、客户端配置） |
-| `.claude/skills/` | 调用或判断相关时 | `go-new-module`（新增业务模块）、`db-schema-design`、`cache-design`、`mq-design`、`rpc-design`（gRPC 契约与实现）、`system-design-doc`（上下文图与结构图）；理由与参数表在各自的 `references/` |
+| `.claude/skills/` | 调用或判断相关时 | `go-new-module`（新增业务模块）、`db-schema-design`、`cache-design`、`mq-design`、`rpc-design`（gRPC 契约与实现）、`system-design-doc`（上下文图与结构图）、`go-perf-diagnose`（泄漏、内存、CPU、锁竞争排查与 benchmark）；理由与参数表在各自的 `references/` |
 | `.claude/hooks/go-fmt.sh` | 每次 Edit / Write `.go` 文件后 | goimports 或 gofmt；语法错误时回报给 Claude |
 
 安装到项目后按实际技术栈删减 `rules/framework/`：使用 FiberHouse 时保留 `fiberhouse.md` 与所用内核的 `fiber.md` 或 `gin.md`；只用原生框架时删除 `fiberhouse.md`。path rules 按目录匹配，无法区分框架，多留的文件会在编辑 handler 时一并载入。不使用的存储或中间件，删除对应的 rules 文件即可（不用 gRPC 时删除 `rules/rpc/`）。

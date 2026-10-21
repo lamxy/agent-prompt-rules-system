@@ -77,10 +77,10 @@ test_bundle_install_keeps_hook_executable() {
   sh "$REPO_ROOT/scripts/install-claude-project.sh" -f backend-dev -t "$project" -N > "$TMP_DIR/install.log"
 
   [ -x "$project/.claude/hooks/go-fmt.sh" ] || fail "installed hook is not executable"
-  for rule in go/layering.md database/mysql.md database/mongodb.md redis.md mq/kafka.md mq/rabbitmq.md rpc/proto.md rpc/grpc-go.md; do
+  for rule in go/layering.md go/concurrency.md database/mysql.md database/mongodb.md redis.md mq/kafka.md mq/rabbitmq.md rpc/proto.md rpc/grpc-go.md; do
     [ -f "$project/.claude/rules/$rule" ] || fail "rule was not installed: $rule"
   done
-  for skill in go-new-module db-schema-design cache-design mq-design rpc-design system-design-doc; do
+  for skill in go-new-module db-schema-design cache-design mq-design rpc-design system-design-doc go-perf-diagnose; do
     [ -f "$project/.claude/skills/$skill/SKILL.md" ] || fail "skill was not installed: $skill"
   done
   [ -f "$project/.claude/skills/db-schema-design/references/mysql.md" ] || fail "skill references were not installed"

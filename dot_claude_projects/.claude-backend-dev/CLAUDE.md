@@ -53,4 +53,4 @@ Go；HTTP 框架为 FiberHouse（可切换 Fiber、Gin、Hertz 内核）或原�
 
 ## 验证
 
-改动 Go 代码后，至少运行 `go build ./...`、`go vet ./...` 和受影响包的 `go test`；涉及并发的改动加 `-race`。项目有 `Makefile` 或 `golangci-lint` 配置时，以项目的命令为准。
+改动 Go 代码后，至少运行 `go build ./...`、`go vet ./...` 和受影响包的 `go test`；涉及并发的改动加 `-race`（并发与 context 约定在 `.claude/rules/go/concurrency.md`）。排查 goroutine 泄漏、内存上涨、CPU 高或做性能优化用 `/go-perf-diagnose`。项目有 `Makefile` 或 `golangci-lint` 配置时，以项目的命令为准。
