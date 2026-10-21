@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 3707f4f
+head: 9bddf11
 status: active
 updated: 2026-10-22
 ---
@@ -12,8 +12,8 @@ updated: 2026-10-22
 ## 摘要
 
 - 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交，已推送并发布 v2.0.1（Latest）；已制定「场景配置评估、优化与验证」待办计划，尚未开始执行
-- 停在：数据库设计强化三批全部完成——MySQL 商城案例（`d56306b`）、AI 技能平台反面案例（`f91cd48`）、MongoDB 实测重写（`3707f4f`），**未推送**（本地领先 `origin/main` 7 个提交）；12 个测试文件全过
-- 下一步：等用户指示——RPC 规范（等用户下一批规范）或评估计划的「典型任务清单」；推送需用户指示
+- 停在：2026-10-22 无人值守把 gRPC、Go、Redis 三个教学目录提炼进 backend-dev / dev-ops（`5098a4e`、`3c492ef`、`9bddf11`），每个都经容器实测与子代理交叉复测；**未推送**（本地领先 `origin/main` 11 个提交）；12 个测试文件全过
+- 下一步：与用户逐条讨论 `docs/plans/2026-10-22-learning-distill-questions.md` 的疑问（gRPC 5 条、Go 6 条、Redis 9 条需决定），按决定调整；之后评估计划的「典型任务清单」；推送需用户指示
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -25,7 +25,8 @@ updated: 2026-10-22
 | 任务 | 状态 | 说明 |
 |---|---|---|
 | **数据库设计强化（优先）** | 完成：MySQL（`d56306b`）、反面案例（`f91cd48`）、MongoDB（`3707f4f`） | 见「续作时必须知道的事」→「数据库设计强化」与「建议的下一步」 |
-| backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；RPC 待用户规范 |
+| 教学材料沉淀（gRPC、Go、Redis） | 完成，**疑问待讨论** | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
+| backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；gRPC 规范 `5098a4e`（来自教学材料，用户企业 RPC 规范若有再补） |
 | 场景配置评估、优化与验证 | 待开始 | 三个阶段，清单见下方；方法论细节见 `docs/plans/2026-10-20-scenario-config-evaluation-plan.md` |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
@@ -65,7 +66,7 @@ updated: 2026-10-22
 
 **仓库定位**：个人 Agent 配置与工具／技能管理仓库（Claude Code 为主，兼顾 Codex），公开供参考。2026-10-19 从「分层提示词规则系统」转型而来，设计原则与原因见根目录 `README.md`。
 
-**版本**：本地 `main` 领先 `origin/main`（`36722e8` 之后的 7 个提交未推送，推送需用户指示）；GitHub release v2.0.0（tag 指向 `a0783b3`）、v2.0.1（tag 指向 `6a31aee`，标为 Latest）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
+**版本**：本地 `main` 领先 `origin/main`（`36722e8` 之后的 11 个提交未推送，推送需用户指示）；GitHub release v2.0.0（tag 指向 `a0783b3`）、v2.0.1（tag 指向 `6a31aee`，标为 Latest）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
 
 **四个场景**（FLAG 在所有维度目录中一致；另有 `fullstack-dev` 只存在于 `settings/`）：
 
@@ -127,7 +128,7 @@ sh scripts/install-claude-project.sh -g -d
 sh scripts/multi_client_support/codex.sh -d
 ```
 
-最后一次完整验证结果：2026-10-22（`3707f4f`），12 个测试文件全部通过（含 `sh -n` 语法检查）。
+最后一次完整验证结果：2026-10-22（`9bddf11`），12 个测试文件全部通过（含 `sh -n` 语法检查）。
 
 <!-- section: gotchas -->
 ## 续作时必须知道的事
@@ -206,6 +207,14 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 正确做法：补充或修改 MongoDB 规范前先查该文件的实测表；新结论用临时容器实测（`mongo:8.0` 三节点副本集，独立 docker 网络、不暴露端口；Go 用 `golang:1.25-alpine` 挂载 scratchpad 目录运行），Go 代码一律用 `go.mongodb.org/mongo-driver/v2`（FiberHouse 亦然）。教材来源在本机 `~/workspace/documents/learning/mongodb/`，**不入库**。
 
+### 教学材料沉淀（2026-10-22）
+
+现象：教材结论常与新版行为不符（例如 Timer 的 Reset 语义、GOMAXPROCS 容器感知取决于 `go.mod` 的 go 行而非工具链；listpack 内置默认 512 而非 `redis.conf` 示例的 128；grpc-go 不捕获 panic，进程直接退出）。
+
+原因：教材基于旧版本，且部分数字来自示例配置或带额外开销的测量。
+
+正确做法：落点与实测表在各 skill 的 references（`rpc-design/references/`、`go-perf-diagnose/references/concurrency.md`、`cache-design/references/{redis,patterns}.md`）；修改前先查实测表，新结论用 `--rm`、不暴露端口的临时容器实测。版本上限：Go 1.25 项目最高 go-redis v9.22.0、x/sync v0.22/v0.23（v0.24 与 go-redis v9.23 要求 Go 1.26）。rule 正文维持用户既定条款（Redis key 禁 `}`、不用 MULTI/EXEC 等），冲突方案只写疑问文件。教材在本机 `~/workspace/documents/learning/{grpc_learn,golang_learn,redis-bootcamp}/`，**不入库**。
+
 ### 其他已知问题
 
 - 第三方市场插件名无法离线校验：`pm-skills`、`anthropic-agent-skills` 未缓存在本机，`test-settings-templates.sh` 跳过其名称检查
@@ -221,6 +230,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 |---|---|
 | 各场景用于试用的真实项目（用户指定） | 计划文件「需要用户决定」 |
 | 试用期长度（建议 2 周） | 同上 |
+| 教学材料沉淀的疑问（20 条需决定）与本机 docker 残留清理 | `docs/plans/2026-10-22-learning-distill-questions.md` |
 | 交叉评审的模型组合与预算上限（`claude -p` 重复执行会消耗额度） | 同上 |
 | 阶段 2 的采纳决策 | 阶段 2 完成后产出 |
 | 本机是否采用新的全局设定 | 本文件「当前状态」 |
@@ -297,3 +307,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-21 | 数据库设计强化：MySQL 商城教学案例 | 组合索引改 ESR、NOT NULL 约定值与例外等写入 MySQL rule；`db-schema-design` 新增 4 个 references 与节点流程、自查清单；销售排行索引经临时容器实测（`d56306b`） | MongoDB、反面案例等用户材料；未推送 |
 | 2026-10-22 | 数据库设计强化：AI 技能平台反面案例 | 子代理只读分析原仓库 migration，去识别化后写入 `case-ai-platform.md`、`anti-patterns.md` 7 条、`mysql.md` 迁移对照与 rule 一条（`f91cd48`） | MongoDB 等用户材料；未推送；临时容器 `dbverify-tmp` 待用户清理（未验证是否仍存在） |
 | 2026-10-22 | 数据库设计强化：MongoDB | 课程笔记经 8.0 副本集与 Go Driver v2 实测、官方文档核对、子代理独立复测审计后重写 backend-dev MongoDB rule 与 reference；分库与 `_id` 规则按实测放宽；dev-ops 补备份与时间点恢复、安全基线、巡检指标（`3707f4f`） | 未推送；临时容器 `mgv1`～`mgv3`、网络 `mgv-net` 待清理 |
+| 2026-10-22 | 教学材料沉淀：gRPC、Go、Redis | 逐个子代理提炼 + 容器实测 + 子代理交叉复测：`rules/rpc/`、`rpc-design`（`5098a4e`）；`rules/go/concurrency.md`、`go-perf-diagnose`，常驻 Go 规则 8.2KB→6.1KB（`3c492ef`）；Redis rule、`cache-design/references/patterns.md`、middleware-ops（`9bddf11`） | 疑问待用户讨论；未推送；docker 卷 `grpclab-gomod`、网络 `redislab-net`/`redisrev-net`、容器 `mgv1`～`mgv3`/`dbverify-tmp` 待清理 |
