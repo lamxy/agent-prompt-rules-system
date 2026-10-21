@@ -24,7 +24,7 @@ paths:
 
 ## 类型转换
 
-- `requestvo → dto`、`entity/dto → responsevo` 只在 `api/` 层完成；`responsevo` 中不出现 BSON、GORM 等存储类型（如 `primitive.ObjectID` 对外转为字符串）。
+- `requestvo → dto`、`entity/dto → responsevo` 只在 `api/` 层完成；`responsevo` 中不出现 BSON、GORM 等存储类型（如 `bson.ObjectID` 对外转为字符串）。
 - 不同传输层（Fiber、Gin、CLI）复用同一个 service，不为每种框架各写一份业务逻辑；只有请求绑定、响应写出、错误翻译随框架变化。
 
 ## 错误映射

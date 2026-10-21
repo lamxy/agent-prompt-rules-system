@@ -14,7 +14,7 @@ description: 部署、调优、迁移或检查 Redis、Kafka、RabbitMQ、Elasti
 | Kafka 集群参数、topic 管理、安全加固 | `references/kafka.md` |
 | RabbitMQ vhost / 队列管理、内存水位 | `references/rabbitmq.md` |
 | Elasticsearch 系统参数、分片与索引设置 | `references/elasticsearch.md` |
-| MongoDB 新库上线清单 | `references/mongodb.md` |
+| MongoDB 新库上线清单、备份与时间点恢复、安全基线、巡检指标 | `references/mongodb.md` |
 
 ## 通用约定
 
