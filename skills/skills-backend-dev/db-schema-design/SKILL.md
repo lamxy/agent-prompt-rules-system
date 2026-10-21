@@ -38,7 +38,7 @@ description: 为 Go 后端设计或评审数据库结构：MySQL / PostgreSQL �
 
 参考资料：
 
-- MySQL：`references/mysql.md`（规则理由、ESR 原理与实测、软删除、反正规化、容量与演进）；`references/sql-pitfalls.md`（会静默出错或拖慢的 SQL 写法）；`references/case-ecommerce.md`（电商订单库的取舍与销售排行索引实测）；`references/anti-patterns.md`（评审中反复出现的错误）。
+- MySQL：`references/mysql.md`（规则理由、ESR 原理与实测、软删除、反正规化、容量与演进）；`references/sql-pitfalls.md`（会静默出错或拖慢的 SQL 写法）；`references/case-ecommerce.md`（电商订单库的取舍与销售排行索引实测）；`references/case-ai-platform.md`（放弃代理键后的连锁代价，以及 PostgreSQL 设计搬到 MySQL 时的问题）；`references/anti-patterns.md`（评审中反复出现的错误）。
 - MongoDB：按 `references/mongodb.md` 决定内嵌还是引用、索引与数据增长方案。
 - 需要缓存时接着使用 `cache-design`；需要异步消息时使用 `mq-design`。
 
@@ -54,7 +54,7 @@ DDL 写完后自查一遍 `.claude/rules/database/` 中的规则与下列清单�
 
 - 概念：每个实体都对应到需求条目；多对多有关联表；快照需求逐条落实；业务链路走过一遍。
 - 逻辑：每处冗余都标明类型和维护方式；冗余计算字段有校验 SQL。
-- 物理：全部 `NOT NULL`，约定值写进注释，例外的 `NULL` 有 ADR；状态字段注释列全取值；标识类字段用 `VARCHAR`；没有保留字；唯一约束基于稳定的业务规则。
+- 物理：每张表自增 `bigint` 主键，表间关联存父表 `id`；全部 `NOT NULL`，约定值写进注释，例外的 `NULL` 有 ADR；状态字段注释列全取值；标识类字段用 `VARCHAR`；没有保留字；唯一约束基于稳定的业务规则。
 - 索引：每个索引都有对应的查询；ESR 顺序；范围列与排序列不同时的取舍已写明；没有冗余索引；分页排序键唯一；全表聚合改为预计算。
 - 容量：按实际平均长度估算；加上隐藏列和膨胀系数；索引空间单独列出。
 - 交付：ADR 的代价已量化；待确认问题排了优先级；ER 图、文档与 DDL 一致。

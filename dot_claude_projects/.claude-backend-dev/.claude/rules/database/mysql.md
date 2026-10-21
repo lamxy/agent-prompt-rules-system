@@ -25,6 +25,7 @@ paths:
 - 所有字段 `NOT NULL`，除 `TEXT` / `BLOB` 外都有默认值。「没有」用约定值表示：可选关联 id 为 `0`，尚未发生的时间为 `'1970-01-01 00:00:00'`，字符串为 `''`；约定值写进字段 `COMMENT`。
 - 确需 `NULL` 的极少数字段，在 `COMMENT` 与设计文档的 ADR 中写明理由；查询可空列用 `IS NULL` / `<=>`，不用 `NOT IN (子查询)`（子查询含 `NULL` 时结果为空），改用 `NOT EXISTS`。
 - 对外暴露的编号（订单号、支付单号等）用独立的 `VARCHAR` 字段加唯一索引，不对外暴露自增 `id`。
+- 表间关联字段存对方的 `bigint` 主键（如 `order_id`，类型与对方 `id` 一致），不用文本业务键或多列组合关联；业务键只留在本表并建唯一索引，需要保留「当时的值」时另存快照字段。
 - 软删除用 `is_deleted TINYINT NOT NULL DEFAULT 0`；需要删除时间或表上有业务唯一键时，按 `db-schema-design` skill 的 `references/mysql.md`「软删除」处理。
 - 金额等精确小数用 `DECIMAL`；枚举、状态与布尔用 `TINYINT`（`TINYINT(1)`），不用 `ENUM` / `BOOLEAN`，`COMMENT` 列出全部取值。
 - 手机号、证件号、外部编码等标识用 `VARCHAR`，不用数字类型。
