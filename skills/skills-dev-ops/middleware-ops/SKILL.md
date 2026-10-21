@@ -1,6 +1,6 @@
 ---
 name: middleware-ops
-description: 部署、调优、迁移或检查 Redis、Kafka、RabbitMQ、Elasticsearch、MongoDB 等中间件，以及为业务系统和中间件配置监控告警基线。用户说「部署 Redis／Kafka／RabbitMQ／ES／MongoDB」「中间件调优」「Redis 迁移」「新库上线」「加监控告警」「中间件巡检」时使用。应用代码如何使用这些中间件属于 backend-dev 场景，不使用本 skill。
+description: 部署、调优、迁移或检查 Redis、Kafka、RabbitMQ、Elasticsearch、MongoDB 等中间件，部署 gRPC 服务（负载均衡、探针、优雅关闭），以及为业务系统和中间件配置监控告警基线。用户说「部署 Redis／Kafka／RabbitMQ／ES／MongoDB」「中间件调优」「Redis 迁移」「新库上线」「加监控告警」「中间件巡检」「gRPC 负载不均」时使用。应用代码如何使用这些中间件属于 backend-dev 场景，不使用本 skill。
 ---
 
 # 中间件运维
@@ -15,6 +15,7 @@ description: 部署、调优、迁移或检查 Redis、Kafka、RabbitMQ、Elasti
 | RabbitMQ vhost / 队列管理、内存水位 | `references/rabbitmq.md` |
 | Elasticsearch 系统参数、分片与索引设置 | `references/elasticsearch.md` |
 | MongoDB 新库上线清单、备份与时间点恢复、安全基线、巡检指标 | `references/mongodb.md` |
+| gRPC 服务的 K8s 负载均衡、探针、优雅关闭、keepalive、监控 | `references/grpc.md` |
 
 ## 通用约定
 

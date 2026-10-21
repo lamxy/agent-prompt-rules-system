@@ -12,7 +12,7 @@
 
 ## 技术栈
 
-Go；HTTP 框架为 FiberHouse（可切换 Fiber、Gin、Hertz 内核）或原生 Gin、Fiber；RPC；MySQL、PostgreSQL、MongoDB、Elasticsearch、Redis、Kafka、RabbitMQ。项目实际使用哪些，以 `go.mod` 为准。
+Go；HTTP 框架为 FiberHouse（可切换 Fiber、Gin、Hertz 内核）或原生 Gin、Fiber；gRPC；MySQL、PostgreSQL、MongoDB、Elasticsearch、Redis、Kafka、RabbitMQ。项目实际使用哪些，以 `go.mod` 为准。
 
 ## 目录结构
 
@@ -46,8 +46,8 @@ Go；HTTP 框架为 FiberHouse（可切换 Fiber、Gin、Hertz 内核）或原�
 
 ## 存储与中间件
 
-- MySQL、MongoDB、Elasticsearch、Redis、Kafka、RabbitMQ 的规范在 `.claude/rules/`，编辑对应代码时自动加载；日志规范在 `.claude/rules/go/logging.md`。
-- 设计新表或集合用 `/db-schema-design`，缓存用 `/cache-design`，消息用 `/mq-design`，系统架构图用 `/system-design-doc`。
+- MySQL、MongoDB、Elasticsearch、Redis、Kafka、RabbitMQ、gRPC（`rules/rpc/`）的规范在 `.claude/rules/`，编辑对应代码时自动加载；日志规范在 `.claude/rules/go/logging.md`。
+- 设计新表或集合用 `/db-schema-design`，缓存用 `/cache-design`，消息用 `/mq-design`，gRPC 接口用 `/rpc-design`，系统架构图用 `/system-design-doc`。
 - schema 变更只通过 migration 文件并附回滚步骤，不直接在库上执行 DDL。
 - 数据库 MCP 只连开发或测试库，使用只读账号。
 

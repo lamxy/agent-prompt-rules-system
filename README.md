@@ -71,7 +71,7 @@
 |------|------|------|
 | `prd-design` | PRD 与原型设计 | 需求说明书、PRD、线框图与基础原型；以 pm-skills、mattpocock-skills、gstack 等技能为主 |
 | `frontend-dev` | 前端开发 | UI 设计与实现、前端交互、对接后端 API |
-| `backend-dev` | 后端开发 | 系统规格与架构设计、技术与框架选型、数据库设计；以 Go 技术栈为参考实现：Gin、Fiber、自定义框架、RPC，MySQL、PostgreSQL、MongoDB、Elasticsearch、Redis、Kafka、RabbitMQ |
+| `backend-dev` | 后端开发 | 系统规格与架构设计、技术与框架选型、数据库设计；以 Go 技术栈为参考实现：Gin、Fiber、自定义框架、gRPC，MySQL、PostgreSQL、MongoDB、Elasticsearch、Redis、Kafka、RabbitMQ |
 | `dev-ops` | DevOps | CI/CD、上线、可观测性；Kubernetes、Prometheus/Grafana、Sentry |
 
 仓库只维护以上四个场景，每个场景是一份**参考实现**，不追求覆盖该领域的所有技术栈（例如 `backend-dev` 只以 Go 为主）。其他场景、其他技术栈或特定项目由使用者自行实现，常见做法有两种：
