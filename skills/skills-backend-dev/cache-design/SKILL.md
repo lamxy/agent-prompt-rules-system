@@ -47,7 +47,7 @@ description: 为 Go 后端设计 Redis 缓存：key 命名、数据类型、TTL�
 
 ## 5. 容量与架构
 
-估算 key 数量 × 平均 value 大小 × 冗余系数，以及峰值 QPS；单个主从实例承载不了时改用集群，并确认代码中没有集群不支持的跨 slot 多 key 操作（必要时用 hash tag `{...}` 让相关 key 落在同一 slot）。
+估算 key 数量 × 平均 value 大小 × 冗余系数，以及峰值 QPS；单个主从实例承载不了时改用集群，并确认代码中没有集群不支持的跨 slot 多 key 操作（必要时按 `rules/redis.md` 在标识段加 hash tag，如 `{u2001}`，让相关 key 落在同一 slot）。
 
 ## 6. 产出
 

@@ -34,7 +34,7 @@
 
 落点：`rules/redis.md`、`skills/cache-design/`（`references/redis.md` 改写并加实测记录，新增 `references/patterns.md` 场景模板）、dev-ops `middleware-ops/references/redis.md`（内存与淘汰、持久化、巡检）。实测环境 Redis 8.10.2（`redis:8`，单机与 3 主集群）、7.4.11 对照，go-redis v9.22.0（集群另以 v9.17.3 对照），Go 1.25.14。
 
-1. **key 禁止 `}` 与集群 hash tag 冲突**。原规则禁止 `}`，`cache-design` 却建议必要时用 `{...}` 让相关 key 同 slot；实测跨 slot 的 `MGet` / `MSet` / 多 key `Del` / Lua 均报 `CROSSSLOT`。暂行（交叉审查改回）：rule 维持原条款，skill 维持原写法，reference 注明冲突。建议改为：五段式不变，`{ }` 只允许包住标识段（`shop:cart:items:zset:{2001}`），只用于必须原子操作或一起 `MGET` 的一组 key。选项：A 按建议放开 / B hash tag 用独立前缀段 / C 禁止 hash tag，跨 key 原子操作改设计。
+1. **key 禁止 `}` 与集群 hash tag 冲突**（2026-10-23 已决定：A 按建议放开）。`{ }` 只包住标识段、用业务实体 id、仅用于同 slot 的多 key 操作，写入 `rules/redis.md`，`cache-design` 同步。
 2. **是否继续禁止 `MULTI` / `EXEC`**。实测运行期错误不回滚（语法错误才整体丢弃）；go-redis `TxPipelined` 一次往返；`Watch` 乐观锁正确但高竞争下重试多（20 并发各加 50 次，冲突 5649 次）。暂行：rule 维持原条款，原子操作用 Lua。选项：A 维持 / B 允许 `TxPipelined` 做同 slot、无条件判断的原子批量写 / C 另允许低竞争场景用 `Watch`。
 3. **go-redis 默认重试与非幂等写**（复测确认）。服务端被慢脚本占住 0.4s、`ReadTimeout` 300ms 时，默认重试下 `INCR` 返回成功但计数器为 2；`MaxRetries: -1` 返回超时、计数器为 1。`MaxRetries: 0` 即默认 3 次。暂行：rule 要求非幂等写用关闭重试的客户端或做成幂等。选项：A 维持 / B 全局 `MaxRetries: -1`，由调用方按幂等性自行重试 / C 只写在 reference。
 4. **`ContextTimeoutEnabled` 是否强制开启**（复测确认）。关闭时 200ms 的 ctx 超时无效（服务端阻塞 1.5s 就等 1.5s），开启后 200ms 返回。暂行：rule 要求开启。选项：A 强制 / B 只在有请求级 deadline 的服务开启。
