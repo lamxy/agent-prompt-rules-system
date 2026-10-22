@@ -6,7 +6,7 @@
 
 ```go
 go func() {
-	// 只监听 localhost 或内网地址；生产是否开放由配置开关控制
+	// 只监听 localhost 或内网地址；由配置开关控制，生产默认关闭，经 SSH 隧道访问
 	if err := http.ListenAndServe("127.0.0.1:6060", nil); err != nil {
 		logger.Error("pprof server", "err", err)
 	}

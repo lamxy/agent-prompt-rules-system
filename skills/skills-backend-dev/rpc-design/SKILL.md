@@ -12,7 +12,7 @@ description: 为 Go 后端设计或评审 gRPC 接口：proto 契约、调用模
 | 调用方 | 选择 |
 |---|---|
 | 内部服务之间、需要强类型契约或流 | gRPC |
-| 浏览器或第三方直接调用 | HTTP/JSON（项目已有网关或转码方案时沿用，不另起一套） |
+| 浏览器或第三方直接调用 | HTTP/JSON，由 FiberHouse HTTP handler 调用同一 service；不引入 grpc-gateway、Connect 等转码层（项目已有时沿用） |
 | 只有一个调用方、调用量小 | 沿用项目现有方式，不为此引入 gRPC |
 
 项目已有 RPC 方案时沿用；引入 gRPC 或网关属于选型，写 ADR。
@@ -45,7 +45,7 @@ description: 为 Go 后端设计或评审 gRPC 接口：proto 契约、调用模
 
 ## 4. 兼容性检查
 
-改已有 proto 前对照 `references/proto.md` 的兼容性表；项目有 `buf.yaml` 时运行 `buf lint` 与 `buf breaking`。破坏性变更走新版本 package，与旧版本并存到调用方全部迁移。
+改已有 proto 前对照 `references/proto.md` 的兼容性表；项目有 `buf.yaml` 时运行 `buf lint` 与 `buf breaking`。新项目 `buf.yaml` 的 breaking 用 `FILE`（buf 默认）：淘汰字段标 `[deprecated = true]` 保留，不删除；破坏性变更走新版本 package，与旧版本并存到调用方全部迁移。
 
 ## 5. 实现
 

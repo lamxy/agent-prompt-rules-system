@@ -30,7 +30,7 @@ paths:
 - stream 拦截器每个流只调用一次；要处理每条消息需包装 `grpc.ServerStream` 的 `RecvMsg` / `SendMsg`。
 - 注册 `grpc_health_v1` 健康服务；退出时依次：`health.Server.Shutdown()` → 带超时的 `GracefulStop()` → 超时后 `Stop()`（有长连接流时 `GracefulStop` 不会自己返回）。
 - 服务端设置 `KeepaliveEnforcementPolicy`，`MinTime` 不大于客户端 keepalive 的 `Time`，否则客户端会被 `too_many_pings` 断开。
-- 反射（`reflection.Register`）只在开发、测试环境或配置开关打开时注册。
+- 反射（`reflection.Register`）由配置开关控制，生产默认关闭；开发、测试环境开启。
 
 ## 客户端
 

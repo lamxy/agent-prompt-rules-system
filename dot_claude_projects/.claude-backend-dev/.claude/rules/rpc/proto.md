@@ -32,5 +32,6 @@ paths:
 
 ## 改动后
 
+- 新项目 `buf.yaml` 的 breaking 类别用 `FILE`；已有项目以其配置为准。
 - 项目有 `buf.yaml` 时运行 `buf lint` 与 `buf breaking --against '<主分支或已发布的 proto>'`；有报错先修改设计，不为通过而关闭检查。
 - 用项目的生成命令（`buf generate` / `make proto`）重新生成；`*.pb.go`、`*_grpc.pb.go` 不手改。
