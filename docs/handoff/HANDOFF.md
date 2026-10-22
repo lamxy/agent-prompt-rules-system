@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 21b6667
+head: fe4fb54
 status: active
 updated: 2026-10-23
 ---
@@ -13,7 +13,7 @@ updated: 2026-10-23
 
 - 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交，已推送并发布 v2.0.1（Latest）；已制定「场景配置评估、优化与验证」待办计划，尚未开始执行
 - 停在：2026-10-22 无人值守把 gRPC、Go、Redis 三个教学目录提炼进 backend-dev / dev-ops（`5098a4e`、`3c492ef`、`9bddf11`），每个都经容器实测与子代理交叉复测；**未推送**（本地领先 `origin/main` 11 个提交）；12 个测试文件全过
-- 下一步：与用户逐条讨论 `docs/plans/2026-10-22-learning-distill-questions.md` 的疑问（gRPC 5 条、Go 6 条、Redis 9 条需决定），按决定调整；之后评估计划的「典型任务清单」；推送需用户指示
+- 下一步：疑问清单已讨论完毕（2026-10-23），仅剩 gRPC 第 5 条与 Redis 第 8 条（rule paths 覆盖不到 repository 层）待用户确认；待办：dev-ops 注入 `GOMEMLIMIT`（需实测）、OpenTelemetry 接入（与 HTTP 侧一并决定）、「待验证（已移出配置）」清单；推送需用户指示
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -25,7 +25,7 @@ updated: 2026-10-23
 | 任务 | 状态 | 说明 |
 |---|---|---|
 | **数据库设计强化（优先）** | 完成：MySQL（`d56306b`）、反面案例（`f91cd48`）、MongoDB（`3707f4f`） | 见「续作时必须知道的事」→「数据库设计强化」与「建议的下一步」 |
-| 教学材料沉淀（gRPC、Go、Redis） | 完成，**疑问待讨论** | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
+| 教学材料沉淀（gRPC、Go、Redis） | 完成，疑问已定稿（余 gRPC 5、Redis 8 待确认） | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
 | backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；gRPC 规范 `5098a4e`（来自教学材料，用户企业 RPC 规范若有再补） |
 | 场景配置评估、优化与验证 | 待开始 | 三个阶段，清单见下方；方法论细节见 `docs/plans/2026-10-20-scenario-config-evaluation-plan.md` |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
