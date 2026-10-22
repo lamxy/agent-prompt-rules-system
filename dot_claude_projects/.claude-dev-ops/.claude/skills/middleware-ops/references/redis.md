@@ -15,9 +15,9 @@
 
 ## 内存与淘汰
 
-- 淘汰策略默认 `volatile-lru`：只淘汰设了 TTL 的 key，因此业务必须给 key 设 TTL；纯缓存实例也可用 `allkeys-lru` / `allkeys-lfu`（批量扫描会污染 LRU，LFU 不受影响）。服务端内置默认值是 `noeviction`，新实例要显式配置。
+- 淘汰策略按实例用途配置，部署时写明用途：纯缓存实例（数据可回源）用 `allkeys-lru`，不依赖 TTL、永不因漏设 TTL 而 OOM，官方称其为没有特殊理由时的良好默认；命中率不理想时可对比 `allkeys-lfu`（`INFO stats` 的 `keyspace_hits` / `evicted_keys`）。缓存与不可丢的持久 key 混存时用 `volatile-lru`，此时业务必须给缓存 key 设 TTL；官方建议尽量拆成两个实例。服务端内置默认值是 `noeviction`，新实例要显式配置。依据 redis.io「Key eviction」。
 - 实测：`volatile-*` 下没有带 TTL 的 key 时，内存超限后写入报 `OOM command not allowed`，一个 key 也不淘汰；读、`DEL`、`EXPIRE` 仍可执行。应急：`CONFIG SET maxmemory-policy allkeys-lru` 立即生效，随后 `CONFIG REWRITE` 或改配置文件，否则重启失效。
-- 8.x 新增 `allkeys-lrm`、`volatile-lrm`（7.4 没有），语义按目标版本文档确认后再用。
+- 8.6 起新增 `allkeys-lrm`、`volatile-lrm`（7.4 没有）：只在写操作时更新时间戳，用于淘汰长期未被修改的 key（依据同上）。
 - 设置 `maxmemory`，为复制缓冲、fork 写时复制与碎片预留内存；开启持久化的写入密集实例更保守。关闭透明大页（THP）。
 - lazyfree 选项（`lazyfree-lazy-eviction`、`-expire`、`-server-del`、`-user-del`）在 7.4 与 8.10 默认均为 `no`：淘汰、过期与 `DEL` 大 key 都在主线程同步释放。实测 20 万成员 set 的 `DEL` 3443μs、`UNLINK` 8μs。大 key 较多的实例评估开启。
 - 小集合编码阈值（`hash-max-listpack-entries` 等）不带配置文件时为 512 / 128，`redis.conf` 示例为 128；改动会影响内存，变更前后对比 `INFO memory`。
