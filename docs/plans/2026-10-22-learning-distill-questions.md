@@ -35,7 +35,7 @@
 落点：`rules/redis.md`、`skills/cache-design/`（`references/redis.md` 改写并加实测记录，新增 `references/patterns.md` 场景模板）、dev-ops `middleware-ops/references/redis.md`（内存与淘汰、持久化、巡检）。实测环境 Redis 8.10.2（`redis:8`，单机与 3 主集群）、7.4.11 对照，go-redis v9.22.0（集群另以 v9.17.3 对照），Go 1.25.14。
 
 1. **key 禁止 `}` 与集群 hash tag 冲突**（2026-10-23 已决定：A 按建议放开）。`{ }` 只包住标识段、用业务实体 id、仅用于同 slot 的多 key 操作，写入 `rules/redis.md`，`cache-design` 同步。
-2. **是否继续禁止 `MULTI` / `EXEC`**。实测运行期错误不回滚（语法错误才整体丢弃）；go-redis `TxPipelined` 一次往返；`Watch` 乐观锁正确但高竞争下重试多（20 并发各加 50 次，冲突 5649 次）。暂行：rule 维持原条款，原子操作用 Lua。选项：A 维持 / B 允许 `TxPipelined` 做同 slot、无条件判断的原子批量写 / C 另允许低竞争场景用 `Watch`。
+2. **是否继续禁止 `MULTI` / `EXEC`**（2026-10-23 已决定：A 维持）。原子操作一律用 Lua；理由与官方文档出处写入 `cache-design/references/redis.md`。待验证、未入配置：Redis 8.4 起的 `DELEX` / `SET IFEQ` 能否替代解锁 Lua（项目最低版本与 go-redis v9.22 支持情况未核对）。
 3. **go-redis 默认重试与非幂等写**（复测确认）。服务端被慢脚本占住 0.4s、`ReadTimeout` 300ms 时，默认重试下 `INCR` 返回成功但计数器为 2；`MaxRetries: -1` 返回超时、计数器为 1。`MaxRetries: 0` 即默认 3 次。暂行：rule 要求非幂等写用关闭重试的客户端或做成幂等。选项：A 维持 / B 全局 `MaxRetries: -1`，由调用方按幂等性自行重试 / C 只写在 reference。
 4. **`ContextTimeoutEnabled` 是否强制开启**（复测确认）。关闭时 200ms 的 ctx 超时无效（服务端阻塞 1.5s 就等 1.5s），开启后 200ms 返回。暂行：rule 要求开启。选项：A 强制 / B 只在有请求级 deadline 的服务开启。
 5. **淘汰策略默认值**。现行 ops 规范默认 `volatile-lru`；实测无 TTL key 时写入直接 OOM、不淘汰。参考资料主张纯缓存用 `allkeys-lru` / `allkeys-lfu`。暂行：维持 `volatile-lru`，补 OOM 现象、应急切换，注明服务端内置默认是 `noeviction`。选项：A 维持 / B 纯缓存实例 `allkeys-lfu`、混存实例 `volatile-lru` / C 一律 `allkeys-lru`。
