@@ -20,7 +20,7 @@ runtime.SetBlockProfileRate(rate)       // 每阻塞约 rate 纳秒采一次；1
 runtime.SetMutexProfileFraction(frac)   // 约 1/frac 的锁竞争事件；1 = 全部记录
 ```
 
-排查时临时设为 1；常开时取较大的值（例如 block 10000、mutex 100，经验值，按开销调整）。
+排查时临时设为 1；常开时取较大的值（值越大采样越少、开销越低），按实测开销调整。
 
 生产环境：诊断端口只绑 `localhost` 或内网，远程经 SSH 隧道或带鉴权的内网网关访问（profile 暴露函数名与调用关系）；CPU profile 采集期间约有 5% 的额外开销，高峰期选单个实例采集；trace 开销更大，只短时开启。
 

@@ -29,7 +29,7 @@
 | 纯缓存（可从数据库重建） | 可关闭 RDB 与 AOF；确认数据库能承受冷启动回源 |
 | 需要恢复数据 | AOF + `aof-use-rdb-preamble yes`（混合：重写后 base 为 RDB、增量为 AOF），`appendfsync everysec`（最多丢约 1 秒） |
 
-- `appendfsync always` 每条写都 fsync，参考资料的单连接压测（Redis 8.2）比 `everysec` 慢约 33 倍；`no` 与 `everysec` 吞吐几乎相同，却有更长的丢失窗口，不用。
+- `appendfsync always` 每条写都 fsync，官方文档称其非常慢；`everysec` 是官方默认与推荐值；`no` 由内核决定刷盘时机（Linux 通常约 30 秒），丢失窗口更长，不用。
 - RDB 快照、AOF 重写、主从全量同步都会 fork；fork 期间主线程阻塞，耗时随内存（页表）增长，用 `INFO stats` 的 `latest_fork_usec` 监控。线上不执行 `SAVE`（全程阻塞），用 `BGSAVE`。
 - 可由从库承担持久化以避开主库 fork，但主库重启时若无持久化文件会以空数据启动并同步给从库，需禁止自动重启或先切换。
 

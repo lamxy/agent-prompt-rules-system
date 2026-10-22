@@ -1,6 +1,6 @@
 # gRPC 服务部署
 
-应用侧的代码规范在 backend-dev 场景的 `rules/rpc/` 与 `rpc-design` skill；这里只写部署、网关与监控。
+应用侧的代码规范在 backend-dev 场景的 `rules/rpc/` 与 `rpc-design` skill；这里只写部署、网关与监控。K8s 部分依据 kubernetes.io（Service、Pod 终止流程、gRPC 探针）与 grpc-go 源码（DNS 解析器不定期轮询，只在连接断开后重新解析；`keepalive` 参数注释）。
 
 ## K8s 负载均衡
 

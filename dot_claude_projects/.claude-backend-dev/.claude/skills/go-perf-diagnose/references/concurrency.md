@@ -10,7 +10,7 @@
 - 「收 N 次」收集结果时，每个 goroutine 无论成败都必须恰好发送一次；可能少于 N 时改为 `close` 后 `range`。
 - `time.After`：`go` ≥ 1.23 的模块中未被引用的定时器可被 GC 回收（官方文档），旧资料说的「循环中一直泄漏到到期」只适用于 < 1.23；热循环每轮仍有约 3 次分配，复用一个 Timer 可省掉。
 - `GOMAXPROCS`（`go` ≥ 1.25，Linux）：取逻辑 CPU 数、CPU 亲和性与 cgroup CPU quota（K8s 的 CPU limit，不是 request）三者的最小值，非整数向上取整，且不低于 2；运行时每秒最多更新一次。设置 `GOMAXPROCS` 环境变量或调用 `runtime.GOMAXPROCS(n)`（`automaxprocs` 就是这样做的）会关闭自动更新。
-- `GOMEMLIMIT` 是软上限，cgo 分配不计入；常见取值为容器内存限额的 80%～90%，`GOGC` 不设为 `off`。
+- `GOMEMLIMIT` 是软上限，cgo 分配不计入；Go GC 指南（go.dev/doc/gc-guide）建议在容器内存限额基础上留 5%～10% 余量给运行时之外的内存；可能与其他进程共享内存时，`GOGC` 不设为 `off`。
 - `sync.Pool`：GC 会清空、`Get` 从不阻塞，只能做临时对象缓存，不能限制数量；限流用 `SetLimit`、`semaphore` 或带缓冲 channel，连接数用客户端自带的池参数。
 - 泛型不是性能手段：指针等同形状的类型参数共用一份代码，方法调用经字典派发，实测与接口调用同速。
 - `-gcflags=-m` 只用来找分配原因：变长 `make` 报告 does not escape 仍可能堆分配，以 benchmark 的 `allocs/op` 为准。已知长度的 slice 与 map 预分配；热路径的数字转字符串用 `strconv`，不用 `fmt.Sprintf`。

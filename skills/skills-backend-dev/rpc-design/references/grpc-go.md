@@ -124,7 +124,7 @@ details 走 `grpc-status-details-bin` trailer，受 header 大小限制，只放
 | `Unavailable` / `Internal` | 暂时不可达 / 服务端缺陷 | 前者可退避重试，后者重试无意义；把 `Internal` 报成 `Unavailable` 会引发重试风暴 |
 | `Unimplemented` / `NotFound` | 方法不存在（版本不符、路由错、代理返回 404）/ 资源不存在 | 前者查部署与路由 |
 
-经过不理解 gRPC 的代理时，代理自身返回的 HTTP 状态会被客户端映射（依据 gRPC 规范的 HTTP 状态映射表，未实测）：404 → `Unimplemented`，429 / 502 / 503 / 504 → `Unavailable`，401 → `Unauthenticated`，403 → `PermissionDenied`。这类响应没有 `grpc-status`，可借此与服务端真实返回区分。
+经过不理解 gRPC 的代理时，代理自身返回的 HTTP 状态会被客户端映射（依据 grpc/grpc 仓库 `doc/http-grpc-status-mapping.md`，只用于响应中没有 `grpc-status` 的情况）：404 → `Unimplemented`，429 / 502 / 503 / 504 → `Unavailable`，401 → `Unauthenticated`，403 → `PermissionDenied`。这类响应没有 `grpc-status`，可借此与服务端真实返回区分。
 
 ## 客户端装配
 
@@ -206,4 +206,4 @@ grpc-go v1.84.0，单机临时容器，健康检查服务作为实验载体：
 
 - 「deadline 到期时服务端 `ctx.Err()` 一定是 `Canceled`」：两种都会出现，不应依赖。
 - 「`Unknown` 通常来自没包装的 panic」：grpc-go 不恢复 panic，未加 recovery 时进程直接退出，客户端看到的是连接断开（`Unavailable`），不是 `Unknown`。
-- 「失败响应（Trailers-Only）时 Header 一定为空」：handler 用 `SetHeader` 设置的值在 grpc-go 中仍可从 Header 取到；只有未设置 header 时才为空。跨语言客户端未验证，关键追踪信息在客户端同时检查 Header 与 Trailer。
+- 「失败响应（Trailers-Only）时 Header 一定为空」：handler 用 `SetHeader` 设置的值在 grpc-go 中仍可从 Header 取到；只有未设置 header 时才为空。关键追踪信息在客户端同时检查 Header 与 Trailer。

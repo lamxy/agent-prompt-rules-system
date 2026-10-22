@@ -96,4 +96,4 @@ Redis 8.10.2（`redis:8` 镜像）单机与 3 主集群、7.4.11 对照；go-red
 | 集群跨 slot `MGet` / `MSet` / `Del` / Lua / `TxPipelined` | 均 `CROSSSLOT`；pipeline 正常；hash tag 同 slot 后 Lua 与 `TxPipelined` 正常 |
 | 集群 Lua 访问未经 `KEYS` 声明的其他节点 key | `Script attempted to access a non local key` |
 | 集群 300 个 key，`ClusterClient.Scan` 迭代器 | 结果不完整且每次不同（两次分别 199、150 个，每次调用可能落到不同节点）；`ForEachMaster` 逐节点 `Scan` 返回 300 个 |
-| 淘汰策略 | 8.10.2 可选值多了 `allkeys-lrm`、`volatile-lrm`（7.4.11 没有），语义未验证 |
+| 淘汰策略 | 8.10.2 可选值多了 `allkeys-lrm`、`volatile-lrm`（7.4.11 没有）；官方文档：8.6 起提供，LRM 只在写操作时更新时间戳，读不更新 |

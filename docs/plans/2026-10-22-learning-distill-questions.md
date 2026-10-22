@@ -48,3 +48,18 @@
 12. **参考资料中推翻或修正的说法**（无需决定）：「`hash-max-listpack-entries` 默认 128」——不带配置文件启动时为 512，128 来自 `redis.conf` 示例；「八种淘汰策略」——8.10 多了 `allkeys-lrm`、`volatile-lrm`；「`MULTI` 不减少往返」——`TxPipelined` 一次发送；「逐条 `INCR` 比 pipeline 慢 462 倍」——主要是每次新建 `redis-cli` 进程与连接的开销；「淘汰一次触发 16035 个 key」——由一次性压低 `maxmemory` 造成，不代表常态。
 13. **未写入的内容**：单线程与 I/O 多路复用、slot 数由来、跳表、RESP、MOVED / ASK、过期抽样算法等属原理或面试知识；RedisBloom 只在穿透一行提及；`KEYS` 在千万级 key 上的耗时、大实例 fork 秒级为外推，未写入；「主库无持久化自动重启会清空从库」「关闭 THP」来自官方文档，未实测。
 14. **本机残留**：原代理的 docker 网络 `redislab-net`、交叉审查的 `redisrev-net` 删除命令均被权限拒绝；镜像 `redis:8`、`redis:7.4` 保留。需要时手动 `docker network rm redislab-net redisrev-net && docker rmi redis:8 redis:7.4`。容器均以 `--rm` 运行并已停止；实测代码与模块缓存在 scratchpad 的 `redis/`、`redis-review/` 子目录，随 scratchpad 清理。
+
+## 待验证（已移出配置）
+
+2026-10-23 按「配置中不得出现未验证内容」核对后移出。原位置均为 `dot_claude_projects/` 下的场景包，`skills/skills-*/` 中的同名副本同步修改。
+
+1. **MongoDB 单事务修改文档数不超过 1000**。原位置：backend-dev `rules/database/mongodb.md`「事务」节、`db-schema-design/references/mongodb.md`「事务」节。缺少依据：官方 Production Considerations 只给 60 秒时限与 WiredTiger 缓存压力中止，没有文档数上限；该数来自课程。现改为「批处理拆成小批次」并引用缓存压力说明。建议验证：在 8.0 副本集上对不同文档数与文档大小的事务测提交耗时、缓存占用与 `TransactionTooLargeForCache` 出现条件。
+2. **分片集群中让同一事务的文档落在同一分片**。原位置：`db-schema-design/references/mongodb.md`「事务」节。缺少依据：课程经验值，未查官方 Sharded Clusters Transactions 原文。建议验证：查 `core/transactions-sharded-clusters` 原文；或在分片集群对单分片与跨分片事务测耗时。
+3. **block / mutex profile 常开采样率 block 10000、mutex 100**。原位置：`go-perf-diagnose/references/pprof.md`。缺少依据：`runtime` 文档只说明参数含义，未给推荐值。现只保留「值越大开销越低，按实测调整」。建议验证：在有锁竞争的 benchmark 上对比不同取值的 CPU 开销与采样数。
+4. **`GOMEMLIMIT` 取容器限额的 80%～90%**。原位置：`go-perf-diagnose/references/concurrency.md`。缺少依据：教材值；官方 GC 指南建议留 5%～10% 余量（即 90%～95%），已改为引用官方。建议验证：在 `--memory` 限额容器内用有 cgo 或大量非堆内存的负载对比 80% 与 90%～95% 的 OOM 与 GC CPU。
+5. **gRPC Trailers-Only 响应中 `SetHeader` 的值在非 Go 客户端能否从 Header 取到**。原位置：`rpc-design/references/grpc-go.md`「早期资料中不准确的说法」。缺少依据：只在 grpc-go 实测，跨语言未测。现删去跨语言说法，保留「同时检查 Header 与 Trailer」。建议验证：用 grpc-java、grpc-python 等客户端调用返回错误且设置了 header 的 grpc-go 服务。
+6. **缓存空值约 95 字节 / key**。原位置：`cache-design/references/patterns.md` 穿透一行。缺少依据：参考资料在 Redis 8.2 上的测量，本仓库未复测。建议验证：Redis 8 容器中 `MEMORY USAGE` 测不同 key 长度的空值。
+7. **固定 TTL 的 1 万个 key 同秒失效、加偏移后分散到 7 秒**。原位置：`cache-design/references/patterns.md` 雪崩一行。缺少依据：参考资料测量，未复测。现改为定性描述。建议验证：容器内批量写入后按秒统计 `expired_keys`。
+8. **`appendfsync always` 比 `everysec` 慢约 33 倍、`no` 与 `everysec` 吞吐几乎相同**。原位置：dev-ops `middleware-ops/references/redis.md`。缺少依据：参考资料单连接压测（Redis 8.2），未复测。现改为引用官方持久化文档的定性说法。建议验证：同一磁盘上 `redis-benchmark` 分别测三种策略，注意单连接与多连接（group commit）差异。
+9. **Elasticsearch 堆「约 31GB」与「大堆使用 G1 GC」**。原位置：`middleware-ops/references/elasticsearch.md`。缺少依据：官方 8.19 文档给的是「26GB 多数系统安全，部分可到 30GB」，以日志确认压缩指针；未找到 G1 建议原文。前者已改为官方说法，后者删除。建议验证：查所用版本 `jvm.options` 默认 GC 与官方说明。
+10. **文件句柄与 `vm.max_map_count`「常设为 655360」**。原位置：同上。缺少依据：官方只给下限 65535、262144（推荐 1048576）。建议验证：确认是否为团队运维规范；若是，标为「默认值，项目可调整」后再放回。

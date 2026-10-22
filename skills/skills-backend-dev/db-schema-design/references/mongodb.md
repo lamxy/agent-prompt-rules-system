@@ -109,7 +109,7 @@ TTL 索引由后台任务每 60 秒清理一次，过期文档不会准时删除
 - 事务超过 `transactionLifetimeLimitSeconds`（默认 60 秒）后被中止，提交时报 `NoSuchTransaction`。
 - Go Driver `WithTransaction` 遇到 `TransientTransactionError` 会**重新执行整个回调**（实测回调执行 2 次，最终数据正确）。回调内的非数据库副作用会重复发生。
 
-单个事务修改的文档数控制在 1000 以内、分片集群中让同一事务的文档落在同一分片，是课程给出的经验值，本次未在官方文档中查到原文。
+官方文档（Transactions Production Considerations）：未提交的事务对 WiredTiger 缓存压力过大时以写冲突中止，大到缓存放不下时报 `TransactionTooLargeForCache`；批处理拆成小批次。
 
 ## Go 驱动
 

@@ -4,9 +4,9 @@
 
 ## 系统
 
-- JVM 堆不超过约 31GB（保持压缩指针），且不超过物理内存的一半；大堆使用 G1 GC。
+- JVM 堆不超过内存的一半（容器内按容器可见内存），且低于压缩指针阈值（官方：26GB 在多数系统安全，部分系统可到 30GB；日志中 `compressed ordinary object pointers [true]` 确认）。
 - 关闭 swap（或 `bootstrap.memory_lock: true`）。
-- 文件句柄数不少于 65535（常设为 655360）；`vm.max_map_count` 不少于 262144（常设为 655360）；保证足够的线程数（nproc）。
+- 文件句柄数不少于 65535；`vm.max_map_count` 不少于 262144（官方推荐 1048576）；线程数（nproc）不少于 4096（均为官方 bootstrap check 要求）。
 - 磁盘使用率保持在 85% 以下（低水位线默认即为 85%）。
 
 ## 集群拓扑
