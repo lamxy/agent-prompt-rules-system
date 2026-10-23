@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 2f7a2c4
+head: 3c278bc
 status: active
 updated: 2026-10-23
 ---
@@ -12,8 +12,8 @@ updated: 2026-10-23
 ## 摘要
 
 - 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交，已推送并发布 v2.0.1（Latest）；已制定「场景配置评估、优化与验证」待办计划，尚未开始执行
-- 停在：2026-10-22 无人值守把 gRPC、Go、Redis 三个教学目录提炼进 backend-dev / dev-ops（`5098a4e`、`3c492ef`、`9bddf11`），每个都经容器实测与子代理交叉复测；**未推送**（本地领先 `origin/main` 11 个提交）；12 个测试文件全过
-- 下一步：疑问清单已讨论完毕（2026-10-23），文件已按状态重组，「一、待确认」剩 2 条（rule paths 覆盖不到 repository 层；Redis 单实例内存上限）；待办：dev-ops 注入 `GOMEMLIMIT`（需实测）、OpenTelemetry 接入（与 HTTP 侧一并决定）、「待验证（已移出配置）」清单；推送需用户指示
+- 停在：2026-10-23 疑问「path rules 覆盖不到 Redis 代码」定稿（`3c278bc`）：path rules 加载行为经 `claude -p` 实测，go-redis 集中到 `cache/` 层并写入常驻 `CLAUDE.md`、depguard 范本、`cache-design` 分层示例；**未推送**（`36722e8` 之后的提交均在本地）；12 个测试文件全过
+- 下一步：疑问清单已讨论完毕（2026-10-23），文件已按状态重组，「一、待确认」剩 1 条（Redis 单实例内存上限）；待办：dev-ops 注入 `GOMEMLIMIT`（需实测）、OpenTelemetry 接入（与 HTTP 侧一并决定）、「待验证（已移出配置）」清单；推送需用户指示
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -25,7 +25,7 @@ updated: 2026-10-23
 | 任务 | 状态 | 说明 |
 |---|---|---|
 | **数据库设计强化（优先）** | 完成：MySQL（`d56306b`）、反面案例（`f91cd48`）、MongoDB（`3707f4f`） | 见「续作时必须知道的事」→「数据库设计强化」与「建议的下一步」 |
-| 教学材料沉淀（gRPC、Go、Redis） | 完成，疑问已定稿（余 2 条待确认） | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
+| 教学材料沉淀（gRPC、Go、Redis） | 完成，疑问已定稿（余 1 条待确认） | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
 | backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；gRPC 规范 `5098a4e`（来自教学材料，用户企业 RPC 规范若有再补） |
 | 场景配置评估、优化与验证 | 待开始 | 三个阶段，清单见下方；方法论细节见 `docs/plans/2026-10-20-scenario-config-evaluation-plan.md` |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
@@ -66,7 +66,7 @@ updated: 2026-10-23
 
 **仓库定位**：个人 Agent 配置与工具／技能管理仓库（Claude Code 为主，兼顾 Codex），公开供参考。2026-10-19 从「分层提示词规则系统」转型而来，设计原则与原因见根目录 `README.md`。
 
-**版本**：本地 `main` 领先 `origin/main`（`36722e8` 之后的 11 个提交未推送，推送需用户指示）；GitHub release v2.0.0（tag 指向 `a0783b3`）、v2.0.1（tag 指向 `6a31aee`，标为 Latest）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
+**版本**：本地 `main` 领先 `origin/main`（`36722e8` 之后的提交均未推送，推送需用户指示）；GitHub release v2.0.0（tag 指向 `a0783b3`）、v2.0.1（tag 指向 `6a31aee`，标为 Latest）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
 
 **四个场景**（FLAG 在所有维度目录中一致；另有 `fullstack-dev` 只存在于 `settings/`）：
 
@@ -128,7 +128,7 @@ sh scripts/install-claude-project.sh -g -d
 sh scripts/multi_client_support/codex.sh -d
 ```
 
-最后一次完整验证结果：2026-10-22（`9bddf11`），12 个测试文件全部通过（含 `sh -n` 语法检查）。
+最后一次完整验证结果：2026-10-23（`3c278bc`），12 个测试文件全部通过（含 `sh -n` 语法检查）。
 
 <!-- section: gotchas -->
 ## 续作时必须知道的事
@@ -216,6 +216,14 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 正确做法：落点与实测表在各 skill 的 references（`rpc-design/references/`、`go-perf-diagnose/references/concurrency.md`、`cache-design/references/{redis,patterns}.md`）；修改前先查实测表，新结论用 `--rm`、不暴露端口的临时容器实测。版本上限：Go 1.25 项目最高 go-redis v9.22.0、x/sync v0.22/v0.23（v0.24 与 go-redis v9.23 要求 Go 1.26）。rule 正文维持用户既定条款（Redis key 禁 `}`、不用 MULTI/EXEC 等），冲突方案只写疑问文件。教材在本机 `~/workspace/documents/learning/{grpc_learn,golang_learn,redis-bootcamp}/`，**不入库**。
 
+### path rules 的加载时机（2026-10-23 实测）
+
+现象：rule 写对了 `paths`，编辑某些代码时仍不生效。
+
+原因：Claude Code 2.1.308 中，Read、Bash 读类命令、Write、Edit 都会加载匹配的 rule，但都在工具执行之后才注入；Bash 写类命令（heredoc、`sed -i`）不加载；代码不在匹配路径下（例如缓存编排在 `service/`）时当然不加载。hook 注入同样晚到，不能补救。
+
+正确做法：必须在动手前知道的约定写进常驻 `CLAUDE.md` 或 skill；按目录集中代码让 `paths` 精准命中（Redis 代码只放 `cache/`），并尽量用 lint（depguard）等机械检查兜底。实测记录在 `docs/plans/2026-10-22-learning-distill-questions.md`「参考记录」。
+
 ### 其他已知问题
 
 - 第三方市场插件名无法离线校验：`pm-skills`、`anthropic-agent-skills` 未缓存在本机，`test-settings-templates.sh` 跳过其名称检查
@@ -231,7 +239,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 |---|---|
 | 各场景用于试用的真实项目（用户指定） | 计划文件「需要用户决定」 |
 | 试用期长度（建议 2 周） | 同上 |
-| 教学材料沉淀的疑问（20 条需决定）与本机 docker 残留清理 | `docs/plans/2026-10-22-learning-distill-questions.md` |
+| 教学材料沉淀的疑问（1 条待确认、3 项待办、12 条待验证）与本机 docker 残留清理 | `docs/plans/2026-10-22-learning-distill-questions.md` |
 | 交叉评审的模型组合与预算上限（`claude -p` 重复执行会消耗额度） | 同上 |
 | 阶段 2 的采纳决策 | 阶段 2 完成后产出 |
 | 本机是否采用新的全局设定 | 本文件「当前状态」 |
@@ -309,3 +317,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-22 | 数据库设计强化：AI 技能平台反面案例 | 子代理只读分析原仓库 migration，去识别化后写入 `case-ai-platform.md`、`anti-patterns.md` 7 条、`mysql.md` 迁移对照与 rule 一条（`f91cd48`） | MongoDB 等用户材料；未推送；临时容器 `dbverify-tmp` 待用户清理（未验证是否仍存在） |
 | 2026-10-22 | 数据库设计强化：MongoDB | 课程笔记经 8.0 副本集与 Go Driver v2 实测、官方文档核对、子代理独立复测审计后重写 backend-dev MongoDB rule 与 reference；分库与 `_id` 规则按实测放宽；dev-ops 补备份与时间点恢复、安全基线、巡检指标（`3707f4f`） | 未推送；临时容器 `mgv1`～`mgv3`、网络 `mgv-net` 待清理 |
 | 2026-10-22 | 教学材料沉淀：gRPC、Go、Redis | 逐个子代理提炼 + 容器实测 + 子代理交叉复测：`rules/rpc/`、`rpc-design`（`5098a4e`）；`rules/go/concurrency.md`、`go-perf-diagnose`，常驻 Go 规则 8.2KB→6.1KB（`3c492ef`）；Redis rule、`cache-design/references/patterns.md`、middleware-ops（`9bddf11`） | 疑问待用户讨论；未推送；docker 卷 `grpclab-gomod`、网络 `redislab-net`/`redisrev-net`、容器 `mgv1`～`mgv3`/`dbverify-tmp` 待清理 |
+| 2026-10-23 | 疑问「path rules 覆盖不到 Redis 代码」定稿 | `claude -p` 实测 rule 加载时机；go-redis 只在 `cache/` 层 import（常驻 `CLAUDE.md`、`layering.md`、`go-new-module`）；depguard 范本（golangci-lint v2.5.0 实测）；`cache-design/references/layered-examples.md`（Redis 8.10.2 / 7.4.11 集成测试）（`3c278bc`） | 复杂约束的自我修正、gRPC depguard 待验证；未推送；容器 `rcase-redis`、网络 `rcase-net` 待清理 |
