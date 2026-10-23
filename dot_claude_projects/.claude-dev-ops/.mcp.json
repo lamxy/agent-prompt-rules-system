@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "glitchtip": {
+      "type": "http",
+      "url": "${GLITCHTIP_URL}/mcp"
+    }
+  }
+}

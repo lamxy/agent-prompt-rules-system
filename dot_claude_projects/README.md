@@ -10,8 +10,8 @@
 | `.claude/` | `open_supports_name_list.txt`：gstack、task-master（用户级） | `~/.claude/` |
 | `.claude-prd-design/` | settings、`CLAUDE.md`、6 个 agent；清单：pm-skills 以 `--scope project` 安装为项目插件 | 项目根目录 |
 | `.claude-frontend-dev/` | settings、`CLAUDE.md`、5 个 agent；清单：codegraph（项目级），OpenSpec、gsd-core 为可选框架（注释状态） | 项目根目录 |
-| `.claude-backend-dev/` | Go 参考实现：settings（含 gofmt hook）、`CLAUDE.md`、`.mcp.json`（MySQL、PostgreSQL）、6 个 agent、path rules（Go、框架、存储与中间件）、5 个 skill；清单同前端 | 项目根目录 |
-| `.claude-dev-ops/` | settings、`CLAUDE.md`、5 个 agent、`middleware-ops` skill；清单无专属支持包 | 项目根目录 |
+| `.claude-backend-dev/` | Go 参考实现：settings（含 gofmt hook）、`CLAUDE.md`、`.mcp.json`（MySQL、PostgreSQL、GlitchTip）、6 个 agent、path rules（Go、框架、存储与中间件）、5 个 skill；清单同前端 | 项目根目录 |
+| `.claude-dev-ops/` | settings、`CLAUDE.md`、`.mcp.json`（GlitchTip）、5 个 agent、`middleware-ops` skill；清单无专属支持包 | 项目根目录 |
 | `.claude-FLAG-NAME_template/` | 命名模板与清单格式说明 | — |
 
 ## 范围与自定义场景

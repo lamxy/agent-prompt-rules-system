@@ -31,6 +31,10 @@
         "POSTGRES_USER": "${POSTGRES_USER}",
         "POSTGRES_PASSWORD": "${POSTGRES_PASSWORD}"
       }
+    },
+    "glitchtip": {
+      "type": "http",
+      "url": "${GLITCHTIP_URL}/mcp"
     }
   }
 }
