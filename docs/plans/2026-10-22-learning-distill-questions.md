@@ -91,6 +91,8 @@ FiberHouse 错误进入 GlitchTip 已按用户决定实现（2026-10-24）：分
 - FiberHouse v1.1.1（fiber v2.52.16）：全局 zerolog 未开 `Caller()`，默认无行号；事件级 `.Caller()` 经 `LoggerWrapper` 得到正确行号；替换 `GetZeroLogger()` 指向的 logger 加 Caller 也生效（启动时已注册的 Origin 子 logger 未测）。ErrorHandler 中 `ErrorStack()` 只有框架调用链，不含 error 产生行与 handler 行；recover 的 defer 中堆栈含 panic 行。`DefaultStackTraceHandler` 的类型 switch 无 `default`，非 error 的 panic 值（如字符串）不记录日志（读码推论，未实测）。
 - sentry-go v0.50.0 → GlitchTip：panic 经 `Hub.Recover` 定位到 panic 行；普通 `errors.New` / `fmt.Errorf` 只定位到调用 `CaptureException` 处；`pkg/errors`（已归档）、`go-errors/errors` v1.5.1、`x/xerrors` 产生的 error 定位到产生行。sentry-go 官方有 `fiber`、`fiberv3`、`gin`、`grpc`、`zerolog`、`slog` 集成。
 
+**场景安装后复验**（2026-10-24，最终版本）：`install-claude-project.sh -N` 把 backend-dev、dev-ops 装到临时项目，14 项检查通过（插件移除、GlitchTip MCP 条目、docker permissions、FiberHouse 规则的 `WithLogWriters` 与 `@39cba6c`、可观测性文件）；从安装路径 `docker compose up` 外部探测机，五个服务正常，`/mcp` 未认证返回 401；GlitchTip 告警经 relay 发往真实 Telegram API（假 token 返回 401，链路可达）。`go get github.com/lamxy/fiberhouse@39cba6c` 经 GOPROXY 解析为伪版本并编译通过。交叉审查（独立子代理）无 blocker，4 项 should-fix 已修正。
+
 **版本约束**：Go 1.25 模块最高 go-redis v9.22.0（v9.23.0 要求 go ≥ 1.26）、x/sync v0.23.x（v0.24.0 要求 go ≥ 1.26）。
 
 **未写入的教材内容**：GMP 调度、GC 三色标记、接口内存布局、Redis 单线程模型、跳表、RESP、MOVED / ASK 等原理或面试知识，对写业务代码收益低；教材 `skills/` 中的面试复习页生成 skill 与后端开发无关。
