@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 211a21d
+head: c6d58b2
 status: active
 updated: 2026-10-24
 ---
@@ -333,4 +333,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-22 | 数据库设计强化：MongoDB | 课程笔记经 8.0 副本集与 Go Driver v2 实测、官方文档核对、子代理独立复测审计后重写 backend-dev MongoDB rule 与 reference；分库与 `_id` 规则按实测放宽；dev-ops 补备份与时间点恢复、安全基线、巡检指标（`3707f4f`） | 未推送；临时容器 `mgv1`～`mgv3`、网络 `mgv-net` 待清理 |
 | 2026-10-22 | 教学材料沉淀：gRPC、Go、Redis | 逐个子代理提炼 + 容器实测 + 子代理交叉复测：`rules/rpc/`、`rpc-design`（`5098a4e`）；`rules/go/concurrency.md`、`go-perf-diagnose`，常驻 Go 规则 8.2KB→6.1KB（`3c492ef`）；Redis rule、`cache-design/references/patterns.md`、middleware-ops（`9bddf11`） | 疑问待用户讨论；未推送；docker 卷 `grpclab-gomod`、网络 `redislab-net`/`redisrev-net`、容器 `mgv1`～`mgv3`/`dbverify-tmp` 待清理 |
 | 2026-10-23 | 疑问「path rules 覆盖不到 Redis 代码」定稿 | `claude -p` 实测 rule 加载时机；go-redis 只在 `cache/` 层 import（常驻 `CLAUDE.md`、`layering.md`、`go-new-module`）；depguard 范本（golangci-lint v2.5.0 实测）；`cache-design/references/layered-examples.md`（Redis 8.10.2 / 7.4.11 集成测试）（`3c278bc`） | 复杂约束的自我修正、gRPC depguard 待验证；未推送；容器 `rcase-redis`、网络 `rcase-net` 待清理 |
-| 2026-10-24 | 可观测性重写、去 K8s、FiberHouse 错误追踪 | 资源配置先问上限（`d229d3d`）；去 K8s 改 Docker（`304865c`）；可观测性起步方案与 compose / relay 实测（`21a4c0f`）；DELEX 说明（`511086d`）；FiberHouse 分支 `feature/logger-extra-writers`（caller、附加 writer、字符串 panic、typed-nil，`39cba6c`）+ 规则接入（`405408c`）；插件改 GlitchTip MCP（`288cda3`）；子代理交叉审查 4 项 should-fix 已修正；场景安装到临时项目后复验通过（compose、MCP、告警链路） | 8 条框架取舍待用户确认；FiberHouse 分支未合并；本仓库未推送；`obs-net`、`mcp-gt` 待清理 |
+| 2026-10-24 | 可观测性重写、去 K8s、FiberHouse 错误追踪 | 资源配置先问上限（`d229d3d`）；去 K8s 改 Docker（`304865c`）；可观测性起步方案与 compose / relay 实测（`21a4c0f`）；DELEX 说明（`511086d`）；FiberHouse 分支 `feature/logger-extra-writers`（caller、附加 writer、字符串 panic、typed-nil，`39cba6c`）+ 规则接入（`405408c`）；插件改 GlitchTip MCP（`288cda3`）；子代理交叉审查 4 项 should-fix 已修正；场景安装到临时项目后复验通过（compose、MCP、告警链路）；第二轮交叉复验无 blocker / should-fix，2 个 nit 已修正 | 8 条框架取舍待用户确认；FiberHouse 分支未合并；本仓库未推送；`obs-net`、`mcp-gt` 待清理 |
