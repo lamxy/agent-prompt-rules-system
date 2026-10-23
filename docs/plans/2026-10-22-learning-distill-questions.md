@@ -6,7 +6,7 @@
 
 ## 一、待确认
 
-1. **Redis 单实例内存上限**（原 Redis 9）。现行用户规范「25GB 以内」；参考资料以 fork 耗时为由主张 8～16GB，但只测到 132MB，大内存为外推。现状：保留 25GB，补「开启持久化时偏向更小实例」与 `latest_fork_usec` 监控。选项：A 维持 / B 改为 16GB / C 按是否开启持久化给两个值。
+无（2026-10-23 全部定稿）。
 
 ## 二、待办（已决定，需后续实施）
 
@@ -37,6 +37,7 @@
 | 分布式锁 | 维持 `SET NX PX` + Lua 校验释放 / 续期；正确性由数据库唯一约束或版本号兜底；不用 Redlock、不引入 etcd | `rules/redis.md`、`cache-design/references/patterns.md` |
 | 配置中的未验证内容 | 不得出现；无一手依据的移入本文件第四节；`anti-patterns.md`「评审经验」条目不动 | 全部场景包 |
 | path rules 覆盖不到 Redis 代码（原 gRPC 5、Redis 8） | `go-redis` 只在 `module/<模块>/cache/` 与通用缓存组件中 import，service 不 import；service 的「先更新数据库再删缓存」写进 layering；项目用 golangci-lint 时以 depguard 机械检查；完整分层示例写入 `cache-design` | `CLAUDE.md`（两份）目录表、`rules/go/layering.md`、`go-new-module`（含 `references/depguard.yml`）、`cache-design/references/layered-examples.md` |
+| Redis 单实例内存上限（原 Redis 9） | 维持 25GB 经验值；新增资源配置规则：单实例与集群都先询问用户可用资源上限，结合业务现状评估，给出带计算过程的建议，由用户或工程师最终决定；数值为通用建议 | `middleware-ops/SKILL.md` 通用约定、`middleware-ops/references/redis.md`、`cache-design/SKILL.md` 第 5 节 |
 
 ## 四、待验证（已移出配置）
 
