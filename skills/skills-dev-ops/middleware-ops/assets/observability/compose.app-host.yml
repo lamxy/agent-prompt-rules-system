@@ -13,7 +13,7 @@ services:
     environment:
       GOMEMLIMIT: 460MiB      # 约为 mem_limit 的 90%，给运行时之外的内存留余量
       SENTRY_DSN: ${SENTRY_DSN:-}
-    stop_grace_period: 30s    # 大于应用优雅关闭的超时（默认 10s）
+    stop_grace_period: 60s    # 大于应用优雅关闭的总耗时（Compose 默认 10s）；FiberHouse 源码中 Gin 内核 HTTP 关闭最多等 30s、Provider 关闭链最多 30s
     logging: *logging
 
   beszel-agent:

@@ -39,6 +39,7 @@ services:
       VALKEY_URL: ""                       # 不用 Valkey，任务队列与缓存走 Postgres
       GLITCHTIP_ALLOW_PRIVATE_IPS: "True"  # 允许告警 webhook 发到同一网络的 relay
       GLITCHTIP_RETENTION_DAYS: "30"       # 默认 90
+      GLITCHTIP_ENABLE_MCP: "True"         # 内置 MCP 端点 <GLITCHTIP_DOMAIN>/mcp；开启时 GLITCHTIP_DOMAIN 必须是 https（localhost、127.0.0.1 除外），否则启动失败
     ports:
       - "127.0.0.1:8000:8000"
     logging: *logging

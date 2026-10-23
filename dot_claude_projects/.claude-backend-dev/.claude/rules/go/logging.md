@@ -20,7 +20,7 @@ paths:
 
 ## 字段
 
-每条日志包含：时间、级别、`service`、`message`，以及请求 id。框架已定的字段名沿用框架（FiberHouse 的请求 id 字段由 trace 配置决定，默认 `traceId`）。当前不做分布式追踪，不要求 `span_id`。按需补充：
+每条日志包含：时间、级别、`service`、`message`，以及请求 id。框架已定的字段名沿用框架（FiberHouse 的请求 id 字段名由 `application.trace.requestID` 决定，代码默认 `requestId`，示例配置为 `traceId`）。当前不做分布式追踪，不要求 `span_id`。按需补充：
 
 - `type`：`ACCESS`（接口访问）或 `EVENT`（业务事件）
 - `biz_tag`：业务标签，如 `order.place`，同一业务流程使用同一个标签
@@ -41,4 +41,4 @@ paths:
 
 - 返回 error 时用 `fmt.Errorf("查询用户 %d: %w", id, err)` 逐层附加上下文；`errors.New` / `fmt.Errorf` 不带堆栈，出处靠上下文链判断。同一个 error 只在最终处理处记录一次。
 - 自己开的 goroutine、启动初始化、后台任务等框架统一错误处理之外的地方，自行 recover 并记录 `ERROR`（带行号）。
-- 错误追踪用 sentry-go：DSN 由环境变量 `SENTRY_DSN` 注入，为空时不上报；panic 经 recover 上报（堆栈含 panic 所在行），error 用 `CaptureException` 上报。没有日志告警平台时，需要告警的 `INFO` / `WARN` 事件用 `CaptureMessage` 上报。
+- 错误追踪用 sentry-go：DSN 由环境变量 `SENTRY_DSN` 注入，为空时不上报；FiberHouse 项目把 `sentryzerolog` 接到框架 logger（见 `rules/framework/fiberhouse.md`）；其余项目的 panic 经 recover 上报（堆栈含 panic 所在行），error 用 `CaptureException` 上报。没有日志告警平台时，需要告警的 `INFO` / `WARN` 事件用 `CaptureMessage` 上报。
