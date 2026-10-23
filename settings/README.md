@@ -68,11 +68,11 @@ local > project > user
 | `settings.project-prd-design.json` | `prd-design` | `playground`、`document-skills`（docx/pptx/xlsx/pdf） | 声明 `anthropic-agent-skills` 市场。PM Skills 由 `open_supports/ost_phuryn_pm-skills` 以项目级插件安装，见下方说明 |
 | `settings.project-frontend-dev.json` | `frontend-dev` | `typescript-native-lsp`、`frontend-design`、`playwright`、`chrome-devtools-mcp`、`modern-web-guidance`、`playground`、`pr-review-toolkit`、`sentry` | — |
 | `settings.project-backend-dev.json` | `backend-dev` | `gopls-lsp`、`postman`、`mongodb`、`redis-development`、`semgrep`、`sentry`、`pr-review-toolkit` | `permissions.deny`：MySQL、PostgreSQL、MongoDB（含 `mongosh`）、Redis 的破坏性命令；`PostToolUse` hook 在编辑 `.go` 文件后执行 `.claude/hooks/go-fmt.sh`（脚本只在场景包中提供） |
-| `settings.project-dev-ops.json` | `dev-ops` | `terraform`、`grafana-mcp`（可查询 Prometheus、Loki）、`sentry`、`semgrep`、`sonatype-guide`、`pr-review-toolkit` | `permissions.ask`：`terraform apply/destroy/import/state`、`kubectl apply/delete/scale/rollout/patch/edit/drain/cordon`、`helm install/upgrade/uninstall/rollback` |
+| `settings.project-dev-ops.json` | `dev-ops` | `terraform`、`grafana-mcp`（可查询 Prometheus、Loki）、`sentry`、`semgrep`、`sonatype-guide`、`pr-review-toolkit` | `permissions.ask`：`terraform apply/destroy/import/state`、`docker compose up/down/rm`、`docker rm`、`docker volume rm/prune`、`docker system/image prune`、`docker network rm`、`docker context use` |
 | `settings.project-fullstack-dev.json` | `fullstack-dev` | 前端 + 后端去重 | 与后端相同的 `permissions.deny` |
 
 - PRD 场景的 PM Skills 来自本仓库收录的 `open_supports/ost_phuryn_pm-skills`，不在 settings 模板中重复启用：`dot_claude_projects/.claude-prd-design/` 的清单以 `--client=claude-code --location=local` 安装，插件以 `--scope project` 写入项目的 `.claude/settings.json`。因此要先安装 settings 模板，再运行 `install-open-supports.sh`；之后若用 `-m overwrite` 重装 settings 模板，PM Skills 的条目会被覆盖（备份中仍有），需重新运行 `install-open-supports.sh` 或改用 `-m merge`。
-- 后端的 MySQL、PostgreSQL 没有通用的官方插件，由 `dot_mcp_jsons/dot-mcp-json-backend-dev.json` 提供 MCP；Kubernetes MCP 同理。
+- 后端的 MySQL、PostgreSQL 没有通用的官方插件，由 `dot_mcp_jsons/dot-mcp-json-backend-dev.json` 提供 MCP。
 - `typescript-native-lsp` 来自 Claude Code 内置插件目录（`@anthropic-plugin-directory`），无需声明市场；TypeScript 6 以下的项目需另装 `typescript-language-server`。
 - 插件需要的账号（Sentry、Grafana、Postman 等）在首次使用时按插件提示登录或配置。
 

@@ -21,8 +21,8 @@ usage() {
 
 必选：
   -f <FLAG>   场景标识，对应 <dot_mcp_jsons_root>/dot-mcp-json-<FLAG>.json，
-              例如 backend-dev（MySQL、PostgreSQL）、dev-ops（Kubernetes 只读）；
-              prd-design、frontend-dev 目前为空模板，会被跳过
+              例如 backend-dev（MySQL、PostgreSQL）；
+              prd-design、frontend-dev、dev-ops 目前为空模板，会被跳过
   -t <目录>   目标目录（通常是项目根目录），必须已存在；输出文件固定为 .mcp.json
 
 可选：
@@ -33,9 +33,6 @@ usage() {
 示例：
   # 为项目安装后端场景的数据库 MCP（连接请使用只读账号）
   sh scripts/install-dot-mcp.sh -f backend-dev -t ~/my-project
-
-  # 为项目安装 DevOps 场景的 Kubernetes MCP
-  sh scripts/install-dot-mcp.sh -f dev-ops -t ~/my-project
 
   # 用仓库版本覆盖已有的 .mcp.json（先备份）
   sh scripts/install-dot-mcp.sh -f backend-dev -t ~/my-project -F

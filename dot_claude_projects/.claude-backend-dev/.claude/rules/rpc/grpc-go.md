@@ -35,7 +35,7 @@ paths:
 ## 客户端
 
 - `*grpc.ClientConn` 按目标服务在进程内创建一次并复用，由依赖装配注入；不在请求路径上新建与关闭。
-- 用 `grpc.NewClient`（不用已弃用的 `grpc.Dial`）；目标写全 scheme（`dns:///host:port`）。默认负载均衡是 `pick_first`，K8s 内直连多实例需 headless Service + service config `round_robin`，或经 L7 代理。
+- 用 `grpc.NewClient`（不用已弃用的 `grpc.Dial`）；目标写全 scheme（`dns:///host:port`）。默认负载均衡是 `pick_first`，连接固定在一个后端；直连多实例时用 service config `round_robin`（需要 DNS 返回多个地址），或经 L7 代理（部署侧见 dev-ops `middleware-ops/references/grpc.md`）。
 - 自动重试（service config `retryPolicy`）只配给幂等方法，`retryableStatusCodes` 默认只放 `UNAVAILABLE`；`ResourceExhausted` 也用于「消息超过大小上限」，不要无条件重试。非幂等写操作靠 `idempotency_key` 由服务端去重。
 - 流式 `Recv()` 先判断 `err == io.EOF`（正常结束），再按错误处理；`status.FromError(io.EOF)` 会得到 `Unknown`。
 

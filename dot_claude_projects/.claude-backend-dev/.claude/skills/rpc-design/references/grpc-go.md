@@ -33,7 +33,7 @@ stopped := make(chan struct{})
 go func() { srv.GracefulStop(); close(stopped) }()
 select {
 case <-stopped:
-case <-time.After(20 * time.Second): // 小于 K8s terminationGracePeriodSeconds
+case <-time.After(20 * time.Second): // 小于容器的停止宽限期（compose stop_grace_period，默认 10s）
 	srv.Stop()
 }
 ```
