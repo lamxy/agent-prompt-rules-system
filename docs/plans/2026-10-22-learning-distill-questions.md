@@ -6,8 +6,16 @@
 
 ## 一、待确认
 
-1. **FiberHouse 统一记录的错误如何进入 GlitchTip**：框架在 recover / ErrorHandler 中用 zerolog 记录（`message` 含 stack trace），但不会自动上报 sentry-go。候选：框架提供 `StackTraceHandler` 扩展点或配置开关上报；或对全局 zerolog 加 hook（只能拿到级别与 message，拿不到字段）。均未实测；用户维护框架，需讨论后再写入规则。
-2. **dev-ops / backend-dev 的 `sentry`、`grafana-mcp` 插件是否保留**：起步阶段用 GlitchTip，不部署 Grafana；`sentry` 插件能否对接 GlitchTip 未验证。
+FiberHouse 错误进入 GlitchTip 已按用户决定实现（2026-10-24）：分支 `feature/logger-extra-writers`（`2deccb4` caller 修正、`ffaed5b` 附加 writer、`41324d4` 字符串 panic 记录、`39cba6c` 跳过 typed-nil writer），用该分支跑 Fiber 示例（MongoDB / Redis / MySQL + GlitchTip 6.2.6）端到端验证。以下是验证中发现、需要用户（框架维护者）决定的问题，均未改动框架：
+
+1. **可预期的 4xx 业务错误以 ERROR 记录**：参数校验失败（400）、`exception` 返回的 404 等都由 `DefaultStackTraceHandler` 以 ERROR 记录，接入 sentryzerolog 后全部成为 GlitchTip issue 并触发告警，与日志规则「可预期的业务失败不用 ERROR」冲突。候选：框架对 `ValidateException` 与 4xx `Exception` 改用 WARN；或应用侧过滤。
+2. **堆栈放在 `message`**：开启 `enablePrintStack` 后 `message` 为 `stack trace: …`，GlitchTip issue 标题与 Telegram 告警都只显示这段前缀，错误内容只在 `Msg` tag 中。候选：`message` 保留错误文本，堆栈放独立字段（如 `stack`）。
+3. **同一错误产生两个事件**：handler 返回 error 时，`Recover` 与访问日志 `FiberHttpLog`（5xx 记为 ERROR）各上报一次。候选：访问日志的 5xx 改为 WARN，或 sentryzerolog 只接收带 `Origin=Recover` 的事件。
+4. **示例日志 `traceId` 为空**：示例请求未带请求 id，`Recover` 日志中 `traceId` 为空字符串；是否应由中间件生成未核实。
+5. **示例启动时有 ERROR**：`manager: 'DefaultPManager' LoadProvider no providers registered` 在启动时记录两次 ERROR，接入后成为 GlitchTip issue。
+6. **分支合并与版本**：`fiberhouse.md` 规则按提交 `39cba6c` 引用（经 GOPROXY 时含 `/` 的分支名不能作为版本，`GOPROXY=direct` 可以）；合并发布后改为版本号。
+8. **`DefaultStackTraceHandler` 每次请求改写包级变量**（`debugFlag`、`requestID` 等），并发请求存在写竞争；既有问题，交叉审查发现，未改动。
+7. **frontend-dev、fullstack-dev 的 `sentry` 插件**：本次只调整 backend-dev 与 dev-ops；前端错误是否也送 GlitchTip 待定。
 
 ## 二、待办（已决定，需后续实施）
 
@@ -95,6 +103,12 @@
 docker volume rm grpclab-gomod
 docker network rm redislab-net redisrev-net
 docker rmi redis:8 redis:7.4 bufbuild/buf:latest
+```
+
+2026-10-24 可观测性与 FiberHouse 实测：网络 `obs-net`（`docker network rm` 被拒）、已退出容器 `mcp-gt`（`docker rm` 被拒）；镜像 `glitchtip/glitchtip:6.2.6`、`postgres:17-alpine`、`louislam/uptime-kuma:2(.5.7)`、`amir20/dozzle`、`henrygd/beszel(-agent)`、`prom/*`、`grafana/grafana`、`golang:1.25`、`alpine:latest`、`local/glitchtip-telegram-relay:test`：
+
+```sh
+docker network rm obs-net; docker rm mcp-gt
 ```
 
 2026-10-23 path rules 与分层示例实测：容器 `rcase-redis`（`--rm`，停止即删除）、网络 `rcase-net`，镜像 `golangci/golangci-lint:v2.5.0`：
