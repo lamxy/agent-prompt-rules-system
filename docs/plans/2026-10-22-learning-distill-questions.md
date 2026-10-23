@@ -6,8 +6,7 @@
 
 ## 一、待确认
 
-1. **path rules 覆盖不到 repository 层**（原 gRPC 5、Redis 8，同类问题一并决定）。rule 只在编辑匹配 `paths` 的文件时加载；调用下游 gRPC、访问 Redis 的代码常在 `repository/` 下，文件名不含 rpc / cache / redis 时 `rules/rpc/grpc-go.md`、`rules/redis.md` 不加载（ClientConn 复用、deadline、重试、`ContextTimeoutEnabled` 等约定失效）。现状：grpc-go 规则内已约定 handler 放 `api/grpc/`、客户端封装放 `grpc/` 目录或以 `_rpc.go` 结尾（paths 放宽为 `*rpc*.go`）；Redis 未改。选项：A 约定目录或文件名（Redis 用 `cache/` 或 `_cache.go`），写入 `go-new-module` 分层约定 / B paths 加 `**/repository/**/*.go`（编辑 repository 时多加载约 2KB + 3.5KB）/ C 不约定，靠 skill。建议 A。
-2. **Redis 单实例内存上限**（原 Redis 9）。现行用户规范「25GB 以内」；参考资料以 fork 耗时为由主张 8～16GB，但只测到 132MB，大内存为外推。现状：保留 25GB，补「开启持久化时偏向更小实例」与 `latest_fork_usec` 监控。选项：A 维持 / B 改为 16GB / C 按是否开启持久化给两个值。
+1. **Redis 单实例内存上限**（原 Redis 9）。现行用户规范「25GB 以内」；参考资料以 fork 耗时为由主张 8～16GB，但只测到 132MB，大内存为外推。现状：保留 25GB，补「开启持久化时偏向更小实例」与 `latest_fork_usec` 监控。选项：A 维持 / B 改为 16GB / C 按是否开启持久化给两个值。
 
 ## 二、待办（已决定，需后续实施）
 
@@ -37,6 +36,7 @@
 | Redis Stream | 维持：Redis 不作为消息队列；Pub/Sub 只用于可丢的信号 | `rules/redis.md`、`mq-design` |
 | 分布式锁 | 维持 `SET NX PX` + Lua 校验释放 / 续期；正确性由数据库唯一约束或版本号兜底；不用 Redlock、不引入 etcd | `rules/redis.md`、`cache-design/references/patterns.md` |
 | 配置中的未验证内容 | 不得出现；无一手依据的移入本文件第四节；`anti-patterns.md`「评审经验」条目不动 | 全部场景包 |
+| path rules 覆盖不到 Redis 代码（原 gRPC 5、Redis 8） | `go-redis` 只在 `module/<模块>/cache/` 与通用缓存组件中 import，service 不 import；service 的「先更新数据库再删缓存」写进 layering；项目用 golangci-lint 时以 depguard 机械检查；完整分层示例写入 `cache-design` | `CLAUDE.md`（两份）目录表、`rules/go/layering.md`、`go-new-module`（含 `references/depguard.yml`）、`cache-design/references/layered-examples.md` |
 
 ## 四、待验证（已移出配置）
 
@@ -52,6 +52,8 @@
 8. **`appendfsync always` 比 `everysec` 慢约 33 倍、`no` 与 `everysec` 吞吐几乎相同**。原位置：dev-ops `middleware-ops/references/redis.md`。缺少依据：参考资料单连接压测（Redis 8.2），未复测。现改为引用官方持久化文档的定性说法。建议验证：同一磁盘上 `redis-benchmark` 分别测三种策略，注意单连接与多连接（group commit）差异。
 9. **Elasticsearch 堆「约 31GB」与「大堆使用 G1 GC」**。原位置：`middleware-ops/references/elasticsearch.md`。缺少依据：官方 8.19 文档给的是「26GB 多数系统安全，部分可到 30GB」，以日志确认压缩指针；未找到 G1 建议原文。前者已改为官方说法，后者删除。建议验证：查所用版本 `jvm.options` 默认 GC 与官方说明。
 10. **文件句柄与 `vm.max_map_count`「常设为 655360」**。原位置：同上。缺少依据：官方只给下限 65535、262144（推荐 1048576）。建议验证：确认是否为团队运维规范；若是，标为「默认值，项目可调整」后再放回。
+11. **晚到的 rule 能否让复杂约束自我修正**。现象：Write 新建文件时 rule 在写完后才注入；只测过「首行固定注释」这类可机械检查的约束。缺少依据：连接复用、deadline、重试等需要理解代码的约束是否同样会被重写修正，未测。建议验证：在临时项目让模型新建 `module/x/cache/x_cache.go`，rule 要求 `ContextTimeoutEnabled` 与关闭重试，多次运行统计合规率。
+12. **gRPC 客户端用 depguard 限制在 `grpc/` 目录**。缺少依据：只对 go-redis 实测了 depguard；`google.golang.org/grpc` 在 handler（`api/grpc/`）与客户端封装两处都要 import，规则写法未测。建议验证：同样以违规文件实测后，再决定是否写入 `rpc-design`。
 
 ## 五、参考记录（无需决定）
 
@@ -61,6 +63,8 @@
 - Go：Timer 的 Reset 语义与容器感知 `GOMAXPROCS` 由 `go.mod` 的 go 行决定（1.23 / 1.25 起），不只看工具链；泛型并非零开销（实测与接口调用同速）；`nilness` 不在 `go vet` 默认分析器；errgroup 派生 ctx 在 `Wait` 后取消且不传播 panic；`go` ≥ 1.25 不再需要 automaxprocs；「循环变量每轮独立」是 `go` ≥ 1.22 语义，与 `wg.Go` 无关。
 - Redis：`hash-max-listpack-entries` 内置默认 512（128 来自 `redis.conf` 示例）；8.6 起多了 `allkeys-lrm`、`volatile-lrm`；`TxPipelined` 一次往返；「逐条比 pipeline 慢 462 倍」主要是每次新建 `redis-cli` 进程的开销；「一次淘汰 16035 个 key」由一次性压低 `maxmemory` 造成。
 - 交叉审查修正：Redis 锁模板续期循环在网络持续失败时不会中止业务，已改为剩余有效期不足 `ttl/2` 时取消 ctx（三种情况复测通过）；`ClusterClient.Scan` 结果不完整且每次不同，集群遍历用 `ForEachMaster`。
+
+**path rules 加载实测**（2026-10-23，Claude Code 2.1.308，`claude -p` 全新会话，以对话记录中的探针标记判断）：Read、Bash 读类命令（`cat`、`grep`、`head`、`sed -n`）、Write 新建文件、Edit 均会加载匹配的 rule，但都在工具执行**之后**注入；Bash 写类命令（heredoc、`sed -i`）不加载；编辑 `service/` 文件不会加载 `rules/redis.md`（FiberHouse 示例把缓存编排放在 `service/`）。PreToolUse / PostToolUse hook 注入的上下文同样随工具结果送达，不比内置机制早。可机械检查的 rule（首行固定注释）在 haiku、sonnet 各 2 次中都是「写完 → 看到 rule → 重写」后合规。社区 issue #23478、#63142 所述「Write 与 Bash 不加载」在该版本已部分过时。depguard 规则用 golangci-lint v2.5.0 实测：`repository/` 中 import go-redis 报错，`cache/` 与测试文件不报错。
 
 **版本约束**：Go 1.25 模块最高 go-redis v9.22.0（v9.23.0 要求 go ≥ 1.26）、x/sync v0.23.x（v0.24.0 要求 go ≥ 1.26）。
 
@@ -74,6 +78,13 @@
 docker volume rm grpclab-gomod
 docker network rm redislab-net redisrev-net
 docker rmi redis:8 redis:7.4 bufbuild/buf:latest
+```
+
+2026-10-23 path rules 与分层示例实测：容器 `rcase-redis`（`--rm`，停止即删除）、网络 `rcase-net`，镜像 `golangci/golangci-lint:v2.5.0`：
+
+```sh
+docker stop rcase-redis; docker network rm rcase-net
+docker rmi golangci/golangci-lint:v2.5.0
 ```
 
 更早的实测资源（MongoDB / MySQL）：容器 `mgv1`～`mgv3`、`dbverify-tmp`，网络 `mgv-net`。实测代码在会话 scratchpad，随会话清理。

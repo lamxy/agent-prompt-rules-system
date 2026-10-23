@@ -39,7 +39,7 @@
 | 位置 | 加载时机 | 内容 |
 |---|---|---|
 | `CLAUDE.md` | 每次会话 | 技术栈、目录与依赖方向、设计文档、API、存储与中间件规范索引、验证命令 |
-| `.claude/rules/go/` | 编辑匹配的 `.go` 文件时 | `code-style.md`（错误、panic 与退出）、`concurrency.md`（context、goroutine 生命周期、定时器、锁、出站 HTTP、容器运行时参数）、`layering.md`（分层职责与类型转换）、`testing.md`、`logging.md`（日志级别与字段） |
+| `.claude/rules/go/` | 编辑匹配的 `.go` 文件时 | `code-style.md`（错误、panic 与退出）、`concurrency.md`（context、goroutine 生命周期、定时器、锁、出站 HTTP、容器运行时参数）、`layering.md`（分层职责、类型转换、Redis 访问边界）、`testing.md`、`logging.md`（日志级别与字段） |
 | `.claude/rules/framework/` | 编辑 handler、路由、Provider 时 | `fiberhouse.md`、`fiber.md`、`gin.md` |
 | `.claude/rules/database/` | 编辑 SQL、migration、`model` / `repository` / `entity` 等目录时 | `mysql.md`、`mongodb.md`、`elasticsearch.md` |
 | `.claude/rules/redis.md`、`.claude/rules/mq/` | 编辑缓存、Kafka、RabbitMQ 相关代码时 | key 与 value 设计、命令限制、go-redis 调用（未命中判断、重试、集群多 key）；`kafka.md`、`rabbitmq.md`（命名、确认、幂等、连接） |

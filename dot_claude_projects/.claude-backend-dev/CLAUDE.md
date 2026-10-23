@@ -25,6 +25,7 @@ Go；HTTP 框架为 FiberHouse（可切换 Fiber、Gin、Hertz 内核）或原�
 | `module/<名称>-module/service/` | 业务用例，与传输层和框架无关 |
 | `module/<名称>-module/repository/` | 数据存取，对 service 隐藏存储细节 |
 | `module/<名称>-module/model/` | 对具体存储（MongoDB 集合、GORM 表）的访问模型 |
+| `module/<名称>-module/cache/` | 本模块的 Redis 访问（key 与 hash / set / zset 操作）；`go-redis` 只在这里与通用缓存组件中 import |
 | `module/<名称>-module/entity/` | 持久化的数据结构与类型 |
 | `module/<名称>-module/dto/` | 层间传递的数据，隔离存储类型（如 BSON）与对外 JSON 契约 |
 | `module/<名称>-module/task/`、`transport/` | 异步任务；领域错误到传输层错误的映射 |

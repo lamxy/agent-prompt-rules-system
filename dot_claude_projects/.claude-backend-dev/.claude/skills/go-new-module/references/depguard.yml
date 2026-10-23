@@ -1,0 +1,18 @@
+# golangci-lint v2 的 depguard 规则：go-redis 只能在 cache/ 目录中 import。
+# 合并进项目 .golangci.yml 的 linters.enable 与 linters.settings；项目已有 depguard 规则时只追加 rules 下的条目。
+# 已用 golangci-lint v2.5.0 实测：repository/ 中 import go-redis 报错，cache/ 与 _test.go 中不报错。
+version: "2"
+linters:
+  enable:
+    - depguard
+  settings:
+    depguard:
+      rules:
+        redis-only-in-cache:
+          files:
+            - $all
+            - "!**/cache/**"
+            - "!$test"
+          deny:
+            - pkg: github.com/redis/go-redis
+              desc: go-redis 只在 component/cache 与 module/<模块>/cache 中使用；其他层调用对应 cache 包的方法

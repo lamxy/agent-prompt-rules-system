@@ -12,15 +12,20 @@ paths:
 
 # 分层与依赖方向
 
-依赖只向内：`api / command → service → repository → model`，`entity` 与 `dto` 可被各层引用。
+依赖只向内：`api / command → service → repository → model`，`entity` 与 `dto` 可被各层引用；`service` 另可调用模块的 `cache/`。
 
 | 层 | 可以 | 不可以 |
 |---|---|---|
 | `api/`（handler） | 绑定与校验 `requestvo`，转换为 service 入参；把结果转换为 `responsevo`；把领域错误映射为 HTTP 状态 | 直接调用 repository 或 model；写业务规则 |
 | `command/` | 解析命令行参数后调用 service | 同 `api/` |
-| `service/` | 业务规则、事务边界、缓存读写、派发任务；入参与返回值用 `dto` / `entity` / 基本类型 | import `apivo`、框架包（fiber、gin、hertz）或接收 `*fiber.Ctx`、`*gin.Context`；只接收 `context.Context` |
+| `service/` | 业务规则、事务边界、编排缓存读写（先更新数据库，再删缓存）、派发任务；入参与返回值用 `dto` / `entity` / 基本类型 | import `apivo`、框架包（fiber、gin、hertz）、`go-redis`，或接收 `*fiber.Ctx`、`*gin.Context`；只接收 `context.Context` |
 | `repository/` | 组合 model 完成存取；把存储错误（如 `mongo.ErrNoDocuments`、`gorm.ErrRecordNotFound`）转换为领域错误（如 `ErrNotFound`） | 引用 service、api；向上暴露驱动专属的错误 |
 | `model/` | 面向单一存储的访问代码（集合、表、索引） | 业务判断 |
+| `cache/` | 本模块全部的 Redis 访问：key 拼装、hash / set / zset 等命令，对外提供有类型的方法 | 业务判断；被 service 以外的层调用 |
+
+## Redis 访问边界
+
+`go-redis` 只在 `module/<模块>/cache/` 与通用缓存组件（框架自带或项目的 `component/cache/`）中 import，其他层调用这些包的方法。这样 `rules/redis.md` 能在编辑全部 Redis 代码时加载；项目用 golangci-lint 时按 `go-new-module` skill 的 `references/depguard.yml` 强制检查。
 
 ## 类型转换
 

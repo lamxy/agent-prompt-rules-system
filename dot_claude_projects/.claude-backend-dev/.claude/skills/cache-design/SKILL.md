@@ -5,7 +5,7 @@ description: 为 Go 后端设计 Redis 缓存：key 命名、数据类型、TTL�
 
 # 缓存设计
 
-逐条规则在 `.claude/rules/redis.md`，编辑缓存相关文件时自动加载；理由、内存编码、go-redis 参数与实测见 `references/redis.md`；读写、锁、限流、排行榜、队列取舍的 Go 模板见 `references/patterns.md`。
+逐条规则在 `.claude/rules/redis.md`，编辑缓存相关文件时自动加载；理由、内存编码、go-redis 参数与实测见 `references/redis.md`；读写、锁、限流、排行榜、队列取舍的 Go 模板见 `references/patterns.md`；代码放在哪一层、string 键值组件与 hash / set / zset 的完整示例见 `references/layered-examples.md`。
 
 ## 1. 先确认需要缓存
 
