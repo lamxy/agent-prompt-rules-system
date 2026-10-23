@@ -1,8 +1,8 @@
 ---
 branch: main
-head: 3c278bc
+head: 75ac599
 status: active
-updated: 2026-10-23
+updated: 2026-10-24
 ---
 # 进度交接
 
@@ -12,8 +12,8 @@ updated: 2026-10-23
 ## 摘要
 
 - 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交，已推送并发布 v2.0.1（Latest）；已制定「场景配置评估、优化与验证」待办计划，尚未开始执行
-- 停在：2026-10-23 疑问「path rules 覆盖不到 Redis 代码」定稿（`3c278bc`）：path rules 加载行为经 `claude -p` 实测，go-redis 集中到 `cache/` 层并写入常驻 `CLAUDE.md`、depguard 范本、`cache-design` 分层示例；**未推送**（`36722e8` 之后的提交均在本地）；12 个测试文件全过
-- 下一步：疑问清单已讨论完毕（2026-10-23），文件已按状态重组，「一、待确认」剩 1 条（Redis 单实例内存上限）；待办：dev-ops 注入 `GOMEMLIMIT`（需实测）、OpenTelemetry 接入（与 HTTP 侧一并决定）、「待验证（已移出配置）」清单；推送需用户指示
+- 停在：2026-10-24 可观测性按起步阶段重写（Uptime Kuma、GlitchTip、Beszel、Dozzle、Telegram 转发，`21a4c0f`）、移除 K8s 改围绕 Docker（`304865c`）、FiberHouse 错误经附加 writer 进入 GlitchTip（`405408c`；FiberHouse 分支 `feature/logger-extra-writers` 已推送，头 `39cba6c`）、sentry / grafana-mcp 插件改为 GlitchTip MCP（`288cda3`）；**本仓库未推送**；12 个测试文件全过
+- 下一步：用户确认 `docs/plans/2026-10-22-learning-distill-questions.md`「一、待确认」8 条（多为 FiberHouse 框架取舍：4xx 以 ERROR 记录、堆栈放 message、重复事件等）；FiberHouse 分支是否合并由用户决定；本仓库推送需用户指示
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -25,8 +25,9 @@ updated: 2026-10-23
 | 任务 | 状态 | 说明 |
 |---|---|---|
 | **数据库设计强化（优先）** | 完成：MySQL（`d56306b`）、反面案例（`f91cd48`）、MongoDB（`3707f4f`） | 见「续作时必须知道的事」→「数据库设计强化」与「建议的下一步」 |
-| 教学材料沉淀（gRPC、Go、Redis） | 完成，疑问已定稿（余 1 条待确认） | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
+| 教学材料沉淀（gRPC、Go、Redis） | 完成，疑问已定稿 | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
 | backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；gRPC 规范 `5098a4e`（来自教学材料，用户企业 RPC 规范若有再补） |
+| 可观测性重写与 FiberHouse 错误追踪 | 完成，待用户确认框架取舍（8 条） | `docs/plans/2026-10-22-learning-distill-questions.md` 第一节；FiberHouse 分支 `feature/logger-extra-writers` |
 | 场景配置评估、优化与验证 | 待开始 | 三个阶段，清单见下方；方法论细节见 `docs/plans/2026-10-20-scenario-config-evaluation-plan.md` |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
@@ -77,7 +78,7 @@ updated: 2026-10-23
 | `backend-dev` | 后端开发 | 系统规格、系统／数据库／架构设计、选型；后端功能、API 与数据库开发 |
 | `dev-ops` | DevOps | CI/CD、上线、可观测性 |
 
-**已确认的技术栈决策**：后端 Go、Node.js / TypeScript；数据库以 MongoDB、Redis、MySQL 为主，兼容 PostgreSQL；开源自建 Kubernetes、Prometheus / Grafana、Sentry；PRD 以 pm-skills、mattpocock-skills、gstack 等技能为主；**不设主工作流框架**（全局只有 superpowers，OpenSpec、gsd-core 在前后端清单中以注释提供）；全局工具 task-master、mattpocock-skills、gstack；记忆类只保留 `remember`，cognee 暂不启用。
+**已确认的技术栈决策**：后端 Go、Node.js / TypeScript；数据库以 MongoDB、Redis、MySQL 为主，兼容 PostgreSQL；部署围绕 Docker / Docker Compose（2026-10-23 去掉 K8s）；可观测性起步阶段用 Uptime Kuma、GlitchTip、Beszel、Dozzle，告警只发 Telegram，升级路径为 Prometheus + Alertmanager；PRD 以 pm-skills、mattpocock-skills、gstack 等技能为主；**不设主工作流框架**（全局只有 superpowers，OpenSpec、gsd-core 在前后端清单中以注释提供）；全局工具 task-master、mattpocock-skills、gstack；记忆类只保留 `remember`，cognee 暂不启用。
 
 **目录结构**：
 
@@ -86,7 +87,7 @@ dot_claude/                 个人用户级配置（约 30 行 CLAUDE.md、comma
 dot_claude_legacy/          2026-10-19 前的分层规则系统存档，不被任何安装脚本使用
 settings/                   全局 settings.user.json（15 个全局插件）+ 项目级 5 个场景模板 + 本地级 4 个
 claude_mds/                 CLAUDE-<FLAG>.md，各约 30 行，只写场景约定
-dot_mcp_jsons/              后端 MySQL/PostgreSQL（MCP Toolbox）、DevOps Kubernetes（只读配置）；PRD、前端为空
+dot_mcp_jsons/              后端 MySQL/PostgreSQL（MCP Toolbox）+ GlitchTip；DevOps GlitchTip；PRD、前端为空
 agents/                     agents-<FLAG>/，各 5～6 个，挑选自 agents-agency-agent-based-dev/
 skills/                     skills-<FLAG>/ 尚为占位；skills-open-supports/ 为支持包安装 Skill
 dot_claude_projects/
@@ -128,7 +129,7 @@ sh scripts/install-claude-project.sh -g -d
 sh scripts/multi_client_support/codex.sh -d
 ```
 
-最后一次完整验证结果：2026-10-23（`3c278bc`），12 个测试文件全部通过（含 `sh -n` 语法检查）。
+最后一次完整验证结果：2026-10-24（`75ac599`），12 个测试文件全部通过（含 `sh -n` 语法检查）。
 
 <!-- section: gotchas -->
 ## 续作时必须知道的事
@@ -163,7 +164,7 @@ sh scripts/multi_client_support/codex.sh -d
 
 ### 数据库 MCP 可写
 
-MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读开关；settings 的 `deny` 只拦 Bash 命令，拦不到 MCP 调用。连接必须使用只读账号、只连开发或测试库。K8s MCP 由只读配置文件保证。
+MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读开关；settings 的 `deny` 只拦 Bash 命令，拦不到 MCP 调用。连接必须使用只读账号、只连开发或测试库。
 
 ### Codex 模板需手动同步
 
@@ -223,6 +224,20 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 原因：Claude Code 2.1.308 中，Read、Bash 读类命令、Write、Edit 都会加载匹配的 rule，但都在工具执行之后才注入；Bash 写类命令（heredoc、`sed -i`）不加载；代码不在匹配路径下（例如缓存编排在 `service/`）时当然不加载。hook 注入同样晚到，不能补救。
 
 正确做法：必须在动手前知道的约定写进常驻 `CLAUDE.md` 或 skill；按目录集中代码让 `paths` 精准命中（Redis 代码只放 `cache/`），并尽量用 lint（depguard）等机械检查兜底。实测记录在 `docs/plans/2026-10-22-learning-distill-questions.md`「参考记录」。
+
+### FiberHouse 改动在独立分支（2026-10-24）
+
+现象：backend-dev 规则引用的 `WithLogWriters`、caller 修正、字符串 panic 记录在 FiberHouse 的发布版本中没有。
+
+原因：按用户要求在临时克隆（scratchpad 下 `fh-work/fiberhouse`，会话结束即清理）切分支 `feature/logger-extra-writers` 修改并推送到 `lamxy/fiberhouse`，尚未合并。
+
+正确做法：需要这些能力时按提交引用 `go get github.com/lamxy/fiberhouse@39cba6c`（经 GOPROXY 时含 `/` 的分支名不能作为版本）；分支合并发布后把 `rules/framework/fiberhouse.md` 中的提交改为版本号。继续修改框架时重新克隆该分支，不在本仓库内放框架源码。FiberHouse 提交信息用英文（其 `CLAUDE.md` 要求）。
+
+### GlitchTip 与 Telegram 的坑（2026-10-24 实测）
+
+- GlitchTip 6.2.6 告警渠道没有 Telegram，靠 `assets/observability/glitchtip-telegram-relay` 转发；relay 与 GlitchTip 同网络时必须 `GLITCHTIP_ALLOW_PRIVATE_IPS=True`，否则 webhook 被 SSRF 检查静默拦截。
+- `GLITCHTIP_ENABLE_MCP=True` 时 `GLITCHTIP_DOMAIN` 不是 https（localhost、127.0.0.1 除外）会启动即退出。
+- 权限：本会话中 `docker network rm`、`docker rm` 被拒，测试网络 `obs-net` 与容器 `mcp-gt` 需用户手动清理（见疑问清单第六节）。
 
 ### 其他已知问题
 
@@ -318,3 +333,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-22 | 数据库设计强化：MongoDB | 课程笔记经 8.0 副本集与 Go Driver v2 实测、官方文档核对、子代理独立复测审计后重写 backend-dev MongoDB rule 与 reference；分库与 `_id` 规则按实测放宽；dev-ops 补备份与时间点恢复、安全基线、巡检指标（`3707f4f`） | 未推送；临时容器 `mgv1`～`mgv3`、网络 `mgv-net` 待清理 |
 | 2026-10-22 | 教学材料沉淀：gRPC、Go、Redis | 逐个子代理提炼 + 容器实测 + 子代理交叉复测：`rules/rpc/`、`rpc-design`（`5098a4e`）；`rules/go/concurrency.md`、`go-perf-diagnose`，常驻 Go 规则 8.2KB→6.1KB（`3c492ef`）；Redis rule、`cache-design/references/patterns.md`、middleware-ops（`9bddf11`） | 疑问待用户讨论；未推送；docker 卷 `grpclab-gomod`、网络 `redislab-net`/`redisrev-net`、容器 `mgv1`～`mgv3`/`dbverify-tmp` 待清理 |
 | 2026-10-23 | 疑问「path rules 覆盖不到 Redis 代码」定稿 | `claude -p` 实测 rule 加载时机；go-redis 只在 `cache/` 层 import（常驻 `CLAUDE.md`、`layering.md`、`go-new-module`）；depguard 范本（golangci-lint v2.5.0 实测）；`cache-design/references/layered-examples.md`（Redis 8.10.2 / 7.4.11 集成测试）（`3c278bc`） | 复杂约束的自我修正、gRPC depguard 待验证；未推送；容器 `rcase-redis`、网络 `rcase-net` 待清理 |
+| 2026-10-24 | 可观测性重写、去 K8s、FiberHouse 错误追踪 | 资源配置先问上限（`d229d3d`）；去 K8s 改 Docker（`304865c`）；可观测性起步方案与 compose / relay 实测（`21a4c0f`）；DELEX 说明（`511086d`）；FiberHouse 分支 `feature/logger-extra-writers`（caller、附加 writer、字符串 panic、typed-nil，`39cba6c`）+ 规则接入（`405408c`）；插件改 GlitchTip MCP（`288cda3`）；子代理交叉审查 3 项 should-fix 已修正 | 8 条框架取舍待用户确认；FiberHouse 分支未合并；本仓库未推送；`obs-net`、`mcp-gt` 待清理 |
