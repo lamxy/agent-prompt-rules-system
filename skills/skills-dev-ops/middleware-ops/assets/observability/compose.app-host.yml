@@ -1,0 +1,37 @@
+# 业务主机：业务服务 + Beszel agent + Dozzle。示例服务名 api 与镜像按项目替换。
+# 必填变量写在同目录 .env（不入库）：BESZEL_KEY（在 hub 中添加主机时给出的公钥）；SENTRY_DSN 可为空（关闭上报）。
+
+x-logging: &logging
+  driver: local  # 默认每个容器保留 100MB 并压缩；json-file 默认不轮转
+
+services:
+  api:
+    image: registry.example.com/api:1.0.0
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 1.5
+    environment:
+      GOMEMLIMIT: 460MiB      # 约为 mem_limit 的 90%，给运行时之外的内存留余量
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    stop_grace_period: 30s    # 大于应用优雅关闭的超时（默认 10s）
+    logging: *logging
+
+  beszel-agent:
+    image: henrygd/beszel-agent:0.21.1
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      LISTEN: "45876"         # 防火墙只允许 hub 所在主机访问
+      KEY: ${BESZEL_KEY:?}
+    logging: *logging
+
+  dozzle:
+    image: amir20/dozzle:v11.3.4
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "127.0.0.1:8080:8080"
+    logging: *logging

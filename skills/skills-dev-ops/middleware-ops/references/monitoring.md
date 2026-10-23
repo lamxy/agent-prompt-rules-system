@@ -1,6 +1,9 @@
-# 监控告警基线
+# 监控告警基线（Prometheus）
 
-以 Prometheus + Grafana 为例；exporter 名称为社区常用实现，按实际部署选择。
+起步阶段用 `observability.md` 的组合（Uptime Kuma、GlitchTip、Beszel），不部署 Prometheus。需要应用层指标（QPS、错误率、延迟分布）或中间件的细粒度指标时，再升级到 Prometheus + Alertmanager（Grafana 可选），以本文为基线；exporter 名称为社区常用实现，按实际部署选择。
+
+- 告警通知用 Alertmanager 的 `telegram_configs`（官方 receiver），与起步阶段一样发到 Telegram。
+- 数据保留：`--storage.tsdb.retention.time` 默认 15d；小硬盘再加 `--storage.tsdb.retention.size` 限制容量。
 
 ## 主机
 
@@ -10,7 +13,7 @@
 
 每个生产环境业务系统必须有：
 
-- 健康检查端点（如 `/healthz`、`/readyz`），并配置存活与就绪探针
+- 健康检查端点（如 `/healthz`），并配置容器 `healthcheck`
 - 核心业务端口的存活探测（blackbox_exporter）
 - QPS 突增、突降告警
 - 响应时间（P95 / P99）与错误率告警

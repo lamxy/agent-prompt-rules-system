@@ -6,13 +6,14 @@
 
 ## 一、待确认
 
-无（2026-10-23 全部定稿）。
+1. **FiberHouse 统一记录的错误如何进入 GlitchTip**：框架在 recover / ErrorHandler 中用 zerolog 记录（`message` 含 stack trace），但不会自动上报 sentry-go。候选：框架提供 `StackTraceHandler` 扩展点或配置开关上报；或对全局 zerolog 加 hook（只能拿到级别与 message，拿不到字段）。均未实测；用户维护框架，需讨论后再写入规则。
+2. **dev-ops / backend-dev 的 `sentry`、`grafana-mcp` 插件是否保留**：起步阶段用 GlitchTip，不部署 Grafana；`sentry` 插件能否对接 GlitchTip 未验证。
 
 ## 二、待办（已决定，需后续实施）
 
-1. **gRPC 追踪与指标统一 OpenTelemetry**：与 HTTP 侧一并决定；写入前核对 otelgrpc 官方文档。未写入配置。
-2. **dev-ops 部署模板注入 `GOMEMLIMIT` 并加入巡检**：注入方式（如 K8s 引用容器内存限额）需实测后再写入；backend rule 维持「由部署配置注入」。
-3. **Redis 8.4 起的 `DELEX` / `SET IFEQ` 能否替代解锁 Lua**：核对项目最低 Redis 版本与 go-redis v9.22 支持情况后再决定是否写入。
+1. **可观测性重写**：已完成（2026-10-24）。落点 dev-ops `CLAUDE.md`、`middleware-ops/references/{observability,monitoring,grpc}.md`、`assets/observability/`（两份 compose 经 `docker compose` 启动验证，转发服务端到端验证）；backend-dev `rules/go/logging.md`、`rules/framework/fiberhouse.md`。Beszel hub 与 agent 的连接未实测，文档指向官方步骤。
+2. **移除 K8s，改为 Docker**：已完成（2026-10-24）。删除 K8s MCP 模板与只读配置，dev-ops permissions 改为 Docker 命令，gRPC 部署文档改为 Compose 版；`GOMEMLIMIT`、`GOMAXPROCS` 已在 `--memory` / `--cpus` 容器中实测。用户级 `settings/settings.user.json` 中的 `kubectl get/describe` 只读放行未改动。
+3. **Redis 8.4 起的 `DELEX` / `SET IFEQ`**：已核对——官方 `redis/docs` 标注两者 since 8.4.0，分布式锁页推荐 `DELEX key IFEQ token`；Redis 8.10.2 实测语义正确、7.4.11 不支持；go-redis v9.22.0 源码有 `DelExArgs`、`SetIFEQ`（后者注释标 experimental）；`rueidislock`、`bsm/redislock` 仍用 Lua 校验。建议：模板维持 Lua，`patterns.md` 补一条「最低版本 ≥ 8.4 时可改用」；客户端维持 go-redis（同级：redigo、Redis 官方组织的 rueidis）。大厂做法未找到可核对来源（未验证）。**待用户确认后写入**。
 
 ## 三、决定记录（2026-10-23）
 
@@ -66,6 +67,21 @@
 - 交叉审查修正：Redis 锁模板续期循环在网络持续失败时不会中止业务，已改为剩余有效期不足 `ttl/2` 时取消 ctx（三种情况复测通过）；`ClusterClient.Scan` 结果不完整且每次不同，集群遍历用 `ForEachMaster`。
 
 **path rules 加载实测**（2026-10-23，Claude Code 2.1.308，`claude -p` 全新会话，以对话记录中的探针标记判断）：Read、Bash 读类命令（`cat`、`grep`、`head`、`sed -n`）、Write 新建文件、Edit 均会加载匹配的 rule，但都在工具执行**之后**注入；Bash 写类命令（heredoc、`sed -i`）不加载；编辑 `service/` 文件不会加载 `rules/redis.md`（FiberHouse 示例把缓存编排放在 `service/`）。PreToolUse / PostToolUse hook 注入的上下文同样随工具结果送达，不比内置机制早。可机械检查的 rule（首行固定注释）在 haiku、sonnet 各 2 次中都是「写完 → 看到 rule → 重写」后合规。社区 issue #23478、#63142 所述「Write 与 Bash 不加载」在该版本已部分过时。depguard 规则用 golangci-lint v2.5.0 实测：`repository/` 中 import go-redis 报错，`cache/` 与测试文件不报错。
+
+**可观测性选型核对与实测**（2026-10-23，OrbStack Docker，闲置约 2 分钟后 `docker stats`）：
+
+| 组件 | 版本 | 闲置内存 | 一手依据 |
+|---|---|---|---|
+| Uptime Kuma | 2.5.7 | 93 MiB | README：Telegram 等 90+ 通知 |
+| Dozzle | v11.3.4 | 10 MiB | README：不支持离线搜索 |
+| Beszel hub / agent | 0.21.1 | 12 / 6 MiB | beszel.dev 通知页：Shoutrrr，含 Telegram |
+| GlitchTip all-in-one（无 Valkey）+ Postgres 17 | 6.2.6 | 129→172 / 42→52 MiB（收 3 个事件后） | 官方安装页：推荐 512MB，all-in-one 最低 256MB，Valkey 可选 |
+| Prometheus + node_exporter + Grafana（对照） | 3.15.1 / — / 13.2.4 | 48 / 15 / 309 MiB | Alertmanager 文档有 `telegram_configs` |
+
+- Gemini 方案的修正：GlitchTip 不需要约 1GB；Sentry 自建最低 14GB（`errors-only` 7GB）；Sentry Developer 免费版 1 个用户、告警只发 email；Promtail 2026-03-02 EOL，改 Alloy；Loki 不开 compactor `retention_enabled` 永久保留；Prometheus 默认保留 15d；Docker `json-file` 默认 `max-size=-1` 不轮转（`local` 驱动默认每容器 100MB）。Fly.io / Render 免费托管 Uptime Kuma 未验证。
+- GlitchTip 6.2.6 告警收件者（`apps/alerts/constants.py`）：email、Slack 兼容 webhook、Discord、Google Chat、ntfy、Teams、Zulip、飞书；**没有 Telegram**。
+- FiberHouse v1.1.1（fiber v2.52.16）：全局 zerolog 未开 `Caller()`，默认无行号；事件级 `.Caller()` 经 `LoggerWrapper` 得到正确行号；替换 `GetZeroLogger()` 指向的 logger 加 Caller 也生效（启动时已注册的 Origin 子 logger 未测）。ErrorHandler 中 `ErrorStack()` 只有框架调用链，不含 error 产生行与 handler 行；recover 的 defer 中堆栈含 panic 行。`DefaultStackTraceHandler` 的类型 switch 无 `default`，非 error 的 panic 值（如字符串）不记录日志（读码推论，未实测）。
+- sentry-go v0.50.0 → GlitchTip：panic 经 `Hub.Recover` 定位到 panic 行；普通 `errors.New` / `fmt.Errorf` 只定位到调用 `CaptureException` 处；`pkg/errors`（已归档）、`go-errors/errors` v1.5.1、`x/xerrors` 产生的 error 定位到产生行。sentry-go 官方有 `fiber`、`fiberv3`、`gin`、`grpc`、`zerolog`、`slog` 集成。
 
 **版本约束**：Go 1.25 模块最高 go-redis v9.22.0（v9.23.0 要求 go ≥ 1.26）、x/sync v0.23.x（v0.24.0 要求 go ≥ 1.26）。
 

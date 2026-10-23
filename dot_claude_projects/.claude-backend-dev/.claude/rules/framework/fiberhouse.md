@@ -20,3 +20,10 @@ paths:
 - 跨组件共享的实例（数据库、缓存、codec 等）通过 `GlobalManager` / `Locator` 获取，不另建包级全局变量。
 - 需要关闭的资源实现 `ClosableProvider`，由框架按注册的逆序关闭；不在业务代码中自行管理关闭顺序。
 - 装配期的错误使用返回 error 的入口，不依赖 panic。
+
+## 日志与错误
+
+- 日志用框架的全局 logger（`LoggerWrapper`，底层 zerolog），按需带 `Origin`；不另引入 slog、zap。
+- 容器部署时 `application.appLog` 设 `enableConsole: true`、`consoleJSON: true`、`enableFile: false`，只写 stdout。框架的异步文件 writer（chan / diode）在压力下会丢日志，且 `Write` 仍返回成功。
+- Web 与命令行的错误和 panic 由框架统一捕获并记录，handler 不重复记录同一个错误。生产环境设 `application.recover.enablePrintStack: true`（`message` 中输出 stack trace）、`application.recover.debugMode: false`（否则接口响应会带详细错误信息）。
+- 堆栈在框架捕获时获取：panic 与 `exception.Throw` / `.Panic()` 的堆栈包含出错所在行；handler `return err` 时业务函数已返回，堆栈只有框架调用链，出处靠 `%w` 附加的上下文判断。

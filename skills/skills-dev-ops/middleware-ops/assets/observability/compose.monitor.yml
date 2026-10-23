@@ -1,0 +1,76 @@
+# 外部探测机：Uptime Kuma、GlitchTip（all-in-one，无 Valkey）、Telegram 转发、Beszel hub。
+# 与业务主机分开部署，业务主机宕机时告警仍能发出。
+# 必填变量写在同目录 .env（不入库）：GLITCHTIP_DOMAIN、GLITCHTIP_SECRET_KEY、POSTGRES_PASSWORD、
+# TELEGRAM_BOT_TOKEN、TELEGRAM_CHAT_ID、RELAY_SECRET。
+# 管理界面只绑定 127.0.0.1，经 SSH 隧道或带认证的反向代理访问；
+# GlitchTip 要接收业务主机 SDK 的上报，经 HTTPS 反向代理对外提供。
+
+x-logging: &logging
+  driver: local
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: glitchtip
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d glitchtip"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging: *logging
+
+  glitchtip:
+    image: glitchtip/glitchtip:6.2.6
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:?}@postgres:5432/glitchtip
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:?}
+      GLITCHTIP_DOMAIN: ${GLITCHTIP_DOMAIN:?}
+      PORT: "8000"
+      SERVER_ROLE: all_in_one              # web 与后台任务同一进程
+      VALKEY_URL: ""                       # 不用 Valkey，任务队列与缓存走 Postgres
+      GLITCHTIP_ALLOW_PRIVATE_IPS: "True"  # 允许告警 webhook 发到同一网络的 relay
+      GLITCHTIP_RETENTION_DAYS: "30"       # 默认 90
+    ports:
+      - "127.0.0.1:8000:8000"
+    logging: *logging
+
+  relay:
+    build: ./glitchtip-telegram-relay
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:?}
+      RELAY_SECRET: ${RELAY_SECRET:?}
+    logging: *logging
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:2.5.7
+    restart: unless-stopped
+    volumes:
+      - kuma-data:/app/data
+    ports:
+      - "127.0.0.1:3001:3001"
+    logging: *logging
+
+  beszel:
+    image: henrygd/beszel:0.21.1
+    restart: unless-stopped
+    volumes:
+      - beszel-data:/beszel_data
+    ports:
+      - "127.0.0.1:8090:8090"
+    logging: *logging
+
+volumes:
+  pg-data:
+  kuma-data:
+  beszel-data:
