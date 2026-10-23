@@ -65,6 +65,8 @@ FiberHouse 错误进入 GlitchTip 已按用户决定实现（2026-10-24）：分
 11. **晚到的 rule 能否让复杂约束自我修正**。现象：Write 新建文件时 rule 在写完后才注入；只测过「首行固定注释」这类可机械检查的约束。缺少依据：连接复用、deadline、重试等需要理解代码的约束是否同样会被重写修正，未测。建议验证：在临时项目让模型新建 `module/x/cache/x_cache.go`，rule 要求 `ContextTimeoutEnabled` 与关闭重试，多次运行统计合规率。
 12. **gRPC 客户端用 depguard 限制在 `grpc/` 目录**。缺少依据：只对 go-redis 实测了 depguard；`google.golang.org/grpc` 在 handler（`api/grpc/`）与客户端封装两处都要 import，规则写法未测。建议验证：同样以违规文件实测后，再决定是否写入 `rpc-design`。
 
+13. **Claude Code 经 OAuth 连接 GlitchTip MCP**：已验证 GlitchTip 6.2.6 开启 MCP 后端点未认证返回 401 并给出 OAuth 元数据（含动态客户端注册），Claude Code 文档说明用 `/mcp` 完成 OAuth；两者实际对接未测（需要交互登录）。原位置：dev-ops `observability.md`、`dot_mcp_jsons/README.md` 的 GlitchTip MCP 说明。建议验证：在临时项目中 `claude mcp add --transport http glitchtip <https 地址>/mcp` 后 `/mcp` 登录，确认能列出 issue；失败时改用 API token。
+
 ## 五、参考记录（无需决定）
 
 **推翻或修正的教材结论**（实测或一手来源）：
