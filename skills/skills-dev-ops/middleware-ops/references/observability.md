@@ -49,7 +49,7 @@
 - 使用 zerolog 的应用把 `sentryzerolog` 接成日志输出之一，ERROR 日志即上报，日志字段成为 tags（`error` 字段转为 exception）。FiberHouse 经 `WithLogWriters` 接入，实测 Web 示例（Fiber 内核）的 handler 错误、panic、`exception.Panic` 与字符串 panic 均进入 GlitchTip。
 - all-in-one 模式：`SERVER_ROLE=all_in_one`，`VALKEY_URL` 置空后任务队列、缓存与会话走 Postgres。官方推荐 512MB 内存，最低 256MB；实测闲置约 130～170MiB。
 - 数据保留：`GLITCHTIP_RETENTION_DAYS`，默认 90 天。
-- MCP：`GLITCHTIP_ENABLE_MCP=True` 后端点为 `<GLITCHTIP_DOMAIN>/mcp`，支持 OAuth（客户端动态注册）与 API token；项目 `.mcp.json` 模板中的 `glitchtip` 条目读取 `GLITCHTIP_URL`。实测 6.2.6：开启后 `GLITCHTIP_DOMAIN` 不是 https（`localhost`、`127.0.0.1` 除外，见 MCP SDK `validate_issuer_url`）时启动即退出（`Issuer URL must be HTTPS`）；端点未认证返回 401 并给出 OAuth 元数据。Claude Code 中用 `/mcp` 完成 OAuth 认证（Claude Code 文档）；与 GlitchTip 的实际登录未实测，失败时改用 API token。
+- MCP：`GLITCHTIP_ENABLE_MCP=True` 后端点为 `<GLITCHTIP_DOMAIN>/mcp`，支持 OAuth（客户端动态注册）与 API token；项目 `.mcp.json` 模板中的 `glitchtip` 条目读取 `GLITCHTIP_URL`。实测 6.2.6：开启后 `GLITCHTIP_DOMAIN` 不是 https（`localhost`、`127.0.0.1` 除外，见 MCP SDK `validate_issuer_url`）时启动即退出（`Issuer URL must be HTTPS`）；端点未认证返回 401 并给出 OAuth 元数据。Claude Code 中用 `/mcp` 完成 OAuth 认证（Claude Code 文档），也可改用 API token。
 - 告警：项目设置中新建 Alert，收件者选「General Slack-compatible webhook」，URL 为 `http://relay:8080/glitchtip/<RELAY_SECRET>`。GlitchTip 发送 webhook 时会拒绝解析到内网地址的 URL，relay 在同一 Docker 网络时必须设 `GLITCHTIP_ALLOW_PRIVATE_IPS=True`。
 - 实测：同一时间窗内的多个新 issue 合并成一条 Telegram 消息，含标题、链接、项目与主机名。
 - 定位能力（sentry-go v0.50.0 实测）：panic 的堆栈含 panic 所在行；`errors.New`、`fmt.Errorf` 产生的 error 不带堆栈，只能定位到上报处，靠 `%w` 逐层附加的上下文判断出处。

@@ -34,7 +34,7 @@
 
 - 需要的环境变量：`GLITCHTIP_URL`（如 `https://glitchtip.example.com`，不带末尾 `/`）。未设置时 `claude mcp list` 会提示缺少变量；项目不用 GlitchTip 时删除该条目。
 - 服务端须开启 `GLITCHTIP_ENABLE_MCP=True`，且 `GLITCHTIP_DOMAIN` 为 https，见 dev-ops `middleware-ops/references/observability.md`。
-- 认证：GlitchTip 支持 OAuth 与 API token（GlitchTip 文档）；Claude Code 中用 `/mcp` 完成 OAuth 认证（Claude Code 文档），与 GlitchTip 的实际登录未实测。也可在 `headers` 中加 `Authorization: Bearer ${GLITCHTIP_TOKEN}` 使用 API token。
+- 认证：GlitchTip 支持 OAuth 与 API token（GlitchTip 文档）；Claude Code 中用 `/mcp` 完成 OAuth 认证（Claude Code 文档）。也可在 `headers` 中加 `Authorization: Bearer ${GLITCHTIP_TOKEN}` 使用 API token。
 
 ## 使用方式
 
