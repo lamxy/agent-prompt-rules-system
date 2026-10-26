@@ -14,7 +14,8 @@ updated: 2026-10-26
 - 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交，已推送并发布 v2.0.1（Latest）；已制定「场景配置评估、优化与验证」待办计划，尚未开始执行
 - 停在：2026-10-24 可观测性按起步阶段重写（Uptime Kuma、GlitchTip、Beszel、Dozzle、Telegram 转发，`21a4c0f`）、移除 K8s 改围绕 Docker（`304865c`）、FiberHouse 错误经附加 writer 进入 GlitchTip（`405408c`；FiberHouse 分支 `feature/logger-extra-writers` 已推送，头 `39cba6c`）、sentry / grafana-mcp 插件改为 GlitchTip MCP（`288cda3`）；**本仓库未推送**；12 个测试文件全过
 - 2026-10-26：FiberHouse 框架取舍 7 条已由用户在 FiberHouse 仓库实施并发布 `v1.2.0`，backend-dev `fiberhouse.md` 改为引用 v1.2.0，疑问文件第一节清空、前端错误送 GlitchTip 转为待办
-- 下一步：疑问文件第二节待办 3（DELEX 写入 `patterns.md`）、4（前端错误送 GlitchTip）待用户安排；本仓库推送需用户指示
+- 2026-10-26（续）：前端错误送 GlitchTip 分析后暂缓；新增请求 id 传递约定；FiberHouse 规则去版本绑定（不再引用 v1.2.0）
+- 下一步：疑问文件第二节待办均已完成或暂缓，无待安排项；本仓库推送需用户指示
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -337,3 +338,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-24 | 可观测性重写、去 K8s、FiberHouse 错误追踪 | 资源配置先问上限（`d229d3d`）；去 K8s 改 Docker（`304865c`）；可观测性起步方案与 compose / relay 实测（`21a4c0f`）；DELEX 说明（`511086d`）；FiberHouse 分支 `feature/logger-extra-writers`（caller、附加 writer、字符串 panic、typed-nil，`39cba6c`）+ 规则接入（`405408c`）；插件改 GlitchTip MCP（`288cda3`）；子代理交叉审查 4 项 should-fix 已修正；场景安装到临时项目后复验通过（compose、MCP、告警链路）；第二轮交叉复验无 blocker / should-fix，2 个 nit 已修正 | 8 条框架取舍待用户确认；FiberHouse 分支未合并；本仓库未推送；`obs-net`、`mcp-gt` 待清理 |
 | 2026-10-26 | FiberHouse 框架取舍定稿 | 7 条取舍在 FiberHouse 实施并发布 `v1.2.0`（经 GOPROXY 实测编译）；`rules/framework/fiberhouse.md` 改为引用 v1.2.0，按新行为改写定级、堆栈字段、重复上报、traceId 说明；疑问文件第一节清空、新增决定表与待办 4（前端错误送 GlitchTip）；12 个测试文件全过；子代理交叉审查无 blocker，4 项 should-fix（Fiber requestid `ContextKey` 前提、Gin 写法、业务码 5xxxxx 仍为 400、顶帧结论限 Fiber 实测）与 2 项 nit 已修正 | 未推送 |
 | 2026-10-26 | 前端错误追踪分析与请求 id 传递规则 | 待办 4 深入分析并实测（`@sentry/browser` 11.9.0 → GlitchTip 6.2.6，报告 `docs/plans/2026-10-26-frontend-glitchtip-analysis.md`），用户决定暂不接入；新增请求 id 传递约定：backend `rules/go/logging.md`「请求 id 传递」（Fiber v2.52.16、Gin v1.12.0 实测入口覆盖与放入 ctx）、frontend `CLAUDE.md` 显示错误编号、dev-ops `observability.md`「请求 id」与 `CLAUDE.md`（Nginx 1.29.8 实测）；12 个测试文件全过 | 未提交；GlitchTip 停用 key 无效、key 限流不生效是否报上游待定；docker `fegt-gt`、`fegt-pg`、网络 `fegt-net` 待手动清理 |
+| 2026-10-26 | 待办 1～3 收尾 | Beszel 0.21.1 hub↔agent 连接补测（公钥正确在线、错误离线）；`settings.user.json` 移除 `kubectl get/describe` 放行（不用 K8s，且可读出 Secret）；DELEX 条目精简并核对主流锁库（Redisson、redis-py 仍用 Lua）；独立子代理交叉评估无 blocker，3 项 should-fix 已修正（FiberHouse 请求 id 兜底顺序、直接对外时丢弃客户端值、实测证据补入疑问文件第五节）；12 个测试文件全过 | 网络 `besz-net`、`fegt-net` 与容器 `fegt-*` 待手动清理；未推送 |
