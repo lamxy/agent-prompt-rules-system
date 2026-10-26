@@ -43,6 +43,19 @@
 { "log-driver": "local" }
 ```
 
+## 请求 id
+
+最外层反向代理生成请求 id，覆盖客户端传入的 `X-Request-ID`，传给后端、写入访问日志、写回响应头（代理自己返回的 502 / 504 也要带）。Nginx 示例：
+
+```nginx
+log_format main_rid '$remote_addr "$request" $status $request_time rid=$request_id';
+proxy_set_header X-Request-ID $request_id;
+proxy_hide_header X-Request-ID;
+add_header X-Request-ID $request_id always;   # always：错误响应也带
+```
+
+注意 `location` 内另写 `add_header` 时不再继承上层的。其他代理按同一原则配置。
+
 ## 错误追踪（GlitchTip）
 
 - 应用接入 sentry-go（官方提供 `fiber`、`gin`、`grpc`、`zerolog`、`slog` 等集成），DSN 由环境变量注入，为空时不上报；换成 Sentry SaaS 只需改 DSN。

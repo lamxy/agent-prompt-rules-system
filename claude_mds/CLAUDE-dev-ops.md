@@ -26,3 +26,4 @@
 
 - 按 `middleware-ops` skill 的 `references/observability.md` 建设：起步阶段不引入分布式追踪与重型日志平台，外部探测与错误告警放在业务主机之外，通知统一发到 Telegram。
 - 新增告警说明阈值依据与处理步骤。
+- 请求 id 由最外层反向代理生成并传给后端、写回响应头，见 `observability.md`「请求 id」。

@@ -5,7 +5,7 @@ paths:
 
 # 日志
 
-使用项目统一的结构化 logger，输出 JSON，一行一条。用框架时用框架的 logger（FiberHouse 见 `rules/framework/fiberhouse.md`），不另引入第二套；没有框架 logger 的项目用 `log/slog` 的 JSON handler 并开启 `AddSource`（zerolog 用 `Caller()`），日志带文件与行号。
+使用项目统一的结构化 logger，输出 JSON，一行一条。用框架时用框架的 logger，不另引入第二套；没有框架 logger 的项目用 `log/slog` 的 JSON handler 并开启 `AddSource`（zerolog 用 `Caller()`），日志带文件与行号。
 
 ## 级别
 
@@ -20,7 +20,7 @@ paths:
 
 ## 字段
 
-每条日志包含：时间、级别、`service`、`message`，以及请求 id。框架已定的字段名沿用框架（FiberHouse 的请求 id 字段名由 `application.trace.requestID` 决定，代码默认 `requestId`，示例配置为 `traceId`）。当前不做分布式追踪，不要求 `span_id`。按需补充：
+每条日志包含：时间、级别、`service`、`message`，以及请求 id。框架已定的字段名沿用框架。当前不做分布式追踪，不要求 `span_id`。按需补充：
 
 - `type`：`ACCESS`（接口访问）或 `EVENT`（业务事件）
 - `biz_tag`：业务标签，如 `order.place`，同一业务流程使用同一个标签
@@ -41,4 +41,14 @@ paths:
 
 - 返回 error 时用 `fmt.Errorf("查询用户 %d: %w", id, err)` 逐层附加上下文；`errors.New` / `fmt.Errorf` 不带堆栈，出处靠上下文链判断。同一个 error 只在最终处理处记录一次。
 - 自己开的 goroutine、启动初始化、后台任务等框架统一错误处理之外的地方，自行 recover 并记录 `ERROR`（带行号）。
-- 错误追踪用 sentry-go：DSN 由环境变量 `SENTRY_DSN` 注入，为空时不上报；FiberHouse 项目把 `sentryzerolog` 接到框架 logger（见 `rules/framework/fiberhouse.md`）；其余项目的 panic 经 recover 上报（堆栈含 panic 所在行），error 用 `CaptureException` 上报。没有日志告警平台时，需要告警的 `INFO` / `WARN` 事件用 `CaptureMessage` 上报。
+- 错误追踪用 sentry-go：DSN 由环境变量 `SENTRY_DSN` 注入，为空时不上报；框架有接入方式时按框架规则接入；否则 panic 经 recover 上报（堆栈含 panic 所在行），error 用 `CaptureException` 上报。没有日志告警平台时，需要告警的 `INFO` / `WARN` 事件用 `CaptureMessage` 上报。
+
+## 请求 id 传递
+
+一次请求一个请求 id，传到链路上的每条日志；前端出错时凭它查服务端日志。HTTP 头用 `X-Request-ID`。
+
+- 由入口生成（具体框架的写法按框架规则调整）：有反向代理时由最外层代理生成并覆盖客户端传入值，后端沿用；后端直接对外时不采信客户端传入值（常见 requestid 中间件会原样采信），由后端生成。
+- 写回响应头；跨域时 CORS 暴露该头，前端才读得到。
+- 进程内经 ctx 传递：中间件把它放进传给 service 的 ctx（requestid 中间件通常只存在框架上下文里，不会自动进入 ctx）。
+- 跨进程显式携带：出站 HTTP 请求头、gRPC metadata（不自动转发）、消息 header；请求结束后仍运行的任务保留原 id，定时任务等无来源的生成新 id。
+- 只用于日志关联，不作鉴权、幂等或查询凭证（部分生成器的值可被推测）。
