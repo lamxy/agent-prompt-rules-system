@@ -1,19 +1,19 @@
 # 教学材料沉淀：待用户确认的疑问
 
-2026-10-22 无人值守处理三个本机教学目录（gRPC、Go、Redis），把对 backend-dev 场景有收益的内容沉淀到配置；2026-10-23 与用户逐条讨论定稿。本文件按状态组织：待确认、待办、决定记录、待验证、参考记录、本机残留。
+2026-10-22 无人值守处理三个本机教学目录（gRPC、Go、Redis），把对 backend-dev 场景有收益的内容沉淀到配置；2026-10-23 与用户逐条讨论定稿。本文件按状态组织：已完成、暂缓、决定记录、待验证、参考记录、本机残留。
 
 落点：gRPC `rules/rpc/{proto,grpc-go}.md`、`skills/rpc-design/`、dev-ops `middleware-ops/references/grpc.md`；Go `rules/go/{code-style,concurrency,testing}.md`、`skills/go-perf-diagnose/`；Redis `rules/redis.md`、`skills/cache-design/`（含 `references/patterns.md`）、`middleware-ops/references/redis.md`。实测环境：grpc-go v1.84.0、buf 1.74.0；Go 1.25.14、x/sync v0.22.0；Redis 8.10.2 / 7.4.11、go-redis v9.22.0。
 
-## 一、待确认
+## 一、已完成
 
-暂无。原 7 条 FiberHouse 框架取舍已于 2026-10-26 由用户在 FiberHouse 仓库决定并实施，见第三节「FiberHouse 框架取舍」；前端错误是否送 GlitchTip 已评估并决定暂缓，见第二节。
+1. **可观测性重写**（2026-10-24）：落点 dev-ops `CLAUDE.md`、`middleware-ops/references/{observability,monitoring,grpc}.md`、`assets/observability/`（两份 compose 经 `docker compose` 启动验证，转发服务端到端验证）；backend-dev `rules/go/logging.md`、`rules/framework/fiberhouse.md`。Beszel hub 与 agent 的连接 2026-10-26 补测：Beszel 0.21.1，公钥正确时 hub 经 SSH 连上 agent 并显示在线、回传指标；公钥不符时 agent 拒绝、hub 显示离线。
+2. **移除 K8s，改为 Docker**（2026-10-24）：删除 K8s MCP 模板与只读配置，dev-ops permissions 改为 Docker 命令，gRPC 部署文档改为 Compose 版；`GOMEMLIMIT`、`GOMAXPROCS` 已在 `--memory` / `--cpus` 容器中实测。用户级 `settings/settings.user.json` 中的 `kubectl get/describe` 放行 2026-10-26 移除：当前阶段不用 K8s，且 `kubectl get` 可读出 Secret 内容；本机镜像 `dot_claude/settings.json` 不动。
+3. **Redis 8.4 起的 `DELEX` / `SET IFEQ`**（2026-10-24，`511086d`）：`cache-design/references/patterns.md` 补充「最低版本 ≥ 8.4 时可改用」，锁模板维持 Lua，客户端维持 go-redis。原「大厂做法未验证」改为核对主流锁库（2026-10-26，各仓库默认分支源码）：Redisson 的 `RedissonLock` 解锁、redis-py 的 `lock.py` 仍用 Lua，`DELEX` 只作为普通命令提供（Redisson `RBucket.compareAndDelete`）。
+4. **FiberHouse 框架取舍**（2026-10-26）：用户在 FiberHouse 仓库决定并实施，见第三节「FiberHouse 框架取舍」。
 
-## 二、待办（均已完成或暂缓）
+## 二、暂缓
 
-1. **可观测性重写**：已完成（2026-10-24）。落点 dev-ops `CLAUDE.md`、`middleware-ops/references/{observability,monitoring,grpc}.md`、`assets/observability/`（两份 compose 经 `docker compose` 启动验证，转发服务端到端验证）；backend-dev `rules/go/logging.md`、`rules/framework/fiberhouse.md`。Beszel hub 与 agent 的连接 2026-10-26 补测：Beszel 0.21.1，公钥正确时 hub 经 SSH 连上 agent 并显示在线、回传指标；公钥不符时 agent 拒绝、hub 显示离线。
-2. **移除 K8s，改为 Docker**：已完成（2026-10-24）。删除 K8s MCP 模板与只读配置，dev-ops permissions 改为 Docker 命令，gRPC 部署文档改为 Compose 版；`GOMEMLIMIT`、`GOMAXPROCS` 已在 `--memory` / `--cpus` 容器中实测。用户级 `settings/settings.user.json` 中的 `kubectl get/describe` 放行 2026-10-26 移除：当前阶段不用 K8s，且 `kubectl get` 可读出 Secret 内容；本机镜像 `dot_claude/settings.json` 不动。
-3. **Redis 8.4 起的 `DELEX` / `SET IFEQ`**：已完成（2026-10-24，`511086d`）。`cache-design/references/patterns.md` 补充「最低版本 ≥ 8.4 时可改用」，锁模板维持 Lua，客户端维持 go-redis。原「大厂做法未验证」改为核对主流锁库（2026-10-26，各仓库默认分支源码）：Redisson 的 `RedissonLock` 解锁、redis-py 的 `lock.py` 仍用 Lua，`DELEX` 只作为普通命令提供（Redisson `RBucket.compareAndDelete`）。
-4. **前端错误送 GlitchTip**：暂缓（2026-10-26 用户决定）。项目尚未验证可行性，等上线、有用户且确有必要时，再按 `2026-10-26-frontend-glitchtip-analysis.md` 实施；届时一并处理 frontend-dev、fullstack-dev 的 `sentry` 插件（其 MCP 连不上自建 GlitchTip）。原方案中「前端请求头带 `X-Request-ID`」已否决，见第三节「请求 id 传递」。
+- **前端错误送 GlitchTip**（2026-10-26 用户决定）：项目尚未验证可行性，等上线、有用户且确有必要时，再按 `2026-10-26-frontend-glitchtip-analysis.md` 实施；届时一并处理 frontend-dev、fullstack-dev 的 `sentry` 插件（其 MCP 连不上自建 GlitchTip）。原方案中「前端请求头带 `X-Request-ID`」已否决，见第三节「请求 id 传递」。
 
 ## 三、决定记录
 
@@ -39,6 +39,7 @@
 | 请求 id 传递 | 最外层代理（或直接对外的后端）生成，不采信客户端传入值；写回响应头，经 ctx 与出站请求、gRPC metadata、消息 header 传递；前端只读响应头并在错误提示中显示 | `rules/go/logging.md`、frontend-dev / dev-ops `CLAUDE.md`、`observability.md`「请求 id」 |
 | 规则的写法 | 只写方向与核心约定，不绑依赖版本、不堆细节；通用规则不写具体框架，框架差异放各框架规则；实测细节留在 `docs/plans` | 全部场景包 |
 | 配置中的未验证内容 | 不得出现；无一手依据的移入本文件第四节；`anti-patterns.md`「评审经验」条目不动 | 全部场景包 |
+| 技术规范来源的配置 | `~/workspace/documents/技術規範/` 中有的内容视为一手依据，保留在配置并标注「技术规范」；与官方文档不同时两者并列 | dev-ops `middleware-ops/references/elasticsearch.md` |
 | path rules 覆盖不到 Redis 代码（原 gRPC 5、Redis 8） | `go-redis` 只在 `module/<模块>/cache/` 与通用缓存组件中 import，service 不 import；service 的「先更新数据库再删缓存」写进 layering；项目用 golangci-lint 时以 depguard 机械检查；完整分层示例写入 `cache-design` | `CLAUDE.md`（两份）目录表、`rules/go/layering.md`、`go-new-module`（含 `references/depguard.yml`）、`cache-design/references/layered-examples.md` |
 | Redis 单实例内存上限（原 Redis 9） | 维持 25GB 经验值；新增资源配置规则：单实例与集群都先询问用户可用资源上限，结合业务现状评估，给出带计算过程的建议，由用户或工程师最终决定；数值为通用建议 | `middleware-ops/SKILL.md` 通用约定、`middleware-ops/references/redis.md`、`cache-design/SKILL.md` 第 5 节 |
 
@@ -57,7 +58,7 @@
 
 ## 四、待验证（已移出配置）
 
-2026-10-23 按「配置中不得出现未验证内容」核对后移出。原位置均为 `dot_claude_projects/` 下的场景包，`skills/skills-*/` 中的同名副本同步修改。
+2026-10-23 按「配置中不得出现未验证内容」核对后移出；2026-10-26 对照 `~/workspace/documents/技術規範/`，原第 9、10 条（Elasticsearch 堆 32GB 与 G1、文件句柄与 `vm.max_map_count` 655360）出自 `elasticsearch規範.txt`，已放回配置并标注「技术规范」，其余各条规范中没有。原位置均为 `dot_claude_projects/` 下的场景包，`skills/skills-*/` 中的同名副本同步修改。
 
 1. **MongoDB 单事务修改文档数不超过 1000**。原位置：backend-dev `rules/database/mongodb.md`「事务」节、`db-schema-design/references/mongodb.md`「事务」节。缺少依据：官方 Production Considerations 只给 60 秒时限与 WiredTiger 缓存压力中止，没有文档数上限；该数来自课程。现改为「批处理拆成小批次」并引用缓存压力说明。建议验证：在 8.0 副本集上对不同文档数与文档大小的事务测提交耗时、缓存占用与 `TransactionTooLargeForCache` 出现条件。
 2. **分片集群中让同一事务的文档落在同一分片**。原位置：`db-schema-design/references/mongodb.md`「事务」节。缺少依据：课程经验值，未查官方 Sharded Clusters Transactions 原文。建议验证：查 `core/transactions-sharded-clusters` 原文；或在分片集群对单分片与跨分片事务测耗时。
@@ -67,12 +68,9 @@
 6. **缓存空值约 95 字节 / key**。原位置：`cache-design/references/patterns.md` 穿透一行。缺少依据：参考资料在 Redis 8.2 上的测量，本仓库未复测。建议验证：Redis 8 容器中 `MEMORY USAGE` 测不同 key 长度的空值。
 7. **固定 TTL 的 1 万个 key 同秒失效、加偏移后分散到 7 秒**。原位置：`cache-design/references/patterns.md` 雪崩一行。缺少依据：参考资料测量，未复测。现改为定性描述。建议验证：容器内批量写入后按秒统计 `expired_keys`。
 8. **`appendfsync always` 比 `everysec` 慢约 33 倍、`no` 与 `everysec` 吞吐几乎相同**。原位置：dev-ops `middleware-ops/references/redis.md`。缺少依据：参考资料单连接压测（Redis 8.2），未复测。现改为引用官方持久化文档的定性说法。建议验证：同一磁盘上 `redis-benchmark` 分别测三种策略，注意单连接与多连接（group commit）差异。
-9. **Elasticsearch 堆「约 31GB」与「大堆使用 G1 GC」**。原位置：`middleware-ops/references/elasticsearch.md`。缺少依据：官方 8.19 文档给的是「26GB 多数系统安全，部分可到 30GB」，以日志确认压缩指针；未找到 G1 建议原文。前者已改为官方说法，后者删除。建议验证：查所用版本 `jvm.options` 默认 GC 与官方说明。
-10. **文件句柄与 `vm.max_map_count`「常设为 655360」**。原位置：同上。缺少依据：官方只给下限 65535、262144（推荐 1048576）。建议验证：确认是否为团队运维规范；若是，标为「默认值，项目可调整」后再放回。
-11. **晚到的 rule 能否让复杂约束自我修正**。现象：Write 新建文件时 rule 在写完后才注入；只测过「首行固定注释」这类可机械检查的约束。缺少依据：连接复用、deadline、重试等需要理解代码的约束是否同样会被重写修正，未测。建议验证：在临时项目让模型新建 `module/x/cache/x_cache.go`，rule 要求 `ContextTimeoutEnabled` 与关闭重试，多次运行统计合规率。
-12. **gRPC 客户端用 depguard 限制在 `grpc/` 目录**。缺少依据：只对 go-redis 实测了 depguard；`google.golang.org/grpc` 在 handler（`api/grpc/`）与客户端封装两处都要 import，规则写法未测。建议验证：同样以违规文件实测后，再决定是否写入 `rpc-design`。
-
-13. **Claude Code 经 OAuth 连接 GlitchTip MCP**：已验证 GlitchTip 6.2.6 开启 MCP 后端点未认证返回 401 并给出 OAuth 元数据（含动态客户端注册），Claude Code 文档说明用 `/mcp` 完成 OAuth；两者实际对接未测（需要交互登录）。原位置：dev-ops `observability.md`、`dot_mcp_jsons/README.md` 的 GlitchTip MCP 说明。建议验证：在临时项目中 `claude mcp add --transport http glitchtip <https 地址>/mcp` 后 `/mcp` 登录，确认能列出 issue；失败时改用 API token。
+9. **晚到的 rule 能否让复杂约束自我修正**。现象：Write 新建文件时 rule 在写完后才注入；只测过「首行固定注释」这类可机械检查的约束。缺少依据：连接复用、deadline、重试等需要理解代码的约束是否同样会被重写修正，未测。建议验证：在临时项目让模型新建 `module/x/cache/x_cache.go`，rule 要求 `ContextTimeoutEnabled` 与关闭重试，多次运行统计合规率。
+10. **gRPC 客户端用 depguard 限制在 `grpc/` 目录**。缺少依据：只对 go-redis 实测了 depguard；`google.golang.org/grpc` 在 handler（`api/grpc/`）与客户端封装两处都要 import，规则写法未测。建议验证：同样以违规文件实测后，再决定是否写入 `rpc-design`。
+11. **Claude Code 经 OAuth 连接 GlitchTip MCP**：已验证 GlitchTip 6.2.6 开启 MCP 后端点未认证返回 401 并给出 OAuth 元数据（含动态客户端注册），Claude Code 文档说明用 `/mcp` 完成 OAuth；两者实际对接未测（需要交互登录）。原位置：dev-ops `observability.md`、`dot_mcp_jsons/README.md` 的 GlitchTip MCP 说明。建议验证：在临时项目中 `claude mcp add --transport http glitchtip <https 地址>/mcp` 后 `/mcp` 登录，确认能列出 issue；失败时改用 API token。
 
 ## 五、参考记录（无需决定）
 
