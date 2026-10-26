@@ -6,24 +6,16 @@
 
 ## 一、待确认
 
-FiberHouse 错误进入 GlitchTip 已按用户决定实现（2026-10-24）：分支 `feature/logger-extra-writers`（`2deccb4` caller 修正、`ffaed5b` 附加 writer、`41324d4` 字符串 panic 记录、`39cba6c` 跳过 typed-nil writer），用该分支跑 Fiber 示例（MongoDB / Redis / MySQL + GlitchTip 6.2.6）端到端验证。以下是验证中发现、需要用户（框架维护者）决定的问题，均未改动框架：
-
-1. **可预期的 4xx 业务错误以 ERROR 记录**：参数校验失败（400）、`exception` 返回的 404 等都由 `DefaultStackTraceHandler` 以 ERROR 记录，接入 sentryzerolog 后全部成为 GlitchTip issue 并触发告警，与日志规则「可预期的业务失败不用 ERROR」冲突。候选：框架对 `ValidateException` 与 4xx `Exception` 改用 WARN；或应用侧过滤。
-2. **堆栈放在 `message`**：开启 `enablePrintStack` 后 `message` 为 `stack trace: …`，GlitchTip issue 标题与 Telegram 告警都只显示这段前缀，错误内容只在 `Msg` tag 中。候选：`message` 保留错误文本，堆栈放独立字段（如 `stack`）。
-3. **同一错误产生两个事件**：handler 返回 error 时，`Recover` 与访问日志 `FiberHttpLog`（5xx 记为 ERROR）各上报一次。候选：访问日志的 5xx 改为 WARN，或 sentryzerolog 只接收带 `Origin=Recover` 的事件。
-4. **示例日志 `traceId` 为空**：示例请求未带请求 id，`Recover` 日志中 `traceId` 为空字符串；是否应由中间件生成未核实。
-5. **示例启动时有 ERROR**：`manager: 'DefaultPManager' LoadProvider no providers registered` 在启动时记录两次 ERROR，接入后成为 GlitchTip issue。
-6. **分支合并与版本**：`fiberhouse.md` 规则按提交 `39cba6c` 引用（经 GOPROXY 时含 `/` 的分支名不能作为版本，`GOPROXY=direct` 可以）；合并发布后改为版本号。
-8. **`DefaultStackTraceHandler` 每次请求改写包级变量**（`debugFlag`、`requestID` 等），并发请求存在写竞争；既有问题，交叉审查发现，未改动。
-7. **frontend-dev、fullstack-dev 的 `sentry` 插件**：本次只调整 backend-dev 与 dev-ops；前端错误是否也送 GlitchTip 待定。
+暂无。原 7 条 FiberHouse 框架取舍已于 2026-10-26 由用户在 FiberHouse 仓库决定并实施，见第三节「FiberHouse 框架取舍」；前端错误是否送 GlitchTip 已评估，转入第二节待办。
 
 ## 二、待办（已决定，需后续实施）
 
 1. **可观测性重写**：已完成（2026-10-24）。落点 dev-ops `CLAUDE.md`、`middleware-ops/references/{observability,monitoring,grpc}.md`、`assets/observability/`（两份 compose 经 `docker compose` 启动验证，转发服务端到端验证）；backend-dev `rules/go/logging.md`、`rules/framework/fiberhouse.md`。Beszel hub 与 agent 的连接未实测，文档指向官方步骤。
 2. **移除 K8s，改为 Docker**：已完成（2026-10-24）。删除 K8s MCP 模板与只读配置，dev-ops permissions 改为 Docker 命令，gRPC 部署文档改为 Compose 版；`GOMEMLIMIT`、`GOMAXPROCS` 已在 `--memory` / `--cpus` 容器中实测。用户级 `settings/settings.user.json` 中的 `kubectl get/describe` 只读放行未改动。
 3. **Redis 8.4 起的 `DELEX` / `SET IFEQ`**：已核对——官方 `redis/docs` 标注两者 since 8.4.0，分布式锁页推荐 `DELEX key IFEQ token`；Redis 8.10.2 实测语义正确、7.4.11 不支持；go-redis v9.22.0 源码有 `DelExArgs`、`SetIFEQ`（后者注释标 experimental）；`rueidislock`、`bsm/redislock` 仍用 Lua 校验。建议：模板维持 Lua，`patterns.md` 补一条「最低版本 ≥ 8.4 时可改用」；客户端维持 go-redis（同级：redigo、Redis 官方组织的 rueidis）。大厂做法未找到可核对来源（未验证）。**待用户确认后写入**。
+4. **前端错误送 GlitchTip**（frontend-dev、fullstack-dev 的 `sentry` 插件）：评估结论是值得接，作为独立任务。做法：为前端单独建 GlitchTip project（与后端分开告警），先只上报未捕获异常并设置采样率，验证 source map 与 traceId 串联（前端请求头带 `X-Request-ID`，后端已从 requestid 中间件取值；Fiber 需 `ContextKey` 与 `application.trace.requestID` 一致）后再扩大范围。成本：浏览器噪音（扩展、网络中断）需采样与过滤，DSN 暴露在前端需限流。前端 SDK（`@sentry/browser` 等）上报 GlitchTip 未验证（只验证过 Go SDK）。
 
-## 三、决定记录（2026-10-23）
+## 三、决定记录
 
 | 主题 | 决定 | 落点 |
 |---|---|---|
@@ -47,6 +39,18 @@ FiberHouse 错误进入 GlitchTip 已按用户决定实现（2026-10-24）：分
 | 配置中的未验证内容 | 不得出现；无一手依据的移入本文件第四节；`anti-patterns.md`「评审经验」条目不动 | 全部场景包 |
 | path rules 覆盖不到 Redis 代码（原 gRPC 5、Redis 8） | `go-redis` 只在 `module/<模块>/cache/` 与通用缓存组件中 import，service 不 import；service 的「先更新数据库再删缓存」写进 layering；项目用 golangci-lint 时以 depguard 机械检查；完整分层示例写入 `cache-design` | `CLAUDE.md`（两份）目录表、`rules/go/layering.md`、`go-new-module`（含 `references/depguard.yml`）、`cache-design/references/layered-examples.md` |
 | Redis 单实例内存上限（原 Redis 9） | 维持 25GB 经验值；新增资源配置规则：单实例与集群都先询问用户可用资源上限，结合业务现状评估，给出带计算过程的建议，由用户或工程师最终决定；数值为通用建议 | `middleware-ops/SKILL.md` 通用约定、`middleware-ops/references/redis.md`、`cache-design/SKILL.md` 第 5 节 |
+
+**FiberHouse 框架取舍**（2026-10-26，用户在 FiberHouse 仓库决定并实施，`main` 已推送，tag `v1.2.0`；backend-dev `rules/framework/fiberhouse.md` 已改为引用 v1.2.0）：
+
+| 原问题 | 决定 | FiberHouse 提交 |
+|---|---|---|
+| 可预期的 4xx 业务错误以 ERROR 记录 | 框架按错误对应的 HTTP 状态定级：`ValidateException`、`Exception`（恒为 400）与 4xx 记 WARN，5xx 记 ERROR；panic 路径与 ErrorHandler 用同一分类 | `63655b8`、`153971a` |
+| 堆栈放在 `message` | 堆栈移到 `stack` 字段，`message` 保持错误文本；错误另写入 zerolog 的 `error` 字段，GlitchTip 生成带堆栈的 exception（GlitchTip 6.2.6 端到端验证） | `3171753`、`c9a3b9d` |
+| 同一错误产生两个事件 | Fiber 访问日志 4xx、5xx 记 WARN，错误只由 Recover 记一次 ERROR；代价：handler 自行 `SendStatus(500)` 不再上报 | `e499c2e` |
+| 示例日志 `traceId` 为空 | 先取 requestid 中间件存入上下文的值，为空再退回请求头（端到端验证） | `71420fd` |
+| 示例启动时有 ERROR | 跳过没有 provider 的未绑定 manager | `32a820d` |
+| 分支合并与版本 | 合并入 `main`，发布 `v1.2.0`（经 proxy.golang.org 解析并编译通过，2026-10-26）；远端分支保留 | `99b68ac` |
+| `DefaultStackTraceHandler` 改写包级变量 | 每次调用从 AppConfig 读取，不再写包级变量（附 race 测试） | `54b9a64` |
 
 ## 四、待验证（已移出配置）
 
@@ -90,10 +94,10 @@ FiberHouse 错误进入 GlitchTip 已按用户决定实现（2026-10-24）：分
 
 - Gemini 方案的修正：GlitchTip 不需要约 1GB；Sentry 自建最低 14GB（`errors-only` 7GB）；Sentry Developer 免费版 1 个用户、告警只发 email；Promtail 2026-03-02 EOL，改 Alloy；Loki 不开 compactor `retention_enabled` 永久保留；Prometheus 默认保留 15d；Docker `json-file` 默认 `max-size=-1` 不轮转（`local` 驱动默认每容器 100MB）。Fly.io / Render 免费托管 Uptime Kuma 未验证。
 - GlitchTip 6.2.6 告警收件者（`apps/alerts/constants.py`）：email、Slack 兼容 webhook、Discord、Google Chat、ntfy、Teams、Zulip、飞书；**没有 Telegram**。
-- FiberHouse v1.1.1（fiber v2.52.16）：全局 zerolog 未开 `Caller()`，默认无行号；事件级 `.Caller()` 经 `LoggerWrapper` 得到正确行号；替换 `GetZeroLogger()` 指向的 logger 加 Caller 也生效（启动时已注册的 Origin 子 logger 未测）。ErrorHandler 中 `ErrorStack()` 只有框架调用链，不含 error 产生行与 handler 行；recover 的 defer 中堆栈含 panic 行。`DefaultStackTraceHandler` 的类型 switch 无 `default`，非 error 的 panic 值（如字符串）不记录日志（读码推论，未实测）。
+- FiberHouse v1.1.1（fiber v2.52.16）：全局 zerolog 未开 `Caller()`，默认无行号；事件级 `.Caller()` 经 `LoggerWrapper` 得到正确行号；替换 `GetZeroLogger()` 指向的 logger 加 Caller 也生效（启动时已注册的 Origin 子 logger 未测）。ErrorHandler 中 `ErrorStack()` 只有框架调用链，不含 error 产生行与 handler 行；recover 的 defer 中堆栈含 panic 行。`DefaultStackTraceHandler` 的类型 switch 无 `default`，非 error 的 panic 值（如字符串）不记录日志（读码推论，未实测；`41324d4` 已改为记录，含于 v1.2.0）。
 - sentry-go v0.50.0 → GlitchTip：panic 经 `Hub.Recover` 定位到 panic 行；普通 `errors.New` / `fmt.Errorf` 只定位到调用 `CaptureException` 处；`pkg/errors`（已归档）、`go-errors/errors` v1.5.1、`x/xerrors` 产生的 error 定位到产生行。sentry-go 官方有 `fiber`、`fiberv3`、`gin`、`grpc`、`zerolog`、`slog` 集成。
 
-**场景安装后复验**（2026-10-24，最终版本）：`install-claude-project.sh -N` 把 backend-dev、dev-ops 装到临时项目，14 项检查通过（插件移除、GlitchTip MCP 条目、docker permissions、FiberHouse 规则的 `WithLogWriters` 与 `@39cba6c`、可观测性文件）；从安装路径 `docker compose up` 外部探测机，五个服务正常，`/mcp` 未认证返回 401；GlitchTip 告警经 relay 发往真实 Telegram API（假 token 返回 401，链路可达）。`go get github.com/lamxy/fiberhouse@39cba6c` 经 GOPROXY 解析为伪版本并编译通过。交叉审查（独立子代理）无 blocker，4 项 should-fix 已修正。
+**场景安装后复验**（2026-10-24，最终版本）：`install-claude-project.sh -N` 把 backend-dev、dev-ops 装到临时项目，14 项检查通过（插件移除、GlitchTip MCP 条目、docker permissions、FiberHouse 规则的 `WithLogWriters` 与 `@39cba6c`、可观测性文件）；从安装路径 `docker compose up` 外部探测机，五个服务正常，`/mcp` 未认证返回 401；GlitchTip 告警经 relay 发往真实 Telegram API（假 token 返回 401，链路可达）。`go get github.com/lamxy/fiberhouse@39cba6c` 经 GOPROXY 解析为伪版本并编译通过。（2026-10-26 规则已改为引用 `v1.2.0`。）交叉审查（独立子代理）无 blocker，4 项 should-fix 已修正。
 
 **版本约束**：Go 1.25 模块最高 go-redis v9.22.0（v9.23.0 要求 go ≥ 1.26）、x/sync v0.23.x（v0.24.0 要求 go ≥ 1.26）。
 
