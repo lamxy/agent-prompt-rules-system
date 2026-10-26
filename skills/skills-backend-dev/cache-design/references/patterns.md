@@ -124,7 +124,7 @@ func WithLock(ctx context.Context, rdb redis.UniversalClient, key string, ttl ti
 
 - 不需要续期的短任务可去掉续期 goroutine，`ttl` 取业务耗时上限的数倍。
 - 续期偶发网络错误时继续尝试，按本地记录的有效期在锁过期前取消业务 ctx；锁被他人持有时 `renewScript` 返回 0，立即取消。业务代码必须检查 ctx。复测（`ttl` 300ms）：持续续期的 700ms 任务正常完成；锁被改写后业务 ctx 立即取消；续期全部失败时 200ms 取消，此时锁剩余约 100ms。
-- 项目最低 Redis 版本 ≥ 8.4 时，可用 `DELEX key IFEQ token` 释放、`SET key token IFEQ token PX ttl` 续期，替代上面两段 Lua（官方 `redis/docs`：两者 8.4.0 引入，分布式锁页推荐 `DELEX`）。实测 Redis 8.10.2：值相同时执行、值不同或 key 不存在时不执行；7.4.11 报语法错误或未知命令。go-redis v9.22.0 对应 `DelExArgs`、`SetIFEQ`（源码注释标为 experimental）。存在低于 8.4 的实例或版本混用时保留 Lua；`rueidislock`、`bsm/redislock` 仍用 Lua 校验。
+- 项目最低 Redis 版本 ≥ 8.4 时，可用 `DELEX key IFEQ token` 释放、`SET key token IFEQ token PX ttl` 续期，替代上面两段 Lua（官方分布式锁页推荐 `DELEX`；go-redis 的 `SetIFEQ` 标为 experimental）。存在低于 8.4 的实例时保留 Lua。主流锁库（Redisson、redis-py、rueidislock、bsm/redislock）目前仍用 Lua。
 
 ## 4. 计数器、限流、排行榜、延时任务
 

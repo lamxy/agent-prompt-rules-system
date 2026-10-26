@@ -6,14 +6,14 @@
 
 ## 一、待确认
 
-暂无。原 7 条 FiberHouse 框架取舍已于 2026-10-26 由用户在 FiberHouse 仓库决定并实施，见第三节「FiberHouse 框架取舍」；前端错误是否送 GlitchTip 已评估，转入第二节待办。
+暂无。原 7 条 FiberHouse 框架取舍已于 2026-10-26 由用户在 FiberHouse 仓库决定并实施，见第三节「FiberHouse 框架取舍」；前端错误是否送 GlitchTip 已评估并决定暂缓，见第二节。
 
-## 二、待办（已决定，需后续实施）
+## 二、待办（均已完成或暂缓）
 
-1. **可观测性重写**：已完成（2026-10-24）。落点 dev-ops `CLAUDE.md`、`middleware-ops/references/{observability,monitoring,grpc}.md`、`assets/observability/`（两份 compose 经 `docker compose` 启动验证，转发服务端到端验证）；backend-dev `rules/go/logging.md`、`rules/framework/fiberhouse.md`。Beszel hub 与 agent 的连接未实测，文档指向官方步骤。
-2. **移除 K8s，改为 Docker**：已完成（2026-10-24）。删除 K8s MCP 模板与只读配置，dev-ops permissions 改为 Docker 命令，gRPC 部署文档改为 Compose 版；`GOMEMLIMIT`、`GOMAXPROCS` 已在 `--memory` / `--cpus` 容器中实测。用户级 `settings/settings.user.json` 中的 `kubectl get/describe` 只读放行未改动。
-3. **Redis 8.4 起的 `DELEX` / `SET IFEQ`**：已核对——官方 `redis/docs` 标注两者 since 8.4.0，分布式锁页推荐 `DELEX key IFEQ token`；Redis 8.10.2 实测语义正确、7.4.11 不支持；go-redis v9.22.0 源码有 `DelExArgs`、`SetIFEQ`（后者注释标 experimental）；`rueidislock`、`bsm/redislock` 仍用 Lua 校验。建议：模板维持 Lua，`patterns.md` 补一条「最低版本 ≥ 8.4 时可改用」；客户端维持 go-redis（同级：redigo、Redis 官方组织的 rueidis）。大厂做法未找到可核对来源（未验证）。**待用户确认后写入**。
-4. **前端错误送 GlitchTip**（frontend-dev、fullstack-dev 的 `sentry` 插件）：评估结论是值得接，作为独立任务。做法：为前端单独建 GlitchTip project（与后端分开告警），先只上报未捕获异常并设置采样率，验证 source map 与 traceId 串联（前端请求头带 `X-Request-ID`，后端已从 requestid 中间件取值；Fiber 需 `ContextKey` 与 `application.trace.requestID` 一致）后再扩大范围。成本：浏览器噪音（扩展、网络中断）需采样与过滤，DSN 暴露在前端需限流。前端 SDK（`@sentry/browser` 等）上报 GlitchTip 未验证（只验证过 Go SDK）。2026-10-26 已深入分析并实测，修正了 traceId 方向、限流与撤销 key 的做法，见 `2026-10-26-frontend-glitchtip-analysis.md`。**2026-10-26 用户决定暂不接入**：项目尚未验证可行性，等上线并有用户、确有必要时再按该报告实施；前端只需在异常时能取到请求 id，用于查服务端日志。
+1. **可观测性重写**：已完成（2026-10-24）。落点 dev-ops `CLAUDE.md`、`middleware-ops/references/{observability,monitoring,grpc}.md`、`assets/observability/`（两份 compose 经 `docker compose` 启动验证，转发服务端到端验证）；backend-dev `rules/go/logging.md`、`rules/framework/fiberhouse.md`。Beszel hub 与 agent 的连接 2026-10-26 补测：Beszel 0.21.1，公钥正确时 hub 经 SSH 连上 agent 并显示在线、回传指标；公钥不符时 agent 拒绝、hub 显示离线。
+2. **移除 K8s，改为 Docker**：已完成（2026-10-24）。删除 K8s MCP 模板与只读配置，dev-ops permissions 改为 Docker 命令，gRPC 部署文档改为 Compose 版；`GOMEMLIMIT`、`GOMAXPROCS` 已在 `--memory` / `--cpus` 容器中实测。用户级 `settings/settings.user.json` 中的 `kubectl get/describe` 放行 2026-10-26 移除：当前阶段不用 K8s，且 `kubectl get` 可读出 Secret 内容；本机镜像 `dot_claude/settings.json` 不动。
+3. **Redis 8.4 起的 `DELEX` / `SET IFEQ`**：已完成（2026-10-24，`511086d`）。`cache-design/references/patterns.md` 补充「最低版本 ≥ 8.4 时可改用」，锁模板维持 Lua，客户端维持 go-redis。原「大厂做法未验证」改为核对主流锁库（2026-10-26，各仓库默认分支源码）：Redisson 的 `RedissonLock` 解锁、redis-py 的 `lock.py` 仍用 Lua，`DELEX` 只作为普通命令提供（Redisson `RBucket.compareAndDelete`）。
+4. **前端错误送 GlitchTip**：暂缓（2026-10-26 用户决定）。项目尚未验证可行性，等上线、有用户且确有必要时，再按 `2026-10-26-frontend-glitchtip-analysis.md` 实施；届时一并处理 frontend-dev、fullstack-dev 的 `sentry` 插件（其 MCP 连不上自建 GlitchTip）。原方案中「前端请求头带 `X-Request-ID`」已否决，见第三节「请求 id 传递」。
 
 ## 三、决定记录
 
@@ -36,11 +36,13 @@
 | 淘汰策略 | 按实例用途：纯缓存 `allkeys-lru`（官方推荐默认，命中率不佳再对比 LFU），混存 `volatile-lru`；新实例显式配置 | `middleware-ops/references/redis.md` |
 | Redis Stream | 维持：Redis 不作为消息队列；Pub/Sub 只用于可丢的信号 | `rules/redis.md`、`mq-design` |
 | 分布式锁 | 维持 `SET NX PX` + Lua 校验释放 / 续期；正确性由数据库唯一约束或版本号兜底；不用 Redlock、不引入 etcd | `rules/redis.md`、`cache-design/references/patterns.md` |
+| 请求 id 传递 | 最外层代理（或直接对外的后端）生成，不采信客户端传入值；写回响应头，经 ctx 与出站请求、gRPC metadata、消息 header 传递；前端只读响应头并在错误提示中显示 | `rules/go/logging.md`、frontend-dev / dev-ops `CLAUDE.md`、`observability.md`「请求 id」 |
+| 规则的写法 | 只写方向与核心约定，不绑依赖版本、不堆细节；通用规则不写具体框架，框架差异放各框架规则；实测细节留在 `docs/plans` | 全部场景包 |
 | 配置中的未验证内容 | 不得出现；无一手依据的移入本文件第四节；`anti-patterns.md`「评审经验」条目不动 | 全部场景包 |
 | path rules 覆盖不到 Redis 代码（原 gRPC 5、Redis 8） | `go-redis` 只在 `module/<模块>/cache/` 与通用缓存组件中 import，service 不 import；service 的「先更新数据库再删缓存」写进 layering；项目用 golangci-lint 时以 depguard 机械检查；完整分层示例写入 `cache-design` | `CLAUDE.md`（两份）目录表、`rules/go/layering.md`、`go-new-module`（含 `references/depguard.yml`）、`cache-design/references/layered-examples.md` |
 | Redis 单实例内存上限（原 Redis 9） | 维持 25GB 经验值；新增资源配置规则：单实例与集群都先询问用户可用资源上限，结合业务现状评估，给出带计算过程的建议，由用户或工程师最终决定；数值为通用建议 | `middleware-ops/SKILL.md` 通用约定、`middleware-ops/references/redis.md`、`cache-design/SKILL.md` 第 5 节 |
 
-**FiberHouse 框架取舍**（2026-10-26，用户在 FiberHouse 仓库决定并实施，`main` 已推送，tag `v1.2.0`；backend-dev `rules/framework/fiberhouse.md` 已改为引用 v1.2.0）：
+**FiberHouse 框架取舍**（2026-10-26，用户在 FiberHouse 仓库决定并实施，`main` 已推送，tag `v1.2.0`；之后 `v1.3.0` 加入下表最后一行；backend-dev `rules/framework/fiberhouse.md` 已改为不绑版本，使用最新已发布版本）：
 
 | 原问题 | 决定 | FiberHouse 提交 |
 |---|---|---|
@@ -51,6 +53,7 @@
 | 示例启动时有 ERROR | 跳过没有 provider 的未绑定 manager | `32a820d` |
 | 分支合并与版本 | 合并入 `main`，发布 `v1.2.0`（经 proxy.golang.org 解析并编译通过，2026-10-26）；远端分支保留 | `99b68ac` |
 | `DefaultStackTraceHandler` 改写包级变量 | 每次调用从 AppConfig 读取，不再写包级变量（附 race 测试） | `54b9a64` |
+| 请求 id 命名与兜底（`v1.3.0`） | 日志字段由 `traceId` 改名 `requestId`，访问日志也记录；取值顺序：中间件 → 请求头 `X-Request-ID` → 与配置同名的请求头 | `00d9e6b`、`e984ddc` |
 
 ## 四、待验证（已移出配置）
 
@@ -97,7 +100,13 @@
 - FiberHouse v1.1.1（fiber v2.52.16）：全局 zerolog 未开 `Caller()`，默认无行号；事件级 `.Caller()` 经 `LoggerWrapper` 得到正确行号；替换 `GetZeroLogger()` 指向的 logger 加 Caller 也生效（启动时已注册的 Origin 子 logger 未测）。ErrorHandler 中 `ErrorStack()` 只有框架调用链，不含 error 产生行与 handler 行；recover 的 defer 中堆栈含 panic 行。`DefaultStackTraceHandler` 的类型 switch 无 `default`，非 error 的 panic 值（如字符串）不记录日志（读码推论，未实测；`41324d4` 已改为记录，含于 v1.2.0）。
 - sentry-go v0.50.0 → GlitchTip：panic 经 `Hub.Recover` 定位到 panic 行；普通 `errors.New` / `fmt.Errorf` 只定位到调用 `CaptureException` 处；`pkg/errors`（已归档）、`go-errors/errors` v1.5.1、`x/xerrors` 产生的 error 定位到产生行。sentry-go 官方有 `fiber`、`fiberv3`、`gin`、`grpc`、`zerolog`、`slog` 集成。
 
-**场景安装后复验**（2026-10-24，最终版本）：`install-claude-project.sh -N` 把 backend-dev、dev-ops 装到临时项目，14 项检查通过（插件移除、GlitchTip MCP 条目、docker permissions、FiberHouse 规则的 `WithLogWriters` 与 `@39cba6c`、可观测性文件）；从安装路径 `docker compose up` 外部探测机，五个服务正常，`/mcp` 未认证返回 401；GlitchTip 告警经 relay 发往真实 Telegram API（假 token 返回 401，链路可达）。`go get github.com/lamxy/fiberhouse@39cba6c` 经 GOPROXY 解析为伪版本并编译通过。（2026-10-26 规则已改为引用 `v1.2.0`。）交叉审查（独立子代理）无 blocker，4 项 should-fix 已修正。
+**场景安装后复验**（2026-10-24，最终版本）：`install-claude-project.sh -N` 把 backend-dev、dev-ops 装到临时项目，14 项检查通过（插件移除、GlitchTip MCP 条目、docker permissions、FiberHouse 规则的 `WithLogWriters` 与 `@39cba6c`、可观测性文件）；从安装路径 `docker compose up` 外部探测机，五个服务正常，`/mcp` 未认证返回 401；GlitchTip 告警经 relay 发往真实 Telegram API（假 token 返回 401，链路可达）。`go get github.com/lamxy/fiberhouse@39cba6c` 经 GOPROXY 解析为伪版本并编译通过。（2026-10-26 规则已改为不绑版本。）交叉审查（独立子代理）无 blocker，4 项 should-fix 已修正。
+
+**请求 id 与 Beszel 实测**（2026-10-26）：
+- Nginx 1.29.8（`nginx:1.29-alpine`）：`proxy_set_header X-Request-ID $request_id` 覆盖客户端伪造的值，上游收到的、访问日志 `rid=` 与响应头三者一致；`proxy_hide_header` + `add_header … always` 时响应头只有一个值，代理自己返回的 502 也带；`location` 内另写 `add_header` 后该 location 的响应不再带上层的 `X-Request-ID`；`$request_time` 可用。
+- Fiber v2.52.16：`requestid` 原样采信请求头（伪造值进入 Locals 与响应头），在其前删除请求头后由中间件重新生成；`c.UserContext()` 默认不含请求 id，`SetUserContext` 后可取到；`utils.UUID` 为「随机种子 + 递增计数」（源码，连续两次只差首字节）。Gin v1.12.0 + gin-contrib/requestid v1.0.6：`c.Request.WithContext` 后 service 可从 ctx 取到。`context.WithoutCancel` 在原 ctx 取消后保留值。kafka-go v0.4.51 `Message.Headers`、amqp091-go v1.16.0 `Publishing.Headers` 编译核对。
+- FiberHouse（main，`e984ddc`）：`resolveRequestID` 顺序为中间件值 → `X-Request-ID` → 与配置同名的请求头；核心不把请求 id 放入 service 的 ctx（仅 hertz 示例如此）。
+- Beszel 0.21.1：hub 首次启动在数据目录生成 `id_ed25519`，`ssh-keygen -y -f` 导出的公钥作 agent 的 `KEY` 后 hub 经 SSH 连上、显示在线并回传指标；换成其他公钥时 agent 日志 `Invalid SSH key`、hub 显示离线。
 
 **版本约束**：Go 1.25 模块最高 go-redis v9.22.0（v9.23.0 要求 go ≥ 1.26）、x/sync v0.23.x（v0.24.0 要求 go ≥ 1.26）。
 
@@ -117,6 +126,13 @@ docker rmi redis:8 redis:7.4 bufbuild/buf:latest
 
 ```sh
 docker network rm obs-net; docker rm mcp-gt
+```
+
+2026-10-26 前端错误追踪与请求 id 实测：容器 `fegt-gt`、`fegt-pg`（`--rm`，`docker stop` 被拒）、网络 `fegt-net`；镜像 `nginx:1.29-alpine`：
+
+```sh
+docker stop fegt-gt fegt-pg; docker network rm fegt-net
+docker network rm besz-net   # 2026-10-26 Beszel 连接补测，容器已停止删除
 ```
 
 2026-10-23 path rules 与分层示例实测：容器 `rcase-redis`（`--rm`，停止即删除）、网络 `rcase-net`，镜像 `golangci/golangci-lint:v2.5.0`：

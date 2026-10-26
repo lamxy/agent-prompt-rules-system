@@ -145,8 +145,6 @@
       "Bash(redis-cli ping)",
       "Bash(redis-cli info*)",
       "Bash(redis-cli dbsize)",
-      "Bash(kubectl get *)",
-      "Bash(kubectl describe *)",
       "Bash(adb devices)",
       "Bash(xcrun simctl list)",
       "mcp__codegraph__*",

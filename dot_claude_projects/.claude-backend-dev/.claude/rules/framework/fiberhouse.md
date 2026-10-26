@@ -9,7 +9,7 @@ paths:
 
 # FiberHouse 框架
 
-适用于基于 [FiberHouse](https://github.com/lamxy/fiberhouse) 的项目。不使用 FiberHouse 的项目删除本文件。使用最新已发布版本（`go get github.com/lamxy/fiberhouse@latest`），具体配置项与 API 以框架源码和文档为准。
+适用于基于 [FiberHouse](https://github.com/lamxy/fiberhouse) 的项目。不使用 FiberHouse 的项目删除本文件。使用最新已发布版本，具体配置项与 API 以框架源码和文档为准。
 
 - 能力只通过显式注册进入启动链：`ApplicationRegister`、`ModuleRegister`、`TaskRegister` 与 Provider / Manager。框架不扫描目录，新增模块、路由、中间件后要在对应注册器或 Provider 中接入。
 - `Default()` 不会自动加入 `DefaultProviders()` / `DefaultPManagers(ctx)`，需要时由应用显式加入。
@@ -28,4 +28,4 @@ paths:
 - 定级按 HTTP 状态：4xx（含 `Exception`、`ValidateException`）记 WARN，5xx 与未知错误记 ERROR；只有 ERROR 进入错误追踪。因此服务端故障（数据库、下游不可用）不包成 `Exception`，直接返回 error（Gin 用 `c.Error`）；自行写出 500 不经框架捕获，不会上报。
 - 错误追踪：经 `WithLogWriters` 接入 sentry-go 的 `sentryzerolog`，DSN 由 `SENTRY_DSN` 注入；writer 由框架关闭。
 - `return err` 的堆栈只有框架调用链，出处靠 `%w` 附加的上下文判断；panic 的堆栈含出错行。
-- 请求 id：字段名、中间件的上下文键、兜底请求头名都由 `application.trace.requestID` 决定（默认 `requestId`）；Fiber `requestid` 的 `ContextKey` 从该配置读取，不写死。访问日志与错误日志带同一个值，传递约定见 `rules/go/logging.md`「请求 id 传递」。
+- 请求 id：日志字段名由 `application.trace.requestID` 决定（默认 `requestId`），Fiber `requestid` 的 `ContextKey` 从该配置读取、不写死；中间件没给值时框架退回请求头 `X-Request-ID`。没有反向代理时，在 requestid 中间件之前丢弃客户端传入的 `X-Request-ID`（中间件与框架兜底都会原样采信）。传递约定见 `rules/go/logging.md`「请求 id 传递」。

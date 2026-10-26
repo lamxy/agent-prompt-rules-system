@@ -74,7 +74,7 @@ add_header X-Request-ID $request_id always;   # always：错误响应也带
 
 ## 主机与容器（Beszel）
 
-- hub 在外部探测机，agent 在业务主机：agent 只读挂载 `docker.sock`，`KEY` 填在 hub 中添加主机时给出的公钥；agent 监听端口只对 hub 所在主机开放。连接步骤以 beszel.dev 的 Getting Started 为准。
+- hub 在外部探测机，agent 在业务主机：agent 只读挂载 `docker.sock`，`KEY` 填在 hub 中添加主机时给出的公钥；agent 监听端口只对 hub 所在主机开放。hub 经 SSH 主动连接 agent，公钥不符时 agent 拒绝、hub 显示离线；`KEY` 也可从 hub 数据目录的 `id_ed25519` 用 `ssh-keygen -y` 导出。
 - 告警至少覆盖：磁盘使用率、内存使用率、主机离线；阈值写明依据。
 
 ## Go 服务的容器参数
