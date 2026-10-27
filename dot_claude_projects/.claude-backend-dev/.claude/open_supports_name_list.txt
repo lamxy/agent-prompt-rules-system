@@ -6,10 +6,20 @@
 #
 # 全局工具（task-master、gstack）在 dot_claude_projects/.claude/ 的全局清单，
 # 用 sh scripts/install-claude-project.sh -g 安装；mattpocock-skills 为全局插件。
+#
+# 主场景／第二场景的划分见 open_supports/INDEX.md「建议场景」。本场景是某支持包的
+# 第二场景时，条目一律以注释形式录入，并说明适用条件，需要时取消注释再安装。
 
-# 代码知识图谱：项目级 MCP，前后端都需要；安装后在项目中执行 codegraph init 建立索引。
+# 【主场景】代码知识图谱：项目级 MCP；安装后在项目中执行 codegraph init 建立索引。
 colbymchenry/codegraph --target=claude --location=local {PROJECT_DIR}
 
-# 可选的规格／工作流框架：同一项目最多启用一个，取消注释后再安装。
-# Fission-AI/OpenSpec --init-project --tools=claude {PROJECT_DIR}
+# 【主场景】规格／工作流框架 OpenSpec（默认启用）：规格以「需求 + 场景（WHEN/THEN）」描述系统行为，
+# 与本场景「先改契约（apivo、OpenAPI、proto）再实现」的约定一致；规格存放在项目的 openspec/ 下。
+# 它与全局 superpowers 一样规定「规划 → 拆解 → 执行」流程；同一项目只启用一套规格框架，
+# 改用 gsd-core 时注释本行。注意：安装脚本会先全局安装或升级 openspec CLI（npm install -g），
+# 再在项目中执行 openspec init。
+Fission-AI/OpenSpec --init-project --tools=claude {PROJECT_DIR}
+
+# 【第二场景】gsd-core（主场景为 frontend-dev）：需要跨多个阶段的长程开发、
+# 希望由全新上下文子代理分波执行并按阶段建 PR 时启用；启用时注释上方 OpenSpec（二选一）。
 # open-gsd/gsd-core --claude --local {PROJECT_DIR}

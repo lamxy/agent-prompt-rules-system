@@ -6,11 +6,14 @@
 #
 # 全局工具（task-master、gstack）在 dot_claude_projects/.claude/ 的全局清单，
 # 用 sh scripts/install-claude-project.sh -g 安装；mattpocock-skills 为全局插件。
+#
+# 主场景／第二场景的划分见 open_supports/INDEX.md「建议场景」。本场景是某支持包的
+# 第二场景时，条目一律以注释形式录入，并说明适用条件，需要时取消注释再安装。
 
-# PM Skills（ost_phuryn_pm-skills）：以 --scope project 安装为本项目的 Claude Code 插件，
+# 【主场景】PM Skills（ost_phuryn_pm-skills）：以 --scope project 安装为本项目的 Claude Code 插件，
 # 写入项目 .claude/settings.json，不影响其他项目。默认只装 PRD 场景常用的 5 个插件；
 # 需要 GTM、增长等其他插件时，在 --plugins 中追加（pm-go-to-market、pm-marketing-growth、
-# pm-toolkit、pm-ai-shipping）。
+# pm-toolkit）；上线前审查用的 pm-ai-shipping 见 dev-ops 场景清单。
 phuryn/pm-skills --client=claude-code --location=local --plugins=pm-product-discovery,pm-product-strategy,pm-execution,pm-market-research,pm-data-analytics {PROJECT_DIR}
 
 # gstack 已全局安装，其中的产品类命令（/office-hours、/plan-ceo-review）可直接使用。

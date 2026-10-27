@@ -6,5 +6,14 @@
 #
 # 全局工具（task-master、gstack）在 dot_claude_projects/.claude/ 的全局清单，
 # 用 sh scripts/install-claude-project.sh -g 安装；mattpocock-skills 为全局插件。
+#
+# 主场景／第二场景的划分见 open_supports/INDEX.md「建议场景」。本场景是某支持包的
+# 第二场景时，条目一律以注释形式录入，并说明适用条件，需要时取消注释再安装。
 
-# 目前没有专属于 DevOps 场景的支持包；task-master 等全局工具已覆盖任务跟踪。
+# 本场景没有主场景支持包；task-master、gstack（/land-and-deploy、/canary 等）等全局工具已可用。
+
+# 【第二场景】PM Skills 的 pm-ai-shipping 插件（支持包主场景为 prd-design）：上线前的静态审查与
+# 签核材料——/ship-check 汇总系统文档、安全与性能静态审计、测试覆盖地图，生成 shipping packet。
+# 它审查的是应用代码，适合本项目即应用仓库、上线前需要一份审查记录时启用。
+# 与已启用的 semgrep、pr-review-toolkit，以及全局 security-guidance、open-code-review、gstack /cso 有重叠。
+# phuryn/pm-skills --client=claude-code --location=local --plugins=pm-ai-shipping {PROJECT_DIR}
