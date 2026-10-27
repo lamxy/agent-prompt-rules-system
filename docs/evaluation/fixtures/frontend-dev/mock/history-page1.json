@@ -1,0 +1,1 @@
+{"items":[{"id":"h1","type":"earn","amount":120,"created_at":"2026-10-20T10:00:00Z","remark":"订单 1001 确认收货"},{"id":"h2","type":"spend","amount":-100,"created_at":"2026-10-21T09:30:00Z","remark":"订单 1002 抵扣"},{"id":"h3","type":"expire","amount":-20,"created_at":"2026-10-22T00:00:00Z"}],"total":3,"page":1,"page_size":20}

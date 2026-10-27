@@ -1,6 +1,15 @@
 # 场景配置评估、优化与验证：待办计划
 
-创建：2026-10-20　状态：待执行　关联：`docs/handoff/HANDOFF.md`「待办」
+创建：2026-10-20　状态：阶段 1 待手动执行（2026-10-27 审计简化）　关联：`docs/handoff/HANDOFF.md`「待办」
+
+## 2026-10-27 审计结论（与下文冲突时以此为准）
+
+- 阶段 1 只测四项：常驻上下文、安全边界、场景约定是否生效、不越界；任务缩减为每场景 3 个 ★ 任务 + 1 个反向任务，共 16 个。范围、推迟项与理由见 `docs/evaluation/2026-10-baseline.md` 第 1 节。
+- 由用户在本机正常的 Claude Code 中以交互模式手动执行，不设 `CLAUDE_CONFIG_DIR`、不用 `claude -p`；环境与真实使用一致（装支持包、场景插件、启用项目 MCP），对本机的影响由指南逐项提醒。步骤见 `docs/evaluation/manual-test-guide.md`，素材在 `docs/evaluation/fixtures/`。
+- 每个任务基线、优化后各最多跑 2 次。
+- 阶段 2 只针对阶段 1 发现的问题调研，不做 2.2 的全面调研。
+- 阶段 3 以同一指南重跑 16 个任务对比；盲评、Codex 对比、`skill-creator`、`claude plugin eval`、真实项目试用改为选做，视基线结果再决定。
+- 全局层评估（重复冲突）推迟到本机采用新全局设定之后；第三方插件名随指南 1.4 的插件安装一并核对。
 
 ## 目标
 
@@ -28,7 +37,7 @@
 | 全局 | 个人差异规则（Claude / Codex 两份） | `dot_claude/CLAUDE.md`、`scripts/multi_client_support/templates/` |
 | 场景 ×4 | settings（插件、permissions） | `settings/settings.project-<FLAG>.json`、`settings.local-<FLAG>.json` |
 | 场景 ×4 | 场景约定 | `claude_mds/CLAUDE-<FLAG>.md` |
-| 场景 ×2 | MCP（后端数据库、DevOps K8s） | `dot_mcp_jsons/` |
+| 场景 ×2 | MCP（后端数据库、GlitchTip） | `dot_mcp_jsons/` |
 | 场景 ×4 | agents（5～6 个/场景） | `agents/agents-<FLAG>/` |
 | 场景 ×4 | 自定义 skill（尚未编写） | `skills/skills-<FLAG>/` |
 | 场景 ×4 | 支持包清单（pm-skills、codegraph、OpenSpec/gsd-core 可选） | `dot_claude_projects/.claude-<FLAG>/` |
@@ -49,9 +58,9 @@
 ### 1.3 待办
 
 - [ ] 为四个场景写「典型任务清单」，作为评估与验证的共同基准（与 3.2 共用）
-- [ ] 在临时项目安装每个场景包（`install-claude-project.sh -f <FLAG> -t <tmp> -N`），记录 `/context` 各项占用
+- [ ] 在临时项目安装每个场景包（`install-claude-project.sh -f <FLAG> -t <项目>`，含支持包与场景插件，见手动测验指南第 1 节），记录 `/context` 各项占用
 - [ ] 汇总全局 + 场景启用后的全部 skill / agent / MCP 工具，按功能归类，标出重复与冲突
-- [ ] 实测 permissions：后端 deny 的数据库破坏性命令、DevOps ask 的 terraform/kubectl/helm 变更命令
+- [ ] 实测 permissions：后端 deny 的数据库破坏性命令、DevOps ask 的 terraform/docker 变更命令
 - [ ] 核对第三方市场插件名（`document-skills@anthropic-agent-skills`、pm-skills）
 - [ ] 对比场景包与各维度目录的差异，记录是否需要人工同步
 - [ ] 评估 fullstack-dev 是否需要场景包
@@ -80,7 +89,7 @@
 | PRD 与原型 | PRD 模板、需求追问、原型产出（线框、可交互原型）的成熟 skill；与设计工具的接入方式 |
 | 前端 | UI 实现与视觉验证（浏览器自动化、截图对比）、可访问性、性能；组件库与设计系统约定写法 |
 | 后端 | API 契约优先、数据库迁移与只读查询的安全做法；Go / Node.js 项目约定；MongoDB/Redis/MySQL/PostgreSQL MCP 的成熟方案 |
-| DevOps | CI/CD 与基础设施变更的人工确认机制；K8s / Terraform / 可观测性 MCP；事故响应流程 |
+| DevOps | CI/CD 与基础设施变更的人工确认机制；Docker Compose / Terraform / 可观测性 MCP；事故响应流程 |
 | 横向 | permissions 与 sandbox 配置范式；hooks 的典型用途与反模式；CLAUDE.md 的长度与写法；agent 定义的粒度 |
 | Codex | Codex 侧的 AGENTS.md 分层、skills、配置的推荐做法，哪些可与 Claude 共用 |
 
@@ -120,9 +129,9 @@
 | PRD 与原型 | 根据一段口述需求产出 PRD；把 PRD 拆成用户故事与验收标准；产出一页线框原型 |
 | 前端 | 按设计说明实现一个组件并做视觉验证；修复一个可访问性问题；对接一个后端 API |
 | 后端 | 设计并实现一个带数据库的 CRUD API；写一个数据库迁移；排查一个慢查询 |
-| DevOps | 为项目写 CI 流水线；为服务写 K8s 部署清单；根据告警做一次事故分析 |
+| DevOps | 为项目写 CI 流水线；为服务写 Docker Compose 部署；根据告警做一次事故分析 |
 
-**执行**：在 git worktree 或临时副本中用 headless 模式（`claude -p`）执行，基线与优化后各跑一次，同一任务至少重复 2 次以观察稳定性。
+**执行**：按 `docs/evaluation/manual-test-guide.md` 在专案集中以交互模式手动执行，基线与优化后各最多 2 次（第 1 次结果明确时不跑第 2 次）。
 
 **采集**：
 
@@ -164,7 +173,7 @@
 - 用 hook 记录 skill / agent 的实际触发情况，作为长期统计（先评估上下文与性能影响）
 - 长任务：ralph-loop、`/loop` 在真实项目中的适用边界
 - 记忆工具：配合用户另行测试的全局记忆工具，比较与 `remember` 的效果
-- MCP 安全：数据库 MCP 只读账号与 K8s 只读配置的实测流程，能否脚本化
+- MCP 安全：数据库 MCP 只读账号的实测流程，能否脚本化
 - 评估自动化：把 3.3 的标准任务与评分表做成可重复执行的脚本或 skill
 
 ---

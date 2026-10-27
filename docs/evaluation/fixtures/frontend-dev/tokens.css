@@ -1,0 +1,19 @@
+/* 设计 token：组件必须使用这些变量，不得硬编码颜色、间距、字号 */
+:root {
+  --color-primary: #1f6f50;
+  --color-on-primary: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #1c1f23;
+  --color-text-muted: #5b6470;
+  --color-danger: #b42318;
+  --color-border: #d0d5dd;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --radius-sm: 4px;
+  --radius-pill: 999px;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 18px;
+}

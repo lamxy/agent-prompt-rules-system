@@ -1,0 +1,5 @@
+GlitchTip Issue #482  level=error  first_seen=2026-10-25T13:02:11Z  last_seen=2026-10-25T13:19:47Z  events=1342  users=611
+title: dial tcp 10.0.2.15:3306: connect: connection refused
+culprit: service.(*OrderService).Create
+tags: environment=staging release=order-api@1.8.3 server_name=app-01
+request_id samples: 7f3c2a9e-01, 7f3c2a9e-02, 9b1d44c0-77

@@ -1,0 +1,54 @@
+openapi: 3.0.3
+info:
+  title: Points API
+  version: 1.0.0
+paths:
+  /api/points/history:
+    get:
+      summary: 积分明细（分页）
+      parameters:
+        - { name: page, in: query, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: page_size, in: query, required: true, schema: { type: integer, minimum: 1, maximum: 50 } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HistoryPage" }
+        "401":
+          description: 未登录
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "500":
+          description: 服务端错误；响应头 X-Request-ID 为请求 id
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+components:
+  schemas:
+    HistoryPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/HistoryItem" }
+        total: { type: integer }
+        page: { type: integer }
+        page_size: { type: integer }
+    HistoryItem:
+      type: object
+      required: [id, type, amount, created_at]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [earn, spend, expire] }
+        amount: { type: integer, description: 正数为获得，负数为使用或过期 }
+        created_at: { type: string, format: date-time }
+        remark: { type: string }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: integer }
+        message: { type: string }
