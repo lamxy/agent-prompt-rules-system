@@ -27,9 +27,40 @@ local > project > user
 分层原则：
 
 - **用户级只放所有项目都需要的插件**；和语言、框架、业务领域相关的插件放到项目级场景模板。插件在项目的 `.claude/settings.json` 中启用时只对该项目生效。
-- **不设默认工作流框架**：superpowers 在全局；OpenSpec、gsd-core 与它同类，同一项目启用多套会产生互相矛盾的指令，所以只在 `dot_claude_projects/` 清单中以注释形式提供，按需启用其一。
+- **规格框架按场景启用**：superpowers 在全局；OpenSpec（后端）、gsd-core（前端）在 `dot_claude_projects/` 场景清单中默认启用，同一项目只启用其中一套，见 [`dot_claude_projects/README.md`](../dot_claude_projects/README.md)。
 - **硬约束写在 `permissions`**：后端模板拒绝破坏性数据库命令，DevOps 模板对基础设施变更命令要求人工确认。
 - **市场统一**：`anthropics/claude-code`（`claude-code-plugins`）中的插件在官方市场 `claude-plugins-official` 都有同名版本，模板不再引用前者。
+
+### 插件池与分层（2026-10-28 集中梳理）
+
+汇总参考的全局插件配置、`settings.user.json` 与各场景模板后的完整插件池。市场规则：同一插件在多个市场都有时用 `@claude-plugins-official`；只有内置目录 `anthropic-plugin-directory` 提供时才用它（`typescript-native-lsp`）。
+
+| 插件 | 层级／场景 | 说明 |
+|------|-----------|------|
+| `superpowers`、`mattpocock-skills`、`andrej-karpathy-skills`、`ralph-loop` | 全局 | 工作流与工程方法 |
+| `context7`、`github`、`commit-commands` | 全局 | 文档查询与代码托管 |
+| `security-guidance`、`open-code-review` | 全局 | 质量与安全 |
+| `claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify` | 全局 | Claude Code 自身配置 |
+| `remember`、`session-report` | 全局 | 会话与记忆 |
+| `playground` | prd-design、frontend-dev | 单文件 HTML 原型与交互探索 |
+| `document-skills`（`@anthropic-agent-skills`） | prd-design | docx / pptx / xlsx / pdf 交付 |
+| `typescript-native-lsp`（`@anthropic-plugin-directory`）、`frontend-design`、`playwright`、`chrome-devtools-mcp`、`modern-web-guidance`、`sentry` | frontend-dev | 语言服务、UI 实现、浏览器验证、Web 最佳实践、错误追踪 |
+| `gopls-lsp`、`postman`、`mongodb`、`redis-development` | backend-dev | Go 语言服务、API 测试、MongoDB、Redis |
+| `semgrep` | backend-dev、dev-ops | 静态安全扫描 |
+| `terraform`、`sonatype-guide` | dev-ops | 基础设施即代码、依赖供应链安全 |
+| `pr-review-toolkit` | frontend-dev、backend-dev、dev-ops | PR 审查代理 |
+| `pyright-lsp`、`typescript-lsp` | 本地级可选（`false`） | 见下方本地级表 |
+| `figma`、`notion`、`miro`、`vercel`、`supabase`、`neon`、`mongodb-atlas`、`datadog`、`pagerduty`、`incident-io`、`cloudflare`、`aws-core` | 本地级可选（`false`） | 需要个人账号或托管服务 |
+
+不采用：
+
+| 插件 | 原因 |
+|------|------|
+| `code-review`（内置目录中为 `code-review-anthropics`） | PR 审查已有内置 `/code-review`、`pr-review-toolkit`、`open-code-review`、gstack `/review`，再加一套重叠过多 |
+| `mongodb-self-managed-mcp`（内置目录） | 与 `mongodb@claude-plugins-official` 同源（`mongodb/agent-skills` 的 `plugins/mongodb`），不重复收录 |
+| `@claude-code-plugins` 市场的 `commit-commands` 等 | 官方市场都有同名版本，不再声明该市场 |
+
+`settings/settings.project-<FLAG>.json` 与 `dot_claude_projects/.claude-<FLAG>/.claude/settings.json` 本次梳理后保持一致；之后仍按「分开维护」处理，除非明确要求再次对齐。
 
 ### 用户级（`-l user`）
 
@@ -57,7 +88,19 @@ local > project > user
 | `commit-commands`、`skill-creator`、`claude-md-management`、`security-guidance` 改用 `@claude-plugins-official` | 原来分别来自 `claude-code-plugins` 与内置插件目录；统一到官方市场，换机器也能复现 |
 | 删除 `claude-code-plugins` 市场 | 其插件官方市场都有 |
 
-`dot_claude/settings.json` 仍是本机设定的镜像，未做上述调整；要在本机采用新的全局设定，需手动执行 `install-settings.sh -l user`（会先备份）。这份设定还包含 `autoMode`、`skillOverrides`、沙箱路径，以及依赖本机 `rtk`、`~/.claude/skills/myhandoff/` 的 hooks，在其他机器上使用前请先确认这些依赖存在，或删除对应的 hook。
+`dot_claude/settings.json` 仍是本机设定的镜像，未做上述调整；要在本机采用新的全局设定，需手动执行 `install-settings.sh -l user`（会先备份）。
+
+这份设定保留了作者本机的环境与偏好，在其他机器上使用前逐项确认：
+
+| 项目 | 依赖或影响 | 其他机器上的处理 |
+|------|-----------|-----------------|
+| `PreToolUse` hook `rtk hook claude` | 本机安装的 `rtk` 命令，用于压缩命令输出 | 每次 Bash 调用前都会执行；没有 `rtk` 时安装它，或删除该 hook |
+| `Stop`、`StopFailure` hook | `~/.claude/skills/myhandoff/scripts/handoff-hook` | 由 `sh scripts/install.sh -l user` 随 `dot_claude/skills/myhandoff/` 安装；未安装时删除这两个 hook |
+| `SessionStart` hook `zsh -c '. ~/.zshrc'` | 在子 shell 中载入 `~/.zshrc`，执行完即退出，不会改变 Claude 的环境 | 非 zsh 环境会报错，可直接删除 |
+| `sandbox`（`filesystem`、`network`）、`excludedCommands` | 路径按 macOS 与作者的工具链（Go、Rust、Node、Python、Flutter）设定；`failIfUnavailable: true` 在沙箱无法启动时（缺依赖或平台不支持，如原生 Windows）让 Claude Code 启动即报错退出（[官方说明](https://code.claude.com/docs/en/settings-reference)） | 按自己的工具链调整路径；不支持沙箱的环境改为 `false`（命令改为不经沙箱执行） |
+| `permissions` | `allow` 放行了大量构建、包管理、`docker compose up/down`、`git push` 命令；`deny` 禁止所有 `docker rm`、`volume rm`、`network rm`、`prune` 等删除类命令 | 按自己的风险偏好删减；`deny` 跨作用域优先于项目级的 `ask`，见下方 dev-ops 说明 |
+| `autoMode.environment`、`defaultMode: auto` | 自动模式的环境描述按作者的前端 + Go 后端工作流编写 | 改写为自己的技术栈 |
+| `model`、`effortLevel`、`language`、`theme`、`tui`、`skillOverrides` | 个人偏好 | 按需修改 |
 
 全局工具中，gstack、task-master 不是插件，登记在全局清单 `dot_claude_projects/.claude/open_supports_name_list.txt`，用 `sh scripts/install-claude-project.sh -g` 安装，见 [`open_supports/INDEX.md`](../open_supports/INDEX.md)「全局工具」。场景的 settings 也已聚合进 `dot_claude_projects/.claude-<FLAG>/.claude/settings.json`，两处分开维护。
 
@@ -75,6 +118,7 @@ local > project > user
 - 后端的 MySQL、PostgreSQL 没有通用的官方插件，由 `dot_mcp_jsons/dot-mcp-json-backend-dev.json` 提供 MCP。
 - `typescript-native-lsp` 来自 Claude Code 内置插件目录（`@anthropic-plugin-directory`），无需声明市场；TypeScript 6 以下的项目需另装 `typescript-language-server`。
 - 插件需要的账号（Postman 等）在首次使用时按插件提示登录或配置。
+- dev-ops 的 `permissions.ask` 与全局设定同时安装时：权限按 `deny` → `ask` → `allow` 判定，且任一作用域的 `deny` 都先于其他作用域生效（[官方说明](https://code.claude.com/docs/en/permissions)）。因此 `settings.user.json` 的 `deny` 中已有的 `docker rm`、`docker volume rm`、`docker network rm`、`docker compose rm`、`docker system/image prune`（带参数）在 dev-ops 项目里会被直接拒绝而不是要求确认，需要时由人手动执行；`docker compose up/down`、`docker context use`、`terraform apply` 等仍会要求确认（全局只 `allow` 了 compose up/down，`ask` 先于 `allow`）。这些 `ask` 条目保留，供未安装本仓库全局设定的机器使用。
 - backend-dev、dev-ops 不启用 `sentry`（其 MCP 连接 sentry.io，不支持自建的 GlitchTip）与 `grafana-mcp`（起步阶段不部署 Grafana；升级到 Prometheus + Grafana 后再启用）；错误追踪查询改用 GlitchTip 内置 MCP（`dot_mcp_jsons/`）。frontend-dev 的 `sentry` 暂未调整。
 
 ### 本地级（`-l local`）
@@ -84,8 +128,8 @@ local > project > user
 | 文件 | `-s` 参数 | 可选插件 |
 |------|-----------|---------|
 | `settings.local-prd-design.json` | `prd-design` | `figma`、`notion`、`miro` |
-| `settings.local-frontend-dev.json` | `frontend-dev` | `figma`、`vercel` |
-| `settings.local-backend-dev.json` | `backend-dev` | `supabase`、`neon`、`mongodb-atlas`（托管数据库） |
+| `settings.local-frontend-dev.json` | `frontend-dev` | `figma`、`vercel`；`typescript-lsp`（项目级 `typescript-native-lsp` 不适用时的替代，启用时把后者设为 `false`） |
+| `settings.local-backend-dev.json` | `backend-dev` | `supabase`、`neon`、`mongodb-atlas`（托管数据库）；`pyright-lsp`（项目含 Python 代码时） |
 | `settings.local-dev-ops.json` | `dev-ops` | `datadog`、`pagerduty`、`incident-io`、`cloudflare`、`aws-core` |
 
 ### 参考文件
