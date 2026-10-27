@@ -1,8 +1,8 @@
 ---
 branch: main
-head: 968ddd2
+head: cff9bfe
 status: active
-updated: 2026-10-27
+updated: 2026-10-28
 ---
 # 进度交接
 
@@ -15,8 +15,9 @@ updated: 2026-10-27
 - 停在：2026-10-24 可观测性按起步阶段重写（Uptime Kuma、GlitchTip、Beszel、Dozzle、Telegram 转发，`21a4c0f`）、移除 K8s 改围绕 Docker（`304865c`）、FiberHouse 错误经附加 writer 进入 GlitchTip（`405408c`；FiberHouse 分支 `feature/logger-extra-writers` 已推送，头 `39cba6c`）、sentry / grafana-mcp 插件改为 GlitchTip MCP（`288cda3`）；12 个测试文件全过
 - 2026-10-26：FiberHouse 框架取舍 7 条已由用户在 FiberHouse 仓库实施并发布 `v1.2.0`，backend-dev `fiberhouse.md` 改为引用 v1.2.0，疑问文件第一节清空、前端错误送 GlitchTip 转为待办
 - 2026-10-26（续）：前端错误送 GlitchTip 分析后暂缓；新增请求 id 传递约定；FiberHouse 规则去版本绑定（不再引用 v1.2.0）
-- 2026-10-27：按用户指示推送 `main` 的全部累积提交（含本次交接补记）
-- 下一步：疑问文件第二节待办均已完成或暂缓，无待安排项；建议开始「场景配置评估」阶段 1 的典型任务清单
+- 2026-10-27：按用户指示推送 `main` 的全部累积提交，发布 v2.1.0（Latest，tag `3821dee`）
+- 2026-10-27～28：阶段 1 审计简化并写成手动测验指南（`b305f5d`）；settings 插件池梳理（`81e2b10`）；支持包按主／第二场景划分、场景包 README（`cff9bfe`）；均未推送
+- 下一步：用户按 `docs/evaluation/manual-test-guide.md` 手动执行阶段 1，逐场景说「总结 <场景>」，由 Claude 回填 `docs/evaluation/2026-10-baseline.md` 第 3 节
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -31,7 +32,7 @@ updated: 2026-10-27
 | 教学材料沉淀（gRPC、Go、Redis） | 完成，疑问已定稿 | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
 | backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；gRPC 规范 `5098a4e`（来自教学材料，用户企业 RPC 规范若有再补） |
 | 可观测性重写与 FiberHouse 错误追踪 | 完成；框架取舍已决定（FiberHouse `v1.2.0`） | `docs/plans/2026-10-22-learning-distill-questions.md` 第三节「FiberHouse 框架取舍」 |
-| 场景配置评估、优化与验证 | 待开始 | 三个阶段，清单见下方；方法论细节见 `docs/plans/2026-10-20-scenario-config-evaluation-plan.md` |
+| 场景配置评估、优化与验证 | **阶段 1 待用户手动执行** | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 待用户决定 | `sh scripts/install-settings.sh -l user -m overwrite`；`dot_claude/settings.json` 仍是本机设定镜像，未做插件分层调整 |
@@ -43,7 +44,8 @@ updated: 2026-10-27
 
 **阶段 1：现状评估**（产出 `docs/evaluation/2026-10-baseline.md`）
 
-- [ ] 为四个场景写「典型任务清单」（每场景 5～8 个），作为评估与验证的共同基准
+- [x] 为四个场景写「典型任务清单」：审计后为每场景 3 个 ★ 任务 + 1 个反向任务（`docs/evaluation/2026-10-baseline.md` 第 2 节）
+- [ ] 用户按手动测验指南执行 T1～T4，Claude 汇总回填第 3 节（以下各项按审计结论并入或推迟）
 - [ ] 在临时项目安装每个场景包（`install-claude-project.sh -f <FLAG> -t <tmp> -N`），用 `/context` 记录各项常驻上下文占用
 - [ ] 汇总全局 + 场景启用后的全部 skill / agent / MCP 工具，按功能归类，标出重复与冲突（辅以 `/doctor prompt-audit`）
 - [ ] 实测 permissions：后端 deny 的数据库破坏性命令、DevOps ask 的 terraform/kubectl/helm 变更命令
@@ -81,7 +83,7 @@ updated: 2026-10-27
 | `backend-dev` | 后端开发 | 系统规格、系统／数据库／架构设计、选型；后端功能、API 与数据库开发 |
 | `dev-ops` | DevOps | CI/CD、上线、可观测性 |
 
-**已确认的技术栈决策**：后端 Go、Node.js / TypeScript；数据库以 MongoDB、Redis、MySQL 为主，兼容 PostgreSQL；部署围绕 Docker / Docker Compose（2026-10-23 去掉 K8s）；可观测性起步阶段用 Uptime Kuma、GlitchTip、Beszel、Dozzle，告警只发 Telegram，升级路径为 Prometheus + Alertmanager；PRD 以 pm-skills、mattpocock-skills、gstack 等技能为主；**不设主工作流框架**（全局只有 superpowers，OpenSpec、gsd-core 在前后端清单中以注释提供）；全局工具 task-master、mattpocock-skills、gstack；记忆类只保留 `remember`，cognee 暂不启用。
+**已确认的技术栈决策**：后端 Go、Node.js / TypeScript；数据库以 MongoDB、Redis、MySQL 为主，兼容 PostgreSQL；部署围绕 Docker / Docker Compose（2026-10-23 去掉 K8s）；可观测性起步阶段用 Uptime Kuma、GlitchTip、Beszel、Dozzle，告警只发 Telegram，升级路径为 Prometheus + Alertmanager；PRD 以 pm-skills、mattpocock-skills、gstack 等技能为主；**规格框架按场景启用**（2026-10-28 改：全局 superpowers；后端清单默认启用 OpenSpec、前端清单默认启用 gsd-core，同一项目只启用一套；支持包按主场景启用、第二场景注释录入，见 `open_supports/INDEX.md`「建议场景」）；全局工具 task-master、mattpocock-skills、gstack；记忆类只保留 `remember`，cognee 暂不启用。
 
 **目录结构**：
 
@@ -132,7 +134,7 @@ sh scripts/install-claude-project.sh -g -d
 sh scripts/multi_client_support/codex.sh -d
 ```
 
-最后一次完整验证结果：2026-10-27（`968ddd2`），12 个测试文件全部通过（含 `sh -n` 语法检查）。
+最后一次完整验证结果：2026-10-28（`cff9bfe`），12 个测试文件全部通过（含 `sh -n` 语法检查）。
 
 <!-- section: gotchas -->
 ## 续作时必须知道的事
@@ -155,7 +157,7 @@ sh scripts/multi_client_support/codex.sh -d
 
 原因：2026-10-20 用户决定场景包是「初次从各维度复制、之后独立维护」的完整聚合，不做同步脚本或一致性测试。
 
-正确做法：需要两边一致时手动复制，并在提交说明里写明；不要新增自动同步。
+正确做法：需要两边一致时手动复制，并在提交说明里写明；不要新增自动同步或一致性测试。2026-10-28 插件集中梳理时，用户要求两边对齐一次（四个场景的 settings 已确认完全一致），之后仍分开维护，除非用户明确要求再次对齐。
 
 ### 安装顺序与 settings 覆盖
 
@@ -262,6 +264,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 阶段 2 的采纳决策 | 阶段 2 完成后产出 |
 | 本机是否采用新的全局设定 | 本文件「当前状态」 |
 | `claude plugin eval` 是否适合本仓库场景包 | 计划文件 3.3（待确认后纳入） |
+| deanpeters/Product-Manager-Skills 是否进入 PRD 场景（2026-10-28 用户决定暂不处理，下次再看）：需先为 `open_supports/ost_deanpeters_Product-Manager-Skills` 补 Claude Code 项目级安装路径（目前项目级只有 `--client=codex-zip`）；还要考虑与 phuryn/pm-skills 功能重叠、两者 `marketplace.json` 的 `name` 都是 `pm-skills`、授权为 CC BY-NC-SA 4.0（非商业） | `open_supports/INDEX.md`「建议场景」下方说明 |
 
 <!-- section: next -->
 ## 建议的下一步
@@ -286,9 +289,9 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 约定：rules 一律带 `paths`（`test-backend-dev-bundle.sh` 检查）；skill 在 `skills/skills-backend-dev/` 与场景包各放一份并保持一致；规范内容先读原始来源（Uber Go Style Guide、FiberHouse 文档）再写。path rules 与 skill 的实际触发效果尚未在真实项目中验证。
 
-**评估计划**：为四个场景写「典型任务清单」，每场景 5～8 个，写入 `docs/evaluation/2026-10-baseline.md` 的开头一节。它同时用于阶段 1 的覆盖度评估、阶段 2 的调研问题聚焦和阶段 3 的标准任务。可参考计划文件 3.3 的示例，写完请用户确认后再进入其余评估项。
+**评估计划（阶段 1）**：由用户按 `docs/evaluation/manual-test-guide.md` 手动执行（专案集 `~/workspace/aitools_test/scenario-eval/`，FiberHouse 在专案集内从 GitHub 重新克隆）。用户说「总结 <场景>」时：读专案集的 `notes.md`、项目内 run tag（`git diff baseline <任务>-r<次数>`）与 `~/.claude/projects/` 下该项目的会话记录，按任务卡观察点判定，回填 `docs/evaluation/2026-10-baseline.md` 第 3 节，列出问题清单，经用户确认后提交。收尾时比对 `env-before.txt` 与 `env-after.txt`。
 
-前置条件：已满足（无需外部资源）。试用项目、模型组合与预算只在阶段 3 才需要。
+前置条件：指南与素材已提交；执行由用户安排。阶段 2 只针对阶段 1 发现的问题调研。
 
 ---
 
@@ -341,4 +344,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-26 | 前端错误追踪分析与请求 id 传递规则 | 待办 4 深入分析并实测（`@sentry/browser` 11.9.0 → GlitchTip 6.2.6，报告 `docs/plans/2026-10-26-frontend-glitchtip-analysis.md`），用户决定暂不接入；新增请求 id 传递约定：backend `rules/go/logging.md`「请求 id 传递」（Fiber v2.52.16、Gin v1.12.0 实测入口覆盖与放入 ctx）、frontend `CLAUDE.md` 显示错误编号、dev-ops `observability.md`「请求 id」与 `CLAUDE.md`（Nginx 1.29.8 实测）；12 个测试文件全过 | 未提交；GlitchTip 停用 key 无效、key 限流不生效是否报上游待定；docker `fegt-gt`、`fegt-pg`、网络 `fegt-net` 待手动清理 |
 | 2026-10-26 | 待办 1～3 收尾 | Beszel 0.21.1 hub↔agent 连接补测（公钥正确在线、错误离线）；`settings.user.json` 移除 `kubectl get/describe` 放行（不用 K8s，且可读出 Secret）；DELEX 条目精简并核对主流锁库（Redisson、redis-py 仍用 Lua）；独立子代理交叉评估无 blocker，3 项 should-fix 已修正（FiberHouse 请求 id 兜底顺序、直接对外时丢弃客户端值、实测证据补入疑问文件第五节）；12 个测试文件全过 | 网络 `besz-net`、`fegt-net` 与容器 `fegt-*` 待手动清理；未推送 |
 | 2026-10-26 | 恢复来自技术规范的 ES 配置 | 对照技术规范原文，ES 堆 32GB 与 G1、文件句柄与 `vm.max_map_count` 655360 放回 dev-ops `middleware-ops/references/elasticsearch.md`（场景包与 `skills/skills-dev-ops/` 两份）并标注来源；疑问文件删除空的待确认节，待办拆为已完成与暂缓（`b01cf82`、`968ddd2`） | — |
-| 2026-10-27 | 交接补记与推送 | 补记上一条、重跑测试（12 个测试文件全过）、重写 frontmatter 锚点；按用户指示推送累积提交 | — |
+| 2026-10-27 | 交接补记与推送 | 补记上一条、重跑测试（12 个测试文件全过）、重写 frontmatter 锚点；按用户指示推送累积提交；发布 v2.1.0（Latest） | — |
+| 2026-10-27～28 | 阶段 1 审计与手动测验指南 | 用户决定不用 `CLAUDE_CONFIG_DIR` 隔离、改为手动实战，环境与真实使用一致（装支持包、场景插件、启用项目 MCP），影响逐项提醒；交互模式、每任务最多 2 次；任务缩减为 16 个；新增 `docs/evaluation/`（基线、指南、fixtures）（`b305f5d`） | 等用户执行 |
+| 2026-10-28 | settings 插件池梳理 | 参考插件配置 + 全局 + 各场景汇总为插件池表；同源插件统一 `@claude-plugins-official`；`code-review`、`mongodb-self-managed-mcp` 不采用；local 模板加 `pyright-lsp`、`typescript-lsp`（false）；`settings.user.json` 本机依赖说明；全局 deny 覆盖 dev-ops ask 保持现状并说明（`81e2b10`） | project 模板与场景包本次对齐，之后仍分开维护 |
+| 2026-10-28 | 支持包场景划分与场景包 README | 核对 5 个上游原文（报告中 pm-skills 数量、`/canary` 灰度、gsd-core 后端命令等为误）；主场景启用、第二场景注释录入：OpenSpec 主后端、gsd-core 主前端（取代「不设默认框架」）、codegraph 主后端、`pm-ai-shipping` 次 DevOps；四个场景包新增 README（自动加载／需手动安装的插件与恢复命令）（`cff9bfe`） | deanpeters 入 PRD 暂缓（见待处理事项） |
