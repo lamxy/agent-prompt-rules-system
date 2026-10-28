@@ -146,6 +146,20 @@ test_merge_keeps_format() {
   pass "merge keeps non-ASCII text and four-space indentation"
 }
 
+test_merge_carries_skill_overrides_per_key() {
+  target="$TMP_DIR/overrides"
+  mkdir -p "$target"
+  printf '{"skillOverrides": {"gstack-ship": "off", "keep-me": "name-only"}}\n' > "$target/settings.json"
+
+  sh "$INSTALLER" -l project -s dev-ops -m merge -p "$target" > /dev/null 2> "$TMP_DIR/overrides.err"
+  assert_contains "$target/settings.json" '"gstack-ship": "on"'
+  assert_contains "$target/settings.json" '"keep-me": "name-only"'
+  sed -n 's/.*未写入：//p' "$TMP_DIR/overrides.err" > "$TMP_DIR/overrides.ignored"
+  assert_not_contains "$TMP_DIR/overrides.ignored" "skillOverrides"
+
+  pass "merge carries skillOverrides key by key"
+}
+
 test_ask_without_terminal_fails_loudly() {
   target="$TMP_DIR/ask-fail"
   mkdir -p "$target"
@@ -191,5 +205,6 @@ test_same_second_backups_are_kept
 test_user_merge_warns_about_ignored_keys
 test_plugin_only_merge_is_quiet
 test_merge_keeps_format
+test_merge_carries_skill_overrides_per_key
 test_ask_without_terminal_fails_loudly
 test_ask_reads_answers

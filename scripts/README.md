@@ -68,7 +68,7 @@ sh ./scripts/install-settings.sh -l local -s frontend-dev -m merge -p /path/to/p
 可用场景见 `settings/README.md`；`-s` 写错或漏写时，脚本会列出该作用域可用的场景名。
 
 - **备份**：覆盖或合并前把目标备份为 `settings.json.bak.<时间戳>`；同一秒内多次执行会加序号，不会覆盖先前的备份。
-- **merge 范围**：只合并 `enabledPlugins` 和 `extraKnownMarketplaces`。源文件中的其他字段（如 `settings.user.json` 的 `permissions`、`hooks`、`sandbox`）不会写入，脚本以 `[WARN]` 列出；安装完整的用户级设定请用 `overwrite`。
+- **merge 范围**：只逐键合并 `enabledPlugins`、`extraKnownMarketplaces` 和 `skillOverrides`。源文件中的其他字段（如 `settings.user.json` 的 `permissions`、`hooks`、`sandbox`）不会写入，脚本以 `[WARN]` 列出；安装完整的用户级设定请用 `overwrite`。
 - **ask 模式**：从终端（`/dev/tty`）读取回答；非交互环境会报错退出，请改用 `overwrite` 或 `merge`。
 
 ---

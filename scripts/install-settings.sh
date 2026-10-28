@@ -24,7 +24,7 @@ usage() {
                       local    -> <target_dir>/settings.local.json
   -m <模式>         目标文件已存在时的处理方式（不存在时总是直接创建）：
                       overwrite  备份为 <文件>.bak.<时间戳> 后整体替换
-                      merge      只把 enabledPlugins、extraKnownMarketplaces 合并进目标
+                      merge      只把 enabledPlugins、extraKnownMarketplaces、skillOverrides 逐键合并进目标
                                  （先备份）；源文件其他字段不写入，以 [WARN] 列出
                       ask        从终端询问覆盖、合并或跳过；非交互环境报错退出
 
@@ -165,32 +165,25 @@ if not isinstance(target, dict):
 
 result = dict(target)
 
-target_plugins = target.get("enabledPlugins") or {}
-source_plugins = source.get("enabledPlugins") or {}
-if not isinstance(target_plugins, dict):
-    raise SystemExit("目标 enabledPlugins 必须为对象")
-if not isinstance(source_plugins, dict):
-    raise SystemExit("源 enabledPlugins 必须为对象")
-
-target_marketplaces = target.get("extraKnownMarketplaces") or {}
-source_marketplaces = source.get("extraKnownMarketplaces") or {}
-if not isinstance(target_marketplaces, dict):
-    raise SystemExit("目标 extraKnownMarketplaces 必须为对象")
-if not isinstance(source_marketplaces, dict):
-    raise SystemExit("源 extraKnownMarketplaces 必须为对象")
-
-result["enabledPlugins"] = dict(target_plugins)
-result["enabledPlugins"].update(source_plugins)
-
-result["extraKnownMarketplaces"] = dict(target_marketplaces)
-result["extraKnownMarketplaces"].update(source_marketplaces)
+# Object fields merged key by key; the source wins on the same key.
+merged_objects = ("enabledPlugins", "extraKnownMarketplaces", "skillOverrides")
+for key in merged_objects:
+    target_value = target.get(key) or {}
+    source_value = source.get(key) or {}
+    if not isinstance(target_value, dict):
+        raise SystemExit("目标 " + key + " 必须为对象")
+    if not isinstance(source_value, dict):
+        raise SystemExit("源 " + key + " 必须为对象")
+    if key in source or key in target:
+        result[key] = dict(target_value)
+        result[key].update(source_value)
 
 with open(output_path, "w", encoding="utf-8") as output_handle:
     json.dump(result, output_handle, ensure_ascii=False, indent=4)
     output_handle.write("\n")
 
 # Report source keys that merge does not carry over, so the caller can warn.
-merged_keys = {"$schema", "enabledPlugins", "extraKnownMarketplaces"}
+merged_keys = {"$schema", *merged_objects}
 print(", ".join(key for key in source if key not in merged_keys))
 ' "$source_file" "$target_file" "$output_file"
 }
@@ -502,7 +495,7 @@ case "$CURRENT_MODE" in
     trap - EXIT HUP INT TERM
     printf '[MERGE] %s\n' "$TARGET_FILE"
     if [ -n "$IGNORED_KEYS" ]; then
-      printf '[WARN] merge 只合并 enabledPlugins 和 extraKnownMarketplaces，以下源字段未写入：%s\n' "$IGNORED_KEYS" >&2
+      printf '[WARN] merge 只合并 enabledPlugins、extraKnownMarketplaces 和 skillOverrides，以下源字段未写入：%s\n' "$IGNORED_KEYS" >&2
       printf '[WARN] 需要这些字段时请改用 -m overwrite（会先备份），或手动合并。\n' >&2
     fi
     ;;
