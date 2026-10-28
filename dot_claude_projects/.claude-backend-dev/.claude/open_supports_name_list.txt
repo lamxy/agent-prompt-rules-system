@@ -5,7 +5,7 @@
 # 安装：install-claude-project.sh -f <FLAG> -t <project> 复制后自动安装；只重装支持包用 install-open-supports.sh -t <project>
 #
 # 全局工具（task-master、gstack）在 dot_claude_projects/.claude/ 的全局清单，
-# 用 sh scripts/install-claude-project.sh -g 安装；mattpocock-skills 为全局插件。
+# 用 sh scripts/install-claude-project.sh -g 安装；mattpocock-skills 为插件，由场景 settings 启用。
 #
 # 主场景／第二场景的划分见 open_supports/INDEX.md「建议场景」。本场景是某支持包的
 # 第二场景时，条目一律以注释形式录入，并说明适用条件，需要时取消注释再安装。

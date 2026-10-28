@@ -2,7 +2,8 @@
     "$schema": "https://json.schemastore.org/claude-code-settings.json",
     "enabledPlugins": {
         "playground@claude-plugins-official": true,
-        "document-skills@anthropic-agent-skills": true
+        "document-skills@anthropic-agent-skills": true,
+        "mattpocock-skills@claude-plugins-official": true
     },
     "extraKnownMarketplaces": {
         "claude-plugins-official": {
@@ -17,5 +18,9 @@
                 "repo": "anthropics/skills"
             }
         }
+    },
+    "skillOverrides": {
+        "gstack-office-hours": "on",
+        "gstack-plan-ceo-review": "on"
     }
 }

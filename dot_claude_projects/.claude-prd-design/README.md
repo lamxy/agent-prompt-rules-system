@@ -15,13 +15,15 @@
 |------|---------|-----------|
 | `playground@claude-plugins-official` | 相对路径（`claude-plugins-official`） | 自动加载 |
 | `document-skills@anthropic-agent-skills` | 相对路径（`anthropic-agent-skills`，`anthropics/skills`） | 自动加载：settings 已在 `extraKnownMarketplaces` 声明该市场，信任目录后登记 |
+| `mattpocock-skills@claude-plugins-official` | 外部（URL：`mattpocock/skills`） | **需手动安装** |
 
 ## 手动安装与恢复
 
 在**项目根目录**执行（已安装的插件会提示已安装并跳过，可重复执行）：
 
 ```sh
-# 本场景插件均为相对路径来源，通常无需手动安装；市场未登记时先执行：
+claude plugin install mattpocock-skills@claude-plugins-official --scope project
+# document-skills 为相对路径来源，通常无需手动安装；市场未登记时先执行：
 claude plugin marketplace add anthropics/skills --scope project
 claude plugin install document-skills@anthropic-agent-skills --scope project
 ```
@@ -46,6 +48,10 @@ for p in pm-product-discovery pm-product-strategy pm-execution pm-market-researc
 done
 ```
 
+
+## gstack
+
+gstack 是全局工具，62 个 skill 在全局 `skillOverrides` 中默认只能手动调用。本场景的 `.claude/settings.json` 把 `gstack-office-hours`、`gstack-plan-ceo-review` 设为 `on`，让 Claude 在需求讨论中可以自动调用。分层理由见 [`settings/README.md`](../../settings/README.md)「工作流框架分层」。
 
 ## 本地级可选插件
 

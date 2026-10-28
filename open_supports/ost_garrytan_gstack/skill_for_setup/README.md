@@ -30,7 +30,7 @@
 |---|---|---|
 | `--host=HOST` | `claude` | Runs upstream `./setup` for Claude Code or `./setup --host HOST` for a supported non-Claude agent. |
 | `--team=MODE` | `none` | Also runs `gstack-team-init`; valid values are `required` and `optional`. |
-| `--install-dir=DIR` | `~/.claude/skills/gstack` | Checkout directory for the official gstack repository. |
+| `--install-dir=DIR` | `~/.local/share/gstack` | Checkout directory for the official gstack repository. Outside `~/.claude/skills`, upstream setup links `~/.claude/skills/gstack` to it. |
 | `--help` / `-h` | | Shows script usage. |
 
 `GSTACK_GIT_TIMEOUT_SECONDS` is an environment variable, not a CLI flag. It

@@ -35,5 +35,11 @@
                 "repo": "anthropics/claude-plugins-official"
             }
         }
+    },
+    "skillOverrides": {
+        "gstack-ship": "on",
+        "gstack-land-and-deploy": "on",
+        "gstack-canary": "on",
+        "gstack-cso": "on"
     }
 }

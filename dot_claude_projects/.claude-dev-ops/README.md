@@ -41,6 +41,10 @@ python3 -c 'import json;[print(k) for k,v in json.load(open(".claude/settings.js
 `.mcp.json` 中的 `glitchtip` 首次打开项目时需确认启用，并在启动 `claude` 前设置 `GLITCHTIP_URL`；状态用 `/mcp` 查看。
 
 
+## gstack
+
+gstack 是全局工具，62 个 skill 在全局 `skillOverrides` 中默认只能手动调用。本场景的 `.claude/settings.json` 把 `gstack-ship`、`gstack-land-and-deploy`、`gstack-canary`、`gstack-cso` 设为 `on`。分层理由见 [`settings/README.md`](../../settings/README.md)「工作流框架分层」。
+
 ## 本地级可选插件
 
 `settings/settings.local-dev-ops.json` 列出需要个人账号或托管服务的可选插件（默认 `false`）：

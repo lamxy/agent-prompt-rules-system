@@ -18,7 +18,8 @@
 #   --team=MODE          setup 后也运行 gstack-team-init MODE；MODE 必须为 required 或 optional，默认 none。
 #   --global             显式选择默认的用户级 setup；不能与 --team 同用。
 #   TARGET_DIR           --team 的项目根目录（默认：.）；未传 --team 时忽略。
-#   --install-dir=DIR    检出目录（默认：~/.claude/skills/gstack）。
+#   --install-dir=DIR    检出目录（默认：~/.local/share/gstack）。不在 ~/.claude/skills 下时，
+#                        上游 setup 会自行创建 ~/.claude/skills/gstack 指向该目录的符号链接。
 #   --help|-h            显示帮助。
 #
 # 示例：
@@ -35,6 +36,11 @@
 #   - GSTACK_GIT_TIMEOUT_SECONDS 默认为 120，必须是正十进制整数；Git 非交互运行，优先使用 timeout/gtimeout。
 #   - 导出的代理变量会被 Git 和上游 setup 继承；Docker 调用方须显式注入代理环境变量。
 #   - Windows 未开启开发者模式时，上游 setup 可能复制文件而非创建符号链接；后续 git 更新后请重跑本脚本。
+#   - Claude 宿主的默认值：skill 加 gstack- 前缀（--prefix），不注册 timeline Stop hook
+#     （--no-timeline-stop-hook）与 plan-tune hook（--no-plan-tune-hooks）。每项只在
+#     gstack-config 尚未保存对应设置（skill_prefix、timeline_stop_hook、plan_tune_hooks）时传入，
+#     之后用 gstack-config set 修改的值不会被本脚本覆盖；hook 设置在下次 setup 时生效。
+#   - ~/.claude/skills/gstack 已是旧的实体检出目录时停止并说明处理方式，不修改该目录。
 # =============================================================================
 
 set -eu
@@ -42,7 +48,8 @@ set -eu
 REPO_URL="https://github.com/garrytan/gstack.git"
 HOST="claude"
 TEAM_MODE="none"
-INSTALL_DIR="$HOME/.claude/skills/gstack"
+INSTALL_DIR="$HOME/.local/share/gstack"
+CLAUDE_GSTACK_LINK="$HOME/.claude/skills/gstack"
 GSTACK_GIT_TIMEOUT_SECONDS="${GSTACK_GIT_TIMEOUT_SECONDS:-120}"
 GIT_TIMEOUT_WARNING_PRINTED="no"
 TARGET_DIR="."
@@ -234,10 +241,42 @@ ensure_checkout() {
   run_git clone clone --single-branch --depth 1 "$REPO_URL" "$INSTALL_DIR"
 }
 
+# 旧版默认把检出放在 ~/.claude/skills/gstack；此时从其他目录运行 setup，上游会跳过 Claude 注册。
+check_legacy_checkout() {
+  [ "$HOST" = "claude" ] || return 0
+  [ -d "$CLAUDE_GSTACK_LINK" ] && [ ! -L "$CLAUDE_GSTACK_LINK" ] || return 0
+  _legacy="$(CDPATH= cd -- "$CLAUDE_GSTACK_LINK" && pwd -P)"
+  _wanted="$(CDPATH= cd -- "$INSTALL_DIR" 2>/dev/null && pwd -P || printf '%s' "$INSTALL_DIR")"
+  [ "$_legacy" != "$_wanted" ] || return 0
+
+  printf '错误：%s 是旧的实体 gstack 检出目录，上游 setup 不会用新目录替换它。\n' "$CLAUDE_GSTACK_LINK" >&2
+  printf '任选其一（本脚本不修改该目录）：\n' >&2
+  printf '  - 继续更新旧目录：%s --install-dir=%s\n' "$0" "$CLAUDE_GSTACK_LINK" >&2
+  printf '  - 改用新目录：确认旧目录没有本地改动后自行移走或删除它，再重新运行本脚本。\n' >&2
+  exit 1
+}
+
+# 只对 gstack-config 尚未保存的设置传入默认旗标。
+claude_setup_flags() {
+  _config="$INSTALL_DIR/bin/gstack-config"
+  _flags=""
+  for _pair in skill_prefix:--prefix timeline_stop_hook:--no-timeline-stop-hook plan_tune_hooks:--no-plan-tune-hooks; do
+    if [ -x "$_config" ] && "$_config" has "${_pair%%:*}" >/dev/null 2>&1; then
+      continue
+    fi
+    _flags="$_flags ${_pair#*:}"
+  done
+  printf '%s' "${_flags# }"
+}
+
 run_setup() {
   printf '%s\n' "-> 正在为宿主运行官方 setup：$HOST"
   if [ "$HOST" = "claude" ]; then
-    (cd "$INSTALL_DIR" && ./setup)
+    _flags="$(claude_setup_flags)"
+    [ -z "$_flags" ] || printf '%s\n' "-> 默认 setup 参数：$_flags"
+    # 旗标为单词列表，按空格拆分是预期行为。
+    # shellcheck disable=SC2086
+    (cd "$INSTALL_DIR" && ./setup $_flags)
   else
     (cd "$INSTALL_DIR" && ./setup --host "$HOST")
   fi
@@ -284,6 +323,7 @@ main() {
   printf '安装目录：%s\n' "$INSTALL_DIR"
   printf '\n'
 
+  check_legacy_checkout
   ensure_checkout
   run_setup
   run_team_init

@@ -8,10 +8,11 @@
 # 格式：<支持包> [安装参数...]，与场景清单相同。
 # 只放用户级安装的条目；含 {PROJECT_DIR}、--local、--location=local 的条目会让整份清单被拒绝。
 
-# Think → Plan → Build → Review → Test → Ship 编码工作流，安装到 ~/.claude/skills/gstack
+# Think → Plan → Build → Review → Test → Ship 编码工作流；检出到 ~/.local/share/gstack，setup 建立 ~/.claude/skills/gstack 链接；
+# 默认 --prefix（gstack-*）、不注册 timeline Stop hook 与 plan-tune hook
 garrytan/gstack
 
 # Taskmaster：把 PRD 拆成任务；注册用户级 MCP，只加载核心工具
 eyaltoledano/claude-task-master --global --claude-mcp --tools=core
 
-# mattpocock-skills 以插件形式在 settings/settings.user.json 启用，不在此安装。
+# mattpocock-skills 是插件，在 prd-design、backend-dev 场景的 settings 启用，不在此安装。

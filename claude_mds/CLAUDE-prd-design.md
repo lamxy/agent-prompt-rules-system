@@ -4,7 +4,7 @@
 维护说明（注入上下文前会被移除）：
 - 只写与 Claude Code 默认行为不同的约定；工具由 settings/settings.project-prd-design.json 启用
   （document-skills、playground），PM Skills 由 open_supports/ost_phuryn_pm-skills 以项目级插件安装，
-  全局另有 mattpocock-skills 与 gstack。
+  mattpocock-skills 也在本场景 settings 启用；全局另有 gstack（本场景打开 gstack-office-hours、gstack-plan-ceo-review）。
 - 文档路径是建议值，项目已有约定时改成项目自己的路径。
 -->
 

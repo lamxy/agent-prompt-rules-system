@@ -33,7 +33,7 @@ Confirm these from conversation context or ask only when needed:
 | Operating system | None | The script supports macOS, Linux, WSL, and Git Bash/MSYS on Windows 11. |
 | Target host | `claude` | Controls whether the script runs `./setup` or `./setup --host HOST`. |
 | Team mode | `none` | `required` or `optional` modifies the current project through `gstack-team-init`. |
-| Install directory | `~/.claude/skills/gstack` | Existing non-git paths cause the script to stop and ask for cleanup or a different directory. |
+| Install directory | `~/.local/share/gstack` (setup links `~/.claude/skills/gstack` to it; a legacy real checkout at `~/.claude/skills/gstack` stops the script, update it with `--install-dir=~/.claude/skills/gstack`) | Existing non-git paths cause the script to stop and ask for cleanup or a different directory. |
 
 ## Procedure
 

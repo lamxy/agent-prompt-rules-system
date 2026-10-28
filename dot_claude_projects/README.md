@@ -91,7 +91,7 @@ sh scripts/install-claude-project.sh -g
 - 只把 `.claude/open_supports_name_list.txt` 复制到 `~/.claude/`；已存在时保留，`-F` 先备份为 `~/.claude/open_supports_name_list.txt.backup-<时间戳>`
 - 再按 `~/.claude/` 上的清单调用 `install-open-supports.sh -g`：支持包不复制，直接在本仓库的 `open_supports/<ost>/` 中运行安装脚本
 - 全局清单出现 `{PROJECT_DIR}`、`--local`、`--location=local` 时整份拒绝，不运行任何安装脚本
-- mattpocock-skills 以插件形式在 `settings/settings.user.json` 启用，不在清单里
+- mattpocock-skills 是插件，不在清单里：2026-10-28 起只在 prd-design、backend-dev 场景的 settings 启用（见 `settings/README.md`「工作流框架分层」）
 
 ## Open Supports 清单格式
 

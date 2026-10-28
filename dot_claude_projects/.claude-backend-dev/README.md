@@ -19,12 +19,14 @@
 | `mongodb@claude-plugins-official` | 外部（git 子目录：`mongodb/agent-skills`） | **需手动安装** |
 | `redis-development@claude-plugins-official` | 外部（git 子目录：`redis/agent-skills`） | **需手动安装** |
 | `semgrep@claude-plugins-official` | 外部（git 子目录：`semgrep/mcp-marketplace`） | **需手动安装** |
+| `mattpocock-skills@claude-plugins-official` | 外部（URL：`mattpocock/skills`） | **需手动安装** |
 
 ## 手动安装与恢复
 
 在**项目根目录**执行（已安装的插件会提示已安装并跳过，可重复执行）：
 
 ```sh
+claude plugin install mattpocock-skills@claude-plugins-official --scope project
 claude plugin install postman@claude-plugins-official --scope project
 claude plugin install mongodb@claude-plugins-official --scope project
 claude plugin install redis-development@claude-plugins-official --scope project

@@ -37,7 +37,8 @@ local > project > user
 
 | 插件 | 层级／场景 | 说明 |
 |------|-----------|------|
-| `superpowers`、`mattpocock-skills`、`andrej-karpathy-skills`、`ralph-loop` | 全局 | 工作流与工程方法 |
+| `superpowers`、`andrej-karpathy-skills`、`ralph-loop` | 全局 | 工作流与工程方法 |
+| `mattpocock-skills` | prd-design、backend-dev | 需求追问、规格与任务拆分、领域建模；2026-10-28 移出全局，见下方「工作流框架分层」 |
 | `context7`、`github`、`commit-commands` | 全局 | 文档查询与代码托管 |
 | `security-guidance`、`open-code-review` | 全局 | 质量与安全 |
 | `claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify` | 全局 | Claude Code 自身配置 |
@@ -62,6 +63,22 @@ local > project > user
 
 `settings/settings.project-<FLAG>.json` 与 `dot_claude_projects/.claude-<FLAG>/.claude/settings.json` 本次梳理后保持一致；之后仍按「分开维护」处理，除非明确要求再次对齐。
 
+### 工作流框架分层（2026-10-28）
+
+依据：`docs/evaluation/2026-10-28-skill-overrides-experiment.md`（实测）与 `docs/plans/2026-10-28-workflow-frameworks-tiering.md`（讨论记录）。
+
+- 判断标准不是插件数量：本机全局 + gstack 共 131 个 skill，清单仍未超出预算。要看的是同一意图可自动触发的 skill 不超过 1 个。
+- `skillOverrides` 只对个人、项目、内置 skill 生效，**对插件 skill 无效**；跨作用域逐键合并，高层可以放宽，也可以收紧。
+- 插件只能整包开关：项目级 `enabledPlugins` 设为 `false` 可以关掉全局已启用的插件。
+
+| 框架 | 形态 | 分层 |
+|------|------|------|
+| superpowers | 插件 | 全局启用 |
+| mattpocock-skills | 插件 | 不在全局；prd-design、backend-dev 的 `enabledPlugins` 启用。上游已把 27 个 skill 中 16 个设为只能手动调用；其余可自动触发的 `tdd`、`diagnosing-bugs`、`code-review` 与 superpowers 重叠，因此不放全局 |
+| gstack | 个人 skill（`--prefix` 安装，名称为 `gstack-*`） | `settings.user.json` 的 `skillOverrides` 把 62 个 skill 及路由 `gstack`、`_gstack-command` 设为 `user-invocable-only`（`/` 菜单可用，模型看不到）；iOS、gbrain、ubicloud 共 8 个设为 `off`。场景模板只把需要的设为 `on`：prd-design 为 `gstack-office-hours`、`gstack-plan-ceo-review`；dev-ops 为 `gstack-ship`、`gstack-land-and-deploy`、`gstack-canary`、`gstack-cso` |
+
+gstack 各 skill 之间多以读取对方 `SKILL.md` 串接，不经 Skill 工具，隐藏后不影响串接；只有路由 skill 用 Skill 工具派发，它本身也已隐藏。gstack 升级新增 skill 时，新 skill 默认为 `on`，需要把它补进 `skillOverrides`。
+
 ### 用户级（`-l user`）
 
 | 文件 | `-s` 参数 | 说明 |
@@ -72,7 +89,7 @@ local > project > user
 
 | 类别 | 插件 |
 |------|------|
-| 工作流与工程方法 | `superpowers`、`mattpocock-skills`、`andrej-karpathy-skills`、`ralph-loop` |
+| 工作流与工程方法 | `superpowers`、`andrej-karpathy-skills`、`ralph-loop` |
 | 文档与代码托管 | `context7`、`github`、`commit-commands` |
 | 质量与安全 | `security-guidance`、`open-code-review` |
 | Claude Code 自身配置 | `claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify` |
@@ -84,7 +101,7 @@ local > project > user
 |------|------|
 | 移出 `gopls-lsp`、`pyright-lsp`、`typescript-native-lsp`、`typescript-lsp`（停用项） | 语言相关，移到前端、后端场景 |
 | 移出 `frontend-design`、`chrome-devtools-mcp`、`playground` | 只在前端或 PRD 场景使用 |
-| 新增 `mattpocock-skills` | 全局工具（官方市场已收录） |
+| `skillOverrides` 新增 gstack 64 项 | gstack 默认只能手动调用，见「工作流框架分层」（2026-10-28；同日 `mattpocock-skills` 移出全局，改为场景启用） |
 | `commit-commands`、`skill-creator`、`claude-md-management`、`security-guidance` 改用 `@claude-plugins-official` | 原来分别来自 `claude-code-plugins` 与内置插件目录；统一到官方市场，换机器也能复现 |
 | 删除 `claude-code-plugins` 市场 | 其插件官方市场都有 |
 
@@ -170,7 +187,7 @@ sh ./scripts/install-settings.sh -l project --src /path/to/settings.project-cust
 ## 注意事项
 
 - **`.json` 文件已存在时不会自动覆盖**（除非显式指定 `-m overwrite`），覆盖或合并前都会先备份。
-- **`-m merge` 只合并 `enabledPlugins` 和 `extraKnownMarketplaces`**。后端、全栈、DevOps 模板的 `permissions` 和 `settings.user.json` 的其他字段都不会写入（脚本会以 `[WARN]` 列出）；需要这些字段时用 `-m overwrite`，或手动合并 `permissions`。
+- **`-m merge` 只逐键合并 `enabledPlugins`、`extraKnownMarketplaces` 和 `skillOverrides`**。后端、全栈、DevOps 模板的 `permissions` 和 `settings.user.json` 的其他字段都不会写入（脚本会以 `[WARN]` 列出）；需要这些字段时用 `-m overwrite`，或手动合并 `permissions`。
 - 新增场景时，复制一个现有场景模板改名为 `settings.<作用域>-<FLAG>.json`，并同步使用 `claude_mds/`、`agents/`、`dot_mcp_jsons/` 中相同的 FLAG。
 - 本机设定变更后，同步到 `dot_claude/settings.json`（本机镜像）；`settings.user.json` 只在全局插件与市场需要调整时修改。
 - 修改插件后运行 `sh scripts/tests/test-settings-templates.sh`，检查 JSON 合法、插件名称在已缓存的市场目录中存在、引用的第三方市场已声明。
