@@ -41,6 +41,8 @@
 #     gstack-config 尚未保存对应设置（skill_prefix、timeline_stop_hook、plan_tune_hooks）时传入，
 #     之后用 gstack-config set 修改的值不会被本脚本覆盖；hook 设置在下次 setup 时生效。
 #   - ~/.claude/skills/gstack 已是旧的实体检出目录时停止并说明处理方式，不修改该目录。
+#   - setup 后以只读方式运行 scripts/check-gstack-overrides.sh，列出未写进 ~/.claude/settings.json
+#     skillOverrides 的 gstack skill（升级新增的 skill 默认可被模型自动调用）；只提醒，不改设定。
 # =============================================================================
 
 set -eu
@@ -282,6 +284,15 @@ run_setup() {
   fi
 }
 
+# 只读检查：本机 skillOverrides 是否覆盖所有已安装的 gstack skill；结果只提醒，不影响安装。
+check_overrides() {
+  [ "$HOST" = "claude" ] || return 0
+  _checker="$(CDPATH= cd -- "$(dirname -- "$0")/../../.." 2>/dev/null && pwd)/scripts/check-gstack-overrides.sh"
+  [ -f "$_checker" ] && [ -f "$HOME/.claude/settings.json" ] || return 0
+  printf '\n%s\n' "-> 检查 ~/.claude/settings.json 的 skillOverrides 是否覆盖全部 gstack skill"
+  sh "$_checker" || printf '%s\n' '提醒：上述 gstack skill 未加入 skillOverrides 时默认可被模型自动调用。'
+}
+
 run_team_init() {
   [ "$TEAM_MODE" != "none" ] || return 0
 
@@ -326,6 +337,7 @@ main() {
   check_legacy_checkout
   ensure_checkout
   run_setup
+  check_overrides
   run_team_init
   print_next_steps
 }

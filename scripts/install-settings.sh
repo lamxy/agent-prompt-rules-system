@@ -15,7 +15,7 @@ set -eu
 usage() {
   cat <<'USAGE'
 用法：
-  sh ./scripts/install-settings.sh -l <user|project|local> -m <overwrite|merge|ask> [-s <场景>] [--src <文件>] [-p <target_dir>]
+  sh ./scripts/install-settings.sh -l <user|project|local> -m <overwrite|merge|ask> [-s <场景>] [--src <文件>] [-p <target_dir>] [-K <字段>]
 
 必选：
   -l <作用域>       user | project | local，决定默认模板与目标文件名：
@@ -40,6 +40,8 @@ usage() {
 可选：
   --src <文件>      显式指定源模板，提供时忽略 -s。文件名仍须与作用域匹配
                     （settings.user*.json / settings.project-*.json / settings.local-*.json）
+  -K <字段[,字段]>  只与 -m merge 同用：只合并列出的字段（enabledPlugins、extraKnownMarketplaces、
+                    skillOverrides 中的一个或多个）；目标不存在时只写入这些字段
   -h, --help        显示此帮助信息
 
 当前可用场景：
@@ -57,6 +59,9 @@ usage() {
 
   # 只把全局插件与市场合并进已有的 ~/.claude/settings.json
   sh ./scripts/install-settings.sh -l user -m merge
+
+  # 只同步全局 skillOverrides（如 gstack 分层），不动插件与其他字段
+  sh ./scripts/install-settings.sh -l user -m merge -K skillOverrides
 
   # 为项目安装后端场景设定（含数据库破坏性命令的 deny 规则）
   sh ./scripts/install-settings.sh -l project -s backend-dev -m overwrite -p ~/my-project/.claude
@@ -147,15 +152,18 @@ merge_json_files() {
 
   run_python_stdin '
 import json
+import os
 import sys
 
-source_path, target_path, output_path = sys.argv[1:4]
+source_path, target_path, output_path, selected = sys.argv[1:5]
 
 with open(source_path, "r", encoding="utf-8") as source_handle:
     source = json.load(source_handle)
 
-with open(target_path, "r", encoding="utf-8") as target_handle:
-    target = json.load(target_handle)
+target = {}
+if os.path.exists(target_path):
+    with open(target_path, "r", encoding="utf-8") as target_handle:
+        target = json.load(target_handle)
 
 if not isinstance(source, dict):
     raise SystemExit("源 settings JSON 必须为对象")
@@ -166,7 +174,7 @@ if not isinstance(target, dict):
 result = dict(target)
 
 # Object fields merged key by key; the source wins on the same key.
-merged_objects = ("enabledPlugins", "extraKnownMarketplaces", "skillOverrides")
+merged_objects = tuple(selected.split(",")) if selected else ("enabledPlugins", "extraKnownMarketplaces", "skillOverrides")
 for key in merged_objects:
     target_value = target.get(key) or {}
     source_value = source.get(key) or {}
@@ -185,7 +193,7 @@ with open(output_path, "w", encoding="utf-8") as output_handle:
 # Report source keys that merge does not carry over, so the caller can warn.
 merged_keys = {"$schema", *merged_objects}
 print(", ".join(key for key in source if key not in merged_keys))
-' "$source_file" "$target_file" "$output_file"
+' "$source_file" "$target_file" "$output_file" "$MERGE_KEYS"
 }
 
 list_scenarios() {
@@ -326,6 +334,7 @@ SCENARIO=""
 MODE=""
 SOURCE_PATH=""
 TARGET_DIR=""
+MERGE_KEYS=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -352,6 +361,11 @@ while [ "$#" -gt 0 ]; do
     --src)
       [ "$#" -ge 2 ] || fail "--src 需要一个值。"
       SOURCE_PATH="$2"
+      shift 2
+      ;;
+    -K)
+      [ "$#" -ge 2 ] || fail "-K 需要一个值。"
+      MERGE_KEYS="$2"
       shift 2
       ;;
     -h|--help)
@@ -382,6 +396,16 @@ case "$MODE" in
     fail "无效的模式：${MODE}。请使用 overwrite、merge 或 ask。"
     ;;
 esac
+
+if [ -n "$MERGE_KEYS" ]; then
+  [ "$MODE" = "merge" ] || fail "-K 只能与 -m merge 同用。"
+  for merge_key in $(printf '%s' "$MERGE_KEYS" | tr ',' ' '); do
+    case "$merge_key" in
+      enabledPlugins|extraKnownMarketplaces|skillOverrides) ;;
+      *) fail "-K 不支持的字段：${merge_key}。可选 enabledPlugins、extraKnownMarketplaces、skillOverrides。" ;;
+    esac
+  done
+fi
 
 case "$0" in
   */*)
@@ -457,14 +481,14 @@ validate_json_file "$RESOLVED_SOURCE_PATH" || fail "源配置文件不是合法 
 
 mkdir -p "$RESOLVED_TARGET_DIR"
 
-if [ ! -f "$TARGET_FILE" ]; then
+if [ ! -f "$TARGET_FILE" ] && [ -z "$MERGE_KEYS" ]; then
   cp "$RESOLVED_SOURCE_PATH" "$TARGET_FILE"
   printf '[CREATED] %s\n' "$TARGET_FILE"
   exit 0
 fi
 
 TARGET_JSON_VALID="no"
-if validate_json_file "$TARGET_FILE"; then
+if [ ! -f "$TARGET_FILE" ] || validate_json_file "$TARGET_FILE"; then
   TARGET_JSON_VALID="yes"
 fi
 
@@ -489,12 +513,14 @@ case "$CURRENT_MODE" in
     TMP_MERGED_FILE="$(create_temp_file "$RESOLVED_TARGET_DIR")"
     trap 'rm -f "$TMP_MERGED_FILE"' EXIT HUP INT TERM
     IGNORED_KEYS="$(merge_json_files "$RESOLVED_SOURCE_PATH" "$TARGET_FILE" "$TMP_MERGED_FILE")" || fail "settings JSON 合并失败"
-    backup_target_file "$TARGET_FILE"
+    [ ! -f "$TARGET_FILE" ] || backup_target_file "$TARGET_FILE"
     cp "$TMP_MERGED_FILE" "$TARGET_FILE"
     rm -f "$TMP_MERGED_FILE"
     trap - EXIT HUP INT TERM
     printf '[MERGE] %s\n' "$TARGET_FILE"
-    if [ -n "$IGNORED_KEYS" ]; then
+    if [ -n "$MERGE_KEYS" ]; then
+      printf '[INFO] 按 -K 只合并：%s\n' "$MERGE_KEYS"
+    elif [ -n "$IGNORED_KEYS" ]; then
       printf '[WARN] merge 只合并 enabledPlugins、extraKnownMarketplaces 和 skillOverrides，以下源字段未写入：%s\n' "$IGNORED_KEYS" >&2
       printf '[WARN] 需要这些字段时请改用 -m overwrite（会先备份），或手动合并。\n' >&2
     fi

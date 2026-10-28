@@ -86,8 +86,20 @@ test_legacy_checkout_can_be_updated_in_place() {
   pass "--install-dir pointing at the legacy checkout updates it in place"
 }
 
+test_reports_uncovered_skills_after_setup() {
+  new_home check
+  mkdir -p "$home/.claude/skills/gstack-new"
+  printf -- '---\nname: gstack-new\n---\n' > "$home/.claude/skills/gstack-new/SKILL.md"
+  printf '{}\n' > "$home/.claude/settings.json"
+  HOME="$home" PATH="$TMP_DIR/bin:$PATH" sh "$INSTALLER" > "$home/out" 2>&1 || fail "installer failed: $(cat "$home/out")"
+  grep -F '"gstack-new": "user-invocable-only"' "$home/out" > /dev/null || fail "missing override report: $(cat "$home/out")"
+  [ "$(cat "$home/.claude/settings.json")" = "{}" ] || fail "settings.json was modified"
+  pass "after setup the wrapper reports gstack skills missing from skillOverrides without failing"
+}
+
 test_defaults_on_first_install
 test_saved_choices_are_respected
+test_reports_uncovered_skills_after_setup
 test_other_hosts_get_no_claude_flags
 test_legacy_checkout_stops_before_setup
 test_legacy_checkout_can_be_updated_in_place

@@ -69,6 +69,7 @@ sh ./scripts/install-settings.sh -l local -s frontend-dev -m merge -p /path/to/p
 
 - **备份**：覆盖或合并前把目标备份为 `settings.json.bak.<时间戳>`；同一秒内多次执行会加序号，不会覆盖先前的备份。
 - **merge 范围**：只逐键合并 `enabledPlugins`、`extraKnownMarketplaces` 和 `skillOverrides`。源文件中的其他字段（如 `settings.user.json` 的 `permissions`、`hooks`、`sandbox`）不会写入，脚本以 `[WARN]` 列出；安装完整的用户级设定请用 `overwrite`。
+- **`-K <字段>`**：只与 `-m merge` 同用，只合并列出的字段；目标不存在时只写入这些字段。例如本机设定与模板的插件来源不同时，只同步 gstack 分层：`sh scripts/install-settings.sh -l user -m merge -K skillOverrides`。
 - **ask 模式**：从终端（`/dev/tty`）读取回答；非交互环境会报错退出，请改用 `overwrite` 或 `merge`。
 
 ---
@@ -151,6 +152,17 @@ sh ./scripts/install-open-supports.sh -g [-n <支持包> [-- 参数...] | -l <�
 - 已安装的支持包与源不一致时提示 `[STALE]`；`-F` 替换前把旧的支持包与 wrapper Skill 备份到 `.claude/open_supports.backup-<时间戳>/`
 
 详细说明见 `open_supports/README.md`。
+
+---
+
+### `check-gstack-overrides.sh` — 检查 gstack skill 是否都已写进 `skillOverrides`
+
+只读。比对 `~/.claude/skills/` 中已安装的 gstack skill 与 settings 文件的 `skillOverrides`，列出未覆盖（默认 `on`，附可粘贴的 JSON）与已失效的项；一致时退出码 0，否则 1。gstack 安装脚本在 setup 后自动运行它，只提醒。
+
+```sh
+sh scripts/check-gstack-overrides.sh                                 # 检查本机 ~/.claude/settings.json
+sh scripts/check-gstack-overrides.sh -f settings/settings.user.json  # 检查仓库模板
+```
 
 ---
 

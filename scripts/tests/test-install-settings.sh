@@ -160,6 +160,50 @@ test_merge_carries_skill_overrides_per_key() {
   pass "merge carries skillOverrides key by key"
 }
 
+test_merge_only_selected_keys() {
+  home="$TMP_DIR/keys-home"
+  mkdir -p "$home/.claude"
+  printf '{"enabledPlugins": {"mine@somewhere": true}}\n' > "$home/.claude/settings.json"
+
+  HOME="$home" sh "$INSTALLER" -l user -m merge -K skillOverrides > "$TMP_DIR/keys.out" 2> "$TMP_DIR/keys.err"
+  assert_contains "$home/.claude/settings.json" '"gstack-review": "user-invocable-only"'
+  assert_contains "$home/.claude/settings.json" '"mine@somewhere": true'
+  assert_not_contains "$home/.claude/settings.json" 'superpowers@claude-plugins-official'
+  assert_contains "$TMP_DIR/keys.out" "[INFO]"
+  assert_not_contains "$TMP_DIR/keys.err" "[WARN]"
+
+  pass "-K merges only the selected keys"
+}
+
+test_selected_keys_create_minimal_target() {
+  target="$TMP_DIR/keys-new"
+
+  sh "$INSTALLER" -l project -s dev-ops -m merge -K skillOverrides -p "$target" > /dev/null 2>&1
+  assert_contains "$target/settings.json" '"gstack-ship": "on"'
+  assert_not_contains "$target/settings.json" '"enabledPlugins"'
+  assert_not_contains "$target/settings.json" '"permissions"'
+
+  pass "-K writes only the selected keys when the target does not exist"
+}
+
+test_selected_keys_are_validated() {
+  target="$TMP_DIR/keys-bad"
+  mkdir -p "$target"
+  printf '{}\n' > "$target/settings.json"
+
+  if sh "$INSTALLER" -l project -s dev-ops -m merge -K permissions -p "$target" > /dev/null 2> "$TMP_DIR/keys-bad.err"; then
+    fail "expected -K permissions to be rejected"
+  fi
+  assert_contains "$TMP_DIR/keys-bad.err" "-K"
+  if sh "$INSTALLER" -l project -s dev-ops -m overwrite -K skillOverrides -p "$target" > /dev/null 2> "$TMP_DIR/keys-mode.err"; then
+    fail "expected -K with overwrite to be rejected"
+  fi
+  assert_contains "$TMP_DIR/keys-mode.err" "-K"
+  [ "$(cat "$target/settings.json")" = "{}" ] || fail "target changed after a rejected run"
+
+  pass "-K accepts only mergeable keys and only with -m merge"
+}
+
 test_ask_without_terminal_fails_loudly() {
   target="$TMP_DIR/ask-fail"
   mkdir -p "$target"
@@ -206,5 +250,8 @@ test_user_merge_warns_about_ignored_keys
 test_plugin_only_merge_is_quiet
 test_merge_keeps_format
 test_merge_carries_skill_overrides_per_key
+test_merge_only_selected_keys
+test_selected_keys_create_minimal_target
+test_selected_keys_are_validated
 test_ask_without_terminal_fails_loudly
 test_ask_reads_answers
