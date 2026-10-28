@@ -1,6 +1,6 @@
 ---
 branch: main
-head: fd254e9
+head: beb1ca8
 status: active
 updated: 2026-10-28
 ---
@@ -18,7 +18,8 @@ updated: 2026-10-28
 - 2026-10-27：按用户指示推送 `main` 的全部累积提交，发布 v2.1.0（tag `3821dee`）
 - 2026-10-27～28：阶段 1 审计简化并写成手动测验指南（`b305f5d`）；settings 插件池梳理（`81e2b10`）；支持包按主／第二场景划分、场景包 README（`cff9bfe`）；2026-10-28 已推送并发布 v2.2.0（Latest，tag `e4af50e`）
 - 2026-10-28（续）：工作流框架分层定稿并实施（`5e3b6a3`、`eb7375a`、`5eb6078`，未推送）：gstack 外部检出 + `--prefix`、默认不注册 hook，`skillOverrides` 默认只手动调用、场景按需打开；mattpocock-skills 移出全局改为 prd-design、backend-dev 场景启用
-- 本机安装或升级 gstack（含 task-master）：`sh scripts/install-claude-project.sh -g -d` 预演，确认后去掉 `-d`；会先把 gstack 的 `skillOverrides` 同步进 `~/.claude/settings.json`（先备份）
+- 2026-10-28：用户已在本机执行 `install-claude-project.sh -g`（gstack 64 个 skill 与 `skillOverrides` 64 项一致，task-master 0.43.1）；推送全部提交并发布 v2.3.0（Latest，tag `beb1ca8`）
+- 之后升级 gstack（含 task-master）仍用 `sh scripts/install-claude-project.sh -g`，可先加 `-d` 预演
 - 下一步：用户按 `docs/evaluation/manual-test-guide.md` 手动执行阶段 1，逐场景说「总结 <场景>」，由 Claude 回填 `docs/evaluation/2026-10-baseline.md` 第 3 节
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
@@ -37,7 +38,7 @@ updated: 2026-10-28
 | 场景配置评估、优化与验证 | **阶段 1 待用户手动执行** | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
-| 本机采用新全局设定 | 待用户决定 | `sh scripts/install-settings.sh -l user -m overwrite`；`dot_claude/settings.json` 仍是本机设定镜像，未做插件分层调整 |
+| 本机采用新全局设定 | 待用户看差异后决定（不得直接覆盖） | 2026-10-28 比对 `~/.claude/settings.json` 与 `settings/settings.user.json`：`skillOverrides` 一致；差异只在 `enabledPlugins` 市场来源（本机 3 个来自 `anthropic-plugin-directory`、1 个来自 `claude-code-plugins`，仓库统一 `claude-plugins-official`）、本机多启用 `chrome-devtools-mcp`、`frontend-design`、`playground`，本机多 `kubectl get/describe` 放行与 `claude-code-plugins` 市场；`dot_claude/settings.json` 仍是本机设定镜像 |
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
 
 ### 待办计划：场景配置评估、优化与验证
@@ -74,7 +75,7 @@ updated: 2026-10-28
 
 **仓库定位**：个人 Agent 配置与工具／技能管理仓库（Claude Code 为主，兼顾 Codex），公开供参考。2026-10-19 从「分层提示词规则系统」转型而来，设计原则与原因见根目录 `README.md`。
 
-**版本**：`main` 已于 2026-10-28 推送至 `origin/main`（之后的新提交推送仍需用户指示）；GitHub release v2.0.0（tag `a0783b3`）、v2.0.1（tag `6a31aee`）、v2.1.0（tag `3821dee`）、v2.2.0（tag `e4af50e`，标为 Latest）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
+**版本**：`main` 已于 2026-10-28 推送至 `origin/main`（之后的新提交推送仍需用户指示）；GitHub release v2.0.0（tag `a0783b3`）、v2.0.1（tag `6a31aee`）、v2.1.0（tag `3821dee`）、v2.2.0（tag `e4af50e`）、v2.3.0（tag `beb1ca8`，标为 Latest）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
 
 **四个场景**（FLAG 在所有维度目录中一致；另有 `fullstack-dev` 只存在于 `settings/`）：
 
@@ -266,7 +267,6 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 阶段 2 的采纳决策 | 阶段 2 完成后产出 |
 | 本机是否采用新的全局设定 | 本文件「当前状态」 |
 | `claude plugin eval` 是否适合本仓库场景包 | 计划文件 3.3（待确认后纳入） |
-| deanpeters/Product-Manager-Skills 是否进入 PRD 场景（2026-10-28 用户决定暂不处理，下次再看）：需先为 `open_supports/ost_deanpeters_Product-Manager-Skills` 补 Claude Code 项目级安装路径（目前项目级只有 `--client=codex-zip`）；还要考虑与 phuryn/pm-skills 功能重叠、两者 `marketplace.json` 的 `name` 都是 `pm-skills`、授权为 CC BY-NC-SA 4.0（非商业） | `open_supports/INDEX.md`「建议场景」下方说明 |
 
 <!-- section: next -->
 ## 建议的下一步
@@ -356,3 +356,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-28 | 本机同步分层与升级检查 | `install-settings.sh` 新增 `-K <字段>`（只合并指定字段，避免本机异市场同名插件被重复启用）；新增只读 `scripts/check-gstack-overrides.sh`，gstack 安装脚本 setup 后自动运行；隔离 HOME 真实安装端到端验证；14 个测试文件全过（`90c2bfd`） | 已由 `41281a1` 合并为一条命令，见下一行 |
 | 2026-10-28 | fullstack-dev 启用 mattpocock-skills | `settings/settings.project-fullstack-dev.json` 与插件池表、索引同步（`690b1b7`） | 未推送：用户要求待办全部完成后再推送 |
 | 2026-10-28 | 推送与发布 v2.2.0 | 推送 `b305f5d`～`e4af50e`，发布 v2.2.0（Latest，tag `e4af50e`）；相容性说明：frontend-dev 默认装 gsd-core、不再默认装 codegraph，backend-dev 加装 OpenSpec（会全局安装或升级 openspec CLI） | — |
+| 2026-10-28 | 本机全局安装、推送与发布 v2.3.0 | 用户在本机执行 `install-claude-project.sh -g`（`check-gstack-overrides.sh` 一致）；deanpeters/Product-Manager-Skills 决定忽略，`open_supports/INDEX.md` 改为不启用（`beb1ca8`）；推送并发布 v2.3.0（Latest），相容性说明：gstack 默认只手动调用、无 `--prefix` 旧安装需重装、全局不再启用 mattpocock-skills；14 个测试文件全过 | 本机全局设定差异待用户决定；docker 残留待用户手动清理 |
