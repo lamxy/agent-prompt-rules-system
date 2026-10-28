@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 90c2bfd
+head: 41281a1
 status: active
 updated: 2026-10-28
 ---
@@ -18,6 +18,7 @@ updated: 2026-10-28
 - 2026-10-27：按用户指示推送 `main` 的全部累积提交，发布 v2.1.0（tag `3821dee`）
 - 2026-10-27～28：阶段 1 审计简化并写成手动测验指南（`b305f5d`）；settings 插件池梳理（`81e2b10`）；支持包按主／第二场景划分、场景包 README（`cff9bfe`）；2026-10-28 已推送并发布 v2.2.0（Latest，tag `e4af50e`）
 - 2026-10-28（续）：工作流框架分层定稿并实施（`5e3b6a3`、`eb7375a`、`5eb6078`，未推送）：gstack 外部检出 + `--prefix`、默认不注册 hook，`skillOverrides` 默认只手动调用、场景按需打开；mattpocock-skills 移出全局改为 prd-design、backend-dev 场景启用
+- 本机安装或升级 gstack（含 task-master）：`sh scripts/install-claude-project.sh -g -d` 预演，确认后去掉 `-d`；会先把 gstack 的 `skillOverrides` 同步进 `~/.claude/settings.json`（先备份）
 - 下一步：用户按 `docs/evaluation/manual-test-guide.md` 手动执行阶段 1，逐场景说「总结 <场景>」，由 Claude 回填 `docs/evaluation/2026-10-baseline.md` 第 3 节
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
@@ -135,7 +136,7 @@ sh scripts/install-claude-project.sh -g -d
 sh scripts/multi_client_support/codex.sh -d
 ```
 
-最后一次完整验证结果：2026-10-28（`90c2bfd`），14 个测试文件全部通过（含 `sh -n` 语法检查）。
+最后一次完整验证结果：2026-10-28（`41281a1`），14 个测试文件全部通过（含 `sh -n` 语法检查）。
 
 <!-- section: gotchas -->
 ## 续作时必须知道的事
@@ -350,6 +351,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-28 | settings 插件池梳理 | 参考插件配置 + 全局 + 各场景汇总为插件池表；同源插件统一 `@claude-plugins-official`；`code-review`、`mongodb-self-managed-mcp` 不采用；local 模板加 `pyright-lsp`、`typescript-lsp`（false）；`settings.user.json` 本机依赖说明；全局 deny 覆盖 dev-ops ask 保持现状并说明（`81e2b10`） | project 模板与场景包本次对齐，之后仍分开维护 |
 | 2026-10-28 | 支持包场景划分与场景包 README | 核对 5 个上游原文（报告中 pm-skills 数量、`/canary` 灰度、gsd-core 后端命令等为误）；主场景启用、第二场景注释录入：OpenSpec 主后端、gsd-core 主前端（取代「不设默认框架」）、codegraph 主后端、`pm-ai-shipping` 次 DevOps；四个场景包新增 README（自动加载／需手动安装的插件与恢复命令）（`cff9bfe`） | deanpeters 入 PRD 暂缓（见待处理事项） |
 | 2026-10-28 | 工作流框架分层 | 讨论与实测（`5e3b6a3`）：`skillOverrides` 对插件 skill 无效、跨作用域逐键合并；`install-settings.sh -m merge` 逐键合并 `skillOverrides`（`eb7375a`）；gstack 安装脚本默认 `~/.local/share/gstack`、`--prefix`、不注册 timeline / plan-tune hook，只对 `gstack-config` 未保存的设置传默认值（隔离 HOME 端到端验证）；`settings.user.json` 隐藏 gstack 64 项，prd-design、dev-ops 按需打开；mattpocock-skills 改为 prd-design、backend-dev 场景启用（`5eb6078`）；13 个测试文件全过 | 未推送；本机尚未按新方式安装 gstack；gstack 升级新增 skill 时需补进 `skillOverrides`；`/gstack-review` 与内置 `/code-review` 别名的关系未实测；本机 `~/.claude/settings.json` 尚无 gstack 的 `skillOverrides`（直接 merge 会重复启用 4 个异市场同名插件，方案待定）；gstack 升级新增 skill 的检查方式待定 |
-| 2026-10-28 | 本机同步分层与升级检查 | `install-settings.sh` 新增 `-K <字段>`（只合并指定字段，避免本机异市场同名插件被重复启用）；新增只读 `scripts/check-gstack-overrides.sh`，gstack 安装脚本 setup 后自动运行；隔离 HOME 真实安装端到端验证；14 个测试文件全过（`90c2bfd`） | 本机安装 gstack 由用户执行：`sh scripts/install-settings.sh -l user -m merge -K skillOverrides`，再 `sh scripts/install-open-supports.sh -g -n garrytan/gstack`，最后 `sh scripts/check-gstack-overrides.sh`；推送待用户指示 |
+| 2026-10-28 | 全局安装一条命令 | `install-claude-project.sh -g` 改为三步并标出步骤：复制全局清单 → `-K skillOverrides` 同步 gstack 分层（先备份，`-k` 跳过）→ 安装全局支持包并只读检查覆盖；14 个测试文件全过（`41281a1`） | 本机安装由用户执行 `sh scripts/install-claude-project.sh -g -d` 预演后去掉 `-d`；推送待用户指示 |
+| 2026-10-28 | 本机同步分层与升级检查 | `install-settings.sh` 新增 `-K <字段>`（只合并指定字段，避免本机异市场同名插件被重复启用）；新增只读 `scripts/check-gstack-overrides.sh`，gstack 安装脚本 setup 后自动运行；隔离 HOME 真实安装端到端验证；14 个测试文件全过（`90c2bfd`） | 已由 `41281a1` 合并为一条命令，见下一行 |
 | 2026-10-28 | fullstack-dev 启用 mattpocock-skills | `settings/settings.project-fullstack-dev.json` 与插件池表、索引同步（`690b1b7`） | 未推送：用户要求待办全部完成后再推送 |
 | 2026-10-28 | 推送与发布 v2.2.0 | 推送 `b305f5d`～`e4af50e`，发布 v2.2.0（Latest，tag `e4af50e`）；相容性说明：frontend-dev 默认装 gsd-core、不再默认装 codegraph，backend-dev 加装 OpenSpec（会全局安装或升级 openspec CLI） | — |
