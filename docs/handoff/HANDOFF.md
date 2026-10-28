@@ -1,6 +1,6 @@
 ---
 branch: main
-head: e4af50e
+head: 5eb6078
 status: active
 updated: 2026-10-28
 ---
@@ -17,6 +17,7 @@ updated: 2026-10-28
 - 2026-10-26（续）：前端错误送 GlitchTip 分析后暂缓；新增请求 id 传递约定；FiberHouse 规则去版本绑定（不再引用 v1.2.0）
 - 2026-10-27：按用户指示推送 `main` 的全部累积提交，发布 v2.1.0（tag `3821dee`）
 - 2026-10-27～28：阶段 1 审计简化并写成手动测验指南（`b305f5d`）；settings 插件池梳理（`81e2b10`）；支持包按主／第二场景划分、场景包 README（`cff9bfe`）；2026-10-28 已推送并发布 v2.2.0（Latest，tag `e4af50e`）
+- 2026-10-28（续）：工作流框架分层定稿并实施（`5e3b6a3`、`eb7375a`、`5eb6078`，未推送）：gstack 外部检出 + `--prefix`、默认不注册 hook，`skillOverrides` 默认只手动调用、场景按需打开；mattpocock-skills 移出全局改为 prd-design、backend-dev 场景启用
 - 下一步：用户按 `docs/evaluation/manual-test-guide.md` 手动执行阶段 1，逐场景说「总结 <场景>」，由 Claude 回填 `docs/evaluation/2026-10-baseline.md` 第 3 节
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
@@ -83,7 +84,7 @@ updated: 2026-10-28
 | `backend-dev` | 后端开发 | 系统规格、系统／数据库／架构设计、选型；后端功能、API 与数据库开发 |
 | `dev-ops` | DevOps | CI/CD、上线、可观测性 |
 
-**已确认的技术栈决策**：后端 Go、Node.js / TypeScript；数据库以 MongoDB、Redis、MySQL 为主，兼容 PostgreSQL；部署围绕 Docker / Docker Compose（2026-10-23 去掉 K8s）；可观测性起步阶段用 Uptime Kuma、GlitchTip、Beszel、Dozzle，告警只发 Telegram，升级路径为 Prometheus + Alertmanager；PRD 以 pm-skills、mattpocock-skills、gstack 等技能为主；**规格框架按场景启用**（2026-10-28 改：全局 superpowers；后端清单默认启用 OpenSpec、前端清单默认启用 gsd-core，同一项目只启用一套；支持包按主场景启用、第二场景注释录入，见 `open_supports/INDEX.md`「建议场景」）；全局工具 task-master、mattpocock-skills、gstack；记忆类只保留 `remember`，cognee 暂不启用。
+**已确认的技术栈决策**：后端 Go、Node.js / TypeScript；数据库以 MongoDB、Redis、MySQL 为主，兼容 PostgreSQL；部署围绕 Docker / Docker Compose（2026-10-23 去掉 K8s）；可观测性起步阶段用 Uptime Kuma、GlitchTip、Beszel、Dozzle，告警只发 Telegram，升级路径为 Prometheus + Alertmanager；PRD 以 pm-skills、mattpocock-skills、gstack 等技能为主；**规格框架按场景启用**（2026-10-28 改：全局 superpowers；后端清单默认启用 OpenSpec、前端清单默认启用 gsd-core，同一项目只启用一套；支持包按主场景启用、第二场景注释录入，见 `open_supports/INDEX.md`「建议场景」）；全局工具 task-master、gstack（2026-10-28：gstack 以 `--prefix` 安装，`skillOverrides` 默认只能手动调用、场景按需打开；mattpocock-skills 移出全局，改在 prd-design、backend-dev 场景启用，见 `settings/README.md`「工作流框架分层」）；记忆类只保留 `remember`，cognee 暂不启用。
 
 **目录结构**：
 
@@ -104,7 +105,7 @@ scripts/
   install-open-supports.sh  安装支持包：-t 项目级 / -g 全局，-n 单一 / -l 清单
   install-*.sh              单一维度安装（settings、CLAUDE.md、.mcp.json、agents、skills、dot_claude）
   multi_client_support/     codex.sh：把个人差异规则写入 ~/.codex/AGENTS.md 标记区块
-  tests/                    10 个测试文件，run-all.sh 一次执行
+  tests/                    13 个测试文件，run-all.sh 一次执行
 docs/
   handoff/HANDOFF.md        本文件
   plans/                    待办计划
@@ -134,7 +135,7 @@ sh scripts/install-claude-project.sh -g -d
 sh scripts/multi_client_support/codex.sh -d
 ```
 
-最后一次完整验证结果：2026-10-28（`cff9bfe`），12 个测试文件全部通过（含 `sh -n` 语法检查）。
+最后一次完整验证结果：2026-10-28（`5eb6078`），13 个测试文件全部通过（含 `sh -n` 语法检查）。
 
 <!-- section: gotchas -->
 ## 续作时必须知道的事
@@ -165,7 +166,7 @@ sh scripts/multi_client_support/codex.sh -d
 
 原因：pm-skills 以 `--scope project` 写入项目 `.claude/settings.json`，overwrite 会整体替换。`install-claude-project.sh` 已内建「先复制 settings 再装支持包」的顺序，单独装 settings 时没有。
 
-正确做法：单独重装 settings 后重新运行 `install-open-supports.sh -t <project>`，或用 `-m merge`。含 permissions 的模板（backend-dev、dev-ops、fullstack-dev）必须用 overwrite，merge 只合并插件字段。
+正确做法：单独重装 settings 后重新运行 `install-open-supports.sh -t <project>`，或用 `-m merge`。含 permissions 的模板（backend-dev、dev-ops、fullstack-dev）必须用 overwrite，merge 只合并插件、市场与 `skillOverrides` 字段。
 
 ### 数据库 MCP 可写
 
@@ -247,7 +248,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 ### 其他已知问题
 
 - 第三方市场插件名无法离线校验：`pm-skills`、`anthropic-agent-skills` 未缓存在本机，`test-settings-templates.sh` 跳过其名称检查
-- 全局工具重叠：mattpocock-skills 与 superpowers 都有 TDD、需求追问类 skill；用户决定不用 `skillOverrides` 关闭，由用户按需手动调用
+- 工作流框架重叠（2026-10-28 改）：原决定「不用 `skillOverrides` 关闭，由用户按需手动调用」已被取代。`skillOverrides` 对插件 skill 无效（实测 + 官方文档），所以 mattpocock-skills 只能整包移到场景；gstack 是个人 skill，用 `user-invocable-only` 实现「只手动调用」。依据见 `docs/evaluation/2026-10-28-skill-overrides-experiment.md`
 - `typescript-native-lsp` 来自内置插件目录（`@anthropic-plugin-directory`）；TypeScript 6 以下需另装 `typescript-language-server`
 - 本机 `~/.codex/AGENTS.md` 首行 `@/Users/zz/.codex/RTK.md`：`@` 引用是 Claude Code 语法，Codex 文档未提及支持，可能不生效（未验证，未改动）
 - zsh 下 `for x in dir/*` 无匹配会报错中断；在本仓库用 Bash 工具批量处理文件时先 `setopt nullglob`，或写成 `sh` 脚本
@@ -348,4 +349,5 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-27～28 | 阶段 1 审计与手动测验指南 | 用户决定不用 `CLAUDE_CONFIG_DIR` 隔离、改为手动实战，环境与真实使用一致（装支持包、场景插件、启用项目 MCP），影响逐项提醒；交互模式、每任务最多 2 次；任务缩减为 16 个；新增 `docs/evaluation/`（基线、指南、fixtures）（`b305f5d`） | 等用户执行 |
 | 2026-10-28 | settings 插件池梳理 | 参考插件配置 + 全局 + 各场景汇总为插件池表；同源插件统一 `@claude-plugins-official`；`code-review`、`mongodb-self-managed-mcp` 不采用；local 模板加 `pyright-lsp`、`typescript-lsp`（false）；`settings.user.json` 本机依赖说明；全局 deny 覆盖 dev-ops ask 保持现状并说明（`81e2b10`） | project 模板与场景包本次对齐，之后仍分开维护 |
 | 2026-10-28 | 支持包场景划分与场景包 README | 核对 5 个上游原文（报告中 pm-skills 数量、`/canary` 灰度、gsd-core 后端命令等为误）；主场景启用、第二场景注释录入：OpenSpec 主后端、gsd-core 主前端（取代「不设默认框架」）、codegraph 主后端、`pm-ai-shipping` 次 DevOps；四个场景包新增 README（自动加载／需手动安装的插件与恢复命令）（`cff9bfe`） | deanpeters 入 PRD 暂缓（见待处理事项） |
+| 2026-10-28 | 工作流框架分层 | 讨论与实测（`5e3b6a3`）：`skillOverrides` 对插件 skill 无效、跨作用域逐键合并；`install-settings.sh -m merge` 逐键合并 `skillOverrides`（`eb7375a`）；gstack 安装脚本默认 `~/.local/share/gstack`、`--prefix`、不注册 timeline / plan-tune hook，只对 `gstack-config` 未保存的设置传默认值（隔离 HOME 端到端验证）；`settings.user.json` 隐藏 gstack 64 项，prd-design、dev-ops 按需打开；mattpocock-skills 改为 prd-design、backend-dev 场景启用（`5eb6078`）；13 个测试文件全过 | 未推送；本机尚未按新方式安装 gstack；gstack 升级新增 skill 时需补进 `skillOverrides`；`/gstack-review` 与内置 `/code-review` 别名的关系未实测；fullstack-dev 是否也启用 mattpocock-skills 未决定 |
 | 2026-10-28 | 推送与发布 v2.2.0 | 推送 `b305f5d`～`e4af50e`，发布 v2.2.0（Latest，tag `e4af50e`）；相容性说明：frontend-dev 默认装 gsd-core、不再默认装 codegraph，backend-dev 加装 OpenSpec（会全局安装或升级 openspec CLI） | — |
