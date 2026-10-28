@@ -56,7 +56,7 @@
 |------|---------|---------------|
 | mattpocock-skills | 2026-10-28 移出全局，改在 prd-design、backend-dev、fullstack-dev 场景 settings 启用（`mattpocock-skills@claude-plugins-official`），无需运行脚本 | 插件 skill 不受 `skillOverrides` 控制，只能整包启用；上游已把 27 个 skill 中 16 个设为只能手动调用，见 `settings/README.md`「工作流框架分层」 |
 | gstack | `sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh` | 检出到 `~/.local/share/gstack`（构建后约 1.1GB），setup 建立 `~/.claude/skills/gstack` 链接，所有项目可见；默认 `--prefix`、不注册 timeline Stop hook 与 plan-tune hook，已用 `gstack-config` 保存的选择不覆盖；62 个 skill 在 `settings/settings.user.json` 的 `skillOverrides` 默认设为只能手动调用，场景按需打开，见 `settings/README.md`「工作流框架分层」 |
-| task-master | `sh open_supports/ost_eyaltoledano_claude-task-master/scripts_for_install/install.sh --global --claude-mcp --tools=core` | 需要模型 API key，或使用已认证的 Claude Code provider；`--tools=core` 只加载核心工具，减少上下文 |
+| task-master | `sh open_supports/ost_eyaltoledano_claude-task-master/scripts_for_install/install.sh --global` | 只安装 CLI，不注册 MCP（2026-10-28 决定，通过 `task-master` 命令使用）；需要模型 API key，或使用已认证的 Claude Code provider。需要 MCP 时加 `--claude-mcp`（可配 `--tools=core` 减少上下文） |
 
 ---
 

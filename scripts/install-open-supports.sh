@@ -85,7 +85,7 @@ wrapper Skill（仅项目级）：
   sh scripts/install-open-supports.sh -g -l dot_claude_projects/.claude/open_supports_name_list.txt
 
   # 全局单独安装一个支持包
-  sh scripts/install-open-supports.sh -g -n eyaltoledano/claude-task-master -- --global --claude-mcp --tools=core
+  sh scripts/install-open-supports.sh -g -n eyaltoledano/claude-task-master -- --global
 USAGE
 }
 

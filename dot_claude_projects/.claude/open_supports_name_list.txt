@@ -12,7 +12,7 @@
 # 默认 --prefix（gstack-*）、不注册 timeline Stop hook 与 plan-tune hook
 garrytan/gstack
 
-# Taskmaster：把 PRD 拆成任务；注册用户级 MCP，只加载核心工具
-eyaltoledano/claude-task-master --global --claude-mcp --tools=core
+# Taskmaster：把 PRD 拆成任务；只全局安装 task-master CLI，不注册 MCP（需要时手动加 --claude-mcp）
+eyaltoledano/claude-task-master --global
 
 # mattpocock-skills 是插件，在 prd-design、backend-dev、fullstack-dev 场景的 settings 启用，不在此安装。
