@@ -1,8 +1,8 @@
 ---
 branch: main
-head: 6adb239
+head: d68370c
 status: active
-updated: 2026-10-28
+updated: 2026-10-29
 ---
 # 进度交接
 
@@ -40,6 +40,7 @@ updated: 2026-10-28
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
+| 配置安装技能 `myconfig`（列出／安装本仓库配置） | 已实现并发布 v2.4.0（2026-10-29）；用户已在本机安装，`/myconfig` 列表模式正常 | `dot_claude/skills/myconfig/`；设计 `docs/plans/2026-10-28-config-install-skill-design.md` §11。`claude -p` 实测：沙箱禁止会话内写 `.claude/settings.json`、`skills/`、`hooks/`，改为技能只预演、写入交付命令由用户执行；跨项目使用需把仓库路径与 `~/.claude/skills/myconfig` 加进 `sandbox.filesystem.allowRead`；两轮子代理交叉审查意见已全部处理 |
 
 ### 待办计划：场景配置评估、优化与验证
 
@@ -75,7 +76,7 @@ updated: 2026-10-28
 
 **仓库定位**：个人 Agent 配置与工具／技能管理仓库（Claude Code 为主，兼顾 Codex），公开供参考。2026-10-19 从「分层提示词规则系统」转型而来，设计原则与原因见根目录 `README.md`。
 
-**版本**：`main` 已于 2026-10-28 推送至 `origin/main`（之后的新提交推送仍需用户指示）；GitHub release v2.0.0（tag `a0783b3`）、v2.0.1（tag `6a31aee`）、v2.1.0（tag `3821dee`）、v2.2.0（tag `e4af50e`）、v2.3.0（tag `beb1ca8`，标为 Latest）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
+**版本**：`main` 已于 2026-10-28 推送至 `origin/main`（之后的新提交推送仍需用户指示）；GitHub release v2.0.0（tag `a0783b3`）、v2.0.1（tag `6a31aee`）、v2.1.0（tag `3821dee`）、v2.2.0（tag `e4af50e`）、v2.3.0（tag `beb1ca8`）、v2.4.0（tag `d68370c`，标为 Latest）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
 
 **四个场景**（FLAG 在所有维度目录中一致；另有 `fullstack-dev` 只存在于 `settings/`）：
 
@@ -266,6 +267,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 交叉评审的模型组合与预算上限（`claude -p` 重复执行会消耗额度） | 同上 |
 | 阶段 2 的采纳决策 | 阶段 2 完成后产出 |
 | 本机是否采用新的全局设定 | 本文件「当前状态」 |
+| myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；会话实测设计 §8 第 3、5～9、11 条与安装后报告；`!` 模式的沙箱与超时 | 设计文件 §8、§11 |
 | `claude plugin eval` 是否适合本仓库场景包 | 计划文件 3.3（待确认后纳入） |
 
 <!-- section: next -->
@@ -358,3 +360,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-28 | 推送与发布 v2.2.0 | 推送 `b305f5d`～`e4af50e`，发布 v2.2.0（Latest，tag `e4af50e`）；相容性说明：frontend-dev 默认装 gsd-core、不再默认装 codegraph，backend-dev 加装 OpenSpec（会全局安装或升级 openspec CLI） | — |
 | 2026-10-28 | 本机全局安装、推送与发布 v2.3.0 | 用户在本机执行 `install-claude-project.sh -g`（`check-gstack-overrides.sh` 一致）；deanpeters/Product-Manager-Skills 决定忽略，`open_supports/INDEX.md` 改为不启用（`beb1ca8`）；推送并发布 v2.3.0（Latest），相容性说明：gstack 默认只手动调用、无 `--prefix` 旧安装需重装、全局不再启用 mattpocock-skills；14 个测试文件全过 | 本机全局设定差异待用户决定；docker 残留待用户手动清理 |
 | 2026-10-28 | 本机全局设定对齐 | 比对本机与 `settings.user.json` 后由用户逐项决定；同一插件跨市场被视为不同插件、同时启用只注册一份 hooks（官方 `plugins/loading.md`），directory 来源用 `install --replace` 切换、demo 市场副本需 `uninstall`；本机备份 `~/.claude/settings.json.bak-20261028191703`；`settings/README.md` 记录与保留差异，镜像同步（`6adb239`） | `installed_plugins.json` 有指向已删除 scratchpad 的项目级孤立记录，无影响、未清理 |
+| 2026-10-29 | 配置安装技能 `myconfig` | 盘点、设计 v2 经子代理交叉审查后由用户确认第 9 节；实现 `dot_claude/skills/myconfig/`（SKILL.md、`scripts/catalog`、`references/commands.md`）与 `test-myconfig-catalog.sh`（15 个测试文件全过）；`claude -p` 实测发现沙箱同时限制读取（`denyRead ~/`）、会话内写 `.claude/` 配置与注入命令，改为只预演 + 交付命令、注入加 `\|\| printf` 退路；第二轮实现审查 1 blocker（单个支持包 `--dry-run` 放在 `--` 后会真实安装）等全部修正 | 已提交（`0400627`、`d68370c`）并推送，发布 v2.4.0（Latest）；安装后报告未端到端测试 |
