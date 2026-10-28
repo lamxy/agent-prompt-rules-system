@@ -24,7 +24,6 @@
 | `skills-codex-repair/` | npm 安装 Codex 时 `ENOTEMPTY` 错误的修复 |
 | `skills-github-ops/` | GitHub release 发布 |
 | `skills-open-supports/` | 安装 `open_supports/` 支持包 |
-| `skills-gstack-based-dev/` | 基于 gstack 的开发（占位） |
 
 ## 目录结构
 
