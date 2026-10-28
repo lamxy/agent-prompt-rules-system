@@ -145,8 +145,6 @@
       "Bash(redis-cli ping)",
       "Bash(redis-cli info*)",
       "Bash(redis-cli dbsize)",
-      "Bash(kubectl get *)",
-      "Bash(kubectl describe *)",
       "Bash(adb devices)",
       "Bash(xcrun simctl list)",
       "mcp__codegraph__*",
@@ -353,6 +351,73 @@
     "defaultMode": "auto"
   },
   "model": "opus",
+  "skillOverrides": {
+    "claude-api": "user-invocable-only",
+    "_gstack-command": "user-invocable-only",
+    "gstack": "user-invocable-only",
+    "gstack-autoplan": "user-invocable-only",
+    "gstack-benchmark": "user-invocable-only",
+    "gstack-benchmark-models": "user-invocable-only",
+    "gstack-browse": "user-invocable-only",
+    "gstack-canary": "user-invocable-only",
+    "gstack-captain": "user-invocable-only",
+    "gstack-careful": "user-invocable-only",
+    "gstack-codex": "user-invocable-only",
+    "gstack-connect-chrome": "user-invocable-only",
+    "gstack-context-restore": "user-invocable-only",
+    "gstack-context-save": "user-invocable-only",
+    "gstack-cso": "user-invocable-only",
+    "gstack-design-consultation": "user-invocable-only",
+    "gstack-design-html": "user-invocable-only",
+    "gstack-design-motion": "user-invocable-only",
+    "gstack-design-review": "user-invocable-only",
+    "gstack-design-shotgun": "user-invocable-only",
+    "gstack-deslop-shared-libs": "user-invocable-only",
+    "gstack-devex-review": "user-invocable-only",
+    "gstack-diagram": "user-invocable-only",
+    "gstack-document-generate": "user-invocable-only",
+    "gstack-document-release": "user-invocable-only",
+    "gstack-eval-plan": "user-invocable-only",
+    "gstack-freeze": "user-invocable-only",
+    "gstack-guard": "user-invocable-only",
+    "gstack-health": "user-invocable-only",
+    "gstack-investigate": "user-invocable-only",
+    "gstack-ios-clean": "off",
+    "gstack-ios-design-review": "off",
+    "gstack-ios-fix": "off",
+    "gstack-ios-qa": "off",
+    "gstack-ios-sync": "off",
+    "gstack-land-and-deploy": "user-invocable-only",
+    "gstack-landing-report": "user-invocable-only",
+    "gstack-learn": "user-invocable-only",
+    "gstack-make-pdf": "user-invocable-only",
+    "gstack-modernize": "user-invocable-only",
+    "gstack-office-hours": "user-invocable-only",
+    "gstack-open-gstack-browser": "user-invocable-only",
+    "gstack-pair-agent": "user-invocable-only",
+    "gstack-plan-ceo-review": "user-invocable-only",
+    "gstack-plan-design-review": "user-invocable-only",
+    "gstack-plan-devex-review": "user-invocable-only",
+    "gstack-plan-eng-review": "user-invocable-only",
+    "gstack-plan-tune": "user-invocable-only",
+    "gstack-qa": "user-invocable-only",
+    "gstack-qa-only": "user-invocable-only",
+    "gstack-retro": "user-invocable-only",
+    "gstack-review": "user-invocable-only",
+    "gstack-scrape": "user-invocable-only",
+    "gstack-setup-browser-cookies": "user-invocable-only",
+    "gstack-setup-deploy": "user-invocable-only",
+    "gstack-setup-gbrain": "off",
+    "gstack-ship": "user-invocable-only",
+    "gstack-skillify": "user-invocable-only",
+    "gstack-spec": "user-invocable-only",
+    "gstack-sync-gbrain": "off",
+    "gstack-test-audit": "user-invocable-only",
+    "gstack-ubicloud": "off",
+    "gstack-unfreeze": "user-invocable-only",
+    "gstack-upgrade": "user-invocable-only",
+    "gstack-write-skill": "user-invocable-only"
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -402,33 +467,23 @@
   "enabledPlugins": {
     "andrej-karpathy-skills@karpathy-skills": true,
     "claude-code-setup@claude-plugins-official": true,
-    "commit-commands@claude-code-plugins": true,
     "context7@claude-plugins-official": true,
     "github@claude-plugins-official": true,
     "hookify@claude-plugins-official": true,
-    "playground@claude-plugins-official": true,
+    "playground@claude-plugins-official": false,
     "ralph-loop@claude-plugins-official": true,
     "session-report@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": false,
     "open-code-review@open-code-review": true,
-    "pyright-lsp@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
     "chrome-devtools-mcp@claude-plugins-official": true,
-    "typescript-native-lsp@anthropic-plugin-directory": true,
-    "skill-creator@anthropic-plugin-directory": true,
-    "claude-md-management@anthropic-plugin-directory": true,
-    "security-guidance@anthropic-plugin-directory": true,
-    "remember@claude-plugins-official": true
+    "remember@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
-    "claude-code-plugins": {
-      "source": {
-        "source": "github",
-        "repo": "anthropics/claude-code"
-      }
-    },
     "claude-plugins-official": {
       "source": {
         "source": "github",
@@ -530,8 +585,5 @@
     ],
     "classifyAllShell": true
   },
-  "skippedPlugins": [],
-  "skillOverrides": {
-    "claude-api": "user-invocable-only"
-  }
+  "skippedPlugins": []
 }

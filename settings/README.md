@@ -61,6 +61,12 @@ local > project > user
 | `mongodb-self-managed-mcp`（内置目录） | 与 `mongodb@claude-plugins-official` 同源（`mongodb/agent-skills` 的 `plugins/mongodb`），不重复收录 |
 | `@claude-code-plugins` 市场的 `commit-commands` 等 | 官方市场都有同名版本，不再声明该市场 |
 
+同一插件挂在不同市场时（2026-10-28 本机核对）：
+
+- `claude-code-plugins`（`anthropics/claude-code`，官方文档称为 demo 市场）与 `anthropic-plugin-directory` 的这些插件，源码都是 `anthropics/claude-plugins-official` 的同一子目录；Claude Code 按 `名称@市场` 识别，会当成不同插件。
+- 两份同时启用时，`/plugin` 都显示已启用，但只有一份的 hooks 会注册（官方文档 `plugins/loading.md`「Hooks when two enabled plugins share a name」）。
+- 本机改用官方市场：`anthropic-plugin-directory` 的插件用 `claude plugin install <名称>@claude-plugins-official --replace` 切换；`claude-code-plugins` 的副本不会被替换，需 `claude plugin uninstall <名称>@claude-code-plugins`，最后 `claude plugin marketplace remove claude-code-plugins`。
+
 `settings/settings.project-<FLAG>.json` 与 `dot_claude_projects/.claude-<FLAG>/.claude/settings.json` 本次梳理后保持一致；之后仍按「分开维护」处理，除非明确要求再次对齐。
 
 ### 工作流框架分层（2026-10-28）
@@ -86,7 +92,7 @@ sh scripts/install-claude-project.sh -g -d   # 预演
 sh scripts/install-claude-project.sh -g      # 复制全局清单 → 同步 skillOverrides → 安装 gstack、task-master → 检查覆盖
 ```
 
-第 2 步只用 `install-settings.sh -l user -m merge -K skillOverrides` 合并 `skillOverrides`（先备份）：本机设定的插件来自其他市场，整份 merge 会重复启用同名插件。单独检查：`sh scripts/check-gstack-overrides.sh`。
+第 2 步只用 `install-settings.sh -l user -m merge -K skillOverrides` 合并 `skillOverrides`（先备份）：本机设定若有插件来自其他市场（见上方「同一插件挂在不同市场时」），整份 merge 会重复启用同名插件。单独检查：`sh scripts/check-gstack-overrides.sh`。
 
 ### 用户级（`-l user`）
 
@@ -114,7 +120,13 @@ sh scripts/install-claude-project.sh -g      # 复制全局清单 → 同步 ski
 | `commit-commands`、`skill-creator`、`claude-md-management`、`security-guidance` 改用 `@claude-plugins-official` | 原来分别来自 `claude-code-plugins` 与内置插件目录；统一到官方市场，换机器也能复现 |
 | 删除 `claude-code-plugins` 市场 | 其插件官方市场都有 |
 
-`dot_claude/settings.json` 仍是本机设定的镜像，未做上述调整；要在本机采用新的全局设定，需手动执行 `install-settings.sh -l user`（会先备份）。
+2026-10-28 本机已对齐上表（插件改用官方市场、删除 `claude-code-plugins` 市场、`skillOverrides` 同步、删除 `kubectl get/describe` 放行、停用 `playground`），`dot_claude/settings.json` 镜像同步更新。本机仍刻意保留的差异：
+
+| 差异 | 原因 |
+|------|------|
+| 全局启用 `frontend-design`、`chrome-devtools-mcp` | 作者常在未套用场景模板的临时项目中使用；仓库模板仍只在前端场景启用，避免后端、DevOps 项目多占上下文 |
+
+要在其他机器采用全局设定，先与该机器的 `~/.claude/settings.json` 比对差异再决定，不要直接覆盖；确认后执行 `install-settings.sh -l user`（会先备份）。
 
 这份设定保留了作者本机的环境与偏好，在其他机器上使用前逐项确认：
 
