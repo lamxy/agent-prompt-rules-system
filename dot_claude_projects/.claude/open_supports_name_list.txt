@@ -15,4 +15,4 @@ garrytan/gstack
 # Taskmaster：把 PRD 拆成任务；注册用户级 MCP，只加载核心工具
 eyaltoledano/claude-task-master --global --claude-mcp --tools=core
 
-# mattpocock-skills 是插件，在 prd-design、backend-dev 场景的 settings 启用，不在此安装。
+# mattpocock-skills 是插件，在 prd-design、backend-dev、fullstack-dev 场景的 settings 启用，不在此安装。

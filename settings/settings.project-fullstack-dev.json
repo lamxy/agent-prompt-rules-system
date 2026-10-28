@@ -13,7 +13,8 @@
         "postman@claude-plugins-official": true,
         "mongodb@claude-plugins-official": true,
         "redis-development@claude-plugins-official": true,
-        "semgrep@claude-plugins-official": true
+        "semgrep@claude-plugins-official": true,
+        "mattpocock-skills@claude-plugins-official": true
     },
     "permissions": {
         "deny": [

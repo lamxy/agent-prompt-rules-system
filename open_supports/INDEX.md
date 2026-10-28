@@ -32,7 +32,7 @@
 | `ost_deanpeters_Product-Manager-Skills` | [deanpeters/Product-Manager-Skills](https://github.com/deanpeters/Product-Manager-Skills) | 产品管理框架 skills / commands（discovery、strategy、delivery 等） | D（项目分支为显式路径） | 主：PRD（备选，未默认启用；与 phuryn 二选一，见下方说明） | ✅ |
 | `ost_eyaltoledano_claude-task-master` | [eyaltoledano/claude-task-master](https://github.com/eyaltoledano/claude-task-master) | Taskmaster：把 PRD 拆成任务，经 CLI 或 MCP 推进 | D（本地 B） | **全局** | ✅ |
 | `ost_garrytan_gstack` | [garrytan/gstack](https://github.com/garrytan/gstack) | Think → Plan → Build → Review → Test → Ship 的编码工作流技能包 | D（本地 B） | **全局**（产品、前后端常用） | ✅ |
-| `ost_mattpocock_skills` | [mattpocock/skills](https://github.com/mattpocock/skills) | 小而可组合的工程类 agent skills（如 `/grill-me`） | D（项目分支 B） | prd-design、backend-dev（插件，场景 settings 启用） | ✅ |
+| `ost_mattpocock_skills` | [mattpocock/skills](https://github.com/mattpocock/skills) | 小而可组合的工程类 agent skills（如 `/grill-me`） | D（项目分支 B） | prd-design、backend-dev、fullstack-dev（插件，场景 settings 启用） | ✅ |
 | `ost_msitarzewski_agency-agents` | [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents) | 多角色专业 agent 与安装脚本（本仓库 `agents/agents-agency-agent-based-dev/` 的来源） | D（项目分支 B） | 不直接安装，已挑选到 `agents/` | ✅ |
 | `ost_open-gsd_gsd-core` | [open-gsd/gsd-core](https://github.com/open-gsd/gsd-core) | discuss → plan → execute → verify → ship 的 spec-driven 工作流 | D（本地 B） | 主：前端；次：后端 | ✅ |
 | `ost_phuryn_pm-skills` | [phuryn/pm-skills](https://github.com/phuryn/pm-skills) | PM Skills 插件市场：68 个 PM skills、42 个工作流 | D（本地 B） | 主：PRD（项目级插件）；次：DevOps（仅 `pm-ai-shipping`） | ✅ |
@@ -54,7 +54,7 @@
 
 | 工具 | 安装方式 | 前置条件与注意 |
 |------|---------|---------------|
-| mattpocock-skills | 2026-10-28 移出全局，改在 prd-design、backend-dev 场景 settings 启用（`mattpocock-skills@claude-plugins-official`），无需运行脚本 | 插件 skill 不受 `skillOverrides` 控制，只能整包启用；上游已把 27 个 skill 中 16 个设为只能手动调用，见 `settings/README.md`「工作流框架分层」 |
+| mattpocock-skills | 2026-10-28 移出全局，改在 prd-design、backend-dev、fullstack-dev 场景 settings 启用（`mattpocock-skills@claude-plugins-official`），无需运行脚本 | 插件 skill 不受 `skillOverrides` 控制，只能整包启用；上游已把 27 个 skill 中 16 个设为只能手动调用，见 `settings/README.md`「工作流框架分层」 |
 | gstack | `sh open_supports/ost_garrytan_gstack/scripts_for_install/install.sh` | 检出到 `~/.local/share/gstack`（构建后约 1.1GB），setup 建立 `~/.claude/skills/gstack` 链接，所有项目可见；默认 `--prefix`、不注册 timeline Stop hook 与 plan-tune hook，已用 `gstack-config` 保存的选择不覆盖；62 个 skill 在 `settings/settings.user.json` 的 `skillOverrides` 默认设为只能手动调用，场景按需打开，见 `settings/README.md`「工作流框架分层」 |
 | task-master | `sh open_supports/ost_eyaltoledano_claude-task-master/scripts_for_install/install.sh --global --claude-mcp --tools=core` | 需要模型 API key，或使用已认证的 Claude Code provider；`--tools=core` 只加载核心工具，减少上下文 |
 

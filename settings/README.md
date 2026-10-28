@@ -38,7 +38,7 @@ local > project > user
 | 插件 | 层级／场景 | 说明 |
 |------|-----------|------|
 | `superpowers`、`andrej-karpathy-skills`、`ralph-loop` | 全局 | 工作流与工程方法 |
-| `mattpocock-skills` | prd-design、backend-dev | 需求追问、规格与任务拆分、领域建模；2026-10-28 移出全局，见下方「工作流框架分层」 |
+| `mattpocock-skills` | prd-design、backend-dev、fullstack-dev | 需求追问、规格与任务拆分、领域建模；2026-10-28 移出全局，见下方「工作流框架分层」 |
 | `context7`、`github`、`commit-commands` | 全局 | 文档查询与代码托管 |
 | `security-guidance`、`open-code-review` | 全局 | 质量与安全 |
 | `claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify` | 全局 | Claude Code 自身配置 |
@@ -74,7 +74,7 @@ local > project > user
 | 框架 | 形态 | 分层 |
 |------|------|------|
 | superpowers | 插件 | 全局启用 |
-| mattpocock-skills | 插件 | 不在全局；prd-design、backend-dev 的 `enabledPlugins` 启用。上游已把 27 个 skill 中 16 个设为只能手动调用；其余可自动触发的 `tdd`、`diagnosing-bugs`、`code-review` 与 superpowers 重叠，因此不放全局 |
+| mattpocock-skills | 插件 | 不在全局；prd-design、backend-dev、fullstack-dev 的 `enabledPlugins` 启用。上游已把 27 个 skill 中 16 个设为只能手动调用；其余可自动触发的 `tdd`、`diagnosing-bugs`、`code-review` 与 superpowers 重叠，因此不放全局 |
 | gstack | 个人 skill（`--prefix` 安装，名称为 `gstack-*`） | `settings.user.json` 的 `skillOverrides` 把 62 个 skill 及路由 `gstack`、`_gstack-command` 设为 `user-invocable-only`（`/` 菜单可用，模型看不到）；iOS、gbrain、ubicloud 共 8 个设为 `off`。场景模板只把需要的设为 `on`：prd-design 为 `gstack-office-hours`、`gstack-plan-ceo-review`；dev-ops 为 `gstack-ship`、`gstack-land-and-deploy`、`gstack-canary`、`gstack-cso` |
 
 gstack 各 skill 之间多以读取对方 `SKILL.md` 串接，不经 Skill 工具，隐藏后不影响串接；只有路由 skill 用 Skill 工具派发，它本身也已隐藏。gstack 升级新增 skill 时，新 skill 默认为 `on`，需要把它补进 `skillOverrides`。
