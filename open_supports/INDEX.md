@@ -29,7 +29,7 @@
 |--------|------|------|------|----------|:-:|
 | `ost_Fission-AI_OpenSpec` | [Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec) | 规格驱动开发工作流：`openspec` CLI 与 `/opsx:*` 命令，先对齐需求再实现 | A（项目初始化 B） | 主：后端；次：前端 | ✅ |
 | `ost_colbymchenry_codegraph` | [colbymchenry/codegraph](https://github.com/colbymchenry/codegraph) | 本地代码知识图谱 MCP，一次调用取得精准上下文 | D（本地 B） | 主：后端；次：前端 | — |
-| `ost_deanpeters_Product-Manager-Skills` | [deanpeters/Product-Manager-Skills](https://github.com/deanpeters/Product-Manager-Skills) | 产品管理框架 skills / commands（discovery、strategy、delivery 等） | D（项目分支为显式路径） | 主：PRD（备选，未默认启用；与 phuryn 二选一，见下方说明） | ✅ |
+| `ost_deanpeters_Product-Manager-Skills` | [deanpeters/Product-Manager-Skills](https://github.com/deanpeters/Product-Manager-Skills) | 产品管理框架 skills / commands（discovery、strategy、delivery 等） | D（项目分支为显式路径） | 不启用（2026-10-28 用户决定忽略，见下方说明） | ✅ |
 | `ost_eyaltoledano_claude-task-master` | [eyaltoledano/claude-task-master](https://github.com/eyaltoledano/claude-task-master) | Taskmaster：把 PRD 拆成任务，经 CLI 或 MCP 推进 | D（本地 B） | **全局** | ✅ |
 | `ost_garrytan_gstack` | [garrytan/gstack](https://github.com/garrytan/gstack) | Think → Plan → Build → Review → Test → Ship 的编码工作流技能包 | D（本地 B） | **全局**（产品、前后端常用） | ✅ |
 | `ost_mattpocock_skills` | [mattpocock/skills](https://github.com/mattpocock/skills) | 小而可组合的工程类 agent skills（如 `/grill-me`） | D（项目分支 B） | prd-design、backend-dev、fullstack-dev（插件，场景 settings 启用） | ✅ |
@@ -44,7 +44,7 @@
 - OpenSpec 规格放在代码仓库的 `openspec/`、`/opsx:apply` 直接实现，属于开发工作流而非 PRD 工具；以「需求 + 场景（WHEN/THEN）」描述行为，与后端「先改契约」一致，故主场景为后端。
 - gsd-core 唯一的场景专属能力是前端的 `/gsd-ui-phase`、`/gsd-ui-review`，故主场景为前端；OpenSpec 与 gsd-core 都是规格／工作流框架，同一项目只启用一套，改用另一套时注释主场景那一行。
 - phuryn/pm-skills 的 `pm-ai-shipping`（`/ship-check`、`/security-audit-static`、`/performance-audit-static`）是上线前的静态代码审查与签核材料，列为 DevOps 的次场景；与已有审查工具重叠，默认不启用。
-- deanpeters/Product-Manager-Skills 与 phuryn 功能高度重叠，两者 `marketplace.json` 的 `name` 都是 `pm-skills`，且授权为 CC BY-NC-SA 4.0（非商业）；本仓库支持包目前没有 Claude Code 项目级安装路径，暂不写入 PRD 清单。
+- deanpeters/Product-Manager-Skills 与 phuryn 功能高度重叠，两者 `marketplace.json` 的 `name` 都是 `pm-skills`，且授权为 CC BY-NC-SA 4.0（非商业）；本仓库支持包目前没有 Claude Code 项目级安装路径。2026-10-28 用户决定忽略：不写入任何场景清单，也不再补项目级安装路径；支持包目录保留供参考。
 
 ---
 
