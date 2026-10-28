@@ -1,0 +1,143 @@
+#!/bin/sh
+# 列出 agent-prompt-rules-system 倉庫可安裝的配置（只讀）。
+# 第一行固定輸出 REPO=<倉庫路徑> 或 REPO=NOT_FOUND。
+# 一律 exit 0：本腳本以 `!` 注入 SKILL.md，非 0 退出會中斷整個技能呼叫。
+# 倉庫定位順序：$AGENT_RULES_REPO → 本腳本所在的倉庫檢出 → 目前目錄的 git 根。
+set -u
+
+is_repo() {
+  [ -n "$1" ] && [ -f "$1/scripts/install-claude-project.sh" ] && [ -d "$1/dot_claude_projects" ]
+}
+
+locate_repo() {
+  if [ -n "${AGENT_RULES_REPO:-}" ]; then
+    if is_repo "$AGENT_RULES_REPO"; then
+      (CDPATH= cd -- "$AGENT_RULES_REPO" 2>/dev/null && pwd -P)
+      return 0
+    fi
+  fi
+
+  # 本腳本位於 <repo>/dot_claude/skills/myconfig/scripts/；符號連結安裝時 pwd -P 會解析回倉庫。
+  self_dir="$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd -P)" || self_dir=""
+  if [ -n "$self_dir" ]; then
+    candidate="$(CDPATH= cd -- "$self_dir/../../../.." 2>/dev/null && pwd -P)" || candidate=""
+    if is_repo "$candidate"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  fi
+
+  candidate="$(git rev-parse --show-toplevel 2>/dev/null)" || candidate=""
+  if is_repo "$candidate"; then
+    (CDPATH= cd -- "$candidate" 2>/dev/null && pwd -P)
+    return 0
+  fi
+
+  return 1
+}
+
+# 範本與原始素材池不列為候選
+is_template() {
+  case "$1" in
+    FLAG-NAME*|NAME-FLAG*|*_template) return 0 ;;
+  esac
+  return 1
+}
+
+count_files() {
+  # count_files <目錄> <名稱模式>
+  [ -d "$1" ] || { printf '0'; return; }
+  find "$1" -maxdepth 1 -type f -name "$2" 2>/dev/null | wc -l | tr -d ' '
+}
+
+count_skills() {
+  [ -d "$1" ] || { printf '0'; return; }
+  find "$1" -mindepth 2 -maxdepth 2 -type f -name SKILL.md 2>/dev/null | wc -l | tr -d ' '
+}
+
+nonempty() {
+  [ -s "$1" ] && printf '✓' || printf '·'
+}
+
+# 清單中未註解的支援包，取 repo 名稱並去重
+support_names() {
+  [ -f "$1" ] || { printf -- '-'; return; }
+  names="$(sed -n 's/^[[:space:]]*\([^#[:space:]][^[:space:]]*\).*/\1/p' "$1" 2>/dev/null \
+    | sed 's#.*/##' | awk '!seen[$0]++' | tr '\n' ' ' | sed 's/ *$//')"
+  [ -n "$names" ] && printf '%s' "$names" || printf -- '-'
+}
+
+collect_flags() {
+  repo="$1"
+  {
+    for dir in "$repo"/dot_claude_projects/.claude-*/; do
+      [ -d "$dir" ] || continue
+      name="$(basename "$dir")"
+      printf '%s\n' "${name#.claude-}"
+    done
+    for file in "$repo"/settings/settings.project-*.json; do
+      [ -f "$file" ] || continue
+      name="$(basename "$file" .json)"
+      printf '%s\n' "${name#settings.project-}"
+    done
+  } | sort -u | while read -r flag; do
+    is_template "$flag" || printf '%s\n' "$flag"
+  done
+}
+
+print_catalog() {
+  repo="$1"
+  printf '場景 × 維度（✓ 有內容，· 空或佔位，- 無；settings 的 p／l 為 project／local 模板；數字為個數）\n\n'
+  printf '| 場景 | 整包 | settings | CLAUDE.md | .mcp.json | agents | skills | 整包附帶支援包 |\n'
+  printf '|---|---|---|---|---|---|---|---|\n'
+  for flag in $(collect_flags "$repo"); do
+    bundle="$repo/dot_claude_projects/.claude-$flag"
+    [ -d "$bundle" ] && whole='✓' || whole='-'
+    [ -f "$repo/settings/settings.project-$flag.json" ] && sp='p' || sp='-'
+    [ -f "$repo/settings/settings.local-$flag.json" ] && sl='l' || sl='-'
+    if [ -f "$repo/claude_mds/CLAUDE-$flag.md" ]; then md="$(nonempty "$repo/claude_mds/CLAUDE-$flag.md")"; else md='-'; fi
+    if [ -f "$repo/dot_mcp_jsons/dot-mcp-json-$flag.json" ]; then mcp="$(nonempty "$repo/dot_mcp_jsons/dot-mcp-json-$flag.json")"; else mcp='-'; fi
+    if [ -d "$repo/agents/agents-$flag" ]; then agents="$(count_files "$repo/agents/agents-$flag" '*.md')"; else agents='-'; fi
+    if [ -d "$repo/skills/skills-$flag" ]; then skills="$(count_skills "$repo/skills/skills-$flag")"; else skills='-'; fi
+    supports="$(support_names "$bundle/.claude/open_supports_name_list.txt")"
+    printf '| %s | %s | %s | %s | %s | %s | %s | %s |\n' "$flag" "$whole" "$sp/$sl" "$md" "$mcp" "$agents" "$skills" "$supports"
+  done
+
+  others=""
+  for dir in "$repo"/skills/skills-*/; do
+    [ -d "$dir" ] || continue
+    name="$(basename "$dir")"
+    name="${name#skills-}"
+    is_template "$name" && continue
+    [ -d "$repo/dot_claude_projects/.claude-$name" ] && continue
+    [ -f "$repo/settings/settings.project-$name.json" ] && continue
+    others="$others $name"
+  done
+  printf '\n其他技能包：%s\n' "${others# }"
+  printf '全域清單（只給命令）：%s\n' "$(support_names "$repo/dot_claude_projects/.claude/open_supports_name_list.txt")"
+}
+
+NOTE=""
+
+main() {
+  # NOTE 必須在這裡設定：locate_repo 在命令替換的子 shell 中執行，賦值不會傳回
+  if [ -n "${AGENT_RULES_REPO:-}" ] && ! is_repo "$AGENT_RULES_REPO"; then
+    NOTE="注意：AGENT_RULES_REPO=$AGENT_RULES_REPO 不是本倉庫或無法讀取（沙箱限制讀取時，要在 sandbox.filesystem.allowRead 加入此路徑），已改用其他方式定位"
+  fi
+  repo="$(locate_repo)" || repo=""
+  if [ -z "$repo" ]; then
+    printf 'REPO=NOT_FOUND\n'
+    [ -n "$NOTE" ] && printf '%s\n' "$NOTE"
+    printf '找不到 agent-prompt-rules-system 倉庫。請在 shell rc 設定：\n'
+    printf '  export AGENT_RULES_REPO=<倉庫絕對路徑>\n'
+    printf '已設定仍找不到時，多半是沙箱擋住讀取：在 ~/.claude/settings.json 的 sandbox.filesystem.allowRead 加入倉庫路徑。\n'
+    printf '或在該倉庫目錄中重新開啟會話。\n'
+    return 0
+  fi
+  printf 'REPO=%s\n' "$repo"
+  [ -n "$NOTE" ] && printf '%s\n' "$NOTE"
+  print_catalog "$repo" 2>/dev/null || printf '（清單產生失敗，請直接查看倉庫目錄）\n'
+}
+
+main
+exit 0

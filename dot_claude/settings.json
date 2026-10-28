@@ -558,7 +558,9 @@
         "~/.ssh/config",
         "~/.kube/config",
         "~/.nvm",
-        "~/.config/pypoetry"
+        "~/.config/pypoetry",
+        "~/workspace/github_repos",
+        "~/.claude/skills/myconfig"
       ]
     },
     "excludedCommands": [

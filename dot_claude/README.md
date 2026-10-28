@@ -9,6 +9,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 | `CLAUDE.md` | 約 30 行，只寫與 Claude Code 預設行為不同的約束：資訊來源驗證、弱網降級、LSP 優先、RTK 原始輸出 |
 | `commands/analyze-github-repo.md` | `/analyze-github-repo`：輕量探測優先的單一 GitHub 倉庫分析 |
 | `skills/myhandoff/` | `myhandoff` 技能：讀寫 `docs/handoff/HANDOFF.md` 的進度交接；`settings.json` 的 `Stop`、`StopFailure` hook 依賴其 `scripts/` |
+| `skills/myconfig/` | `myconfig` 技能：列出本倉庫的場景配置，或在會話中預演並給出安裝命令（寫入由使用者執行）；`scripts/catalog` 現場產生清單。設計見 `docs/plans/2026-10-28-config-install-skill-design.md` |
 | `settings.json` | 個人使用者層級設定（權限、沙箱、hooks、外掛），與本機 `~/.claude/settings.json` 同步 |
 | `README.md` | 本說明，不會被載入為指令 |
 
@@ -18,6 +19,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 
 - `settings.json` 是個人使用者層級設定：其中 `autoMode`、`skillOverrides` 等鍵與依賴 `~/.claude/skills/myhandoff/`、`rtk` 的 hooks 不適合放進專案。`install.sh` 在 project/local 層級預設不安裝它（`-S` 可強制安裝），專案請改用 `settings/` 下的範本。
 - `README.md`（本檔）預設不會被 `install.sh` 安裝。
+- `skills/myconfig/` 需要找到本倉庫：在 shell rc 設定 `export AGENT_RULES_REPO=<倉庫絕對路徑>`（以符號連結安裝時可自動定位）。本機沙箱若以 `denyRead` 擋住家目錄，還要在 `~/.claude/settings.json` 的 `sandbox.filesystem.allowRead` 加入倉庫路徑與 `~/.claude/skills/myconfig`，否則在其他專案中讀不到倉庫與技能腳本（2026-10-29 實測：注入命令同樣受沙箱限制）。本機鏡像的 `settings.json` 已加入 `~/workspace/github_repos` 與 `~/.claude/skills/myconfig`；刻意不開放整個 `~/workspace`，避免讀到 `documents/` 等非程式碼資料。只更新技能：`sh ./scripts/install.sh -l user -m overwrite -E commands -e CLAUDE.md -e settings.json`；以符號連結安裝 myconfig 時再加 `-E skills/myconfig`，否則 `cp` 同一檔案會報錯中斷。
 - `skills/myhandoff/` 是本機 `~/.claude/skills/myhandoff/` 的副本（2026-10-20 同步），在本機修改技能後需再複製回本目錄。技能內的 `README.md` 會一併安裝；`-m append` 時 `skills/` 下已存在的檔案一律跳過（`[SKIP-APPEND]`），更新技能請用 `-m overwrite`。
 - 目標若裝過舊版，`install.sh` 會以 `[LEGACY]` 列出殘留檔案；`rules/` 下的舊規則每次啟動都會載入並與本版衝突。加 `-C` 會移至 `<target>/legacy-backup-<時間戳>/`，不會刪除。
 - 以 `-l user` 安裝時，`CLAUDE.md` 會覆蓋現有的 `~/.claude/CLAUDE.md`；若其中有本機專屬規則（例如 Homebrew、curl 重試、`@RTK.md` 匯入），需先手動合併。已存在的 `settings.json` 會被安裝腳本跳過，需手動合併。

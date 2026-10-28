@@ -185,6 +185,7 @@ sh ./scripts/tests/run-all.sh
 | `test-pm-skills-claude-scope.sh` | `ost_phuryn_pm-skills` 的 `--client=claude-code`：`--location=local` 在项目目录的子 shell 中以 `--scope project` 安装、默认保持用户级、未加 `--location=local` 时拒绝项目目录（以替身 `claude` 执行，不改动真实配置） |
 | `test-open-supports-index.sh` | `open_supports/INDEX.md` 登记了每个支持包，且分类与各包 `repo_readme_summary.md` 的「模式 X」一致 |
 | `test-open-support-install-scopes.sh` | 各 `open_supports` 安装脚本拒绝不存在的目标目录，且 `--help` 可用 |
+| `test-myconfig-catalog.sh` | `dot_claude/skills/myconfig/scripts/catalog`：自身路径、符号链接（含空格路径）、`AGENT_RULES_REPO`、cwd git 根四种定位；找不到或仓库残缺时仍 exit 0 并以 `REPO=` 开头、输出 ≤30 行、不列模板名；SKILL.md 的 `allowed-tools` 与注入命令逐字一致且带 `\|\|` 退路；技能内不含本机绝对路径；有 `dash` 时另跑一遍 |
 | `test-multi-client-codex.sh` | `multi_client_support/codex.sh`：新建、追加并保留原有内容、只替换区块且重复执行不变、`-d` 不写入、区块损坏需 `-F` 且先备份、拒绝已移除的选项、模板不含 Claude 专属工具名 |
 
 单独执行某个测试：`sh ./scripts/tests/test-install-settings.sh`。新增测试命名为 `test-<对象>.sh` 放在此目录，`run-all.sh` 会自动执行。
