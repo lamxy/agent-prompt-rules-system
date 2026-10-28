@@ -36,6 +36,12 @@ assert_contains() {
   grep -F -- "$2" "$1" >/dev/null 2>&1 || fail "expected $1 to contain: $2"
 }
 
+assert_not_contains() {
+  if grep -F -- "$2" "$1" >/dev/null 2>&1; then
+    fail "expected $1 not to contain: $2"
+  fi
+}
+
 # Source fixtures: a filled template, an empty one, and an invalid JSON one.
 SRC="$TMP_DIR/src"
 mkdir -p "$SRC/claude_mds" "$SRC/mcp" "$SRC/projects/.claude-demo/.claude/rules"
@@ -239,9 +245,49 @@ test_global_copies_only_the_list() {
   HOME="$home" PROJECT_TEST_LOG="$log" sh "$PROJECT_INSTALLER" -g -s "$SRC/projects" -o "$OST" -F > /dev/null
   assert_contains "$home/.claude/open_supports_name_list.txt" "acme/widget --global"
   grep -l -e '--mine' "$home"/.claude/open_supports_name_list.txt.backup-* > /dev/null || fail "global -F should back up the old list"
-  [ "$(find "$home" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" -eq 1 ] || fail "global install should only touch ~/.claude"
+  # macOS system Python may create ~/Library/Caches for its own bytecode cache.
+  [ "$(find "$home" -mindepth 1 -maxdepth 1 ! -name Library | wc -l | tr -d ' ')" -eq 1 ] || fail "global install should only touch ~/.claude"
 
   pass "-g copies only the list to ~/.claude, backs it up on -F, and installs globally"
+}
+
+test_global_syncs_skill_overrides() {
+  home="$TMP_DIR/sync-home"
+  mkdir -p "$home/.claude"
+  printf '{"enabledPlugins": {"mine@somewhere": true}}\n' > "$home/.claude/settings.json"
+
+  HOME="$home" PROJECT_TEST_LOG="$TMP_DIR/sync.log" sh "$PROJECT_INSTALLER" -g -s "$SRC/projects" -o "$OST" > "$TMP_DIR/sync.out"
+  assert_contains "$home/.claude/settings.json" '"gstack-review": "user-invocable-only"'
+  assert_contains "$home/.claude/settings.json" '"mine@somewhere": true'
+  assert_not_contains "$home/.claude/settings.json" "superpowers@claude-plugins-official"
+  find "$home/.claude" -name 'settings.json.bak.*' | grep . > /dev/null || fail "settings.json should be backed up"
+  # Overrides are synced before support packages are installed.
+  sync_line="$(grep -n 'skillOverrides' "$TMP_DIR/sync.out" | head -1 | cut -d: -f1)"
+  install_line="$(grep -n '安装支持包' "$TMP_DIR/sync.out" | head -1 | cut -d: -f1)"
+  [ -n "$sync_line" ] && [ -n "$install_line" ] && [ "$sync_line" -lt "$install_line" ] \
+    || fail "skillOverrides must be synced before installing support packages"
+
+  pass "-g syncs only skillOverrides into ~/.claude/settings.json before installing"
+}
+
+test_global_skip_and_preview_leave_settings_alone() {
+  home="$TMP_DIR/skip-home"
+  mkdir -p "$home"
+
+  HOME="$home" PROJECT_TEST_LOG="$TMP_DIR/skip.log" sh "$PROJECT_INSTALLER" -g -k -s "$SRC/projects" -o "$OST" > /dev/null
+  assert_not_exists "$home/.claude/settings.json"
+
+  home="$TMP_DIR/preview-home"
+  mkdir -p "$home"
+  HOME="$home" sh "$PROJECT_INSTALLER" -g -d -s "$SRC/projects" -o "$OST" > "$TMP_DIR/preview.out"
+  assert_contains "$TMP_DIR/preview.out" "-K skillOverrides"
+  assert_not_exists "$home/.claude/settings.json"
+
+  if HOME="$home" sh "$PROJECT_INSTALLER" -f ost -t "$TMP_DIR" -k -s "$SRC/projects" -o "$OST" > /dev/null 2>&1; then
+    fail "-k should be rejected without -g"
+  fi
+
+  pass "-g -k skips the sync, -g -d only previews it, and -k needs -g"
 }
 
 test_arguments_are_not_evaluated
@@ -252,3 +298,5 @@ test_scenario_bundles
 test_project_installs_support_packages
 test_project_dry_run_writes_nothing
 test_global_copies_only_the_list
+test_global_syncs_skill_overrides
+test_global_skip_and_preview_leave_settings_alone

@@ -97,7 +97,8 @@
 # 1. 同步个人用户级配置到 ~/.claude（已有 CLAUDE.md 时会询问；检测到旧版残留会警告）
 sh ./scripts/install.sh -l user -m ask
 
-# 2. 安装全局支持包（gstack、task-master）：清单复制到 ~/.claude/ 后全局安装
+# 2. 新机器或升级 gstack：复制全局清单、同步 skillOverrides（gstack 默认只手动调用）、
+#    安装全局支持包（gstack、task-master）；可重复执行
 sh ./scripts/install-claude-project.sh -g -d   # 预演，确认后去掉 -d
 
 # 3. 一次安装一个场景的完整项目配置，并安装其清单中的支持包

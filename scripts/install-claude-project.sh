@@ -5,8 +5,12 @@
 #   - 项目级（-f <FLAG> -t <project_dir>）：把场景包 .claude-<FLAG>/ 中的
 #     .claude/、.mcp.json、CLAUDE.md 逐个文件复制到项目根目录，再调用
 #     install-open-supports.sh -t 安装项目清单中的支持包。
-#   - 全局（-g）：只把 dot_claude_projects/.claude/open_supports_name_list.txt
-#     复制到 ~/.claude/，再调用 install-open-supports.sh -g 安装其中的全局支持包。
+#   - 全局（-g）：新机器或升级全局工具时运行，依次：
+#       1. 把 dot_claude_projects/.claude/open_supports_name_list.txt 复制到 ~/.claude/；
+#       2. 把 settings/settings.user.json 的 skillOverrides（gstack 默认只手动调用）合并进
+#          ~/.claude/settings.json（先备份，不动插件与其他字段；-k 跳过）；
+#       3. 调用 install-open-supports.sh -g 安装清单中的全局支持包（gstack、task-master），
+#          gstack 安装脚本最后只读检查 skillOverrides 是否覆盖全部 gstack skill。
 #
 # 已存在的文件默认不覆盖（标记 [MANUAL]），-F 时先备份再覆盖。目标上已有清单时，
 # 支持包按目标上的清单安装，保留使用者对清单的修改。场景包是各维度配置
@@ -17,6 +21,7 @@ set -eu
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 OPEN_SUPPORTS_INSTALLER="$SCRIPT_DIR/install-open-supports.sh"
+SETTINGS_INSTALLER="$SCRIPT_DIR/install-settings.sh"
 LIST_REL=".claude/open_supports_name_list.txt"
 
 usage() {
@@ -28,14 +33,18 @@ usage() {
 作用域（必选，二选一）：
   -f <FLAG>         项目级：场景标识，对应源目录中的 .claude-<FLAG>/；须与 -t 一起使用
   -t <project_dir>  项目级：目标项目根目录（目录必须已存在）
-  -g                全局：只复制 .claude/open_supports_name_list.txt 到 ~/.claude/，
-                    再安装其中的全局支持包；不能与 -f、-t 同用
+  -g                全局：新机器或升级全局工具时运行；不能与 -f、-t 同用。依次：
+                      1. 复制 .claude/open_supports_name_list.txt 到 ~/.claude/
+                      2. 把 settings/settings.user.json 的 skillOverrides 合并进
+                         ~/.claude/settings.json（先备份，只动 skillOverrides）
+                      3. 安装清单中的全局支持包（gstack、task-master）
 
 其他选项（均可选）：
   -F                目标文件已存在时先备份再覆盖。项目级备份到
                     <project_dir>/.claude-project-backup-<时间戳>/；全局备份为
                     ~/.claude/open_supports_name_list.txt.backup-<时间戳>
   -N                只复制配置，不调用 install-open-supports.sh 安装支持包
+  -k                仅全局：跳过第 2 步，不修改 ~/.claude/settings.json
   -d                预演：只打印要复制的文件和支持包安装计划，不写入任何文件
   -s <root>         源 dot_claude_projects 根目录（默认：<repo>/dot_claude_projects）
   -o <root>         源 open_supports 根目录，传给 install-open-supports.sh -s
@@ -60,11 +69,12 @@ usage() {
   # 用仓库版本更新已安装的场景配置（被覆盖的文件先备份），不重装支持包
   sh scripts/install-claude-project.sh -f backend-dev -t ~/my-project -F -N
 
-  # 预演全局支持包安装（复制清单到 ~/.claude/，再全局安装）
+  # 新机器或升级 gstack：先预演，再执行（复制清单、同步 skillOverrides、安装全局支持包）
   sh scripts/install-claude-project.sh -g -d
-
-  # 安装全局支持包；~/.claude/ 已有清单时沿用它
   sh scripts/install-claude-project.sh -g
+
+  # 只装全局支持包，不碰 ~/.claude/settings.json
+  sh scripts/install-claude-project.sh -g -k
 
   # 用仓库的全局清单替换 ~/.claude/ 上的清单（先备份）再安装
   sh scripts/install-claude-project.sh -g -F
@@ -85,17 +95,19 @@ TARGET=""
 GLOBAL=0
 FORCE=0
 NO_INSTALL=0
+SKIP_OVERRIDES=0
 DRY_RUN=0
 SOURCE_ROOT=""
 OPEN_SUPPORTS_ROOT=""
 
-while getopts "f:t:gFNds:o:h" opt; do
+while getopts "f:t:gFNkds:o:h" opt; do
   case "$opt" in
     f) FLAG="$OPTARG" ;;
     t) TARGET="$OPTARG" ;;
     g) GLOBAL=1 ;;
     F) FORCE=1 ;;
     N) NO_INSTALL=1 ;;
+    k) SKIP_OVERRIDES=1 ;;
     d) DRY_RUN=1 ;;
     s) SOURCE_ROOT="$OPTARG" ;;
     o) OPEN_SUPPORTS_ROOT="$OPTARG" ;;
@@ -112,6 +124,8 @@ if [ "$GLOBAL" -eq 1 ]; then
   fi
 elif [ -z "$FLAG" ] || [ -z "$TARGET" ]; then
   fail_usage '项目级需要 -f <FLAG> 和 -t <project_dir>；全局请用 -g'
+elif [ "$SKIP_OVERRIDES" -eq 1 ]; then
+  fail_usage '-k 只能与 -g 同用'
 fi
 
 if [ -z "$SOURCE_ROOT" ]; then
@@ -258,7 +272,7 @@ install_file() {
 }
 
 if [ "$GLOBAL" -eq 1 ]; then
-  printf '[GLOBAL] 只复制 %s 到 %s/.claude/\n' "$LIST_REL" "$HOME"
+  printf '[GLOBAL] 第 1/3 步：复制全局清单 %s 到 %s/.claude/（已存在时保留，-F 先备份再覆盖）\n' "$LIST_REL" "$HOME"
   # The global bundle contributes this one file and nothing else.
   BUNDLE_FILES="$LIST_REL"
 else
@@ -287,6 +301,20 @@ if [ "$SKIPPED" -gt 0 ]; then
 fi
 if [ -n "$BACKUP_DIR" ]; then
   printf '被覆盖的文件已备份到：%s\n' "$BACKUP_DIR"
+fi
+
+# Global step 2: hide gstack from the model before it is installed, so there is no
+# window where every gstack skill is auto-invocable.
+if [ "$GLOBAL" -eq 1 ]; then
+  printf '\n==> [GLOBAL] 第 2/3 步：同步 skillOverrides（gstack 默认只手动调用）：settings/settings.user.json -> %s/.claude/settings.json\n' "$HOME"
+  if [ "$SKIP_OVERRIDES" -eq 1 ]; then
+    printf '已指定 -k，跳过。之后可单独执行：sh scripts/install-settings.sh -l user -m merge -K skillOverrides\n'
+  elif [ "$DRY_RUN" -eq 1 ]; then
+    printf '[DRY-RUN] run %s -l user -m merge -K skillOverrides（先备份，只合并 skillOverrides）\n' "$SETTINGS_INSTALLER"
+  else
+    printf '只合并 skillOverrides，先备份为 settings.json.bak.<时间戳>；还原时用备份覆盖 settings.json。\n'
+    sh "$SETTINGS_INSTALLER" -l user -m merge -K skillOverrides
+  fi
 fi
 
 if [ "$NO_INSTALL" -eq 1 ]; then
@@ -319,5 +347,8 @@ fi
 [ -z "$OPEN_SUPPORTS_ROOT" ] || set -- "$@" -s "$OPEN_SUPPORTS_ROOT"
 [ "$DRY_RUN" -eq 0 ] || set -- "$@" --dry-run
 
+if [ "$GLOBAL" -eq 1 ]; then
+  printf '\n==> [GLOBAL] 第 3/3 步：安装全局支持包（gstack 安装后会只读检查 skillOverrides 覆盖情况）\n'
+fi
 printf '\n==> 安装支持包：%s\n' "$list_file"
 sh "$OPEN_SUPPORTS_INSTALLER" "$@"

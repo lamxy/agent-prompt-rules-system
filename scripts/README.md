@@ -123,13 +123,13 @@ sh ./scripts/install-dot-mcp.sh -f <FLAG> -t /path/to/project [-F]
 
 ```sh
 sh ./scripts/install-claude-project.sh -f <FLAG> -t /path/to/project [-F] [-N] [-d]   # 项目级
-sh ./scripts/install-claude-project.sh -g [-F] [-N] [-d]                              # 全局
+sh ./scripts/install-claude-project.sh -g [-F] [-N] [-k] [-d]                         # 全局
 ```
 
 负责**复制配置**，复制后调用 `install-open-supports.sh` 安装清单中的支持包。
 
 - 项目级：把场景包 `.claude-<FLAG>/` 的 `.claude/`、`.mcp.json`、`CLAUDE.md` 逐个文件复制到项目根目录；场景包是 settings、`CLAUDE.md`、`.mcp.json`、agents、skills 的完整聚合
-- 全局：只把 `dot_claude_projects/.claude/open_supports_name_list.txt` 复制到 `~/.claude/`，再以 `-g` 安装全局支持包
+- 全局（新机器或升级 gstack）：复制 `dot_claude_projects/.claude/open_supports_name_list.txt` 到 `~/.claude/`；用 `install-settings.sh -l user -m merge -K skillOverrides` 同步 gstack 分层（先备份，`-k` 跳过）；再以 `-g` 安装全局支持包
 - 目标文件已存在时标记 `[MANUAL]` 跳过，支持包仍按目标上的清单安装；`-F` 先备份（项目级到 `<project>/.claude-project-backup-<时间戳>/`，全局为清单旁的 `.backup-<时间戳>`）
 - `-N` 只复制不安装；`-d` 预演，不写入任何文件；`-o` 指定 open_supports 根目录
 - 空文件、`.gitkeep` 与不合法的 JSON 会被跳过

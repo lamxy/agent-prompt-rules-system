@@ -88,8 +88,11 @@ sh scripts/install-claude-project.sh -g -d   # 预演
 sh scripts/install-claude-project.sh -g
 ```
 
-- 只把 `.claude/open_supports_name_list.txt` 复制到 `~/.claude/`；已存在时保留，`-F` 先备份为 `~/.claude/open_supports_name_list.txt.backup-<时间戳>`
-- 再按 `~/.claude/` 上的清单调用 `install-open-supports.sh -g`：支持包不复制，直接在本仓库的 `open_supports/<ost>/` 中运行安装脚本
+新机器或升级 gstack 时运行，可重复执行，分三步（屏幕上会标出第几步）：
+
+- 第 1 步：把 `.claude/open_supports_name_list.txt` 复制到 `~/.claude/`；已存在时保留，`-F` 先备份为 `~/.claude/open_supports_name_list.txt.backup-<时间戳>`
+- 第 2 步：把 `settings/settings.user.json` 的 `skillOverrides` 合并进 `~/.claude/settings.json`（先备份，只动 `skillOverrides`），让 gstack 装好时已是只能手动调用；`-k` 跳过
+- 第 3 步：按 `~/.claude/` 上的清单调用 `install-open-supports.sh -g`：支持包不复制，直接在本仓库的 `open_supports/<ost>/` 中运行安装脚本
 - 全局清单出现 `{PROJECT_DIR}`、`--local`、`--location=local` 时整份拒绝，不运行任何安装脚本
 - mattpocock-skills 是插件，不在清单里：2026-10-28 起只在 prd-design、backend-dev 场景包与 `settings/settings.project-fullstack-dev.json` 启用（见 `settings/README.md`「工作流框架分层」）
 

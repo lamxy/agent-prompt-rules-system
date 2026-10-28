@@ -79,12 +79,14 @@ local > project > user
 
 gstack 各 skill 之间多以读取对方 `SKILL.md` 串接，不经 Skill 工具，隐藏后不影响串接；只有路由 skill 用 Skill 工具派发，它本身也已隐藏。gstack 升级新增 skill 时，新 skill 默认为 `on`，需要把它补进 `skillOverrides`：gstack 安装脚本在 setup 后自动运行只读的 `scripts/check-gstack-overrides.sh` 列出未覆盖项，把它们补进 `settings.user.json` 后同步到本机。
 
-本机设定不是用 `settings.user.json` 安装时（插件来源不同，直接 merge 会重复启用同名插件），只同步分层：
+本机安装或升级 gstack 统一用一条命令（可重复执行）：
 
 ```sh
-sh scripts/install-settings.sh -l user -m merge -K skillOverrides   # 先备份，只合并 skillOverrides
-sh scripts/check-gstack-overrides.sh                                 # 确认本机已覆盖全部 gstack skill
+sh scripts/install-claude-project.sh -g -d   # 预演
+sh scripts/install-claude-project.sh -g      # 复制全局清单 → 同步 skillOverrides → 安装 gstack、task-master → 检查覆盖
 ```
+
+第 2 步只用 `install-settings.sh -l user -m merge -K skillOverrides` 合并 `skillOverrides`（先备份）：本机设定的插件来自其他市场，整份 merge 会重复启用同名插件。单独检查：`sh scripts/check-gstack-overrides.sh`。
 
 ### 用户级（`-l user`）
 

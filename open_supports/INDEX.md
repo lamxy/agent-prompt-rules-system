@@ -50,7 +50,7 @@
 
 ## 全局工具
 
-以下工具在所有项目中都生效，按用户级方式安装一次即可，不写进任何项目的 `open_supports_name_list.txt`。gstack、task-master 已登记在全局清单 `dot_claude_projects/.claude/open_supports_name_list.txt`，统一用 `sh scripts/install-claude-project.sh -g` 安装（先加 `-d` 预演）；下表的单独命令供参考。场景分配见 [`settings/README.md`](../settings/README.md)。
+以下工具在所有项目中都生效，按用户级方式安装一次即可，不写进任何项目的 `open_supports_name_list.txt`。gstack、task-master 已登记在全局清单 `dot_claude_projects/.claude/open_supports_name_list.txt`，统一用 `sh scripts/install-claude-project.sh -g` 安装（先加 `-d` 预演；会先把 gstack 的 `skillOverrides` 同步进 `~/.claude/settings.json`，`-k` 跳过）；下表的单独命令供参考。场景分配见 [`settings/README.md`](../settings/README.md)。
 
 | 工具 | 安装方式 | 前置条件与注意 |
 |------|---------|---------------|
