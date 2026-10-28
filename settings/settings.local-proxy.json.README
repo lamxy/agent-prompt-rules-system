@@ -52,9 +52,9 @@
         "hookify@claude-plugins-official": true,
         "playground@claude-plugins-official": true,
         "optibot@claude-plugins-official": true,
-        "commit-commands@claude-code-plugins": true,
-        "context7@claude-code-plugins": true,
-        "ralph-loop@claude-code-plugins": true,
+        "commit-commands@claude-plugins-official": true,
+        "context7@claude-plugins-official": true,
+        "ralph-loop@claude-plugins-official": true,
         "session-report@claude-plugins-official": true
 	},
 	"extraKnownMarketplaces": { # 额外已知的插件市场列表，包含官方和社区插件市场的信息，如来源和仓库地址。这些信息用于插件的安装和更新。
@@ -62,12 +62,6 @@
             "source": {
                 "source": "github",
                 "repo": "anthropics/claude-plugins-official"
-            }
-        },
-        "claude-code-plugins": {
-            "source": {
-                "source": "github",
-                "repo": "anthropics/claude-code"
             }
         },
         "karpathy-skills": {
