@@ -1,6 +1,6 @@
 ---
 branch: main
-head: beb1ca8
+head: 6adb239
 status: active
 updated: 2026-10-28
 ---
@@ -38,7 +38,7 @@ updated: 2026-10-28
 | 场景配置评估、优化与验证 | **阶段 1 待用户手动执行** | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
-| 本机采用新全局设定 | 待用户看差异后决定（不得直接覆盖） | 2026-10-28 比对 `~/.claude/settings.json` 与 `settings/settings.user.json`：`skillOverrides` 一致；差异只在 `enabledPlugins` 市场来源（本机 3 个来自 `anthropic-plugin-directory`、1 个来自 `claude-code-plugins`，仓库统一 `claude-plugins-official`）、本机多启用 `chrome-devtools-mcp`、`frontend-design`、`playground`，本机多 `kubectl get/describe` 放行与 `claude-code-plugins` 市场；`dot_claude/settings.json` 仍是本机设定镜像 |
+| 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
 
 ### 待办计划：场景配置评估、优化与验证
@@ -357,3 +357,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-28 | fullstack-dev 启用 mattpocock-skills | `settings/settings.project-fullstack-dev.json` 与插件池表、索引同步（`690b1b7`） | 未推送：用户要求待办全部完成后再推送 |
 | 2026-10-28 | 推送与发布 v2.2.0 | 推送 `b305f5d`～`e4af50e`，发布 v2.2.0（Latest，tag `e4af50e`）；相容性说明：frontend-dev 默认装 gsd-core、不再默认装 codegraph，backend-dev 加装 OpenSpec（会全局安装或升级 openspec CLI） | — |
 | 2026-10-28 | 本机全局安装、推送与发布 v2.3.0 | 用户在本机执行 `install-claude-project.sh -g`（`check-gstack-overrides.sh` 一致）；deanpeters/Product-Manager-Skills 决定忽略，`open_supports/INDEX.md` 改为不启用（`beb1ca8`）；推送并发布 v2.3.0（Latest），相容性说明：gstack 默认只手动调用、无 `--prefix` 旧安装需重装、全局不再启用 mattpocock-skills；14 个测试文件全过 | 本机全局设定差异待用户决定；docker 残留待用户手动清理 |
+| 2026-10-28 | 本机全局设定对齐 | 比对本机与 `settings.user.json` 后由用户逐项决定；同一插件跨市场被视为不同插件、同时启用只注册一份 hooks（官方 `plugins/loading.md`），directory 来源用 `install --replace` 切换、demo 市场副本需 `uninstall`；本机备份 `~/.claude/settings.json.bak-20261028191703`；`settings/README.md` 记录与保留差异，镜像同步（`6adb239`） | `installed_plugins.json` 有指向已删除 scratchpad 的项目级孤立记录，无影响、未清理 |
