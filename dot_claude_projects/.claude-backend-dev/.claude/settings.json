@@ -2,7 +2,6 @@
     "$schema": "https://json.schemastore.org/claude-code-settings.json",
     "enabledPlugins": {
         "gopls-lsp@claude-plugins-official": true,
-        "postman@claude-plugins-official": true,
         "mongodb@claude-plugins-official": true,
         "redis-development@claude-plugins-official": true,
         "semgrep@claude-plugins-official": true,

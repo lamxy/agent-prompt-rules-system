@@ -46,7 +46,7 @@ local > project > user
 | `playground` | prd-design、frontend-dev | 单文件 HTML 原型与交互探索 |
 | `document-skills`（`@anthropic-agent-skills`） | prd-design | docx / pptx / xlsx / pdf 交付 |
 | `typescript-native-lsp`（`@anthropic-plugin-directory`）、`frontend-design`、`playwright`、`chrome-devtools-mcp`、`modern-web-guidance`、`sentry` | frontend-dev | 语言服务、UI 实现、浏览器验证、Web 最佳实践、错误追踪 |
-| `gopls-lsp`、`postman`、`mongodb`、`redis-development` | backend-dev | Go 语言服务、API 测试、MongoDB、Redis |
+| `gopls-lsp`、`mongodb`、`redis-development` | backend-dev | Go 语言服务、MongoDB、Redis |
 | `semgrep` | backend-dev、dev-ops | 静态安全扫描 |
 | `terraform`、`sonatype-guide` | dev-ops | 基础设施即代码、依赖供应链安全 |
 | `pr-review-toolkit` | frontend-dev、backend-dev、dev-ops | PR 审查代理 |
@@ -148,16 +148,17 @@ sh scripts/install-claude-project.sh -g      # 复制全局清单 → 同步 ski
 |------|-----------|------|------|
 | `settings.project-prd-design.json` | `prd-design` | `playground`、`document-skills`（docx/pptx/xlsx/pdf） | 声明 `anthropic-agent-skills` 市场。PM Skills 由 `open_supports/ost_phuryn_pm-skills` 以项目级插件安装，见下方说明 |
 | `settings.project-frontend-dev.json` | `frontend-dev` | `typescript-native-lsp`、`frontend-design`、`playwright`、`chrome-devtools-mcp`、`modern-web-guidance`、`playground`、`pr-review-toolkit`、`sentry` | — |
-| `settings.project-backend-dev.json` | `backend-dev` | `gopls-lsp`、`postman`、`mongodb`、`redis-development`、`semgrep`、`pr-review-toolkit` | `permissions.deny`：MySQL、PostgreSQL、MongoDB（含 `mongosh`）、Redis 的破坏性命令；`PostToolUse` hook 在编辑 `.go` 文件后执行 `.claude/hooks/go-fmt.sh`（脚本只在场景包中提供） |
+| `settings.project-backend-dev.json` | `backend-dev` | `gopls-lsp`、`mongodb`、`redis-development`、`semgrep`、`pr-review-toolkit`、`mattpocock-skills` | `permissions.deny`：MySQL、PostgreSQL、MongoDB（含 `mongosh`）、Redis 的破坏性命令；`PostToolUse` hook 在编辑 `.go` 文件后执行 `.claude/hooks/go-fmt.sh`（脚本只在场景包中提供） |
 | `settings.project-dev-ops.json` | `dev-ops` | `terraform`、`semgrep`、`sonatype-guide`、`pr-review-toolkit` | `permissions.ask`：`terraform apply/destroy/import/state`、`docker compose up/down/rm`、`docker rm`、`docker volume rm/prune`、`docker system/image prune`、`docker network rm`、`docker context use` |
 | `settings.project-fullstack-dev.json` | `fullstack-dev` | 前端 + 后端去重 | 与后端相同的 `permissions.deny` |
 
 - PRD 场景的 PM Skills 来自本仓库收录的 `open_supports/ost_phuryn_pm-skills`，不在 settings 模板中重复启用：`dot_claude_projects/.claude-prd-design/` 的清单以 `--client=claude-code --location=local` 安装，插件以 `--scope project` 写入项目的 `.claude/settings.json`。因此要先安装 settings 模板，再运行 `install-open-supports.sh`；之后若用 `-m overwrite` 重装 settings 模板，PM Skills 的条目会被覆盖（备份中仍有），需重新运行 `install-open-supports.sh` 或改用 `-m merge`。
 - 后端的 MySQL、PostgreSQL 没有通用的官方插件，由 `dot_mcp_jsons/dot-mcp-json-backend-dev.json` 提供 MCP。
 - `typescript-native-lsp` 来自 Claude Code 内置插件目录（`@anthropic-plugin-directory`），无需声明市场；TypeScript 6 以下的项目需另装 `typescript-language-server`。
-- 插件需要的账号（Postman 等）在首次使用时按插件提示登录或配置。
+- 插件需要的账号在首次使用时按插件提示登录或配置。
 - dev-ops 的 `permissions.ask` 与全局设定同时安装时：权限按 `deny` → `ask` → `allow` 判定，且任一作用域的 `deny` 都先于其他作用域生效（[官方说明](https://code.claude.com/docs/en/permissions)）。因此 `settings.user.json` 的 `deny` 中已有的 `docker rm`、`docker volume rm`、`docker network rm`、`docker compose rm`、`docker system/image prune`（带参数）在 dev-ops 项目里会被直接拒绝而不是要求确认，需要时由人手动执行；`docker compose up/down`、`docker context use`、`terraform apply` 等仍会要求确认（全局只 `allow` 了 compose up/down，`ask` 先于 `allow`）。这些 `ask` 条目保留，供未安装本仓库全局设定的机器使用。
 - backend-dev、dev-ops 不启用 `sentry`（其 MCP 连接 sentry.io，不支持自建的 GlitchTip）与 `grafana-mcp`（起步阶段不部署 Grafana；升级到 Prometheus + Grafana 后再启用）；错误追踪查询改用 GlitchTip 内置 MCP（`dot_mcp_jsons/`）。frontend-dev 的 `sentry` 暂未调整。
+- backend-dev、fullstack-dev 不启用 `postman`（2026-10-29 移除）：2.0.1 版带 17 个 skill，流程以 Postman 账号、workspace 与 Postman CLI 为中心，MCP 需登录；本场景的 API 契约用 `apivo`、验证用 `go test`，个人开发也没有 Postman workspace，收益低于常驻上下文成本。
 
 ### 本地级（`-l local`）
 

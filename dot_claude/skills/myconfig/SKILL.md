@@ -88,7 +88,7 @@ backend-dev → /path/to/api
 支援包：codegraph、OpenSpec 安裝成功
 備份：無
 接下來要手動做：
-1. claude plugin install postman@claude-plugins-official --scope project（另 4 個見下）
+1. claude plugin install mongodb@claude-plugins-official --scope project（另 3 個見下）
 2. 啟動前設定 MYSQL_HOST 等環境變數；只用唯讀帳號
 3. 在專案中執行 codegraph init
 ```

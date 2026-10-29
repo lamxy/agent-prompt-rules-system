@@ -15,7 +15,6 @@
 |------|---------|-----------|
 | `gopls-lsp@claude-plugins-official` | 相对路径（`claude-plugins-official`） | 自动加载；需另装语言服务器：`go install golang.org/x/tools/gopls@latest`，并确保 `$HOME/go/bin` 在 PATH 中（插件 README 要求） |
 | `pr-review-toolkit@claude-plugins-official` | 相对路径（`claude-plugins-official`） | 自动加载 |
-| `postman@claude-plugins-official` | 外部（URL：`postman-devrel/postman-claude-code-plugin`） | **需手动安装** |
 | `mongodb@claude-plugins-official` | 外部（git 子目录：`mongodb/agent-skills`） | **需手动安装** |
 | `redis-development@claude-plugins-official` | 外部（git 子目录：`redis/agent-skills`） | **需手动安装** |
 | `semgrep@claude-plugins-official` | 外部（git 子目录：`semgrep/mcp-marketplace`） | **需手动安装** |
@@ -27,7 +26,6 @@
 
 ```sh
 claude plugin install mattpocock-skills@claude-plugins-official --scope project
-claude plugin install postman@claude-plugins-official --scope project
 claude plugin install mongodb@claude-plugins-official --scope project
 claude plugin install redis-development@claude-plugins-official --scope project
 claude plugin install semgrep@claude-plugins-official --scope project

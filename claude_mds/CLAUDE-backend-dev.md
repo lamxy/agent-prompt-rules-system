@@ -5,7 +5,7 @@
 - 本场景以 Go 技术栈为参考实现；其他技术栈请复制场景包后改写，见 dot_claude_projects/README.md。
 - 只写每个会话都需要、且与 Claude Code 默认行为不同的约定。只在编辑特定文件时才需要的规范放
   .claude/rules/（带 paths），设计流程与完整规范放 .claude/skills/。
-- 工具由 settings/settings.project-backend-dev.json 启用（gopls-lsp、postman、mongodb、
+- 工具由 settings/settings.project-backend-dev.json 启用（gopls-lsp、mongodb、
   redis-development 等），MySQL / PostgreSQL MCP 见 dot_mcp_jsons/dot-mcp-json-backend-dev.json。
 - 破坏性数据库命令由 settings 的 permissions.deny 拦截；.go 文件格式由 PostToolUse hook 处理，不在此重复。
 -->
