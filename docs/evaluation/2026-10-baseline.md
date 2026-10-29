@@ -121,6 +121,9 @@ P3 PRD 拆用户故事；P5 PRD 转 docx/pptx；P6 用户反馈归纳；F3 契�
 | E-1 | 指南 1.3 漏了 `codegraph init` | 准备阶段 | B1 无索引，B2 起有 | 测验结束后补进指南 1.3 |
 | E-2 | B1 的「HTTP 内核」追问未在交互脚本中 | B1 | 阶段 3 重测可能答法不同 | 补进 B1 交互脚本：「只接 Fiber 核心，Hertz 和 Gin 都不接」 |
 | E-3 | 每个会话首次 Bash 被 Node.js CVE PreToolUse hook 挡一次（来源插件未查明） | 全部 | 多一轮往返，属本机环境 | 用户决定是否升级 Node.js；与场景配置无关 |
+| E-4 | 指南第 4、5 节未提醒：B 系列载入 `mysql.env` 的终端会把 `MYSQL_*` 带进后续场景 | D2 | compose 同名变量被覆盖，测验库密码进入会话记录 | 指南 dev-ops 一节开头加「换新终端或 `unset MYSQL_*`」 |
+| E-5 | `save-run.sh` 未检查会话是否已退出 | 全部 | 会话未退出时回滚会让 Claude 的文件凭空消失、或把下个任务的产出存进上个 tag | 指南第 4 节强调「先退出再存档」；脚本可加 `lsof` 检查 |
+| E-6 | frontend-dev 的静态服务器用 8080，与 D2 保留的 `fiberhouse-dev` app（`127.0.0.1:8080`）冲突 | F 系列准备 | 静态服务器启动失败 | 测 F 系列前先 `docker compose stop` fiberhouse-dev；或指南改用其他端口并同步提示词 |
 | D-1 | `middleware-ops` SKILL.md 第 27 行要求「规划内存上限前先询问资源上限」，D2、D3 都调用了该 skill 却未询问，直接自估 | D2、D3 | 资源配置由 Claude 决定，违背 2026-10-23 的约定（`d229d3d`） | 把这条提到 dev-ops `CLAUDE.md`（常驻），或改为 skill 流程中的显式第一步 |
 | D-2 | dev-ops 场景下数据库凭据经 shell 环境变量覆盖 compose 变量，Claude 预览时遮蔽规则遗漏、打印明文密码 | D2 | 密钥进入会话记录 | `middleware-ops` 增加「展示 `compose config` 时用 `--no-interpolate` 或遮蔽所有 `*PASSWORD*`/DSN」；compose 变量建议带项目前缀 |
 | D-3 | 测验条件：dev-ops 无沙箱、glitchtip MCP 可用，与其他场景不同 | D2～D4 | 场景间比较需注明 | 阶段 3 重测保持相同条件，或统一开启沙箱后重测 dev-ops |
