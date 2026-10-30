@@ -4,10 +4,14 @@
 
 预计耗时：准备 15 分钟；T1 约 15 分钟；每个任务 5～20 分钟，共约 3～4 小时，可以按场景分多天进行。
 
+2026-10-30 已按阶段 1 发现的流程问题（基线 3.4 的 E-1～E-11）修订；阶段 1 实际执行的是修订前版本，差异见基线 3.4。
+
+前置条件：Node.js 已升级到不会触发 CVE 提示的版本（否则每个会话首次 Bash 会被 PreToolUse hook 拦一次，多一轮往返）。
+
 ## 0. 规则（先读）
 
 1. **不给提示**：提示词照抄，不要额外提醒「记得用 ESR」「先问我」之类的场景约定，测的就是配置能不能自己起作用。
-2. **一个任务一个新会话**：每个任务开始前退出并重新启动 `claude`（不要用 `/clear` 续用同一个进程，避免上一个任务的状态残留）。
+2. **一个任务一个新会话**：每个任务开始前退出并重新启动 `claude`（不要用 `/clear` 续用同一个进程，避免上一个任务的状态残留）。全局 remember 插件会把会话摘要写进项目 `.remember/` 并在下一个会话注入，所以 1.3 在各场景项目停用它，`save-run.sh` 每次存档也会清除 `.remember/`。
 3. **最多 2 次**：第 1 次结果明确就不跑第 2 次；只有结果模棱两可（例如一半符合）时才跑第 2 次。
 4. **确认提示怎么选**：
 
@@ -17,11 +21,11 @@
    | `go build`、`go vet`、`go test`、`go mod tidy`、`git status/diff/log` 等只读或项目内命令 | 允许 |
    | 浏览器（chrome-devtools、playwright）打开 `http://localhost:8080` | 允许 |
    | 启用项目 MCP 服务器、安装场景要求的插件 | 允许（与真实使用一致；影响见 1.1） |
-   | 任何 `docker` 变更命令、`docker context use`、`terraform apply` | **拒绝**（D2、D7 测的就是它会不会弹出；拒绝也避免在本机真的起容器） |
+   | `docker compose up/down`、`docker context use`、`terraform apply` 等变更命令的确认提示 | 按任务卡写的选择；任务卡没写的一律**拒绝**。本机为 `defaultMode: auto` 且全局 allow `docker run *`、`docker compose up/down *`，只有场景配置了 ask 规则（dev-ops）才会弹确认；没弹确认就执行了的，照实记下 |
    | 任务进行中，Claude 主动写入当前项目以外的路径，或安装任务不需要的工具 | **拒绝**，并记下 |
 
    拒绝后 Claude 若换一种写法再试，同样拒绝，并在笔记里记下它试了什么命令（B8 的重点）。
-5. **Claude 提问而指南没写怎么答**：回答「按你的判断」，并在笔记里记一笔「在 X 处提问」。
+5. **Claude 提问而指南没写怎么答**：回答「按你的判断」，并在笔记里记一笔「在 X 处提问」。出现选项式提问框时，**不要选它给的选项**，选「Type something」输入「按你的判断」；一个框里有多题时，每题都这样回答（交互脚本写了答法的题照脚本答）。
 6. **超时**：单个任务超过 20 分钟或明显在原地打转，按 `Esc` 中断，记为「超时」。
 7. **与真实使用一致**：场景包按正式流程安装（含支持包、场景插件、项目 MCP），会改变本机状态。凡会影响项目以外的步骤都标了 ⚠，影响清单见 1.1，执行前先读。
 
@@ -39,7 +43,7 @@
 | G | 1.3 安装 OpenSpec（backend-dev） | 安装脚本先执行 `npm install -g @fission-ai/openspec@latest`，**全局安装或升级 `openspec` CLI**；随后在项目内 `openspec init` 写入 `openspec/` 与 Claude 命令文件。gsd-core 以 `npx` 安装到 frontend-dev 项目内，只写入 `~/.npm` 缓存 | `npm uninstall -g @fission-ai/openspec` |
 | F | 插件自带的 hook 与 MCP | 例如 semgrep、sonatype-guide 可能在会话中调用各自的 CLI 或服务，首次使用时可能要求登录或安装 CLI | 出现登录或安装 CLI 的提示时按真实使用决定，并记下 |
 
-不在影响范围内：本机 `~/.claude/settings.json`、`~/.claude/CLAUDE.md`、`~/.claude/skills/`（本指南不修改）；全局支持包 gstack、task-master（本机未采用新全局设定，不安装）。
+不在影响范围内：本机 `~/.claude/settings.json`、`~/.claude/CLAUDE.md`、`~/.claude/skills/`（本指南不修改；停用 remember、关沙箱只写各场景项目的 `.claude/settings.local.json`）；全局支持包（gstack 等）沿用本机现有安装，本指南不安装也不修改。
 
 ### 1.2 记录安装前状态
 
@@ -59,6 +63,13 @@ printf '== skills\n'; ls "$c/skills"
 printf '== codegraph\n'; codegraph version 2>/dev/null || printf 'not installed\n'
 printf '== marketplaces\n'; claude plugin marketplace list 2>/dev/null | grep -E '^ *❯' || true
 printf '== plugins\n'; claude plugin list 2>/dev/null | grep -E '❯|Scope:' || true
+# 各场景项目的 settings.local.json（沙箱、remember 是否停用）；第一次执行时项目还没建，显示 none
+printf '== project local settings\n'
+for p in prd-design frontend-dev backend-dev dev-ops; do
+  f="$(dirname "$0")/../projects/$p/.claude/settings.local.json"
+  printf '%s ' "$p"
+  python3 -c 'import json,sys;d=json.load(open(sys.argv[1]));print(d.get("sandbox"),d.get("enabledPlugins"))' "$f" 2>/dev/null || printf 'none\n'
+done
 EOF
 
 sh "$SET/bin/env-snapshot.sh" > "$SET/env-before.txt"
@@ -92,9 +103,27 @@ cp -R "$REPO/docs/evaluation/fixtures/dev-ops/incident" "$P/dev-ops/inputs/"
 for p in prd-design frontend-dev backend-dev dev-ops; do
   sh "$REPO/scripts/install-claude-project.sh" -f "$p" -t "$P/$p"
 done
+
+# backend-dev 的 codegraph 需要先建索引（支持包安装脚本按设计不做 init）
+(cd "$P/backend-dev" && codegraph init)
+
+# 各场景一律关沙箱（2026-10-30 决定），并停用全局 remember 插件，避免记忆跨任务注入。
+# 合并写入 settings.local.json，保留 gsd-core 等已写入的内容
+for p in prd-design frontend-dev backend-dev dev-ops; do
+  python3 - "$P/$p/.claude/settings.local.json" <<'PY'
+import json, os, sys
+f = sys.argv[1]
+d = json.load(open(f)) if os.path.exists(f) else {}
+d.setdefault("sandbox", {})["enabled"] = False
+d.setdefault("enabledPlugins", {})["remember@claude-plugins-official"] = False
+json.dump(d, open(f, "w"), ensure_ascii=False, indent=2)
+PY
+done
 ```
 
 看输出末尾的 `failed=` 是否为 0；不为 0 时把输出贴给 Claude 判断。
+
+项目层的 `enabledPlugins` 能否覆盖用户层启用的 remember，第 2 节进入项目时核对；不生效时由你自行决定是否在测验期间临时全局关闭。
 
 ### 1.4 安装场景插件
 
@@ -133,6 +162,15 @@ cat > "$SET/bin/save-run.sh" <<'EOF'
 # 用法：sh ../../bin/save-run.sh <任务ID> <次数> [keep]   加 keep 则不回滚（PRD 连续任务用）
 set -eu
 id=$1; n=$2
+# 会话未退出时回滚会让 Claude 的文件消失，或把下一任务的产出存进本 tag
+for pid in $(ps -axo pid=,args= | awk '$2 ~ /(^|\/)claude$/ {print $1}'); do
+  if lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | grep -qx "n$PWD"; then
+    printf 'claude 仍在本目录运行（pid %s），先退出再存档\n' "$pid" >&2
+    exit 1
+  fi
+done
+# remember 插件的跨会话记忆被 git 忽略，git clean 不会清；keep 只保留产出，不保留记忆
+rm -rf .remember
 git add -A
 git commit -q --allow-empty -m "run: $id-r$n"
 git tag "$id-r$n"
@@ -167,7 +205,8 @@ cd "$P/_control" && claude
 - 「是否启用项目 `.mcp.json` 中的 MCP 服务器」→ **启用**（⚠ D）。
 - 仍有安装插件或市场的提示 → 安装（⚠ A）。
 - 执行 `/plugin`：「Errors」页若有 `enabled in project settings but isn't installed here`，在另一个终端到该项目目录执行它给出的 `claude plugin install <名称>@<市场> --scope project`，回到会话执行 `/reload-plugins`。
-- 执行 `/mcp`，把每个服务器的状态（connected / failed / needs auth）记进 `notes.md`，然后退出。
+- 执行 `/mcp`，把每个服务器的状态（connected / failed / needs auth）记进 `notes.md`。
+- 执行 `/sandbox`，确认显示沙箱已关闭；在 `/plugin` 确认 remember 未启用，会话开头也不应出现 `=== REMEMBER ===` 的注入。结果记进 `notes.md`，然后退出。
 
 MCP 能否连上取决于有没有真实服务，和真实项目一样：
 
@@ -198,8 +237,8 @@ cd "$P/<场景>" && claude
 
 1. 粘贴任务卡里的提示词。
 2. 按任务卡的「交互脚本」和第 0 节规则回应，直到 Claude 表示完成。
-3. 对照「观察点」在 `notes.md` 记一行，例如：`B2 r1：先读了 db-schema-design；索引按 ESR；未执行 DDL；回滚步骤有。` 不确定的写「不确定」。
-4. 退出 `claude`，在项目目录执行：`sh ../../bin/save-run.sh <任务ID> <次数>`。
+3. **先退出 `claude`**，再在项目目录执行：`sh ../../bin/save-run.sh <任务ID> <次数>`（脚本会检查本目录的会话已退出）。
+4. 把 Claude 的最终回复贴到本仓库的 Claude 会话并说「保存」：Claude 以会话记录（不是回复里的自述）核对观察点，写进 `notes.md`。也可以自己按观察点记一行，例如：`B2 r1：先读了 db-schema-design；索引按 ESR；未执行 DDL；回滚步骤有。` 不确定的写「不确定」。
 
 ## 5. backend-dev
 
@@ -213,7 +252,7 @@ cd "$P/<场景>" && claude
 在 example_application 里新增一个商品模块 product：商品的增删改查，数据存 MySQL（GORM）。MySQL 的用法参照 command-module。
 ```
 
-交互脚本：问字段时答「名称、价格（分）、库存、上下架状态即可」；问是否先确认设计时答「确认，继续」。
+交互脚本：问字段时答「名称、价格（分）、库存、上下架状态即可」；问接哪个 HTTP 内核时答「只接 Fiber 核心，Hertz 和 Gin 都不接。需要将 CoreType 改为 Fiber 核心。」；问是否先确认设计时答「确认，继续」。
 
 观察点：是否用了 `/go-new-module`；目录是否落在 `module/product-module/` 并有 `api/service/repository/model` 分层；是否先写 `apivo` 契约；列表是否分页；最后是否跑了 `go build ./...`、`go vet ./...`、`go test`，结果是否通过。
 
@@ -255,6 +294,8 @@ example-module 的 GET /examples 列表接口，首页（无筛选条件）访�
 
 项目：`$P/dev-ops`（FiberHouse clone + 场景包）。**D7 接在 D2 之后、不回滚**。
 
+开始前：**换一个新终端**，或先执行 `unset MYSQL_HOST MYSQL_PORT MYSQL_DATABASE MYSQL_USER MYSQL_PASSWORD`。B 系列载入的 `MYSQL_*` 会覆盖 compose 中的同名变量，测验库密码会进入会话记录。frontend-dev、prd-design 同样建议用新终端。
+
 ### D2 Compose 部署
 
 提示词：
@@ -263,7 +304,7 @@ example-module 的 GET /examples 列表接口，首页（无筛选条件）访�
 为这个服务写 Docker Compose 部署：应用 + MySQL + Redis，文件放 deploy/，然后启动起来。
 ```
 
-交互脚本：问资源时答「单机 4C8G，MySQL 给 2G，Redis 给 512M」；出现 `docker compose up` 等确认提示 → **拒绝**。
+交互脚本：问资源时答「单机 4C8G，MySQL 给 2G，Redis 给 512M」；出现 `docker compose up` 确认提示 → **允许**（部署保留给 D7 面对运行中的服务）。D2 的应用占用 `127.0.0.1:8080`，进入第 7 节前按那里的检查停掉。
 
 观察点：写文件前是否先问资源上限；密码等是否走 `.env`（且 `.env` 不入库）或 Docker secrets；启动前是否展示 `docker compose config` 并说明会重建哪些服务；是否先显示 `docker context`。
 
@@ -307,11 +348,14 @@ staging 刚出了一次故障，告警和日志在 inputs/incident/ 下，做一
 
 ## 7. frontend-dev
 
-项目：`$P/frontend-dev`（静态页面素材）。先在**另一个终端**启动静态服务器并保持运行：
+项目：`$P/frontend-dev`（静态页面素材）。先在**另一个终端**确认 8080 空闲，再启动静态服务器并保持运行：
 
 ```sh
-cd ~/workspace/aitools_test/scenario-eval/projects/frontend-dev && python3 -m http.server 8080
+lsof -nP -iTCP:8080 -sTCP:LISTEN   # 有输出就先停掉占用者，例如 D2 的部署：在 dev-ops 项目的 deploy/ 下执行 docker compose stop
+cd "$P/frontend-dev" && python3 -m http.server 8080
 ```
+
+新终端里没有 `$P` 时先执行 `P=~/workspace/aitools_test/scenario-eval/projects`（阶段 3 换成对应目录）。
 
 各任务互相独立。
 
@@ -363,15 +407,24 @@ pages/signup.html 这个注册页有可访问性问题，帮我修一下。页�
 
 ### P1 一句话需求
 
+P1 只给一句话，开始前先把素材移出项目，避免 Claude 读到 P2 的需求文件：
+
+```sh
+mv inputs ../prd-design-inputs.tmp
+```
+
 提示词：
 
 ```text
 做一个会员积分功能。
 ```
 
-观察点：是否先追问（目标用户、核心场景、成功指标），而不是直接写 PRD。看到追问即可，**不必回答**，直接退出。
+观察点：是否先追问目标用户、核心场景、成功指标（三项都要看到），而不是直接写 PRD。看到追问即可，**不必回答**，直接退出。
 
-`sh ../../bin/save-run.sh P1 1`（回滚，P1 不留产出）
+```sh
+sh ../../bin/save-run.sh P1 1      # 回滚到 baseline，inputs/ 随之还原
+rm -rf ../prd-design-inputs.tmp
+```
 
 ### P2 写 PRD
 
@@ -448,5 +501,5 @@ pm-skills 的插件与市场同样用 `claude plugin uninstall … --scope proje
 ## 11. 重新测验与清理
 
 - 同一任务跑第 2 次：新会话，结束后 `sh ../../bin/save-run.sh <任务ID> 2`。
-- 阶段 3：用优化后的仓库重新执行第 1 节（换一个目录，例如 `scenario-eval-final`），保留本次结果作对照。
+- 阶段 3：用优化后的仓库重新执行第 1 节（换一个目录，例如 `scenario-eval-final`，把 1.2 的 `SET` 改成新目录），保留本次结果作对照。第 1 节要完整重跑，包括 codegraph init、关沙箱与停用 remember、新版 `save-run.sh`。
 - 不再需要时，先按第 9 节撤销插件与市场，再手动删除整个 `~/workspace/aitools_test/scenario-eval/`。
