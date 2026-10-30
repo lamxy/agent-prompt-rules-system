@@ -1,6 +1,6 @@
 ---
 branch: main
-head: d2b129a
+head: f9c4813
 status: active
 updated: 2026-10-30
 ---
@@ -327,6 +327,12 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 3. 最后：单独测 B0（独立 Go 项目 `go get` FiberHouse 建第一个模块），任务卡先写、给用户确认（用户 2026-10-30 决定放到最后）
 
 前置条件：阶段 1 已完成；收尾的容器与 `.env` 清理由用户决定，不阻塞阶段 2。
+
+下次开工第一步（引导用户执行，Claude 判读）：
+
+1. 用户在新终端执行 `cd ~/workspace/aitools_test/scenario-eval/projects/prd-design && claude --debug`，进入后输入 `/context`，然后退出
+2. Claude 读 debug log（启动时会显示路径；默认在 `~/.claude/debug/` 下最新的文件），搜索 skill 清单超出预算的警告，并对照 `/context` 的 Skills 行；有警告即证实 P-2 推测，写回基线 3.4 P-2
+3. 视结果写 2～3 个补测任务卡（含 P-1 的 `/create-prd` 盲比），先给用户确认再执行；执行流程沿用修订后的指南第 4 节（「保存」= 确认退出 + `save-run.sh` + 写 `notes.md`）
 
 ---
 
