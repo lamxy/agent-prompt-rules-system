@@ -1,6 +1,6 @@
 ---
 branch: main
-head: aa9620e
+head: d6df740
 status: active
 updated: 2026-10-30
 ---
@@ -21,7 +21,7 @@ updated: 2026-10-30
 - 2026-10-28：用户已在本机执行 `install-claude-project.sh -g`（gstack 64 个 skill 与 `skillOverrides` 64 项一致，task-master 0.43.1）；推送全部提交并发布 v2.3.0（Latest，tag `beb1ca8`）
 - 之后升级 gstack（含 task-master）仍用 `sh scripts/install-claude-project.sh -g`，可先加 `-d` 预演
 - 2026-10-29～30：**阶段 1 手动测验完成**。16 个任务通过 15、部分 1（D2），反向任务 B8/D7/F7/P7 全部符合；结果、问题清单（B-1～B-6、D-1～D-3、F-1～F-4、P-1～P-3、E-1～E-9）与 3.5 小结在 `docs/evaluation/2026-10-baseline.md`（`6ece7e8`、`09936c7`、`f0dbb7c`、`8f8e911`、`d70b231`、`aa9620e`）；收尾环境 diff 只有 1.1 范围内的新增
-- 下一步：先提醒用户是否单独测 B0（任务卡待写、写前确认）；再按 E-1～E-9 修订手动测验指南；然后进入阶段 2，优先 D-1、B-4、F-3/P-2、B-3/F-4、P-1
+- 下一步：按 E-1～E-9 修订手动测验指南；然后进入阶段 2，优先 D-1、B-4、F-3/P-2、B-3/F-4、P-1；B0 单独测验用户 2026-10-30 决定放到最后
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -293,7 +293,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；会话实测设计 §8 第 3、5～9、11 条与安装后报告；`!` 模式的沙箱与超时 | 设计文件 §8、§11 |
 | `claude plugin eval` 是否适合本仓库场景包 | 计划文件 3.3（待确认后纳入） |
 | 修订手动测验指南：E-1～E-9（`codegraph init`、B1 追问脚本、换终端、先退出再存档、8080 冲突、沙箱统一关闭、P1 素材隔离、`.remember/` 清除）与第 0 节 docker 确认的前提 | `docs/evaluation/2026-10-baseline.md` 3.4 |
-| **阶段 1 完成后提醒用户**：单独测 B0「在独立 Go 项目中用 `go get` 引入 FiberHouse 并建第一个模块」，补上基线在框架仓库内测验的局限；任务卡待写、写前先给用户确认 | `docs/evaluation/2026-10-baseline.md` 1.2 |
+| **放到最后**（用户 2026-10-30 决定）：单独测 B0「在独立 Go 项目中用 `go get` 引入 FiberHouse 并建第一个模块」，补上基线在框架仓库内测验的局限；任务卡待写、写前先给用户确认 | `docs/evaluation/2026-10-baseline.md` 1.2 |
 
 <!-- section: next -->
 ## 建议的下一步
@@ -324,9 +324,9 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 2026-10-30 进度：**阶段 1 全部完成**（16 个任务、收尾 diff、基线 3.5 小结、计划文件同步）。续作顺序：
 
-1. 提醒用户：是否单独测 B0（独立 Go 项目 `go get` FiberHouse 建第一个模块），任务卡先写、给用户确认
-2. 按 E-1～E-9 修订 `docs/evaluation/manual-test-guide.md`（含 `save-run.sh` 清 `.remember/`、P1 前移走 `inputs/`、各场景关闭沙箱）
-3. 阶段 2：按 3.4 问题清单调研，优先 D-1（资源上限未询问）、B-4（Bash 写文件绕过 path rules，已跨场景）、F-3/P-2（第三方插件 skill 在 F、P 8 个任务中从未调用）、B-3/F-4（范围外改动先确认）、P-1（`create-prd` 模板与 `CLAUDE.md` 冲突）；产出采纳决策表交用户确认
+1. 按 E-1～E-9 修订 `docs/evaluation/manual-test-guide.md`（含 `save-run.sh` 清 `.remember/`、P1 前移走 `inputs/`、各场景关闭沙箱）
+2. 阶段 2：按 3.4 问题清单调研，优先 D-1（资源上限未询问）、B-4（Bash 写文件绕过 path rules，已跨场景）、F-3/P-2（第三方插件 skill 在 F、P 8 个任务中从未调用）、B-3/F-4（范围外改动先确认）、P-1（`create-prd` 模板与 `CLAUDE.md` 冲突）；产出采纳决策表交用户确认
+3. 最后：单独测 B0（独立 Go 项目 `go get` FiberHouse 建第一个模块），任务卡先写、给用户确认（用户 2026-10-30 决定放到最后）
 
 前置条件：阶段 1 已完成；收尾的容器与 `.env` 清理由用户决定，不阻塞阶段 2。
 
@@ -395,4 +395,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-28 | 本机全局设定对齐 | 比对本机与 `settings.user.json` 后由用户逐项决定；同一插件跨市场被视为不同插件、同时启用只注册一份 hooks（官方 `plugins/loading.md`），directory 来源用 `install --replace` 切换、demo 市场副本需 `uninstall`；本机备份 `~/.claude/settings.json.bak-20261028191703`；`settings/README.md` 记录与保留差异，镜像同步（`6adb239`） | `installed_plugins.json` 有指向已删除 scratchpad 的项目级孤立记录，无影响、未清理 |
 | 2026-10-29 | 配置安装技能 `myconfig` | 盘点、设计 v2 经子代理交叉审查后由用户确认第 9 节；实现 `dot_claude/skills/myconfig/`（SKILL.md、`scripts/catalog`、`references/commands.md`）与 `test-myconfig-catalog.sh`（15 个测试文件全过）；`claude -p` 实测发现沙箱同时限制读取（`denyRead ~/`）、会话内写 `.claude/` 配置与注入命令，改为只预演 + 交付命令、注入加 `\|\| printf` 退路；第二轮实现审查 1 blocker（单个支持包 `--dry-run` 放在 `--` 后会真实安装）等全部修正 | 已提交（`0400627`、`d68370c`）并推送，发布 v2.4.0（Latest）；安装后报告未端到端测试 |
 | 2026-10-29～30 | 阶段 1 手动测验：T1、backend-dev、dev-ops | postman 移出 backend-dev、fullstack-dev（`29a8e27`）；T1 按配置项求差（场景增量 ≤ 1%）；B1/B4/B8/B2 通过，D2 部分（未询问资源上限）、D7/D3/D4 通过；问题清单 B-1～B-6、D-1～D-3、E-1～E-6（`6ece7e8`、`09936c7`、`f0dbb7c`）；阶段 1 后另测 B0 登记 | frontend-dev、prd-design 待测；指南待修订；测验容器与残留待收尾清理 |
-| 2026-10-30 | 阶段 1 手动测验：frontend-dev、prd-design 与收尾 | F1/F2/F4/F7、P1/P2/P4/P7 均通过（F4、P1 附注）；问题清单新增 F-1～F-4、P-1～P-3、E-7～E-9，B-4 确认跨场景；沙箱统一关闭的决定与更正写入 1.2/3.1；收尾 env diff 只有 1.1 范围新增；3.5 阶段 1 小结；计划文件阶段 1 清单同步（`8f8e911`、`d70b231`、`aa9620e`） | B0 待提醒；指南待按 E-1～E-9 修订；`deploy/.env`、`eval-mysql`、`.remember/` 清理待用户决定；未推送 |
+| 2026-10-30 | 阶段 1 手动测验：frontend-dev、prd-design 与收尾 | F1/F2/F4/F7、P1/P2/P4/P7 均通过（F4、P1 附注）；问题清单新增 F-1～F-4、P-1～P-3、E-7～E-9，B-4 确认跨场景；沙箱统一关闭的决定与更正写入 1.2/3.1；收尾 env diff 只有 1.1 范围新增；3.5 阶段 1 小结；计划文件阶段 1 清单同步（`8f8e911`、`d70b231`、`aa9620e`） | B0 放到最后；指南待按 E-1～E-9 修订；`deploy/.env`、`eval-mysql`、`.remember/` 清理待用户决定；未推送 |
