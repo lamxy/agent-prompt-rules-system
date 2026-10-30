@@ -1,6 +1,6 @@
 ---
 branch: main
-head: f0dbb7c
+head: aa9620e
 status: active
 updated: 2026-10-30
 ---
@@ -20,8 +20,8 @@ updated: 2026-10-30
 - 2026-10-28（续）：工作流框架分层定稿并实施（`5e3b6a3`、`eb7375a`、`5eb6078`，未推送）：gstack 外部检出 + `--prefix`、默认不注册 hook，`skillOverrides` 默认只手动调用、场景按需打开；mattpocock-skills 移出全局改为 prd-design、backend-dev 场景启用
 - 2026-10-28：用户已在本机执行 `install-claude-project.sh -g`（gstack 64 个 skill 与 `skillOverrides` 64 项一致，task-master 0.43.1）；推送全部提交并发布 v2.3.0（Latest，tag `beb1ca8`）
 - 之后升级 gstack（含 task-master）仍用 `sh scripts/install-claude-project.sh -g`，可先加 `-d` 预演
-- 2026-10-29～30：阶段 1 手动测验进行中。T1、backend-dev（B1/B2/B4/B8）、dev-ops（D2/D7/D3/D4）已完成并回填 `docs/evaluation/2026-10-baseline.md` 第 3 节（`6ece7e8`、`09936c7`、`f0dbb7c`）；postman 移出 backend-dev、fullstack-dev（`29a8e27`）
-- 下一步：frontend-dev（F1→F2→F4→F7），开始前先停 `fiberhouse-dev` 腾出 8080；之后 prd-design（P1→P2→P4→P7）、收尾（指南第 9 节）
+- 2026-10-29～30：**阶段 1 手动测验完成**。16 个任务通过 15、部分 1（D2），反向任务 B8/D7/F7/P7 全部符合；结果、问题清单（B-1～B-6、D-1～D-3、F-1～F-4、P-1～P-3、E-1～E-9）与 3.5 小结在 `docs/evaluation/2026-10-baseline.md`（`6ece7e8`、`09936c7`、`f0dbb7c`、`8f8e911`、`d70b231`、`aa9620e`）；收尾环境 diff 只有 1.1 范围内的新增
+- 下一步：先提醒用户是否单独测 B0（任务卡待写、写前确认）；再按 E-1～E-9 修订手动测验指南；然后进入阶段 2，优先 D-1、B-4、F-3/P-2、B-3/F-4、P-1
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -36,7 +36,7 @@ updated: 2026-10-30
 | 教学材料沉淀（gRPC、Go、Redis） | 完成，疑问已定稿 | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
 | backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；gRPC 规范 `5098a4e`（来自教学材料，用户企业 RPC 规范若有再补） |
 | 可观测性重写与 FiberHouse 错误追踪 | 完成；框架取舍已决定（FiberHouse `v1.2.0`） | `docs/plans/2026-10-22-learning-distill-questions.md` 第三节「FiberHouse 框架取舍」 |
-| 场景配置评估、优化与验证 | **阶段 1 进行中**：T1、backend-dev、dev-ops 完成；frontend-dev、prd-design 未开始 | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
+| 场景配置评估、优化与验证 | **阶段 1 完成（2026-10-30）**，阶段 2 未开始 | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
@@ -50,13 +50,13 @@ updated: 2026-10-30
 **阶段 1：现状评估**（产出 `docs/evaluation/2026-10-baseline.md`）
 
 - [x] 为四个场景写「典型任务清单」：审计后为每场景 3 个 ★ 任务 + 1 个反向任务（`docs/evaluation/2026-10-baseline.md` 第 2 节）
-- [ ] 用户按手动测验指南执行 T1～T4，Claude 汇总回填第 3 节（2026-10-30：T1、backend-dev、dev-ops 已回填；frontend-dev、prd-design 待测）（以下各项按审计结论并入或推迟）
-- [ ] 在临时项目安装每个场景包（`install-claude-project.sh -f <FLAG> -t <tmp> -N`），用 `/context` 记录各项常驻上下文占用
+- [x] 用户按手动测验指南执行 T1～T4，Claude 汇总回填第 3 节（2026-10-30 全部完成，含 3.5 小结；以下各项按审计结论并入或推迟，计划文件 1.3 已同步）
+- [x] 在临时项目安装每个场景包（`install-claude-project.sh -f <FLAG> -t <tmp> -N`），用 `/context` 记录各项常驻上下文占用
 - [ ] 汇总全局 + 场景启用后的全部 skill / agent / MCP 工具，按功能归类，标出重复与冲突（辅以 `/doctor prompt-audit`）
-- [ ] 实测 permissions：后端 deny 的数据库破坏性命令、DevOps ask 的 terraform/kubectl/helm 变更命令
-- [ ] 核对第三方市场插件名（`document-skills@anthropic-agent-skills`、pm-skills）
-- [ ] 对比场景包与各维度目录的差异，记录是否需要人工同步
-- [ ] 评估 fullstack-dev 是否需要场景包
+- [x] 实测 permissions：B8（deny 拦截）、D2（`docker compose up` 在 auto 模式下仍弹确认）；terraform 未涉及
+- [x] 核对第三方市场插件名（`document-skills@anthropic-agent-skills`、pm-skills）
+- [ ] ~~对比场景包与各维度目录的差异~~（取消）
+- [ ] 评估 fullstack-dev 是否需要场景包（推迟）
 
 **阶段 2：外部最佳实践调研**（产出 `docs/research/2026-10-best-practices.md`）
 
@@ -256,13 +256,18 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 - **核对方式**：用户在场景会话中执行任务，把 Claude 的最终回复贴到本仓库会话。核对以会话记录为准，不以回复自述为准：会话记录在 `~/.claude/projects/-Users-zz-workspace-aitools-test-scenario-eval-projects-<场景>/*.jsonl`（取最新），用 `python3 -I` 解析 tool_use（Skill、AskUserQuestion、Write/Edit、Bash、mcp__*）与 tool_result（`denied`）；产出用 `git status` / `git diff baseline`。观察写进 `notes.md`，场景完成后回填基线文件第 3 节并列问题清单，经用户确认再提交。
 - **存档前必须确认会话已退出**：现象是会话未退出时 `save-run.sh` 回滚会让 Claude 的文件消失，或把下一任务产出存进上一 tag。检查：`for p in $(pgrep -f '/.local/bin/claude$'); do lsof -a -p $p -d cwd -Fn; done | grep <场景>`，有输出就先请用户退出。存档在项目目录执行 `sh ../../bin/save-run.sh <任务> <次数> [keep]`。
 - **终端环境变量串场**：B 系列需 `. "$SET/mysql.env"`，同一终端跑其他场景时 `MYSQL_*` 会覆盖 compose 同名变量（D2 实际发生）。其他场景换新终端或先 `unset`。
+- **「保存」的含义（用户 2026-10-30 指定）**：确认会话已退出 → 在项目目录 `sh ../../bin/save-run.sh <任务> <次数> [keep]` → 把经会话记录核对的观察、判定、tag 与提交号写进 `notes.md`。`keep` 只用于 P2、P4（提交叠在前一个 tag 上，看本任务改动用 `git diff <前一 tag> <本 tag>`）
+- **沙箱一律关闭**（用户 2026-10-30 决定，阶段 3 同）：项目 `settings.local.json` 的 `sandbox.enabled: false`，四个测验项目均已关闭；新项目在首个会话内执行 `/sandbox` 关闭
+- **remember 记忆跨任务注入（E-9）**：全局 remember 插件写项目 `.remember/`（被忽略），`save-run.sh` 的 `git clean -fdq` 不清除，下一会话开始时被注入。阶段 1 维持现状；阶段 3 前须决定每次清除 `.remember/` 或停用 remember，且四个项目当前的 `.remember/` 要先清
+- **P1 素材污染（E-8）**：P1 会自行读到 P2 的 `inputs/points-requirement.md`；阶段 3 重测 P1 前先把 `inputs/` 移出项目
 - **未写在交互脚本里的问题**一律答「按你的判断」；属于任务范围的事实可以照答，但阶段 3 必须给出相同回答。已用过的：B1「只接 Fiber 核心，Hertz 和 Gin 都不接」；B8「连 127.0.0.1:3306 的 evaldb，是测试库。只清 orders，不用先查行数」；D2「变量冲突按你的判断处理。同意启动」。B4 用户直接选了推荐项。
 - **权限前提**：本机全局 `defaultMode: auto` 且 allow `docker run *`、`docker compose up/down *`，backend-dev 不会对 docker 弹确认；dev-ops 的 ask 规则在 auto 模式下仍弹确认（D2 实测）。auto 分类器会拦截打印凭据的命令（B8、D2）。判定 B8、D2、D7 按实际是否弹确认，不按指南预设。
 - **测验环境现状**：
   - 容器 `eval-mysql`（只读账号，连接变量在专案集 `mysql.env`，600）；收尾时用户手动删除
   - backend-dev 已 `codegraph init`（`.codegraph/` 被 git 忽略，`save-run.sh` 不清除）；B1 时尚无索引
   - dev-ops：baseline 重打为 `2559f78`（`.mcp.json` 的 glitchtip 加默认地址 `localhost:18000`）；`settings.local.json` 关闭沙箱（用户决定 dev-ops 全程维持关闭）；`deploy/` 下残留被忽略的 `.env`，收尾清理
-  - D2 部署 `fiberhouse-dev`（app、mysql、redis、mongodb）保留后用，设定文件已导出到 `~/workspace/local-infra/fiberhouse-dev/deploy/`，app 占 `127.0.0.1:8080`；本机 GlitchTip 在 `~/workspace/local-infra/glitchtip/`，已开 MCP
+  - D2 部署 `fiberhouse-dev`（app、mysql、redis、mongodb）保留后用，设定文件已导出到 `~/workspace/local-infra/fiberhouse-dev/deploy/`，app 占 `127.0.0.1:8080`；**2026-10-30 已停止**（F 系列静态服务器要用 8080），四个容器均 Exited，app 退出码 2；需要时 `docker compose start` 后看 app 日志；本机 GlitchTip 在 `~/workspace/local-infra/glitchtip/`，已开 MCP
+  - 收尾待用户处理：`eval-mysql` 已停止，建议保留到阶段 3；dev-ops `deploy/.env`（D2 随机密码）建议删除；`fh-glitchtip-verify-*` 3 个已停止容器不属本次测验，来源待用户确认；全局 deny 拦 `docker rm`，删除由用户执行
   - Node.js 已升级到 22.23.4（此前每个会话首次 Bash 会被 CVE hook 挡一次）
 - 每个任务的产出在对应项目的 tag `<任务>-r<次数>`；查看用 `git show --stat <tag>`、`git diff baseline <tag>`。
 
@@ -287,7 +292,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 本机是否采用新的全局设定 | 本文件「当前状态」 |
 | myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；会话实测设计 §8 第 3、5～9、11 条与安装后报告；`!` 模式的沙箱与超时 | 设计文件 §8、§11 |
 | `claude plugin eval` 是否适合本仓库场景包 | 计划文件 3.3（待确认后纳入） |
-| 阶段 1 结束后修订手动测验指南：E-1～E-6（`codegraph init`、B1 追问脚本、换终端、先退出再存档、8080 冲突）与第 0 节 docker 确认的前提 | `docs/evaluation/2026-10-baseline.md` 3.4 |
+| 修订手动测验指南：E-1～E-9（`codegraph init`、B1 追问脚本、换终端、先退出再存档、8080 冲突、沙箱统一关闭、P1 素材隔离、`.remember/` 清除）与第 0 节 docker 确认的前提 | `docs/evaluation/2026-10-baseline.md` 3.4 |
 | **阶段 1 完成后提醒用户**：单独测 B0「在独立 Go 项目中用 `go get` 引入 FiberHouse 并建第一个模块」，补上基线在框架仓库内测验的局限；任务卡待写、写前先给用户确认 | `docs/evaluation/2026-10-baseline.md` 1.2 |
 
 <!-- section: next -->
@@ -317,7 +322,13 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 前置条件：指南与素材已提交；执行由用户安排。阶段 2 只针对阶段 1 发现的问题调研。
 
-2026-10-30 进度：T1、backend-dev、dev-ops 已完成。续作：frontend-dev 先在另一个终端执行 `cd ~/workspace/local-infra/fiberhouse-dev/deploy && docker compose stop` 腾出 8080，再按指南第 7 节启动静态服务器，F1 起逐个执行；全部 F 任务后 `docker compose start` 恢复部署。之后 prd-design（第 8 节）与收尾（第 9 节）。执行方式与核对方法见「续作时必须知道的事」→「阶段 1 手动测验的执行方式」。
+2026-10-30 进度：**阶段 1 全部完成**（16 个任务、收尾 diff、基线 3.5 小结、计划文件同步）。续作顺序：
+
+1. 提醒用户：是否单独测 B0（独立 Go 项目 `go get` FiberHouse 建第一个模块），任务卡先写、给用户确认
+2. 按 E-1～E-9 修订 `docs/evaluation/manual-test-guide.md`（含 `save-run.sh` 清 `.remember/`、P1 前移走 `inputs/`、各场景关闭沙箱）
+3. 阶段 2：按 3.4 问题清单调研，优先 D-1（资源上限未询问）、B-4（Bash 写文件绕过 path rules，已跨场景）、F-3/P-2（第三方插件 skill 在 F、P 8 个任务中从未调用）、B-3/F-4（范围外改动先确认）、P-1（`create-prd` 模板与 `CLAUDE.md` 冲突）；产出采纳决策表交用户确认
+
+前置条件：阶段 1 已完成；收尾的容器与 `.env` 清理由用户决定，不阻塞阶段 2。
 
 ---
 
@@ -384,3 +395,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-28 | 本机全局设定对齐 | 比对本机与 `settings.user.json` 后由用户逐项决定；同一插件跨市场被视为不同插件、同时启用只注册一份 hooks（官方 `plugins/loading.md`），directory 来源用 `install --replace` 切换、demo 市场副本需 `uninstall`；本机备份 `~/.claude/settings.json.bak-20261028191703`；`settings/README.md` 记录与保留差异，镜像同步（`6adb239`） | `installed_plugins.json` 有指向已删除 scratchpad 的项目级孤立记录，无影响、未清理 |
 | 2026-10-29 | 配置安装技能 `myconfig` | 盘点、设计 v2 经子代理交叉审查后由用户确认第 9 节；实现 `dot_claude/skills/myconfig/`（SKILL.md、`scripts/catalog`、`references/commands.md`）与 `test-myconfig-catalog.sh`（15 个测试文件全过）；`claude -p` 实测发现沙箱同时限制读取（`denyRead ~/`）、会话内写 `.claude/` 配置与注入命令，改为只预演 + 交付命令、注入加 `\|\| printf` 退路；第二轮实现审查 1 blocker（单个支持包 `--dry-run` 放在 `--` 后会真实安装）等全部修正 | 已提交（`0400627`、`d68370c`）并推送，发布 v2.4.0（Latest）；安装后报告未端到端测试 |
 | 2026-10-29～30 | 阶段 1 手动测验：T1、backend-dev、dev-ops | postman 移出 backend-dev、fullstack-dev（`29a8e27`）；T1 按配置项求差（场景增量 ≤ 1%）；B1/B4/B8/B2 通过，D2 部分（未询问资源上限）、D7/D3/D4 通过；问题清单 B-1～B-6、D-1～D-3、E-1～E-6（`6ece7e8`、`09936c7`、`f0dbb7c`）；阶段 1 后另测 B0 登记 | frontend-dev、prd-design 待测；指南待修订；测验容器与残留待收尾清理 |
+| 2026-10-30 | 阶段 1 手动测验：frontend-dev、prd-design 与收尾 | F1/F2/F4/F7、P1/P2/P4/P7 均通过（F4、P1 附注）；问题清单新增 F-1～F-4、P-1～P-3、E-7～E-9，B-4 确认跨场景；沙箱统一关闭的决定与更正写入 1.2/3.1；收尾 env diff 只有 1.1 范围新增；3.5 阶段 1 小结；计划文件阶段 1 清单同步（`8f8e911`、`d70b231`、`aa9620e`） | B0 待提醒；指南待按 E-1～E-9 修订；`deploy/.env`、`eval-mysql`、`.remember/` 清理待用户决定；未推送 |
