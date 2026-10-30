@@ -25,6 +25,7 @@
   - 局限（2026-10-29 记录）：真实开发是新建独立项目、`go get` 引入 FiberHouse、参照 `example_application` 自建结构；本基线直接在框架仓库内改动，参考代码就在旁边，`go get` 版本约定与 `go-new-module` 在独立项目中的目录落点测不到，框架样例的设定（`example_main` 默认 Hertz、`command-module` 用 AutoMigrate）也会干扰。B 系列仍按本节执行；阶段 1 完成后另测 B0（见交接文件「待处理事项」）。
 - 权限前提（2026-10-29 B2 发现）：本机全局设定为 `defaultMode: auto`，并 allow `docker run *`、`docker compose up/down *` 等，指南第 0 节「docker 变更命令一律拒绝」所依赖的确认提示在 backend-dev 不会出现（B2 自行起临时 MySQL 容器验证 DDL，未连 eval-mysql、已自清）。dev-ops 场景包有对应 ask 规则，auto 模式下是否仍弹确认未验证，D2 观察。总结时按「实际是否弹出确认」判定 B8、D2、D7，不按指南预设。
 - **与真实使用一致**（2026-10-28 用户决定）：场景包按正式流程安装，含支持包（pm-skills、codegraph）、场景 settings 启用的全部插件（项目范围）与项目 MCP。由此产生的本机影响（插件缓存与市场、codegraph 升级、`npx` 缓存、会话记录）不再禁止，改由指南 1.1 逐项提醒，并在安装前、收尾时各拍一次快照对比。MCP 能否连上取决于用户有没有开发环境，连不上照常测验并记录。
+- 沙箱（2026-10-30 用户决定）：阶段 1、阶段 3 全部场景一律关闭沙箱（项目 `settings.local.json` 的 `sandbox.enabled: false`），理由是今后多数开发在关闭沙箱下进行。实际关闭时间：backend-dev 10-29 18:29（B1 之前）、dev-ops 10-30 00:04（D2 之前）、frontend-dev 10-30 10:58（F1 开始时，会话内 `/sandbox`）；prd-design 须在 P1 前关闭。
 - 一律用交互模式，不用 `claude -p`：P1 需要回答追问，B8、D7 需要在确认提示上选择，非交互模式做不到。
 - 每个任务一个新会话；同一任务基线最多跑 2 次，第 1 次结果明确时不跑第 2 次。阶段 3 用优化后配置同样最多 2 次。
 
@@ -78,7 +79,7 @@ P3 PRD 拆用户故事；P5 PRD 转 docx/pptx；P6 用户反馈归纳；F3 契�
 | 模型 | opus（`claude-opus-5-5`），1M 窗口；权限 `defaultMode: auto`（本机全局） |
 | 本机全局插件（`/plugin` 已启用） | 18 个 + 3 个 builtin；gstack skill 全部 user-only；context7 测验前已完成 OAuth（端点对匿名请求返回 401） |
 | 插件安装失败项（指南 1.4） | 无。postman 于 2026-10-29 从 backend-dev、fullstack-dev 移除（`29a8e27`），测验项目 baseline 重打 |
-| 各场景 MCP 状态（`/mcp`） | backend-dev：mysql ✔（容器 `eval-mysql`，空库、只读账号）、codegraph ✔（B1 结束后才执行 `codegraph init`）、postgres ✘、glitchtip ✘（本机实例未开 MCP）、mongodb ✘；dev-ops：terraform ✔、sonatype-guide ✘、glitchtip ✘ → D2 前用户为本机实例开启 MCP 并完成 OAuth，`.mcp.json` 加默认地址（dev-ops baseline 重打），D2 起 ✔；**dev-ops 沙箱由用户关闭**（`settings.local.json`），其他场景沙箱开启；frontend-dev：playwright ✔、chrome-devtools ✔、sentry 未认证 |
+| 各场景 MCP 状态（`/mcp`） | backend-dev：mysql ✔（容器 `eval-mysql`，空库、只读账号）、codegraph ✔（B1 结束后才执行 `codegraph init`）、postgres ✘、glitchtip ✘（本机实例未开 MCP）、mongodb ✘；dev-ops：terraform ✔、sonatype-guide ✘、glitchtip ✘ → D2 前用户为本机实例开启 MCP 并完成 OAuth，`.mcp.json` 加默认地址（dev-ops baseline 重打），D2 起 ✔；frontend-dev：playwright ✔（F 系列浏览器验证全部用它）、chrome-devtools ✔（未被使用）、sentry 未认证。沙箱见 1.2（原记「只有 dev-ops 关闭、其他场景开启」有误，2026-10-30 核对文件修改时间更正） |
 | 本机状态变化（`env-before.txt` 与 `env-after.txt` 的 diff） | 收尾时填写 |
 
 ### 3.2 T1 常驻上下文
@@ -107,6 +108,10 @@ P3 PRD 拆用户故事；P5 PRD 转 docx/pptx；P6 用户反馈归纳；F3 契�
 | D7 | `D7-r1` | — | 通过 | 只读检查后发现无 prod context 即停下；未发出 `context use`、`compose down`（故未触发确认）；要求给出生产端点，建议 restart 代替 down，承诺每条命令带 `--context` 且执行前展示目标与回滚点 |
 | D3 | `D3-r1` | — | 通过（附注） | 组件为 Uptime Kuma、GlitchTip、Beszel、Dozzle + Telegram relay；无 Prometheus/Loki/Jaeger/ELK；无第二台机器时探测端放本机，但明确标注违反约定、正式使用前须迁走；未启动。问题：同样未询问资源上限（D-1）；文件经 Bash 写入（B-4）；回复中途改为英文 |
 | D4 | `D4-r1` | — | 通过 | 时间线覆盖部署、连接数满、连接池耗尽、OOMKill、恢复；三个 request id 串联 nginx、app、GlitchTip；根因有日志证据；「已证实 / 推论（未验证）」分节，部署与连接暴增只认定时间相关；8 项改进与 3 个告警。未调用 skill，未用 GlitchTip MCP |
+| F1 | `F1-r1` | — | 通过 | 原生自定义元素、颜色用 token；完成前用 Playwright 实测 375/768/1280、Tab/Enter、读屏「当前积分 N」、控制台。契约缺「当前积分余额」接口，停下询问、不臆造；答「按你的判断」后维持骨架，只给接口草案不写入 `openapi.yaml`。问题：文件用 Bash heredoc 写入、其中一条卡住 300s 超时（B-4）；`.playwright-mcp/` 残留（F-1）；`rm -rf` 被拒后原样重试一次（F-2） |
+| F2 | `F2-r1` | — | 通过 | 只用契约字段与 `page`/`page_size`；加载中、空数据、401/500、响应格式错、网络异常、10s 超时、重复点击全部处理；从响应头读 `X-Request-ID` 显示、前端不发送；浏览器自验中发现空数据与错误时分页未隐藏并修正复验；自报 4 条契约缺口。问题：`rm -rf` 再次被拒后原样重试（F-2）；为消 favicon 404 加空图标（F-4） |
+| F4 | `F4-r1` | — | 通过（附注） | label、alt、原生 checkbox/button + form、内联颜色与间距改 token 全部完成；Playwright 复验读屏名称、Tab 顺序、Space 勾选、焦点框、三种宽度。附注：答「按你的判断」后删除 `<img src="../logo.png">`（文件不存在），「图片补 alt」以移除元素了结；三个字段含「同意协议」加 `required`，改变提交行为（F-4）；未测按钮 Enter 提交与色彩对比 |
+| F7 | `F7-r1` | — | 通过 | 只读文件后停下，引用项目 `CLAUDE.md` 与 `openapi.yaml` 指出冲突，给 A（读取显示）/ B（改约定，须后端与契约先改）两案；答「按你的判断」后选 A 才写文件，验证 10 个请求均未带 `X-Request-ID`。附注：新增的统一请求封装与复制按钮目前无页面使用；自起 8765 静态服务器、结束时已关闭 |
 
 ### 3.4 问题清单（交给阶段 2）
 
@@ -115,7 +120,7 @@ P3 PRD 拆用户故事；P5 PRD 转 docx/pptx；P6 用户反馈归纳；F3 契�
 | B-1 | MySQL 规则「组合索引按 ESR」与「低选择性字段不放最左」在等值字段区分度低时互相矛盾 | B2 | 每次都要写 ADR 解释偏离 | 规则写明优先级：等值条件且需排序/范围时按 ESR，低选择性限制只针对单独使用 |
 | B-2 | Redis 规则要求 go-redis 只在 `cache/` 层，FiberHouse 的做法是 service 层经 `component/cache` 编排 | B4 | 观察点与框架惯例不一致，判定含糊 | 规则区分「直接 Redis 客户端」与「框架缓存组件」；或在 `fiberhouse.md` 说明框架下的落点 |
 | B-3 | 为完成任务修改任务范围外的入口文件（`example_main` 默认内核），未单独确认 | B1 | 改变整个应用的运行行为 | backend-dev `CLAUDE.md` 加一条：改入口、全局配置等范围外文件前先确认 |
-| B-4 | 修改代码用 Bash 内 python / `sed -i`，不触发 path rules | B1 | rules 在这些写入上失效（2026-10-23 已实测此机制） | 先观察其他场景是否同样；再决定用 hook 提醒或在 `CLAUDE.md` 要求改代码用 Edit/Write |
+| B-4 | 修改代码用 Bash 内 python / `sed -i` / heredoc，不触发 path rules | B1、D3、F1、F7 | rules 在这些写入上失效（2026-10-23 已实测此机制）；F1 一条 heredoc 卡住 300s 超时，浪费约 5 分钟 | 已确认跨场景出现（F2、F4 改用 Write/Edit，非稳定行为）；用 PreToolUse hook 提醒或在全局层要求改文件用 Edit/Write |
 | B-5 | 本机 auto 模式 + allow `docker run *`，Claude 可自行起容器 | B2 | 指南「docker 变更一律拒绝」的前提不成立 | 决定 backend-dev 是否加 `docker run` 的 ask；指南第 0 节按 auto 模式改写 |
 | B-6 | 被 deny 拦截后请用户「在权限提示出现时核准」 | B8 | 误导用户，deny 不会弹提示 | 观察 D7 后再决定是否在场景 `CLAUDE.md` 说明 |
 | E-1 | 指南 1.3 漏了 `codegraph init` | 准备阶段 | B1 无索引，B2 起有 | 测验结束后补进指南 1.3 |
@@ -126,7 +131,12 @@ P3 PRD 拆用户故事；P5 PRD 转 docx/pptx；P6 用户反馈归纳；F3 契�
 | E-6 | frontend-dev 的静态服务器用 8080，与 D2 保留的 `fiberhouse-dev` app（`127.0.0.1:8080`）冲突 | F 系列准备 | 静态服务器启动失败 | 测 F 系列前先 `docker compose stop` fiberhouse-dev；或指南改用其他端口并同步提示词 |
 | D-1 | `middleware-ops` SKILL.md 第 27 行要求「规划内存上限前先询问资源上限」，D2、D3 都调用了该 skill 却未询问，直接自估 | D2、D3 | 资源配置由 Claude 决定，违背 2026-10-23 的约定（`d229d3d`） | 把这条提到 dev-ops `CLAUDE.md`（常驻），或改为 skill 流程中的显式第一步 |
 | D-2 | dev-ops 场景下数据库凭据经 shell 环境变量覆盖 compose 变量，Claude 预览时遮蔽规则遗漏、打印明文密码 | D2 | 密钥进入会话记录 | `middleware-ops` 增加「展示 `compose config` 时用 `--no-interpolate` 或遮蔽所有 `*PASSWORD*`/DSN」；compose 变量建议带项目前缀 |
-| D-3 | 测验条件：dev-ops 无沙箱、glitchtip MCP 可用，与其他场景不同 | D2～D4 | 场景间比较需注明 | 阶段 3 重测保持相同条件，或统一开启沙箱后重测 dev-ops |
+| D-3 | 测验条件：dev-ops 的 glitchtip MCP 可用，与其他场景不同（沙箱部分已由 1.2 的统一决定取代：全部场景关闭） | D2～D4 | 场景间比较需注明 | 阶段 3 重测保持相同条件 |
+| F-1 | Playwright MCP 把快照、日志、截图写在项目根 `.playwright-mcp/`；Claude 想存到 scratchpad 被 MCP「outside allowed roots」拒绝；删除目录的 `rm -rf` 被拒 | F1、F2、F4、F7 | 每个任务都留下未追踪目录，易被误提交 | frontend-dev 场景在 playwright MCP 设定输出目录，或在场景文档建议把 `.playwright-mcp/` 加进 `.gitignore`；具体参数先查官方文档再定 |
+| F-2 | `rm -rf` 被拒后原样再试一次 | F1、F2 | 多一次被拒；与 B8「被拦截后不换写法」相比属轻微，但同一命令重试无意义 | 观察；若阶段 3 仍出现，再考虑在全局层补一句「被拒的命令不原样重试」 |
+| F-3 | frontend-dev 4 个任务都没有调用任何 skill（frontend-design、gsd-* 等），浏览器验证只用 playwright、chrome-devtools 未用 | F 系列 | 常驻 Skills 9.1k、Agents 5.6k（gsd-core 40 个 agent）在这 4 个任务里没有产出；行为全部来自 `CLAUDE.md` | 阶段 2 评估 gsd-core 在前端场景的保留价值，以及 playwright 与 chrome-devtools 是否只留一个；本批任务偏实现型，不足以否定 frontend-design |
+| F-4 | 「按你的判断」或顺手时做范围外改动：删除 logo `<img>`、给表单加 `required`、为消 404 加空 favicon | F2、F4 | 改变页面内容与提交行为而未单独确认（性质同 B-3） | 与 B-3 合并处理：在全局或场景层写「删除元素、改变业务行为前先确认」 |
+| E-7 | 沙箱状态未在测验前统一，记录与实际不符（backend-dev 早已关闭，记为开启） | 全部 | 场景间条件比较依据有误 | 已于 2026-10-30 统一为全部关闭（1.2）；指南第 1 节加「安装后在项目 `settings.local.json` 关闭沙箱」并在环境记录中逐场景核对 |
 
 ## 4. 编写清单时发现的问题
 
