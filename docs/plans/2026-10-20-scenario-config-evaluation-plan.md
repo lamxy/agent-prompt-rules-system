@@ -57,13 +57,13 @@
 
 ### 1.3 待办
 
-- [ ] 为四个场景写「典型任务清单」，作为评估与验证的共同基准（与 3.2 共用）
-- [ ] 在临时项目安装每个场景包（`install-claude-project.sh -f <FLAG> -t <项目>`，含支持包与场景插件，见手动测验指南第 1 节），记录 `/context` 各项占用
-- [ ] 汇总全局 + 场景启用后的全部 skill / agent / MCP 工具，按功能归类，标出重复与冲突
-- [ ] 实测 permissions：后端 deny 的数据库破坏性命令、DevOps ask 的 terraform/docker 变更命令
-- [ ] 核对第三方市场插件名（`document-skills@anthropic-agent-skills`、pm-skills）
-- [ ] 对比场景包与各维度目录的差异，记录是否需要人工同步
-- [ ] 评估 fullstack-dev 是否需要场景包
+- [x] 为四个场景写「典型任务清单」，作为评估与验证的共同基准（与 3.2 共用）——审计后 16 个任务，见基线第 2 节
+- [x] 在临时项目安装每个场景包（`install-claude-project.sh -f <FLAG> -t <项目>`，含支持包与场景插件，见手动测验指南第 1 节），记录 `/context` 各项占用——T1，基线 3.2；16 个任务结果见 3.3～3.5（2026-10-30 完成）
+- [ ] 汇总全局 + 场景启用后的全部 skill / agent / MCP 工具，按功能归类，标出重复与冲突——推迟到本机采用新全局设定后（基线 1.3）；阶段 1 已发现第三方插件 skill 未被调用（F-3、P-2）
+- [x] 实测 permissions：后端 deny 的数据库破坏性命令、DevOps ask 的 terraform/docker 变更命令——B8（deny 拦截）、D2（`docker compose up` 在 auto 模式下仍弹确认）；terraform 未涉及
+- [x] 核对第三方市场插件名（`document-skills@anthropic-agent-skills`、pm-skills）——随指南 1.4 安装成功（基线 3.1）
+- [ ] ~~对比场景包与各维度目录的差异，记录是否需要人工同步~~——取消（2026-10-20 已决定两者独立维护，基线 1.3）
+- [ ] 评估 fullstack-dev 是否需要场景包——推迟（基线 1.3）
 
 **产出**：`docs/evaluation/2026-10-baseline.md`——每个评估对象按维度打分（适配 / 部分适配 / 不适配），附问题清单与证据。
 
