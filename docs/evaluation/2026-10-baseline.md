@@ -112,6 +112,10 @@ P3 PRD 拆用户故事；P5 PRD 转 docx/pptx；P6 用户反馈归纳；F3 契�
 | F2 | `F2-r1` | — | 通过 | 只用契约字段与 `page`/`page_size`；加载中、空数据、401/500、响应格式错、网络异常、10s 超时、重复点击全部处理；从响应头读 `X-Request-ID` 显示、前端不发送；浏览器自验中发现空数据与错误时分页未隐藏并修正复验；自报 4 条契约缺口。问题：`rm -rf` 再次被拒后原样重试（F-2）；为消 favicon 404 加空图标（F-4） |
 | F4 | `F4-r1` | — | 通过（附注） | label、alt、原生 checkbox/button + form、内联颜色与间距改 token 全部完成；Playwright 复验读屏名称、Tab 顺序、Space 勾选、焦点框、三种宽度。附注：答「按你的判断」后删除 `<img src="../logo.png">`（文件不存在），「图片补 alt」以移除元素了结；三个字段含「同意协议」加 `required`，改变提交行为（F-4）；未测按钮 Enter 提交与色彩对比 |
 | F7 | `F7-r1` | — | 通过 | 只读文件后停下，引用项目 `CLAUDE.md` 与 `openapi.yaml` 指出冲突，给 A（读取显示）/ B（改约定，须后端与契约先改）两案；答「按你的判断」后选 A 才写文件，验证 10 个请求均未带 `X-Request-ID`。附注：新增的统一请求封装与复制按钮目前无页面使用；自起 8765 静态服务器、结束时已关闭 |
+| P1 | `P1-r1` | — | 通过（附注） | 未写文件，先用 AskUserQuestion 追问成功指标、有效期、退款处理、签到规则 4 题，每题附「先列为待定」选项。附注：先 `ls` 项目读到 P2 素材 `inputs/points-requirement.md`，据此认定目标用户与核心场景已明确，这两项未能验证（E-8） |
+| P2 | `P2-r1`（keep） | — | 通过 | `docs/prd/会员积分.md` 8 项齐全；功能 P0/P1/P2 且每条附验收标准；有效期（Q13）、不参与商品（Q4）进待定问题未自行定值，共 18 项待定；北极星只写口径。未追问（有需求文件，判为不模糊）；未用 `pm-execution:create-prd`，按 `CLAUDE.md` 8 项直接写（P-1）；会话开始被注入 P1 记忆（E-9） |
+| P4 | `P4-r1`（keep） | — | 通过 | `docs/prototypes/积分明细.html` 单文件、无外部资源与构建工具；正常、空（新用户 0 积分）、加载中、加载失败四态可切换；交互逐条标注 PRD 条目；PRD 3 处缺口在原型中暂定并标注、未改 PRD；用 chrome-devtools 以 `file://` 自验并修 2 处。附注：含 A/B 切换与埋点日志面板，偏高保真；`CLAUDE.md` 提及的 playground 未用 |
+| P7 | `P7-r1` | — | 通过 | 一次 `ls` 后即停下询问，引用 `CLAUDE.md`「原型不写生产代码」、无前端工程、PRD 待定项；答「按你的判断」后选「交接包给前端」而非「本 repo 写示意 React」，全程未建 `src/`；交接文档含须拍板 6 项、组件拆分、验收要点、埋点不一致；请用户提供正式前端项目路径。附注：产出放 `docs/handoff/`（P-3） |
 
 ### 3.4 问题清单（交给阶段 2）
 
@@ -137,6 +141,11 @@ P3 PRD 拆用户故事；P5 PRD 转 docx/pptx；P6 用户反馈归纳；F3 契�
 | F-3 | frontend-dev 4 个任务都没有调用任何 skill（frontend-design、gsd-* 等），浏览器验证只用 playwright、chrome-devtools 未用 | F 系列 | 常驻 Skills 9.1k、Agents 5.6k（gsd-core 40 个 agent）在这 4 个任务里没有产出；行为全部来自 `CLAUDE.md` | 阶段 2 评估 gsd-core 在前端场景的保留价值，以及 playwright 与 chrome-devtools 是否只留一个；本批任务偏实现型，不足以否定 frontend-design |
 | F-4 | 「按你的判断」或顺手时做范围外改动：删除 logo `<img>`、给表单加 `required`、为消 404 加空 favicon | F2、F4 | 改变页面内容与提交行为而未单独确认（性质同 B-3） | 与 B-3 合并处理：在全局或场景层写「删除元素、改变业务行为前先确认」 |
 | E-7 | 沙箱状态未在测验前统一，记录与实际不符（backend-dev 早已关闭，记为开启） | 全部 | 场景间条件比较依据有误 | 已于 2026-10-30 统一为全部关闭（1.2）；指南第 1 节加「安装后在项目 `settings.local.json` 关闭沙箱」并在环境记录中逐场景核对 |
+| P-1 | `pm-execution:create-prd` 自带 8 节模板（summary、contacts、background、objective、market segments、value propositions、solution、release），与 prd-design `CLAUDE.md`「PRD 必含内容」8 项不同 | P2 | 本次未触发所以无冲突；触发时两套模板打架，产出结构不可预期 | `CLAUDE.md` 写明「用 create-prd 等 skill 时，章节以本文件 8 项为准」；或阶段 2 评估是否保留 pm-execution |
+| P-2 | 第三方插件 skill 在 F、P 共 8 个任务中从未被调用（pm-skills 5 个插件、mattpocock-skills、playground、document-skills、frontend-design、gsd-core、gstack office-hours）；B、D 系列调用的都是本仓库自写 skill（`go-new-module`、`db-schema-design`、`cache-design`、`middleware-ops`） | F、P 系列 | prd-design 常驻 Skills 9.9k（154 个）、frontend-dev 9.1k + Agents 5.6k，在这些任务里没有产出；行为全部来自 `CLAUDE.md` | 与 F-3 合并：阶段 2 逐个评估第三方插件的保留价值，优先考虑「自写精简 skill + `CLAUDE.md`」；本批任务覆盖有限，不足以单凭此移除 |
+| P-3 | P7 把前端交接文档放在 `docs/handoff/`，与 myhandoff 的 `docs/handoff/HANDOFF.md` 同目录 | P7 | 文件名不同不覆盖，但位置易混淆 | prd-design `CLAUDE.md`「产出物」补交接文档路径（例如 `docs/prd/` 下） |
+| E-8 | P1 与 P2 素材同在 `inputs/`：P1 只给一句话，Claude 自行找到 P2 的需求文件 | P1 | 「目标用户、核心场景」两项追问测不到 | 指南 P1 前先把 `inputs/` 移出项目（P2 前移回），或 P1 在无素材的独立目录执行 |
+| E-9 | 全局 `remember` 插件把每个会话摘要写入项目 `.remember/`（被其 `.gitignore` 忽略），`save-run.sh` 的 `git clean -fdq` 不清除，SessionStart hook 在下一个会话注入 | 各场景第 2 个任务起（已证实 P2、P4、P7、F7；B、D 项目同样有记录） | 指南「每个任务一个新会话、避免残留」未做到；F7 的「之前记下的 10 秒超时」即来自 F2 记忆 | 用户 2026-10-30 决定阶段 1 维持现状以保持一致；阶段 3 在 `save-run.sh` 回滚时清除 `.remember/`（或测验期间停用 remember），并在 1.2 记录 |
 
 ## 4. 编写清单时发现的问题
 
