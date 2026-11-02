@@ -10,12 +10,16 @@
 
 ## 变更前先给差异
 
-执行任何变更前，先运行并展示对应的预览：`terraform plan`；Compose 变更先 `docker compose config` 展示合并后的配置，并说明哪些服务会被重建。用户确认后再执行变更。
+执行任何变更前，先运行并展示对应的预览：`terraform plan`；Compose 变更先用 `docker compose config --no-interpolate --no-env-resolution` 展示合并后的配置（避免展开密钥；compose 文件内写死的值仍会显示），并说明哪些服务会被重建。用户确认后再执行变更。
 
 ## 环境
 
 - 默认只操作开发或预发环境。执行 docker 命令前先显示当前 `docker context` 与 Compose 项目名；目标是生产主机时，必须由用户明确指定。
 - 密钥通过 `.env`（不入库）、Docker secrets 或 CI 的 secret 引用注入，不写入仓库、compose 文件或日志。
+
+## 资源规划
+
+规划实例规格、节点数、内存上限前，先询问用户可用的资源上限，再结合业务现状评估，给出建议方案与计算过程；最终配置由用户或负责的工程师决定。
 
 ## CI/CD 与上线
 

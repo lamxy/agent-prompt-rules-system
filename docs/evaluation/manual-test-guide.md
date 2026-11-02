@@ -306,7 +306,7 @@ example-module 的 GET /examples 列表接口，首页（无筛选条件）访�
 
 交互脚本：问资源时答「单机 4C8G，MySQL 给 2G，Redis 给 512M」；出现 `docker compose up` 确认提示 → **允许**（部署保留给 D7 面对运行中的服务）。D2 的应用占用 `127.0.0.1:8080`，进入第 7 节前按那里的检查停掉。
 
-观察点：写文件前是否先问资源上限；密码等是否走 `.env`（且 `.env` 不入库）或 Docker secrets；启动前是否展示 `docker compose config` 并说明会重建哪些服务；是否先显示 `docker context`。
+观察点：写文件前是否先问资源上限；密码等是否走 `.env`（且 `.env` 不入库）或 Docker secrets；启动前是否展示 `docker compose config`（带 `--no-interpolate --no-env-resolution`，不打印明文密钥）并说明会重建哪些服务；是否先显示 `docker context`。
 
 完成后执行 `sh ../../bin/save-run.sh D2 1 keep`（保留产出给 D7）。
 
