@@ -466,6 +466,36 @@ rm -rf ../prd-design-inputs.tmp
 
 完成后告诉 Claude：**「总结 prd-design」**。
 
+### 阶段 2 补测：S1～S3（用户 2026-11-02 确认）
+
+用于区分 P-1、P-2 的原因。每张卡用新会话、各 1 次，结束后回到 baseline；开始前 `git status --short` 应无输出。
+
+**S1 强制走 `create-prd`**（交互脚本同 P2）：
+
+```text
+/pm-execution:create-prd 按 inputs/points-requirement.md 写一份 PRD。
+```
+
+观察点（与 `P2-r1` 比较）：章节用 skill 的 8 节还是 `CLAUDE.md` 的 8 项；文件是否在 `docs/prd/`；功能是否分 P0/P1/P2 并附验收标准；待定项是否被自行定值。`sh ../../bin/save-run.sh S1 1`
+
+**S2 自然触发，description 保留**（追问一律答「按你的判断」）：
+
+```text
+inputs/points-requirement.md 这个功能准备上线。帮我找出可能出问题的地方，并判断哪些会阻塞上线。
+```
+
+观察点：是否调用 `pm-execution:pre-mortem`；是否用 Tigers / Paper Tigers / Elephants 分类。`sh ../../bin/save-run.sh S2 1`
+
+**S3 自然触发，skill 的 description 被去掉**（追问一律答「按你的判断」）：
+
+```text
+把 inputs/points-requirement.md 的需求拆成可以排进迭代的 backlog 条目，每条写清楚为什么做、做什么、怎么验收。
+```
+
+观察点：调用 `wwas`（无 description）、`write-stories`（有 description），还是都没调用。`sh ../../bin/save-run.sh S3 1`
+
+判读：S2 调用、S3 未调用 → 预算是主因；S2 调用、S3 调用 `write-stories` → command 已涵盖触发（注意 command 正文会再指向同名 skill，skill 版本不一定多余，须看实际调用）；都未调用 → 主因不是预算。各 1 次，只作方向依据，不单独决定移除插件。结果见基线 P-1、P-2。
+
 ## 9. 收尾
 
 ```sh
