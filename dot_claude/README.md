@@ -6,7 +6,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 
 | 檔案 | 說明 |
 |---|---|
-| `CLAUDE.md` | 約 30 行，只寫與 Claude Code 預設行為不同的約束：資訊來源驗證、弱網降級、LSP 優先、RTK 原始輸出 |
+| `CLAUDE.md` | 約 50 行，只寫與 Claude Code 預設行為不同的約束：範圍與完成、資訊來源驗證、網路、LSP 優先、RTK 原始輸出 |
 | `commands/analyze-github-repo.md` | `/analyze-github-repo`：輕量探測優先的單一 GitHub 倉庫分析 |
 | `skills/myhandoff/` | `myhandoff` 技能：讀寫 `docs/handoff/HANDOFF.md` 的進度交接；`settings.json` 的 `Stop`、`StopFailure` hook 依賴其 `scripts/` |
 | `skills/myconfig/` | `myconfig` 技能：列出本倉庫的場景配置，或在會話中預演並給出安裝命令（寫入由使用者執行）；`scripts/catalog` 現場產生清單。設計見 `docs/plans/2026-10-28-config-install-skill-design.md` |
@@ -47,7 +47,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 | `design-first-rule-min.md` | 刪除 | Plan mode、brainstorming skill |
 | `env-tools-min.md` | 壓縮為 1 條 | 內建 Grep（基於 rg）、LSP 工具 |
 | `source-verification-min.md` | 保留並壓縮 | CLAUDE.md「資訊來源」 |
-| `network-degraded-preference-min.md` | 保留並壓縮 | CLAUDE.md「弱網環境」 |
+| `network-degraded-preference-min.md` | 保留並壓縮 | CLAUDE.md「網路」（輕量探測已於 2026-11-03 移出，見 `docs/plans/2026-11-03-weak-network-rule-backup.md`） |
 | `skill-trigger-constraint-min.md` | 改為硬約束 | settings.json `skillOverrides: {"claude-api": "user-invocable-only"}`：模型看不到該技能，`/claude-api` 仍可手動執行 |
 | `instruction-writing-style-min.md` | 改為維護註解 | CLAUDE.md 頂部 HTML 註解 |
 | `RTK.md` | 壓縮為 1 段 | CLAUDE.md「RTK」；rtk 1.0.1 起 `rtk proxy` 已改為 `rtk bypass` |

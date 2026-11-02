@@ -43,8 +43,9 @@ sh scripts/multi_client_support/codex.sh [-d] [-F]
 
 | `CLAUDE.md` 段落 | Codex 模板 |
 |-----------------|-----------|
+| 范围与完成 | 保留；「子代理」改为「其他代理」 |
 | 资讯来源 | 保留；Claude 专属工具名（GitHub MCP `get_file_contents`、WebFetch）改为通用说法 |
-| 弱网环境 | 保留 |
+| 网路 | 保留；「hook 或外挂」改为「工具或外挂」 |
 | 程式码操作（LSP） | 删除：Codex 没有 LSP 工具 |
 | RTK | 保留 |
 | —— | 新增「回覆语言」：Claude 由 `settings.json` 的 `language` 设定，Codex 没有对应设定 |

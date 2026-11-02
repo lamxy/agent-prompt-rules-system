@@ -56,6 +56,10 @@ Git history uses concise conventional-style prefixes such as `feat:`, `docs:`, `
 
 Pull requests should state the goal, affected directories, verification performed, and any maintenance or context-size impact. For template or rule changes, explain why the change belongs at that layer rather than in a package-specific `CLAUDE.md`.
 
+## Unverified Content
+
+Before writing to installed configuration (`dot_claude_projects/`, `skills/`, `claude_mds/`), back each claim with a test or primary source; otherwise record it in a `docs/plans/` open-questions list. A "not verified" label is not enough.
+
 ## Security & Configuration Tips
 
 Never commit API keys, access tokens, `.env` contents, or private cloud credentials. Shared settings should avoid sensitive paths and should not automatically overwrite JSON that requires human review.
