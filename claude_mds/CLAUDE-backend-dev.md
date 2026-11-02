@@ -10,6 +10,10 @@
 - 破坏性数据库命令由 settings 的 permissions.deny 拦截；.go 文件格式由 PostToolUse hook 处理，不在此重复。
 -->
 
+## 修改文件
+
+修改代码与配置文件一律用 Edit/Write，不用 Bash（`sed -i`、heredoc、脚本写入）。
+
 ## 技术栈
 
 Go；HTTP 框架为 FiberHouse（可切换 Fiber、Gin、Hertz 内核）或原生 Gin、Fiber；gRPC；MySQL、PostgreSQL、MongoDB、Elasticsearch、Redis、Kafka、RabbitMQ。项目实际使用哪些，以 `go.mod` 为准。

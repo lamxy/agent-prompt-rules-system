@@ -8,6 +8,10 @@
 - 文档路径是建议值，项目已有约定时改成项目自己的路径。
 -->
 
+## 修改文件
+
+修改代码与配置文件一律用 Edit/Write，不用 Bash（`sed -i`、heredoc、脚本写入）。
+
 ## 产出物
 
 - PRD 写到 `docs/prd/<功能名>.md`；需要交付 Word / PPT 时，再用 document-skills 从 Markdown 生成 docx / pptx。

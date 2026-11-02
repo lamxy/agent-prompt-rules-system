@@ -8,6 +8,10 @@
 - 当前阶段部署围绕 Docker / Docker Compose，不涉及 Kubernetes。
 -->
 
+## 修改文件
+
+修改代码与配置文件一律用 Edit/Write，不用 Bash（`sed -i`、heredoc、脚本写入）。
+
 ## 变更前先给差异
 
 执行任何变更前，先运行并展示对应的预览：`terraform plan`；Compose 变更先用 `docker compose config --no-interpolate --no-env-resolution` 展示合并后的配置（避免展开密钥；compose 文件内写死的值仍会显示），并说明哪些服务会被重建。用户确认后再执行变更。
