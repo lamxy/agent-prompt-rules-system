@@ -19,7 +19,6 @@
 | `pr-review-toolkit@claude-plugins-official` | 相对路径（`claude-plugins-official`） | 自动加载 |
 | `chrome-devtools-mcp@claude-plugins-official` | 外部（URL：`ChromeDevTools/chrome-devtools-mcp`） | **需手动安装** |
 | `modern-web-guidance@claude-plugins-official` | 外部（URL：`GoogleChrome/modern-web-guidance`） | **需手动安装** |
-| `sentry@claude-plugins-official` | 外部（URL：`getsentry/plugin-claude`） | **需手动安装** |
 | `typescript-native-lsp@anthropic-plugin-directory` | 内置插件目录（上游 `rubberduck-studio/typescript-native-lsp`） | 未验证是否自动加载；未生效时手动安装 |
 
 ## 手动安装与恢复
@@ -29,7 +28,6 @@
 ```sh
 claude plugin install chrome-devtools-mcp@claude-plugins-official --scope project
 claude plugin install modern-web-guidance@claude-plugins-official --scope project
-claude plugin install sentry@claude-plugins-official --scope project
 claude plugin install typescript-native-lsp@anthropic-plugin-directory --scope project
 ```
 
