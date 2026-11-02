@@ -1,8 +1,8 @@
 ---
 branch: main
-head: 4dfce4a
+head: af6e65f
 status: active
-updated: 2026-11-02
+updated: 2026-11-03
 ---
 # 进度交接
 
@@ -22,7 +22,8 @@ updated: 2026-11-02
 - 之后升级 gstack（含 task-master）仍用 `sh scripts/install-claude-project.sh -g`，可先加 `-d` 预演
 - 2026-10-29～30：**阶段 1 手动测验完成**。16 个任务通过 15、部分 1（D2），反向任务 B8/D7/F7/P7 全部符合；结果、问题清单（B-1～B-6、D-1～D-3、F-1～F-4、P-1～P-3、E-1～E-9）与 3.5 小结在 `docs/evaluation/2026-10-baseline.md`（`6ece7e8`、`09936c7`、`f0dbb7c`、`8f8e911`、`d70b231`、`aa9620e`）；收尾环境 diff 只有 1.1 范围内的新增
 - 2026-10-30（续）：指南已按 E-1～E-11 修订，基线撤回 B-3、补 B-4 直接原因（auto 模式系统提示允许 Bash 改文件）与 skill 清单预算推测，阶段 2 决定登记进计划文件（`d2b129a`）
-- 下一步：阶段 2，先 `claude --debug` 核对 skill 清单预算并补测 2～3 个应触发 skill 的任务，再按问题清单调研、出决策表；修改只落场景层；B0 放到最后
+- 2026-11-02～03：阶段 2 第一步完成。prd-design skill 清单超预算已证实（39312 > 30000 字符，37 项只有名称）；补测 S1～S3 通过，第三方 skill 可被自然触发，预算不是未调用的主因（基线 P-1、P-2）
+- 下一步：阶段 2，汇总四场景 skill/agent/MCP，实测 frontend-dev、dev-ops 预算，再按问题清单调研、出决策表；修改只落场景层；B0 放到最后
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -37,7 +38,7 @@ updated: 2026-11-02
 | 教学材料沉淀（gRPC、Go、Redis） | 完成，疑问已定稿 | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
 | backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；gRPC 规范 `5098a4e`（来自教学材料，用户企业 RPC 规范若有再补） |
 | 可观测性重写与 FiberHouse 错误追踪 | 完成；框架取舍已决定（FiberHouse `v1.2.0`） | `docs/plans/2026-10-22-learning-distill-questions.md` 第三节「FiberHouse 框架取舍」 |
-| 场景配置评估、优化与验证 | **阶段 1 完成、指南已修订（2026-10-30）**，阶段 2 未开始 | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
+| 场景配置评估、优化与验证 | **阶段 1 完成、指南已修订（2026-10-30）**，阶段 2 进行中（预算核对与 S1～S3 补测已完成，2026-11-03） | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
@@ -259,7 +260,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 - **终端环境变量串场**：B 系列需 `. "$SET/mysql.env"`，同一终端跑其他场景时 `MYSQL_*` 会覆盖 compose 同名变量（D2 实际发生）。其他场景换新终端或先 `unset`。
 - **「保存」的含义（用户 2026-10-30 指定）**：确认会话已退出 → 在项目目录 `sh ../../bin/save-run.sh <任务> <次数> [keep]` → 把经会话记录核对的观察、判定、tag 与提交号写进 `notes.md`。`keep` 只用于 P2、P4（提交叠在前一个 tag 上，看本任务改动用 `git diff <前一 tag> <本 tag>`）
 - **沙箱一律关闭**（用户 2026-10-30 决定，阶段 3 同）：项目 `settings.local.json` 的 `sandbox.enabled: false`，四个测验项目均已关闭；新项目在首个会话内执行 `/sandbox` 关闭
-- **remember 记忆跨任务注入（E-9）**：阶段 1 维持现状。阶段 3 已定：修订后指南在各项目 `settings.local.json` 停用 remember、`save-run.sh` 每次清除 `.remember/`；项目层能否覆盖用户层启用**未验证**，不生效时由用户自行临时全局关闭（不由 Claude 改本机）
+- **remember 记忆跨任务注入（E-9）**：阶段 1 维持现状。阶段 3 已定：修订后指南在各项目 `settings.local.json` 停用 remember、`save-run.sh` 每次清除 `.remember/`；prd-design 的 S1～S3 实测项目层停用有效（无注入、skill 154→152、退出后不重建 `.remember/`），其余三个项目尚未加此设定
 - **P1 素材污染（E-8）**：已写进指南，P1 前 `mv inputs` 出项目
 - **未写在交互脚本里的问题**一律答「按你的判断」；属于任务范围的事实可以照答，但阶段 3 必须给出相同回答。已用过的：B1「只接 Fiber 核心，Hertz 和 Gin 都不接。需要将 CoreType 改为 Fiber 核心。」（已进交互脚本；B-3 因此撤回）；B8「连 127.0.0.1:3306 的 evaldb，是测试库。只清 orders，不用先查行数」；D2「变量冲突按你的判断处理。同意启动」。B4 用户直接选了推荐项。
 - **权限前提**：本机全局 `defaultMode: auto` 且 allow `docker run *`、`docker compose up/down *`，backend-dev 不会对 docker 弹确认；dev-ops 的 ask 规则在 auto 模式下仍弹确认（D2 实测）。auto 分类器会拦截打印凭据的命令（B8、D2）。判定 B8、D2、D7 按实际是否弹确认，不按指南预设。
@@ -330,9 +331,11 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 下次开工第一步（引导用户执行，Claude 判读）：
 
-1. 用户在新终端执行 `cd ~/workspace/aitools_test/scenario-eval/projects/prd-design && claude --debug`，进入后输入 `/context`，然后退出
-2. Claude 读 debug log（启动时会显示路径；默认在 `~/.claude/debug/` 下最新的文件），搜索 skill 清单超出预算的警告，并对照 `/context` 的 Skills 行；有警告即证实 P-2 推测，写回基线 3.4 P-2
-3. 视结果写 2～3 个补测任务卡（含 P-1 的 `/create-prd` 盲比），先给用户确认再执行；执行流程沿用修订后的指南第 4 节（「保存」= 确认退出 + `save-run.sh` + 写 `notes.md`）
+1. 用户分别在 `frontend-dev`、`dev-ops` 项目新终端执行 `claude --debug`，**发一条真实消息**（只跑 `/context` 不会写预算警告），然后退出
+2. Claude 在 `~/.claude/debug/latest` 搜索 `Skill listing over budget`，并读会话记录的 `skill_listing` 附件（无描述的条目），结果写回基线 P-2
+3. 汇总四场景 skill/agent/MCP，再按计划文件 3.4 调研，产出采纳决策表交用户确认。不移除 pm-skills：现有证据不支持；command 正文会指向同名 skill，两者不能只留一半
+
+环境注意：专案集 `bin/save-run.sh` 仍是旧版（不检查会话已退出、不清 `.remember/`），阶段 3 前换成指南版本；在此之前存档前须人工确认退出。prd-design 原 `.remember/` 已移到专案集 `remember-prd-design-bak-20261102`。
 
 ---
 
@@ -402,3 +405,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-30 | 阶段 1 手动测验：frontend-dev、prd-design 与收尾 | F1/F2/F4/F7、P1/P2/P4/P7 均通过（F4、P1 附注）；问题清单新增 F-1～F-4、P-1～P-3、E-7～E-9，B-4 确认跨场景；沙箱统一关闭的决定与更正写入 1.2/3.1；收尾 env diff 只有 1.1 范围新增；3.5 阶段 1 小结；计划文件阶段 1 清单同步（`8f8e911`、`d70b231`、`aa9620e`） | B0 放到最后；指南待按 E-1～E-9 修订；`deploy/.env`、`eval-mysql`、`.remember/` 清理待用户决定；未推送 |
 | 2026-10-30 | 阶段 1 梳理与指南修订 | 梳理问题与疑问 Q1～Q12 并由用户决定；指南修订 E-1～E-11（`save-run.sh` 检查会话已退出、清 `.remember/`，各项目关沙箱并停用 remember，P1 移出素材，8080 检查，提问框答法，docker 确认按 auto 模式）；基线撤回 B-3、补 B-1 实例、B-4 原因、skill 清单预算推测；计划改为只改场景层、汇总提前到阶段 2（`d2b129a`） | `save-run.sh` 会话拦截与项目层停用 remember 未实测；未推送 |
 | 2026-11-02 | 本机 docker 误清恢复 | 用户执行 `docker system prune --volumes`，已停止容器与匿名卷被删、具名卷保留；从 `~/workspace/local-infra/` 重建 `fh-glitchtip-verify`、`fiberhouse-dev`，GlitchTip 数据核对仍在（1 用户、1 组织、1 项目、12 issue），两栈端点可达；之后用户手动 `docker rmi` 清理未用映像（剩 26 个、16.15GB），保留 `/cso` 11 个与 `mysql:8.0` 等 8 个；建置缓存未清。临时操作，不改变后续计划 | `eval-mysql` 阶段 3 前重建；两栈 20:23 起由用户手动停止 |
+| 2026-11-02～03 | 阶段 2：预算核对与 S1～S3 补测 | prd-design 超预算证实（39312 > 30000 字符）；S1 无模板冲突，S2、S3 自然触发 pm-skills；基线 P-1、P-2 与指南更新，观察在专案集 `notes.md` | frontend-dev、dev-ops 预算未测；37 项无描述 skill 的影响未测；`save-run.sh` 待换新版；未推送 |
