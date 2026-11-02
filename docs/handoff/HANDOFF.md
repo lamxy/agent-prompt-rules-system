@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 2cfbd06
+head: 0919251
 status: active
 updated: 2026-11-03
 ---
@@ -24,7 +24,7 @@ updated: 2026-11-03
 - 2026-10-30（续）：指南已按 E-1～E-11 修订，基线撤回 B-3、补 B-4 直接原因（auto 模式系统提示允许 Bash 改文件）与 skill 清单预算推测，阶段 2 决定登记进计划文件（`d2b129a`）
 - 2026-11-02～03：阶段 2 第一步完成。prd-design skill 清单超预算已证实（39312 > 30000 字符，37 项只有名称）；补测 S1～S3 通过，第三方 skill 可被自然触发，预算不是未调用的主因（基线 P-1、P-2）
 - 2026-11-03：阶段 2 **部分完成**：四场景预算实测、官方来源核对、第一轮决策已确认并实施（`69e10a6`～`4ecf882`，`docs/research/2026-10-best-practices.md`）；大厂、社区与场景对标未做。全局规则来源已修订（`dot_claude/CLAUDE.md`、Codex 模板）
-- 下一步：先提醒用户决定本机规则套用；再按方案 B 补做阶段 2；之后阶段 3 重跑全部 16 个任务；B0 放到最后
+- 下一步：新会话测验新规则；再按方案 B 补做阶段 2；之后阶段 3 重跑全部 16 个任务；B0 放到最后
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -332,7 +332,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 下次开工第一步：
 
-1. **提醒用户决定本机规则套用**（用户 2026-11-03 决定本轮探讨结束后再处理）：`~/.claude/CLAUDE.md` 手动合并，不用 `install.sh -l user`（会覆盖 Homebrew、curl、`/goal`、`@RTK.md`）；`~/.codex/AGENTS.md` 经 `codex.sh`。套用后用新会话测两次：缩范围素材、单行修改小任务；在阶段 3 前套用要记入测验 `notes.md`
+1. 本机规则已于 2026-11-03 套用（`~/.claude/CLAUDE.md` 手动合并，备份 `.bak-20261103023211`；`~/.codex/AGENTS.md` 首次写入区块；已记入测验 `notes.md`）。待用户在新会话做两个小测验：缩范围素材、单行修改
 2. 方案 B 补做阶段 2：先列逐项核对表、四场景对标问题与候选来源给用户确认（不用 `docs/recommend_repos/`），再调研并出第二轮决策表（含「新增能力」与是否写自定义 skill）
 3. 阶段 3 准备：四个测验项目套用新配置并重打 baseline，另三个项目搬走 `.remember/` 并停用 remember，换新版 `save-run.sh`，重建 `eval-mysql`；先核对 prd-design、backend-dev 不再出现 `Skill listing over budget`，再**重跑全部 16 个任务**，并补测一个前端规划型任务决定 gsd-core 去留
 
@@ -408,4 +408,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-02 | 本机 docker 误清恢复 | 用户执行 `docker system prune --volumes`，已停止容器与匿名卷被删、具名卷保留；从 `~/workspace/local-infra/` 重建 `fh-glitchtip-verify`、`fiberhouse-dev`，GlitchTip 数据核对仍在（1 用户、1 组织、1 项目、12 issue），两栈端点可达；之后用户手动 `docker rmi` 清理未用映像（剩 26 个、16.15GB），保留 `/cso` 11 个与 `mysql:8.0` 等 8 个；建置缓存未清。临时操作，不改变后续计划 | `eval-mysql` 阶段 3 前重建；两栈 20:23 起由用户手动停止 |
 | 2026-11-02～03 | 阶段 2：预算核对与 S1～S3 补测 | prd-design 超预算证实（39312 > 30000 字符）；S1 无模板冲突，S2、S3 自然触发 pm-skills；基线 P-1、P-2 与指南更新，观察在专案集 `notes.md` | 见下一行 |
 | 2026-11-03 | 阶段 2 调研与实施 | 预算实测：backend-dev 也超出（32978），frontend-dev、dev-ops 未超；更正基线把 backend-dev 记成 dev-ops 的错误；D-1、D-2、B-4、F-4、F-1 约定落场景层，frontend-dev 移除 sentry，prd-design、backend-dev 设 `skillListingBudgetFraction: 0.015`；不移除 pm-skills，gsd-core 暂缓；15 个测试文件全过 | 改动效果未验证（阶段 3）；`save-run.sh` 待换新版；调研子代理曾把 `CLAUDE_CODE_MESSAGING_TOKEN` 明文印进其会话记录（值未入库，处理由用户决定）；未推送。当时写「阶段 2 完成」不实，已更正 |
-| 2026-11-03 | 全局规则修订 | 经两轮子代理交叉审核：`dot_claude/CLAUDE.md` 新增「范围与完成」，「资讯来源」补来源与验证边界，「弱网环境」改「网路」；轻量探测移到 `docs/plans/2026-11-03-weak-network-rule-backup.md`；同步 Codex 模板、README、`analyze-github-repo` 第 3 步；`AGENTS.md` 补未验证内容约束；计划与交接勾选更正，方案 B 登记 | 本机未套用；规则行为效果未测；未推送 |
+| 2026-11-03 | 全局规则修订 | 经两轮子代理交叉审核：`dot_claude/CLAUDE.md` 新增「范围与完成」，「资讯来源」补来源与验证边界，「弱网环境」改「网路」；轻量探测移到 `docs/plans/2026-11-03-weak-network-rule-backup.md`；同步 Codex 模板、README、`analyze-github-repo` 第 3 步；`AGENTS.md` 补未验证内容约束；计划与交接勾选更正，方案 B 登记 | 本机已套用；规则行为效果未测；未推送 |
