@@ -1,8 +1,8 @@
 ---
 branch: main
-head: f9c4813
+head: 4dfce4a
 status: active
-updated: 2026-10-30
+updated: 2026-11-02
 ---
 # 进度交接
 
@@ -267,8 +267,8 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
   - 容器 `eval-mysql`（只读账号，连接变量在专案集 `mysql.env`，600）；收尾时用户手动删除
   - backend-dev 已 `codegraph init`（`.codegraph/` 被 git 忽略，`save-run.sh` 不清除）；B1 时尚无索引
   - dev-ops：baseline 重打为 `2559f78`（`.mcp.json` 的 glitchtip 加默认地址 `localhost:18000`）；`settings.local.json` 关闭沙箱（用户决定 dev-ops 全程维持关闭）；`deploy/` 下残留被忽略的 `.env`，收尾清理
-  - D2 部署 `fiberhouse-dev`（app、mysql、redis、mongodb）保留后用，设定文件已导出到 `~/workspace/local-infra/fiberhouse-dev/deploy/`，app 占 `127.0.0.1:8080`；**2026-10-30 已停止**（F 系列静态服务器要用 8080），四个容器均 Exited，app 退出码 2；需要时 `docker compose start` 后看 app 日志；本机 GlitchTip 在 `~/workspace/local-infra/glitchtip/`，已开 MCP
-  - 收尾待用户处理：`eval-mysql` 已停止，建议保留到阶段 3；dev-ops `deploy/.env`（D2 随机密码）建议删除；`fh-glitchtip-verify-*` 3 个已停止容器不属本次测验，用户决定不处理；全局 deny 拦 `docker rm`，删除由用户执行
+  - D2 部署 `fiberhouse-dev`（app、mysql、redis、mongodb）保留后用，设定文件已导出到 `~/workspace/local-infra/fiberhouse-dev/deploy/`，app 占 `127.0.0.1:8080`；2026-11-02 误清后用 `docker compose up -d --no-build` 重建（建置上下文没有源码，不能 `--build`），当日 20:23 起已停止，需要时 `docker compose start`；停止状态下 `docker system prune` 会再次删除容器（数据卷保留）；本机 GlitchTip 在 `~/workspace/local-infra/glitchtip/`，已开 MCP
+  - 收尾待用户处理：`eval-mysql` 已于 2026-11-02 被 `docker system prune --volumes` 删除（没有 compose、没有具名卷，原为空库），阶段 3 前按 `mysql:8.0`、`127.0.0.1:3306`、空库 `evaldb`、只读账号 `eval_ro` 重建；dev-ops `deploy/.env`（D2 随机密码）建议删除；`fh-glitchtip-verify-*` 3 个容器 2026-11-02 已从 `~/workspace/local-infra/glitchtip/` 重建，当日 20:23 起已停止，数据卷保留；全局 deny 拦 `docker rm`，删除由用户执行
   - Node.js 已升级到 22.23.4（此前每个会话首次 Bash 会被 CVE hook 挡一次）
 - 每个任务的产出在对应项目的 tag `<任务>-r<次数>`；查看用 `git show --stat <tag>`、`git diff baseline <tag>`。
 
@@ -401,3 +401,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-10-29～30 | 阶段 1 手动测验：T1、backend-dev、dev-ops | postman 移出 backend-dev、fullstack-dev（`29a8e27`）；T1 按配置项求差（场景增量 ≤ 1%）；B1/B4/B8/B2 通过，D2 部分（未询问资源上限）、D7/D3/D4 通过；问题清单 B-1～B-6、D-1～D-3、E-1～E-6（`6ece7e8`、`09936c7`、`f0dbb7c`）；阶段 1 后另测 B0 登记 | frontend-dev、prd-design 待测；指南待修订；测验容器与残留待收尾清理 |
 | 2026-10-30 | 阶段 1 手动测验：frontend-dev、prd-design 与收尾 | F1/F2/F4/F7、P1/P2/P4/P7 均通过（F4、P1 附注）；问题清单新增 F-1～F-4、P-1～P-3、E-7～E-9，B-4 确认跨场景；沙箱统一关闭的决定与更正写入 1.2/3.1；收尾 env diff 只有 1.1 范围新增；3.5 阶段 1 小结；计划文件阶段 1 清单同步（`8f8e911`、`d70b231`、`aa9620e`） | B0 放到最后；指南待按 E-1～E-9 修订；`deploy/.env`、`eval-mysql`、`.remember/` 清理待用户决定；未推送 |
 | 2026-10-30 | 阶段 1 梳理与指南修订 | 梳理问题与疑问 Q1～Q12 并由用户决定；指南修订 E-1～E-11（`save-run.sh` 检查会话已退出、清 `.remember/`，各项目关沙箱并停用 remember，P1 移出素材，8080 检查，提问框答法，docker 确认按 auto 模式）；基线撤回 B-3、补 B-1 实例、B-4 原因、skill 清单预算推测；计划改为只改场景层、汇总提前到阶段 2（`d2b129a`） | `save-run.sh` 会话拦截与项目层停用 remember 未实测；未推送 |
+| 2026-11-02 | 本机 docker 误清恢复 | 用户执行 `docker system prune --volumes`，已停止容器与匿名卷被删、具名卷保留；从 `~/workspace/local-infra/` 重建 `fh-glitchtip-verify`、`fiberhouse-dev`，GlitchTip 数据核对仍在（1 用户、1 组织、1 项目、12 issue），两栈端点可达；之后用户手动 `docker rmi` 清理未用映像（剩 26 个、16.15GB），保留 `/cso` 11 个与 `mysql:8.0` 等 8 个；建置缓存未清。临时操作，不改变后续计划 | `eval-mysql` 阶段 3 前重建；两栈 20:23 起由用户手动停止 |
