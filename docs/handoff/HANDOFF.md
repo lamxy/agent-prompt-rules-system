@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 0919251
+head: 5809068
 status: active
 updated: 2026-11-03
 ---
@@ -24,7 +24,7 @@ updated: 2026-11-03
 - 2026-10-30（续）：指南已按 E-1～E-11 修订，基线撤回 B-3、补 B-4 直接原因（auto 模式系统提示允许 Bash 改文件）与 skill 清单预算推测，阶段 2 决定登记进计划文件（`d2b129a`）
 - 2026-11-02～03：阶段 2 第一步完成。prd-design skill 清单超预算已证实（39312 > 30000 字符，37 项只有名称）；补测 S1～S3 通过，第三方 skill 可被自然触发，预算不是未调用的主因（基线 P-1、P-2）
 - 2026-11-03：阶段 2 **部分完成**：四场景预算实测、官方来源核对、第一轮决策已确认并实施（`69e10a6`～`4ecf882`，`docs/research/2026-10-best-practices.md`）；大厂、社区与场景对标未做。全局规则来源已修订（`dot_claude/CLAUDE.md`、Codex 模板）
-- 下一步：新会话测验新规则；再按方案 B 补做阶段 2；之后阶段 3 重跑全部 16 个任务；B0 放到最后
+- 下一步：按方案 B 补做阶段 2；之后阶段 3 重跑全部 16 个任务；B0 放到最后
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -332,8 +332,8 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 下次开工第一步：
 
-1. 本机规则已于 2026-11-03 套用（`~/.claude/CLAUDE.md` 手动合并，备份 `.bak-20261103023211`；`~/.codex/AGENTS.md` 首次写入区块；已记入测验 `notes.md`）。待用户在新会话做两个小测验：缩范围素材、单行修改
-2. 方案 B 补做阶段 2：先列逐项核对表、四场景对标问题与候选来源给用户确认（不用 `docs/recommend_repos/`），再调研并出第二轮决策表（含「新增能力」与是否写自定义 skill）
+1. 本机规则已于 2026-11-03 套用（`~/.claude/CLAUDE.md` 手动合并，备份 `.bak-20261103023211`；`~/.codex/AGENTS.md` 首次写入区块，备份 `.bak.20261103-023237`；已记入测验 `notes.md`）。新会话小测验两个都通过（`/tmp/rule-test`，各 1 次，无旧规则对照；缩范围测验把「仅读摘要」的社区来源标成已做，应标部分）。子代理：旧会话派出的子代理实测仍拿到旧规则；Explore、Plan 不载入 `CLAUDE.md`，派它们要在指令里重申；新会话一般子代理是否载入新规则待按会话记录确认
+2. 方案 B 补做阶段 2，候选清单在 `docs/research/2026-11-plan-b-candidates.md`（21 个，尚未经用户确认，未深入调研）。先把逐项核对表、对标问题与候选交用户确认，要决定：(a) PlanetScale、Trail of Bits、Docker 等是否算大厂；(b) 清单的未做项（Node.js、MongoDB、Redis 未单独搜索；6 个仓库未读）是否补；(c) C10 偏 K8s 且个别 skill 是否依赖被排除工具未查，C4、C5 为 0 星。确认后回原文深入调研（WebFetch 摘要不算已读原文），出第二轮决策表（含「新增能力」与是否写自定义 skill），不用 `docs/recommend_repos/`；核对 B4 与官方文档对 deny 规则的说法是否一致
 3. 阶段 3 准备：四个测验项目套用新配置并重打 baseline，另三个项目搬走 `.remember/` 并停用 remember，换新版 `save-run.sh`，重建 `eval-mysql`；先核对 prd-design、backend-dev 不再出现 `Skill listing over budget`，再**重跑全部 16 个任务**，并补测一个前端规划型任务决定 gsd-core 去留
 
 环境注意：专案集 `bin/save-run.sh` 仍是旧版（不检查会话已退出、不清 `.remember/`），阶段 3 前换成指南版本；在此之前存档前须人工确认退出。prd-design 原 `.remember/` 已移到专案集 `remember-prd-design-bak-20261102`。
