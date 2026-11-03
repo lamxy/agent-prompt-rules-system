@@ -1,0 +1,15 @@
+{
+  "plugins": [
+    {"id": "frontend-design@claude-plugins-official", "category": "前端", "description": "有設計品質要求的前端介面實作"},
+    {"id": "chrome-devtools-mcp@claude-plugins-official", "category": "前端", "description": "操作真實 Chrome：效能追蹤、網路、主控台、無障礙檢查（每個會話啟動 MCP 程序）"},
+    {"id": "playground@claude-plugins-official", "category": "原型", "description": "單檔 HTML 原型與互動探索"},
+    {"id": "pr-review-toolkit@claude-plugins-official", "category": "審核", "description": "PR 審查代理組"},
+    {"id": "semgrep@claude-plugins-official", "category": "審核", "description": "靜態安全掃描"},
+    {"id": "claude-code-setup@claude-plugins-official", "category": "配置", "description": "分析專案並推薦 hook、skill、MCP"},
+    {"id": "claude-md-management@claude-plugins-official", "category": "配置", "description": "審查與更新 CLAUDE.md"},
+    {"id": "skill-creator@claude-plugins-official", "category": "配置", "description": "建立 skill 與執行 skill 評估"},
+    {"id": "hookify@claude-plugins-official", "category": "配置", "description": "把行為規則寫成 hook（每次工具呼叫都會跑它的 hook）"},
+    {"id": "ralph-loop@claude-plugins-official", "category": "工作流", "description": "讓 Claude 反覆執行同一任務直到完成"},
+    {"id": "session-report@claude-plugins-official", "category": "會話", "description": "產生 token 用量的 HTML 報告"}
+  ]
+}

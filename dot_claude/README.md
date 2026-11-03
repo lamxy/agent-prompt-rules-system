@@ -10,6 +10,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 | `commands/analyze-github-repo.md` | `/analyze-github-repo`：輕量探測優先的單一 GitHub 倉庫分析 |
 | `skills/myhandoff/` | `myhandoff` 技能：讀寫 `docs/handoff/HANDOFF.md` 的進度交接；`settings.json` 的 `Stop`、`StopFailure` hook 依賴其 `scripts/` |
 | `skills/myconfig/` | `myconfig` 技能：列出本倉庫的場景配置，或在會話中預演並給出安裝命令（寫入由使用者執行）；`scripts/catalog` 現場產生清單。設計見 `docs/plans/2026-10-28-config-install-skill-design.md` |
+| `skills/myplugins/` | `myplugins` 技能：按序號在目前專案啟用或關閉可選插件（預設寫 `.claude/settings.local.json`，`--shared` 寫 `.claude/settings.json`），增刪清單（`~/.claude/myplugins/catalog.json`，首次從 `catalog.default.json` 複製）；`scripts/myplugins hint` 供 SessionStart hook 顯示提示。需要的本機設定見下方「myplugins 安裝」 |
 | `settings.json` | 個人使用者層級設定（權限、沙箱、hooks、外掛），與本機 `~/.claude/settings.json` 同步 |
 | `README.md` | 本說明，不會被載入為指令 |
 
@@ -23,6 +24,16 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 - `skills/myhandoff/` 是本機 `~/.claude/skills/myhandoff/` 的副本（2026-10-20 同步），在本機修改技能後需再複製回本目錄。技能內的 `README.md` 會一併安裝；`-m append` 時 `skills/` 下已存在的檔案一律跳過（`[SKIP-APPEND]`），更新技能請用 `-m overwrite`。
 - 目標若裝過舊版，`install.sh` 會以 `[LEGACY]` 列出殘留檔案；`rules/` 下的舊規則每次啟動都會載入並與本版衝突。加 `-C` 會移至 `<target>/legacy-backup-<時間戳>/`，不會刪除。
 - 以 `-l user` 安裝時，`CLAUDE.md` 會覆蓋現有的 `~/.claude/CLAUDE.md`；若其中有本機專屬規則（例如 Homebrew、curl 重試、`@RTK.md` 匯入），需先手動合併。已存在的 `settings.json` 會被安裝腳本跳過，需手動合併。
+
+## myplugins 安裝
+
+全局只留基礎插件（`superpowers`、`andrej-karpathy-skills`、`context7`、`github`、`commit-commands`、`security-guidance`、`remember`、`open-code-review`），其餘在 `catalog.default.json` 中，由使用者在各專案用 `/myplugins` 啟用。需要三項本機設定（2026-11-03 在臨時專案實測）：
+
+1. 複製技能：`cp -R dot_claude/skills/myplugins ~/.claude/skills/`。
+2. `sandbox.excludedCommands` 加 `python3 <家目錄>/.claude/skills/myplugins/scripts/myplugins *`：沙箱不允許 Bash 寫 `.claude/settings*.json`（實測 `Operation not permitted`），排除後這條命令仍走權限流程，由技能的 `allowed-tools` 放行。排除規則按命令文字比對，路徑要寫絕對路徑，技能內的命令不能加引號或串接。
+3. `hooks.SessionStart` 加 `python3 "$HOME/.claude/skills/myplugins/scripts/myplugins" hint`（timeout 10）：新會話與恢復會話時在終端顯示一行提示（`systemMessage`，不進上下文）；`/clear`、壓縮後不顯示。
+
+寫入後要在會話中執行 `/reload-plugins` 或重開 Claude 才生效（官方文件 `plugins/loading`；會話中重載未實測，重開已實測）。插件設定逐鍵合併，優先級：本地 > 共享 > 全局。
 
 ## 為什麼精簡
 
