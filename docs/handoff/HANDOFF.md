@@ -1,6 +1,6 @@
 ---
 branch: main
-head: c180f0f
+head: 1c75d05
 status: active
 updated: 2026-11-03
 ---
@@ -27,7 +27,8 @@ updated: 2026-11-03
 - 2026-11-03（续）：方案 B 调研与第二轮决策（第 12～29 条）完成并经用户确认，改动已实施；结论见 `docs/research/2026-10-best-practices.md` 第 4 节
 - 2026-11-03（续）：阶段 2 未做项补做（Reddit 已移除），第三轮决策第 30～39 条经用户确认并实施：MySQL 迁移规则与验证步骤、dev-ops 3 个 agent 去 K8s、`middleware-ops/references/backup-restore.md`（均有实测，见 `docs/research/2026-11-plan-b-reports/`）；未做项见研究文档 5.3
 - 2026-11-03（续）：MongoDB 场景案例调研、8.0 副本集实测 T1～T8 与独立交叉审核后写入：新增 `db-schema-design/references/case-mongodb.md`，`mongodb.md` 补属性模式、分桶、分页索引三处，`rules/database/mongodb.md` 分页游标改为 `(排序键, _id)`；结论与不写入项见 `docs/research/2026-11-mongodb-cases.md`
-- 下一步：阶段 3 重跑全部 16 个任务；B0 放到最后
+- 2026-11-03（续）：全局插件分析与独立交叉审核后，新增全局技能 `myplugins`（`dot_claude/skills/myplugins/`，按序号把可选插件启用到当前项目，分本地／共享两层，清单可增删，SessionStart 提示）；测试通过、临时项目实测通过，**未提交**；本机安装用户决定**延到阶段 3 结束后**（避免改变阶段 1 的全局插件条件）
+- 下一步：阶段 3 重跑全部 16 个任务；B0 放到最后；阶段 3 结束后安装 myplugins
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -46,6 +47,7 @@ updated: 2026-11-03
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
+| 可选插件技能 `myplugins` | 已实现，**未提交**；本机安装延到阶段 3 结束后 | 见「续作时必须知道的事」→「myplugins」；安装步骤在 `dot_claude/README.md`「myplugins 安装」 |
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
 | 配置安装技能 `myconfig`（列出／安装本仓库配置） | 已实现并发布 v2.4.0（2026-10-29）；用户已在本机安装，`/myconfig` 列表模式正常 | `dot_claude/skills/myconfig/`；设计 `docs/plans/2026-10-28-config-install-skill-design.md` §11。`claude -p` 实测：沙箱禁止会话内写 `.claude/settings.json`、`skills/`、`hooks/`，改为技能只预演、写入交付命令由用户执行；跨项目使用需把仓库路径与 `~/.claude/skills/myconfig` 加进 `sandbox.filesystem.allowRead`；两轮子代理交叉审查意见已全部处理 |
 
@@ -277,6 +279,15 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
   - Node.js 已升级到 22.23.4（此前每个会话首次 Bash 会被 CVE hook 挡一次）
 - 每个任务的产出在对应项目的 tag `<任务>-r<次数>`；查看用 `git show --stat <tag>`、`git diff baseline <tag>`。
 
+### myplugins（2026-11-03）
+
+未提交变更（工作区）：`dot_claude/skills/myplugins/`（`SKILL.md`、`catalog.default.json` 11 个可选插件、`scripts/myplugins`）、`scripts/tests/test-myplugins.sh`（24 项检查，全部 16 个测试文件通过）、`dot_claude/README.md`（目录表一行 +「myplugins 安装」一节）。功能已完成，等用户确认提交；提交时 skill、测试与 README 一个提交，交接另一个提交。
+
+- **沙箱拦写设定**：现象是会话内 `/myplugins 3` 报 `Operation not permitted`；原因是沙箱禁止 Bash 写 `.claude/settings*.json`（本机 `allowUnsandboxedCommands: false`）；正确做法是在 `~/.claude/settings.json` 的 `sandbox.excludedCommands` 加 `python3 /Users/zz/.claude/skills/myplugins/scripts/myplugins *`，命令须原样单独执行（不加引号、不串接、不重导向）才匹配。临时项目用 `--settings` 实测可写入，新会话载入了 `playground`。
+- **为什么延后安装**：阶段 3 要与阶段 1 比较，基线条件是「全局插件 18 个、`~/.claude/settings.json` 无变化」。全局关掉 8 个插件会缩短所有场景的 skill 清单，prd-design、backend-dev「超预算是否消失」就分不清是阶段 2 的 `skillListingBudgetFraction` 还是全局变化所致；P4 当时用的是**全局** chrome-devtools（prd-design 场景未启用）。frontend-dev 自己在项目层启用 `frontend-design`、`chrome-devtools-mcp`，不受影响。
+- **安装方法**：`dot_claude/README.md`「myplugins 安装」三项（复制 skill、`excludedCommands`、SessionStart hook `python3 "$HOME/.claude/skills/myplugins/scripts/myplugins" hint`），再把 8 个插件全局设 `false`：`frontend-design`、`chrome-devtools-mcp`、`claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify`、`ralph-loop`、`session-report`。本会话写的合并脚本在 scratchpad（会话结束可能被清除），不依赖它。装好后在本仓库维护时 `skill-creator`、`claude-md-management` 要先 `/myplugins` 启用。
+- **未验证**：会话内 `/reload-plugins` 是否立即生效（只测了重开会话）；互动终端中提示的显示效果，以及 `systemMessage` 是否进入模型上下文；共享模式多人实机（只有脚本测试）。
+
 ### 其他已知问题
 
 - 第三方市场插件名无法离线校验：`pm-skills`、`anthropic-agent-skills` 未缓存在本机，`test-settings-templates.sh` 跳过其名称检查
@@ -296,6 +307,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 阶段 2 未做项（取不到原文、未读、未实测）与第三轮留下的待验证（疑问清单第 12、16 条） | `docs/research/2026-10-best-practices.md` 5.3、`docs/plans/2026-10-22-learning-distill-questions.md` |
 | myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；会话实测设计 §8 第 3、5～9、11 条与安装后报告；`!` 模式的沙箱与超时 | 设计文件 §8、§11 |
 | `claude plugin eval` 是否适合本仓库场景包 | 计划文件 3.3（待确认后纳入） |
+| myplugins：提交待用户确认；阶段 3 结束后本机安装，之后同步 `dot_claude/settings.json` 镜像与 `settings/README.md`（全局插件表、「本机刻意保留差异」的 frontend 一行会过时）；补测会话内 `/reload-plugins` 与提示显示 | 本文件「myplugins」 |
 | **放到最后**（用户 2026-10-30 决定）：单独测 B0「在独立 Go 项目中用 `go get` 引入 FiberHouse 并建第一个模块」，补上基线在框架仓库内测验的局限；任务卡待写、写前先给用户确认 | `docs/evaluation/2026-10-baseline.md` 1.2 |
 
 <!-- section: next -->
@@ -337,7 +349,8 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 1. 本机规则已于 2026-11-03 套用（`~/.claude/CLAUDE.md` 手动合并，备份 `.bak-20261103023211`；`~/.codex/AGENTS.md` 首次写入区块，备份 `.bak.20261103-023237`；已记入测验 `notes.md`）。新会话小测验两个都通过（`/tmp/rule-test`，各 1 次，无旧规则对照；缩范围测验把「仅读摘要」的社区来源标成已做，应标部分）。子代理：旧会话派出的子代理实测仍拿到旧规则；Explore、Plan 不载入 `CLAUDE.md`，派它们要在指令里重申；新会话一般子代理是否载入新规则待按会话记录确认
 2. 方案 B 已完成（2026-11-03），决策与未做项见 `docs/research/2026-10-best-practices.md` 第 4 节
-3. 阶段 3 准备：四个测验项目套用新配置并重打 baseline，另三个项目搬走 `.remember/` 并停用 remember，换新版 `save-run.sh`，重建 `eval-mysql`；先核对 prd-design、backend-dev 不再出现 `Skill listing over budget`，再**重跑全部 16 个任务**，并补测一个前端规划型任务决定 gsd-core 去留
+3. 阶段 3 准备：四个测验项目套用新配置并重打 baseline，另三个项目搬走 `.remember/` 并停用 remember，换新版 `save-run.sh`，重建 `eval-mysql`；先核对 prd-design、backend-dev 不再出现 `Skill listing over budget`，再**重跑全部 16 个任务**，并补测一个前端规划型任务决定 gsd-core 去留。阶段 3 期间不要安装 myplugins、不改全局插件
+4. 阶段 3 结束后：按本文件「myplugins」安装并同步镜像与 `settings/README.md`
 
 环境注意：专案集 `bin/save-run.sh` 仍是旧版（不检查会话已退出、不清 `.remember/`），阶段 3 前换成指南版本；在此之前存档前须人工确认退出。prd-design 原 `.remember/` 已移到专案集 `remember-prd-design-bak-20261102`。
 
@@ -416,3 +429,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-03 | 阶段 2 未做项补做 | Reddit 按用户决定移除；Hacker News、dev-ops 仓库、Go 迁移工具（含 MySQL 实测）完成，报告在 `docs/research/2026-11-plan-b-reports/`；第三轮决策（第 30～39 条）见研究文档第 5 节 | 第三轮待用户确认、未实施；所有改动未提交；`mig-probe-net` 待用户手动删除 |
 | 2026-11-03 | 第三轮决策实施 | 用户确认第 30～39 条照建议。`rules/database/mysql.md` 改第 47 行并加 4 条；`db-schema-design` 加 MySQL 迁移验证步骤、更正 `references/mysql.md` 改类型的 `INSTANT` 说法（两份同步）；dev-ops `incident-response-commander`、`security-engineer`、`devops-automator` 去 K8s，事故范本改 Compose 并先取证（两份同步）；`middleware-ops` 新增 `references/backup-restore.md` 与索引、description 加触发词（两份同步）；计划 3.3 加第 37 条指标；疑问清单第 12 条更新、新增第 16 条。实测：Compose 重建容器会丢日志、`--scale` 限制、`pg_dump` 隔离还原与冷备份卷摘要一致、Beszel 卷含私钥（`2026-11-plan-b-reports/compose-probe/`）；迁移实测脚本入库 `go-migrations-lab/` | 备份失败告警、Kuma 卷还原、离机与加密未实测（疑问清单第 16 条）；`bprobe-*` 与 `mig-probe-net` 清理被拒，待用户手动执行 |
 | 2026-11-03 | MongoDB 场景案例 | 子代理调研电商、聊天、替代 MySQL（大厂一手资料只有 Coinbase；X 无可用内容），报告 `docs/research/2026-11-mongodb-cases.md`；MongoDB 8.0.34 副本集实测 T1～T8（脚本 `2026-11-plan-b-reports/mongo-lab/`）；独立子代理交叉审核更正 T2（超卖次数不定）、T5（漏读取决于页大小）并修订草案；用户确认后写入 `case-mongodb.md`、`mongodb.md` 三处、`SKILL.md` 索引（两份同步）与 rules 分页一句；疑问清单新增第 17 条（片键） | 不写入：前缀正则、片键、Discord 反例、SKU 拆分、选型信号；`mcase*` 容器清理被拒，待用户执行 |
+| 2026-11-03 | 全局插件拆分与 myplugins | 分析全局插件用途与常驻成本（约 3.9k，拆 8 个省约 1.8k），独立子代理交叉审核；实现 `dot_claude/skills/myplugins/`（序号启用／关闭、本地或 `--shared`、清单增删、SessionStart 提示）与 `test-myplugins.sh`，16 个测试文件全过；临时项目实测提示输出、写入本地设定、新会话载入插件；发现沙箱拦写 `.claude/settings*.json`，以 `sandbox.excludedCommands` 解决 | 未提交；本机安装延到阶段 3 结束后（用户决定）；会话内 `/reload-plugins`、提示显示、共享模式实机未验证 |
