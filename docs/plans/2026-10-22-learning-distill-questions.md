@@ -148,17 +148,4 @@ docker rmi golangci/golangci-lint:v2.5.0
 
 更早的实测资源（MongoDB / MySQL）：容器 `mgv1`～`mgv3`、`dbverify-tmp`，网络 `mgv-net`。实测代码在会话 scratchpad，随会话清理。
 
-2026-11-03 第三轮实测：MySQL 迁移网络 `mig-probe-net`（0 容器）；备份还原实测的 5 个容器（运行中）、4 个卷、2 个网络（`docker compose down -v` 被拒）：
-
-```sh
-docker network rm mig-probe-net
-docker rm -f bprobe-rA bprobe-rB bprobe-rC bprobe-postgres-1 bprobe-beszel-1
-docker volume rm bprobe-rB bprobe-rC bprobe_pg-data bprobe_beszel-data
-docker network rm bprobe-rnet bprobe_default
-```
-
-2026-11-03 MongoDB 案例实测：容器 `mcase1`～`mcase3`、网络 `mcase-net`（`docker rm` 被拒）：
-
-```sh
-docker rm -f mcase1 mcase2 mcase3; docker network rm mcase-net
-```
+2026-11-03 第三轮与 MongoDB 案例实测的残留（`mig-probe-net`、`bprobe-*`、`mcase*`）已由用户手动清理。
