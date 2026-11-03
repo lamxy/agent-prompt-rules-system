@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 47928a3
+head: 871bf85
 status: active
 updated: 2026-11-03
 ---
@@ -349,7 +349,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 1. 本机规则已于 2026-11-03 套用（`~/.claude/CLAUDE.md` 手动合并，备份 `.bak-20261103023211`；`~/.codex/AGENTS.md` 首次写入区块，备份 `.bak.20261103-023237`；已记入测验 `notes.md`）。新会话小测验两个都通过（`/tmp/rule-test`，各 1 次，无旧规则对照；缩范围测验把「仅读摘要」的社区来源标成已做，应标部分）。子代理：旧会话派出的子代理实测仍拿到旧规则；Explore、Plan 不载入 `CLAUDE.md`，派它们要在指令里重申；新会话一般子代理是否载入新规则待按会话记录确认
 2. 方案 B 已完成（2026-11-03），决策与未做项见 `docs/research/2026-10-best-practices.md` 第 4 节
-3. 阶段 3 准备：四个测验项目套用新配置并重打 baseline，另三个项目搬走 `.remember/` 并停用 remember，换新版 `save-run.sh`，重建 `eval-mysql`；先核对 prd-design、backend-dev 不再出现 `Skill listing over budget`，再**重跑全部 16 个任务**，并补测一个前端规划型任务决定 gsd-core 去留。阶段 3 期间不要安装 myplugins、不改全局插件
+3. 阶段 3：按 `docs/evaluation/manual-test-guide.md` 第 12 节（`871bf85`，用户 2026-11-03 确认）：重建 `eval-mysql`（12.1 命令未实测，首次执行时核对 `ERROR 1142`）→ 新专案集 `scenario-eval-final`（FiberHouse 用旧专案集同一提交 `9aa0b1b`）→ 核对 prd-design、backend-dev 不再 `Skill listing over budget` → 旧专案集补齐流程（新 `save-run.sh`、停用 remember）→ 16 个任务 + B1、D3、F1 对照组（tag `<任务>-ctl-r1`）；前端规划型补测任务卡待写、先给用户确认。阶段 3 期间不要安装 myplugins、不改全局插件
 4. 阶段 3 结束后：按本文件「myplugins」安装并同步镜像与 `settings/README.md`
 
 环境注意：专案集 `bin/save-run.sh` 仍是旧版（不检查会话已退出、不清 `.remember/`），阶段 3 前换成指南版本；在此之前存档前须人工确认退出。prd-design 原 `.remember/` 已移到专案集 `remember-prd-design-bak-20261102`。
@@ -430,3 +430,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-03 | 第三轮决策实施 | 用户确认第 30～39 条照建议。`rules/database/mysql.md` 改第 47 行并加 4 条；`db-schema-design` 加 MySQL 迁移验证步骤、更正 `references/mysql.md` 改类型的 `INSTANT` 说法（两份同步）；dev-ops `incident-response-commander`、`security-engineer`、`devops-automator` 去 K8s，事故范本改 Compose 并先取证（两份同步）；`middleware-ops` 新增 `references/backup-restore.md` 与索引、description 加触发词（两份同步）；计划 3.3 加第 37 条指标；疑问清单第 12 条更新、新增第 16 条。实测：Compose 重建容器会丢日志、`--scale` 限制、`pg_dump` 隔离还原与冷备份卷摘要一致、Beszel 卷含私钥（`2026-11-plan-b-reports/compose-probe/`）；迁移实测脚本入库 `go-migrations-lab/` | 备份失败告警、Kuma 卷还原、离机与加密未实测（疑问清单第 16 条）；`bprobe-*` 与 `mig-probe-net` 清理被拒，待用户手动执行 |
 | 2026-11-03 | MongoDB 场景案例 | 子代理调研电商、聊天、替代 MySQL（大厂一手资料只有 Coinbase；X 无可用内容），报告 `docs/research/2026-11-mongodb-cases.md`；MongoDB 8.0.34 副本集实测 T1～T8（脚本 `2026-11-plan-b-reports/mongo-lab/`）；独立子代理交叉审核更正 T2（超卖次数不定）、T5（漏读取决于页大小）并修订草案；用户确认后写入 `case-mongodb.md`、`mongodb.md` 三处、`SKILL.md` 索引（两份同步）与 rules 分页一句；疑问清单新增第 17 条（片键） | 不写入：前缀正则、片键、Discord 反例、SKU 拆分、选型信号；`mcase*` 容器清理被拒，待用户执行 |
 | 2026-11-03 | 全局插件拆分与 myplugins | 分析全局插件用途与常驻成本（约 3.9k，拆 8 个省约 1.8k），独立子代理交叉审核；实现 `dot_claude/skills/myplugins/`（序号启用／关闭、本地或 `--shared`、清单增删、SessionStart 提示）与 `test-myplugins.sh`，16 个测试文件全过；临时项目实测提示输出、写入本地设定、新会话载入插件；发现沙箱拦写 `.claude/settings*.json`，以 `sandbox.excludedCommands` 解决 | 已提交 `47928a3`，未推送；本机安装延到阶段 3 结束后（用户决定）；会话内 `/reload-plugins`、提示显示、共享模式实机未验证 |
+| 2026-11-03 | 阶段 3 准备步骤 | 指南新增第 12 节：新专案集重装、FiberHouse 固定阶段 1 提交、`eval-mysql` 重建、预算核对、旧专案集对照组只跑 B1/D3/F1（取代第 37 条「每次同跑基线」），计划文件同步（`871bf85`） | 12.1 命令试跑被权限拒绝、未实测；前端规划型任务卡待写 |
