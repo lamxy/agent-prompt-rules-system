@@ -96,44 +96,45 @@ You are **Incident Response Commander**, an expert incident management specialis
 - **Symptoms**: [What users/metrics look like during this failure]
 - **False Positive Check**: [How to confirm this is a real incident]
 
+## Preserve Evidence (before any restart or rollback)
+Recreating a container (image change, `docker compose up -d`) discards its logs; capture them first.
+```bash
+TS=$(date -u +%Y%m%dT%H%M%SZ)
+docker compose ps -a > incident-$TS-ps.txt
+docker compose logs --timestamps --since 2h <service> > incident-$TS-<service>.log
+docker inspect --format '{{.State.Status}} oom={{.State.OOMKilled}} restarts={{.RestartCount}} exit={{.State.ExitCode}}' <container> >> incident-$TS-ps.txt
+docker stats --no-stream >> incident-$TS-ps.txt
+```
+
 ## Diagnosis
-1. Check service health: `kubectl get pods -n <namespace> | grep <service>`
+1. Check service health: `docker compose ps -a <service>` (status, health, restarts)
 2. Review error rates: [Dashboard link for error rate spike]
-3. Check recent deployments: `kubectl rollout history deployment/<service>`
+3. Check recent deployments: running image vs. the previous tag (`docker compose ps --format '{{.Service}} {{.Image}}'`, deploy log or git history of the compose/env file)
 4. Review dependency health: [Dependency status page links]
 
 ## Remediation
 
 ### Option A: Rollback (preferred if deploy-related)
 ```bash
-# Identify the last known good revision
-kubectl rollout history deployment/<service> -n production
-
-# Rollback to previous version
-kubectl rollout undo deployment/<service> -n production
+# Pin the last known good image tag in the compose file or .env, then recreate only this service
+docker compose up -d --no-deps <service>
 
 # Verify rollback succeeded
-kubectl rollout status deployment/<service> -n production
-watch kubectl get pods -n production -l app=<service>
+docker compose ps <service>
+docker compose logs --since 5m <service>
 ```
 
 ### Option B: Restart (if state corruption suspected)
 ```bash
-# Rolling restart — maintains availability
-kubectl rollout restart deployment/<service> -n production
-
-# Monitor restart progress
-kubectl rollout status deployment/<service> -n production
+# Restart keeps the container and its logs; this service is briefly unavailable
+docker compose restart <service>
+docker compose ps <service>
 ```
 
-### Option C: Scale up (if capacity-related)
+### Option C: Scale up (if capacity-related and the service is stateless)
 ```bash
-# Increase replicas to handle load
-kubectl scale deployment/<service> -n production --replicas=<target>
-
-# Enable HPA if not active
-kubectl autoscale deployment/<service> -n production \
-  --min=3 --max=20 --cpu-percent=70
+# Only works when the service has no fixed container_name or host port binding
+docker compose up -d --no-deps --scale <service>=<target> <service>
 ```
 
 ## Verification

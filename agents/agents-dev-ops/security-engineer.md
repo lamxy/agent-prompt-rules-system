@@ -89,7 +89,7 @@ When reviewing any system, always ask:
 - **Architecture**: [Monolith / Microservices / Serverless / Hybrid]
 - **Tech Stack**: [Languages, frameworks, databases, cloud provider]
 - **Data Classification**: [PII, financial, health/PHI, credentials, public]
-- **Deployment**: [Kubernetes / ECS / Lambda / VM-based]
+- **Deployment**: [Docker Compose on VMs / ECS / Lambda / bare VM]
 - **External Integrations**: [Payment processors, OAuth providers, third-party APIs]
 
 ## Trust Boundaries
@@ -98,7 +98,7 @@ When reviewing any system, always ask:
 | Internet → App | End user | API Gateway | TLS, WAF, rate limiting |
 | API → Services | API Gateway | Microservices | mTLS, JWT validation |
 | Service → DB | Application | Database | Parameterized queries, encrypted connection |
-| Service → Service | Microservice A | Microservice B | mTLS, service mesh policy |
+| Service → Service | Microservice A | Microservice B | mTLS |
 
 ## STRIDE Analysis
 | Threat | Component | Risk | Attack Scenario | Mitigation |
@@ -282,10 +282,8 @@ When reviewing or writing code, ensure tests exist for each applicable category:
 
 ### Cloud & Infrastructure Security
 - Cloud security posture management across AWS, GCP, and Azure
-- Kubernetes: Pod Security Standards, NetworkPolicies, RBAC, secrets encryption, admission controllers
 - Container security: distroless base images, non-root execution, read-only filesystems, capability dropping
 - Infrastructure as Code security review (Terraform, CloudFormation)
-- Service mesh security (Istio, Linkerd)
 
 ### AI/LLM Application Security
 - Prompt injection: direct and indirect injection detection and mitigation

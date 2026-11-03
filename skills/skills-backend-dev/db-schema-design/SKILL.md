@@ -48,6 +48,13 @@ description: 为 Go 后端设计或评审数据库结构：MySQL / PostgreSQL �
 
 迁移文件按项目工具的格式成对编写（up / down）。
 
+MySQL 的迁移文件提交前在临时库验证（以下步骤只在 MySQL 8.0 上实测过，PostgreSQL、MongoDB 未验证）：
+
+- 先灌入种子数据再跑；空库通过不算验证，唯一索引、数据转换类 migration 要用含重复或边界值的数据试跑。
+- 比对 up、down 前后的 `mysqldump --no-data` 结果，排除工具的版本表，并去掉 `AUTO_INCREMENT=` 值。
+- 用 `COUNT(*)` 比对 up 前后每张表的行数，不用 `information_schema.tables.table_rows`（估算值）。
+- schema 与行数都相同，不代表 down 能恢复数据：删列或改写数据的 migration，在 up、down 之后与原值比对 `CHECKSUM TABLE`（schema 变了它本来就会变，不用在 up 前后比）；确认不可恢复时在回滚步骤写明。
+
 ## 5. 自查
 
 DDL 写完后自查一遍 `.claude/rules/database/` 中的规则与下列清单，向用户汇报设计要点、与规则不一致之处（如有）及理由，以及没有实测、需要上线前验证的假设。

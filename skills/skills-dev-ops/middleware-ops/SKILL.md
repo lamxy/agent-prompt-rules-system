@@ -1,6 +1,6 @@
 ---
 name: middleware-ops
-description: 部署、调优、迁移或检查 Redis、Kafka、RabbitMQ、Elasticsearch、MongoDB 等中间件，用 Docker Compose 部署 gRPC 服务（健康检查、优雅关闭），以及搭建可观测性（存活探测、错误追踪、主机监控、Telegram 告警）。用户说「部署 Redis／Kafka／RabbitMQ／ES／MongoDB」「中间件调优」「Redis 迁移」「新库上线」「加监控告警」「搭监控」「错误追踪」「中间件巡检」「gRPC 负载不均」时使用。应用代码如何使用这些中间件属于 backend-dev 场景，不使用本 skill。
+description: 部署、调优、迁移或检查 Redis、Kafka、RabbitMQ、Elasticsearch、MongoDB 等中间件，用 Docker Compose 部署 gRPC 服务（健康检查、优雅关闭），以及搭建可观测性（存活探测、错误追踪、主机监控、Telegram 告警）与数据卷的备份还原。用户说「部署 Redis／Kafka／RabbitMQ／ES／MongoDB」「中间件调优」「Redis 迁移」「新库上线」「加监控告警」「搭监控」「错误追踪」「中间件巡检」「gRPC 负载不均」「备份」「还原演练」时使用。应用代码如何使用这些中间件属于 backend-dev 场景，不使用本 skill。
 ---
 
 # 中间件运维
@@ -18,6 +18,7 @@ description: 部署、调优、迁移或检查 Redis、Kafka、RabbitMQ、Elasti
 | RabbitMQ vhost / 队列管理、内存水位 | `references/rabbitmq.md` |
 | Elasticsearch 系统参数、分片与索引设置 | `references/elasticsearch.md` |
 | MongoDB 新库上线清单、备份与时间点恢复、安全基线、巡检指标 | `references/mongodb.md` |
+| Docker Compose 数据卷的备份分类、备份、存放与还原演练（Postgres 与其他卷） | `references/backup-restore.md` |
 | gRPC 服务的负载均衡、健康检查、优雅关闭、keepalive、排障 | `references/grpc.md` |
 
 ## 通用约定
