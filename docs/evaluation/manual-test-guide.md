@@ -544,7 +544,7 @@ pm-skills 的插件与市场同样用 `claude plugin uninstall … --scope proje
 
 阶段 1 的容器在 2026-11-02 被 `docker system prune --volumes` 删除。密码沿用旧专案集的 `mysql-root.env`（`ROOT_PW`）与 `mysql.env`（`MYSQL_*`），不在终端打印。
 
-下面的命令未实测（2026-11-03 会话内试跑被权限拒绝）。末行应报 `ERROR 1142`；`CREATE USER` 报连接错误时，等几秒后只重跑 `docker exec -i … <<SQL` 那一段；把输出贴给 Claude 核对。
+下面的命令 2026-11-03 由用户在终端实测通过（一次成功，末行报 `ERROR 1142 … CREATE command denied to user 'eval_ro'@'localhost'`；错误信息显示连接来源 `localhost`，匹配的是 `'eval_ro'@'%'` 账号）。末行应报 `ERROR 1142`；`CREATE USER` 报连接错误时，等几秒后只重跑 `docker exec -i … <<SQL` 那一段；把输出贴给 Claude 核对。
 
 ```sh
 OLD=~/workspace/aitools_test/scenario-eval
@@ -572,6 +572,15 @@ SQL
    git clone -q "$OLD/repos/fiberhouse" "$SET/repos/fiberhouse"
    git -C "$SET/repos/fiberhouse" log --oneline -1   # 应为 9aa0b1b
    ```
+
+3. 1.3 装完、1.5 提交基线之前，dev-ops 的 glitchtip 地址补上与阶段 1 相同的默认值（阶段 1 在 D2 前把这项改动提交为新 baseline `2559f78`，D2～D4 都在其上；仓库场景包没有默认值，不补则 glitchtip MCP 连不上，条件与阶段 1 不同）：
+
+   ```sh
+   sed -i '' 's|"${GLITCHTIP_URL}/mcp"|"${GLITCHTIP_URL:-http://localhost:18000}/mcp"|' "$P/dev-ops/.mcp.json"
+   grep -n GLITCHTIP "$P/dev-ops/.mcp.json"   # 应显示 :-http://localhost:18000
+   ```
+
+   D 系列开始前启动本机 GlitchTip：`(cd ~/workspace/local-infra/glitchtip && docker compose start)`。
 
 接着：
 
@@ -625,7 +634,39 @@ done
 
 每个任务跑完照第 4 节把最终回复贴回本仓库会话说「保存」。阶段 3 额外记录（由 Claude 从会话记录统计）：Bash 写入文件次数（B-4）、工具调用失败次数、LSP 使用次数、触发的 skill，以及项目规则与 `redis-development`、`mongodb` 插件有无冲突。
 
-还未定的：补测一个前端规划型任务（决定 gsd-core 去留），任务卡写好后先给用户确认；B0 放到最后。
+B0 放到最后。
+
+#### F5 规划型任务（阶段 3 新增，决定 gsd-core 去留；用户 2026-11-03 确认只跑自然版）
+
+原因：F-3 中 F1/F2/F4/F7 偏实现型，没有调用任何 gsd-*，不足以判断 gsd-core（frontend-dev 77 项 skill／command、40 个 agent，常驻约 5k）的价值。全局 superpowers 的 `brainstorming`、`writing-plans` 也是规划工具，本任务同时观察哪一套被选用。
+
+项目：新专案集 `$P/frontend-dev`，从 baseline 开始；不需要静态服务器与新素材。放在 F 系列最后跑。
+
+提示词（不点名工具）：
+
+```text
+我们要在这个站点加「积分兑换」功能：礼品列表、礼品详情、兑换确认、兑换结果四个页面。后端接口还没定，现有契约在 api/openapi.yaml。先帮我规划怎么做：页面结构、组件拆分、需要后端提供的接口、分几步交付。先不要写代码。
+```
+
+交互脚本：问需求细节（礼品字段、库存、积分不足等）答「按你的判断」；提议初始化 gsd（`/gsd-new-project`、建 `.planning/`）或进入 brainstorming 流程时答「按你的判断」；交出计划后问是否开始实现，答「先到这里」，然后退出。
+
+观察点（由 Claude 从会话记录统计）：
+
+1. 触发了哪套 skill／command／agent：gsd-*（如 `plan-phase`、`ui-phase`、`mvp-phase`、`sketch`）、superpowers、`frontend-design`，或都没有
+2. 是否遵守「先不要写代码」，有没有写入计划以外的文件
+3. 是否指出现有契约只有 `GET /api/points/history`、缺兑换相关接口，列成待后端提供的需求，而不是臆造字段当既定事实
+4. 计划是否分步交付，是否对应场景约定（token、三种宽度、可访问性、`X-Request-ID`）
+5. token、耗时、工具调用次数、Bash 写入次数（B-4）
+
+判定：
+
+| 结果 | gsd-core |
+|---|---|
+| 自然触发 gsd-*，且计划质量明显更好 | 保留 |
+| 没触发 gsd-*，由 superpowers 或不用工具就交出合格计划 | 从 frontend-dev 默认清单移除，改为注释录入（同第二场景支持包做法） |
+| 触发了，但流程过重（例如必须先跑完 new-project 才肯规划） | 调整，再议 |
+
+存档：`sh ../../bin/save-run.sh F5 1`。不跑对照组（阶段 1 没有 F5）。
 
 ### 12.6 收尾
 

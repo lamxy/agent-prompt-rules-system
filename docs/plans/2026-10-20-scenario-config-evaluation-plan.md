@@ -130,6 +130,16 @@
 
 **第三轮决策追加（2026-11-03，第 37 条）**：B-4 以每次运行的 Bash 写入次数为主要指标；同时记录工具调用失败次数与 LSP 使用次数；做优化前后对比时，每次都同跑一次基线配置，不拿过去的基线结果比（2026-11-03 缩为只对 B1、D3、F1 同跑，见开头审计结论）。
 
+**阶段 3 执行中发现，阶段 3 跑完后再处理（用户 2026-11-03 确认时机）**：`db-schema-design` 第 4 节的 MySQL 迁移验证步骤（阶段 2 第三轮加入）在两个任务中出问题。细节见专案集 `notes.md` 的 B1、B2 记录。
+
+- B1：没有限定验证用一次性容器，Claude 用 `docker exec eval-mysql` 和容器内 root 在共享测验库建了临时库，绕过只读账号，结束后临时库还留在库里（用户已手动删除）。
+- B2：步骤要求比对 `mysqldump --no-data`，与全局 deny `Bash(*mysqldump*)` 冲突。Claude 探测工具的复合命令 `which mysql mysqldump docker; docker ps` 整条被拒，之后放弃验证。阶段 1 的 skill 没有这一步，`docker run --rm mysql:8.0` 验证可以正常执行。
+- 用户原则：创建与只读命令放行，清理与删除需要确认或禁止；不应阻止 Claude 发起验证。
+- [ ] 修改 `db-schema-design`（`skills/skills-backend-dev/` 与 `dot_claude_projects/.claude-backend-dev/` 两处）：验证改用 `docker run --rm mysql:8.0` 一次性容器，不用共享库；schema 比对改用 `SHOW CREATE TABLE` 或 `information_schema`，不依赖 `mysqldump`
+- [ ] 改完后重跑 B2（r2），确认验证能完成且不留残留；B1 是否重跑视改动范围决定
+- [ ] D2：compose 项目名与本机 `~/workspace/local-infra/fiberhouse-dev`（`name: fiberhouse-dev`）同名，挂上并改动了该环境的三个卷。评估 `middleware-ops` 是否加「启动前按项目名查已有卷与停止的容器」；测验后在 local-infra 目录 `docker compose up -d` 重建容器，并检查其 Redis 是否混入测验写入
+- [ ] 全局 deny `Bash(*mysqldump*)` 是否改为 ask，由用户决定（改 `~/.claude/` 需用户明确指示；skill 改完后不再依赖它，非必需）
+
 **标准任务**：每个场景 3～5 个，覆盖该场景核心能力，例如：
 
 | 场景 | 标准任务示例 |
@@ -203,3 +213,9 @@
 - [ ] 试用期长度——同上；建议以会话次数计（例如每场景 10 个真实会话）
 - [ ] 交叉评审使用的模型组合与预算上限——选做，只用于 P-1 模板盲比与阶段 2 决策表复核（Codex 一轮）
 - [ ] 阶段 2 的采纳决策——实施前用决策表逐条确认
+- [ ] **分层规则是否必须严格**（用户 2026-11-03 提出，待讨论；阶段 3 结束后、处理 3.3「阶段 3 执行中发现」那批修改时提醒用户）。起因：B4 中 Claude 指出 FiberHouse 的 `example-module` 中 `service` 直接 import `apivo`，违反 `rules/go/layering.md` 的「service 不可 import apivo」。要讨论的问题：
+  - 严格分层（service 只用 dto/entity，api 层做全部 VO 转换）与宽松分层（允许 service 直接复用请求/响应结构，减少样板转换）各自的收益和代价
+  - 技术大厂与社区的实践：Go 社区（如 Go 项目布局讨论、Clean Architecture / 六边形架构在 Go 中的落地、Uber/Google 等公开风格指南）、Java 系（阿里巴巴 Java 开发手册的分层领域模型规约等）对「DTO/VO 是否跨层」的规定与反思；需读原文，结论标明哪些是规范、哪些是个人经验
+  - 规则应写成硬约束（depguard 强制）、默认建议（允许写 ADR 例外），还是按项目规模分级
+  - 框架代码本身（FiberHouse 示例模块）不符合规则时，规则跟框架走还是框架跟规则走；新模块与存量模块是否区别对待
+  - 结论影响 `rules/go/layering.md`、`go-new-module` 的 `references/depguard.yml`，以及 B1/B4 观察点的判定口径
