@@ -288,7 +288,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 - **compose 项目名撞名**：现象是 D2 用 `name: fiberhouse-dev` 挂上了本机 `~/workspace/local-infra/fiberhouse-dev` 的三个卷并替换其容器；原因是 `docker compose ls` 只列运行中项目，没查同名卷；正确做法是起新项目前 `docker volume ls --filter label=com.docker.compose.project=<名>`、`docker ps -a --filter label=com.docker.compose.project=<名>`。测验用的是 `fiberhouse-example-dev`（已 stop，未删）。
 - **回滚不清被忽略的文件**：`save-run.sh` 的 `git clean -fdq` 不删 `.gitignore` 里的文件（如 `deploy/.env`），会留给后续任务；对照组前要人工查 `git status --short --ignored`。
 - **Claude 在本仓库会话的权限**：用容器 root 改库（`DROP DATABASE`）、`rm -rf` 测验目录都会被拒，交给用户用 `!` 执行；只读查询可以。
-- **测验环境现状**：`eval-mysql` 在跑（只读账号 `eval_ro`，变量在专案集 `mysql.env`）；GlitchTip（`~/workspace/local-infra/glitchtip`）在跑；`fiberhouse-example-dev` 已 stop；local-infra 的 `fiberhouse-dev` 容器已由用户重建（2026-11-04，四个容器 healthy、挂回原三个卷）；其 Redis 是否混入测验写入未检查；旧专案集 `dev-ops/deploy/` 的阶段 1 残留移到了 `scenario-eval/leftover-dev-ops-deploy-bak-20261104/`。
+- **测验环境现状**：`eval-mysql` 在跑（只读账号 `eval_ro`，变量在专案集 `mysql.env`）；GlitchTip（`~/workspace/local-infra/glitchtip`）在跑；`fiberhouse-example-dev` 已 stop；local-infra 的 `fiberhouse-dev` 容器已由用户重建（2026-11-04，四个容器 healthy、挂回原三个卷）；其 Redis 已只读检查：只有 asynq 的服务器登记（一条过期登记推断来自 D2 测验 app），无队列、任务与缓存数据，不需清理；旧专案集 `dev-ops/deploy/` 的阶段 1 残留移到了 `scenario-eval/leftover-dev-ops-deploy-bak-20261104/`。
 
 ### myplugins（2026-11-03）
 
