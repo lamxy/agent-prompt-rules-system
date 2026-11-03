@@ -288,7 +288,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 - **compose 项目名撞名**：现象是 D2 用 `name: fiberhouse-dev` 挂上了本机 `~/workspace/local-infra/fiberhouse-dev` 的三个卷并替换其容器；原因是 `docker compose ls` 只列运行中项目，没查同名卷；正确做法是起新项目前 `docker volume ls --filter label=com.docker.compose.project=<名>`、`docker ps -a --filter label=com.docker.compose.project=<名>`。测验用的是 `fiberhouse-example-dev`（已 stop，未删）。
 - **回滚不清被忽略的文件**：`save-run.sh` 的 `git clean -fdq` 不删 `.gitignore` 里的文件（如 `deploy/.env`），会留给后续任务；对照组前要人工查 `git status --short --ignored`。
 - **Claude 在本仓库会话的权限**：用容器 root 改库（`DROP DATABASE`）、`rm -rf` 测验目录都会被拒，交给用户用 `!` 执行；只读查询可以。
-- **测验环境现状**：`eval-mysql` 在跑（只读账号 `eval_ro`，变量在专案集 `mysql.env`）；GlitchTip（`~/workspace/local-infra/glitchtip`）在跑；`fiberhouse-example-dev` 已 stop；local-infra 的 `fiberhouse-dev` 容器已被替换掉，**需用户在其 `deploy/` 目录 `docker compose up -d` 重建**，并检查其 Redis 是否混入测验写入；旧专案集 `dev-ops/deploy/` 的阶段 1 残留移到了 `scenario-eval/leftover-dev-ops-deploy-bak-20261104/`。
+- **测验环境现状**：`eval-mysql` 在跑（只读账号 `eval_ro`，变量在专案集 `mysql.env`）；GlitchTip（`~/workspace/local-infra/glitchtip`）在跑；`fiberhouse-example-dev` 已 stop；local-infra 的 `fiberhouse-dev` 容器已由用户重建（2026-11-04，四个容器 healthy、挂回原三个卷）；其 Redis 是否混入测验写入未检查；旧专案集 `dev-ops/deploy/` 的阶段 1 残留移到了 `scenario-eval/leftover-dev-ops-deploy-bak-20261104/`。
 
 ### myplugins（2026-11-03）
 
@@ -368,7 +368,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 6. **安装 myplugins**（B2 r2 之后）：按本文件「myplugins」整理命令给用户执行，装后核对并同步镜像与 `settings/README.md`
 7. 其余待确认项（「待处理事项」第一行），分层规则讨论要主动提醒；B0 在 myplugins 之后
 
-前置条件：4 无阻塞；5 需 4 完成；6 需 5 完成；local-infra 容器重建由用户随时进行。
+前置条件：4 无阻塞；5 需 4 完成；6 需 5 完成；local-infra 容器已重建。
 
 ---
 
@@ -447,4 +447,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-03 | MongoDB 场景案例 | 子代理调研电商、聊天、替代 MySQL（大厂一手资料只有 Coinbase；X 无可用内容），报告 `docs/research/2026-11-mongodb-cases.md`；MongoDB 8.0.34 副本集实测 T1～T8（脚本 `2026-11-plan-b-reports/mongo-lab/`）；独立子代理交叉审核更正 T2（超卖次数不定）、T5（漏读取决于页大小）并修订草案；用户确认后写入 `case-mongodb.md`、`mongodb.md` 三处、`SKILL.md` 索引（两份同步）与 rules 分页一句；疑问清单新增第 17 条（片键） | 不写入：前缀正则、片键、Discord 反例、SKU 拆分、选型信号；`mcase*` 容器清理被拒，待用户执行 |
 | 2026-11-03 | 全局插件拆分与 myplugins | 分析全局插件用途与常驻成本（约 3.9k，拆 8 个省约 1.8k），独立子代理交叉审核；实现 `dot_claude/skills/myplugins/`（序号启用／关闭、本地或 `--shared`、清单增删、SessionStart 提示）与 `test-myplugins.sh`，16 个测试文件全过；临时项目实测提示输出、写入本地设定、新会话载入插件；发现沙箱拦写 `.claude/settings*.json`，以 `sandbox.excludedCommands` 解决 | 已提交 `47928a3`，未推送；本机安装延到阶段 3 结束后（用户决定）；会话内 `/reload-plugins`、提示显示、共享模式实机未验证 |
 | 2026-11-03 | 阶段 3 准备步骤 | 指南新增第 12 节：新专案集重装、FiberHouse 固定阶段 1 提交、`eval-mysql` 重建、预算核对、旧专案集对照组只跑 B1/D3/F1（取代第 37 条「每次同跑基线」），计划文件同步（`871bf85`） | 12.1 命令试跑被权限拒绝、未实测；前端规划型任务卡待写 |
-| 2026-11-04 | 阶段 3 行为验证 | 新专案集 16 个任务 + B1、D3、F1 同期对照（用户手动执行，Claude 按会话记录核对）；新增 F5 规划型任务卡；结论写入 `docs/evaluation/2026-10-final.md`：全部通过（6 个附注），B-4 改善在 B、D 可归因于配置、F1 不算，D-1/D-2/F-1/F-4/P-3/E-8/E-9 已解决，新问题 B-7～E-13，gsd-core 建议移出 | 已提交 `68e14a8`、`44c190a`、`398d2b5`，未推送；B2 r2、myplugins 安装、待确认项未做；local-infra 容器待用户重建 |
+| 2026-11-04 | 阶段 3 行为验证 | 新专案集 16 个任务 + B1、D3、F1 同期对照（用户手动执行，Claude 按会话记录核对）；新增 F5 规划型任务卡；结论写入 `docs/evaluation/2026-10-final.md`：全部通过（6 个附注），B-4 改善在 B、D 可归因于配置、F1 不算，D-1/D-2/F-1/F-4/P-3/E-8/E-9 已解决，新问题 B-7～E-13，gsd-core 建议移出 | 已提交 `68e14a8`、`44c190a`、`398d2b5`，未推送；B2 r2、myplugins 安装、待确认项未做；local-infra 容器已由用户重建 |
