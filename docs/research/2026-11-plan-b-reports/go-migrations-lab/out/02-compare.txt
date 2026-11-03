@@ -1,0 +1,88 @@
+=== C1 good migration
+--- up:
+2026/11/02 19:14:11 goose: successfully migrated database to version: 2
+[exit=0]
+--- rowcount before vs after up:
+rowcount identical
+--- down:
+2026/11/02 19:14:11 OK   00002_add.sql (6.39ms)
+[exit=0]
+--- schema diff before vs after up+down:
+schema identical
+--- rowcount after up+down:
+rowcount identical
+--- checksum after up+down:
+checksum identical
+--- snapshot size: 41 lines; dump stderr: 
+=== C2 down forgets index
+--- up:
+2026/11/02 19:14:11 goose: successfully migrated database to version: 2
+[exit=0]
+--- rowcount before vs after up:
+rowcount identical
+--- down:
+2026/11/02 19:14:11 OK   00002_add.sql (1.52ms)
+[exit=0]
+--- schema diff before vs after up+down:
+-   KEY `idx_user` (`user_id`)
++   KEY `idx_user` (`user_id`),
++   KEY `idx_note` (`note`)
+--- rowcount after up+down:
+rowcount identical
+--- checksum after up+down:
+checksum identical
+--- snapshot size: 41 lines; dump stderr: 
+=== C3 down re-adds dropped column: data lost, schema same
+--- up:
+2026/11/02 19:14:11 goose: successfully migrated database to version: 2
+[exit=0]
+--- rowcount before vs after up:
+rowcount identical
+--- down:
+2026/11/02 19:14:11 OK   00002_dropnote.sql (1.37ms)
+[exit=0]
+--- schema diff before vs after up+down:
+schema identical
+--- rowcount after up+down:
+rowcount identical
+--- checksum after up+down:
+- c3.orders	1483869659
++ c3.orders	18937970
+--- snapshot size: 41 lines; dump stderr: 
+1	NULL
+2	NULL
+3	NULL
+4	NULL
+5	NULL
+=== C4 rebuild via INNER JOIN drops orphan row (forward only)
+2026/11/02 19:14:11 goose: successfully migrated database to version: 2
+[exit=0]
+- orders 5
++ orders 4
+ROWCOUNT DIFFERS
+=== C5 same migration on empty vs seeded (shadow value)
+2026/11/02 19:14:11 goose: successfully migrated database to version: 2
+[exit=0]
+--- state c5e: tables: goose_db_version orders users 
+orders columns: id,user_id,note
+2026/11/02 19:14:11 goose run: ERROR 00002_uniq.sql: failed to run SQL migration: failed to execute SQL query "ALTER TABLE users ADD UNIQUE INDEX uk_email (email);": Error 1062 (23000): Duplicate entry 'dup@x' for key 'users.uk_email'
+[exit=1]
+id	bigint unsigned	NO	PRI	NULL	auto_increment
+email	varchar(64)	NO		NULL	
+nick	varchar(16)	YES		NULL	
++------------+
+| version_id |
++------------+
+|          0 |
+|          1 |
++------------+
+=== C6 AUTO_INCREMENT noise without normalisation
+before-seed lines with AUTO_INCREMENT=: 0; after-seed: AUTO_INCREMENT=6
+=== C7 table_rows estimate vs exact COUNT
+COUNT=131072 information_schema.table_rows=130036
+=== C8 shadow copy via mysqldump|mysql then migrate shadow only
+2026/11/02 19:14:12 goose: successfully migrated database to version: 2
+[exit=0]
+src goose version: 1; shadow: 2
+src status col: 0; shadow: 1
+rowcount src==shadow

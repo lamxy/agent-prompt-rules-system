@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: glitchtip
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d glitchtip"]
+      interval: 2s
+      retries: 30
+  beszel:
+    image: henrygd/beszel:0.21.1
+    volumes:
+      - beszel-data:/beszel_data
+volumes:
+  pg-data:
+  beszel-data:

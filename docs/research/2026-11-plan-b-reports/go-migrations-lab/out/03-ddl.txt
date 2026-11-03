@@ -1,0 +1,61 @@
+8.0.46
+=== L1 PlanetScale advice: explicit ALGORITHM plus LOCK=NONE on INSTANT
+>> ALTER TABLE p ADD COLUMN c1 INT NULL, ALGORITHM=INSTANT, LOCK=NONE
+ERROR 1221 (HY000) at line 1: Incorrect usage of ALGORITHM=INSTANT and LOCK=NONE/SHARED/EXCLUSIVE
+[exit=1]
+>> ALTER TABLE p ADD COLUMN c1 INT NULL, ALGORITHM=INSTANT
+[exit=0]
+=== L2 fail-fast cases
+>> ALTER TABLE p MODIFY qty BIGINT NOT NULL DEFAULT 1, ALGORITHM=INSTANT
+ERROR 1846 (0A000) at line 1: ALGORITHM=INSTANT is not supported. Reason: Need to rebuild the table to change column type. Try ALGORITHM=COPY/INPLACE.
+[exit=1]
+>> ALTER TABLE p MODIFY qty BIGINT NOT NULL DEFAULT 1, ALGORITHM=INPLACE, LOCK=NONE
+ERROR 1846 (0A000) at line 1: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+[exit=1]
+>> ALTER TABLE p ADD INDEX idx_q (qty), ALGORITHM=INSTANT
+ERROR 1845 (0A000) at line 1: ALGORITHM=INSTANT is not supported for this operation. Try ALGORITHM=COPY/INPLACE.
+[exit=1]
+>> ALTER TABLE p ADD INDEX idx_q (qty), ALGORITHM=INPLACE, LOCK=NONE
+[exit=0]
+>> ALTER TABLE p MODIFY name VARCHAR(60) NOT NULL DEFAULT 'x', ALGORITHM=INPLACE, LOCK=NONE
+[exit=0]
+>> ALTER TABLE p MODIFY name VARCHAR(100) NOT NULL DEFAULT 'x', ALGORITHM=INPLACE, LOCK=NONE
+ERROR 1846 (0A000) at line 1: ALGORITHM=INPLACE is not supported. Reason: Cannot change column type INPLACE. Try ALGORITHM=COPY.
+[exit=1]
+>> ALTER TABLE p MODIFY name VARCHAR(100) NOT NULL DEFAULT 'x', ALGORITHM=COPY, LOCK=SHARED
+[exit=0]
+>> ALTER TABLE o ADD COLUMN c2 INT NULL, ALGORITHM=INSTANT
+ERROR 1846 (0A000) at line 1: ALGORITHM=INSTANT is not supported. Reason: InnoDB presently supports one FULLTEXT index creation at a time. Try ALGORITHM=COPY/INPLACE.
+[exit=1]
+>> ALTER TABLE p ADD COLUMN c3 INT NULL AFTER id, ALGORITHM=INSTANT
+[exit=0]
+=== L3 repo rule merge into one ALTER vs INSTANT
+>> ALTER TABLE p ADD COLUMN c4 INT NULL, ADD INDEX idx_c4 (c4), ALGORITHM=INSTANT
+ERROR 1845 (0A000) at line 1: ALGORITHM=INSTANT is not supported for this operation. Try ALGORITHM=COPY/INPLACE.
+[exit=1]
+>> ALTER TABLE p ADD COLUMN c4 INT NULL, ADD INDEX idx_c4 (c4), ALGORITHM=INPLACE, LOCK=NONE
+[exit=0]
+=== L4 single multi-clause ALTER is atomic on failure
+>> ALTER TABLE u ADD COLUMN x1 INT NULL, ADD UNIQUE INDEX uk (e)
+ERROR 1062 (23000) at line 1: Duplicate entry 'd' for key 'u.uk'
+[exit=1]
+columns after failed ALTER: e,id
+=== L5 INSTANT row version limit (add+drop loop)
+add #65 failed: ERROR 4092 (HY000) at line 1: Maximum row versions reached for table d1/v. No more columns can be added or dropped instantly. Please use COPY/INPLACE.
+total_row_versions: 64
+no ALGORITHM clause after limit: exit=0 
+total_row_versions after: 0
+=== L6 default algorithm evidence: rows affected on 200k rows
+rows: 262144
+Query OK, 0 rows affected (0.01 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+Query OK, 0 rows affected (0.21 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+Query OK, 262144 rows affected (0.34 sec)
+Records: 262144  Duplicates: 0  Warnings: 0
+=== L7 MDL: uncommitted reader blocks DDL, and DDL blocks later reads
+later SELECT waited 4s
+instant ALTER waited 5s
+--- with lock_wait_timeout=1
+ERROR 1205 (HY000) at line 1: Lock wait timeout exceeded; try restarting transaction
+[exit=1]

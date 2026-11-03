@@ -7,7 +7,7 @@
 - **已讀範圍**：「MCP」是用 GitHub MCP 讀到原文；「WebFetch」是經小模型回傳的摘要與引文，引用前要回原文核對。
 - **日期**：倉庫取最後 push 日；文章取發布日。星數取自 2026-11-03 的 GitHub 搜尋結果。
 - **「同用」**：是否與 gstack、gsd-core、OpenSpec、pm-skills、mattpocock-skills、superpowers、codegraph 相同。本清單的候選都不是這些工具，下表不再逐項寫，僅在有關聯時註明。
-- **「大廠」的認定**：使用者未定義規模。Docker、GitHub、Spotify、Vercel、Grafana、Sentry、Trail of Bits、PlanetScale 歸 B；PlanetScale、Trail of Bits 規模較小，是否算大廠請使用者判斷。
+- **「大廠」的認定**（使用者 2026-11-03 定義）：商業上是具千億級資本體量、跨賽道生態與極強抗風險能力的巨型科技平台；技術上是掌控底層基礎設施、主導開源與工程標準的生態統治者。「技術角度的大廠」的創始人員與技術員工，其影響力（引領、制定、開源行業規範等）也算。依使用者判斷，Docker、GitHub、Spotify、Vercel、Grafana、Sentry、Trail of Bits、PlanetScale 都歸 B。
 
 ## 候選總表
 
@@ -149,11 +149,119 @@
 ### 未做
 
 - 已用工具（gstack、gsd-core、OpenSpec、pm-skills、mattpocock-skills、superpowers、codegraph）未重讀，未列為候選。
-- Node.js、MongoDB、Redis 未單獨搜尋大廠或社區來源。
-- `samber/cc-skills`、`cxuu/golang-skills`、`FlorianBruniaux/claude-code-ultimate-guide`、`ChrisWiles/claude-code-showcase`、`disler/claude-code-hooks-mastery`、`cloudflare/skills` 只看到搜尋結果的描述，未讀。
+- 上方 dev-ops × C 的 3 個倉庫（`sanjay3290/ai-skills` 等）仍未讀，不在本輪補做範圍。
+
+## 第二輪補做（2026-11-03）
+
+使用者確認：補 Node.js、MongoDB、Redis 定向搜尋；6 個未讀倉庫只讀 README 篩選；新增技術大廠人員一輪；C4、C5 只作設計參考，採用其做法前須實測。
+
+| ID | 名稱與 URL | 類別 | 作者／維護者 | 對應 | 已讀範圍 | 篩選結論 |
+|---|---|---|---|---|---|---|
+| B11 | [mongodb/agent-skills](https://github.com/mongodb/agent-skills) | B | MongoDB 官方 | backend-dev | MCP：README 全文；skill 未讀 | **深入**。自架部署要用 `mongodb` 外掛，不是 `mongodb-atlas` |
+| B12 | [redis/agent-skills](https://github.com/redis/agent-skills) | B | Redis 官方 | backend-dev、dev-ops | MCP：README 全文；skill 未讀 | **深入**。對照 `redis-core`、`redis-connections`、`redis-clustering`、`redis-observability` 與現行規則 |
+| B13 | [mcollina/skills](https://github.com/mcollina/skills) | B（人員） | Matteo Collina | backend-dev | MCP：README 全文；skill 未讀 | **深入** `node`、`typescript-magician`、`skill-optimizer`。屬個人倉庫，非 Node.js 官方；搜尋摘要稱他是 core contributor，TSC 身分未確認 |
+| B14 | [ghostty AGENTS.md](https://github.com/ghostty-org/ghostty/blob/main/AGENTS.md) | B（人員） | Ghostty（Mitchell Hashimoto 的專案） | (d) | MCP：全文 | **已讀完，只作參考**。短小，只含指令、目錄與硬性禁止。「每條都來自實際錯誤」是二手說法，此檔無法佐證 |
+| B15 | [cloudflare/skills](https://github.com/cloudflare/skills) | B | Cloudflare | frontend-dev | MCP：README 全文 | **只看** `web-perf`。其餘綁定 Cloudflare 平台 |
+| C12 | [cxuu/golang-skills](https://github.com/cxuu/golang-skills) | C | cxuu | backend-dev、(c) | MCP：README 全文 | **深入**，與 C7 比較。依 Google、Uber Go 規範；附檢查腳本、評測與 `RULE_OWNERSHIP.md` |
+| C13 | [samber/cc-skills](https://github.com/samber/cc-skills) | C | Samuel Berthe | frontend-dev、dev-ops、(c) | MCP：README 全文 | **只看** `frontend-design-deslop`、`promql-cli`、`skill-progressive-disclosure-design`。評測數字為自述 |
+| C14 | [ChrisWiles/claude-code-showcase](https://github.com/ChrisWiles/claude-code-showcase) | C | ChrisWiles | (c)、frontend-dev | MCP：README 開頭與章節目錄，未讀完 | **只看** hook 與排程 workflow 範例。無法確認是實際生產配置 |
+| C15 | [disler/claude-code-hooks-mastery](https://github.com/disler/claude-code-hooks-mastery) | C | disler | (a)、(b) | MCP：README 開頭與章節目錄，未讀完 | **只查** hook 流程控制段落，機制仍以官方文件為準 |
+| C16 | [FlorianBruniaux/claude-code-ultimate-guide](https://github.com/FlorianBruniaux/claude-code-ultimate-guide) | C | Florian Bruniaux | (a)～(d) | MCP：README 開頭與章節目錄，未讀完 | **暫不深入**。是綜合指南，引用需回溯原始來源 |
+
+**B11、B12 已在使用**：`settings/settings.project-backend-dev.json` 已啟用 `mongodb`、`redis-development`；`settings/README.md` 記錄 `mongodb` 外掛來自 `mongodb/agent-skills`，`redis/agent-skills` 的 README 也指向 `redis-development@claude-plugins-official`。所以它們不是新能力，深入時只檢查與 backend-dev 規則是否衝突或重複。
+
+**技術大廠人員**：
+
+- Boris Cherny（Claude Code 作者）：只找到 VentureBeat 等二手轉述，包含「Claude 犯錯就寫進 CLAUDE.md」與驗證是品質關鍵。**未讀到一手來源，未驗證，不列候選**。
+- Simon Willison：只找到指南摘要，未驗證，不列候選。
+
+**MongoDB、Redis、Node.js 搜尋結果**：GitHub 依星數各查一次，除官方外多為 0～54 星，且未讀 README，不列候選。`Ashfaqbs/software-dev-ai-claude-toolkit`（27 星）、`seed-forge/harness-ai-kit`（25 星）描述涵蓋這些主題但也含 K8s，同樣未讀。
+
+**覆蓋變化**：backend-dev × B 的 MongoDB、Redis、Node.js 已有來源（B11、B12、B13）；Go 的大廠配置仍未找到，只有依大廠規範整理的 C12。prd-design × B 仍未找到。
+
+**K8s 掃描**：本輪新增候選未做，深入時再查。
+
+## 社區經驗與常見解法（2026-11-03）
+
+**可信度**：
+
+- 「原文」是用 GitHub MCP 或官方文件讀到的；其中 issue 內容仍是回報者自述，未經本倉庫實測。
+- 「摘要」只看過搜尋摘要，未開原文。
+- 部分作者賣模板或工具，有立場。
+- Reddit、Hacker News 沒有搜到討論串，也未直接查，這是**未做**。
+
+### 問題組
+
+| 問題 | 常見解法 | 社區經驗 | 來源層級 |
+|---|---|---|---|
+| (a) 不先問就動手 | 判斷題放規則，不變量放 hook；縮短 `CLAUDE.md`；把流程移到 skill | 多篇回報長規則會被忽略，任務壓力常勝過規則；「遵守率 70～90%」沒有量測依據，不引用。沒有找到專門測「先問再做」的資料 | 摘要 |
+| (b) Bash 改檔 | PreToolUse 擋 Bash 寫入；收窄 `Bash(python3 *)` 這類放行；在 `CLAUDE.md` 明寫 | 詳見下方 | 原文 |
+| (c) skill 過量 | 定期稽核；`disable-model-invocation: true`；用 `/context` 或 `/skill-doctor` 量測 | 有人回報 skill 太多會被靜默截斷，與本倉庫實測的預算問題相符；「4～6 個外掛」只是個人說法 | 摘要 |
+| (d) 範圍外改動 | 順手發現只記 TODO 不修；中途看 `git diff --name-only`；一任務一分支；審查與修復分開；Stop hook 把大 diff 送交叉審查 | 都是個人經驗，沒有成效量測 | 摘要 |
+
+### (b) 的重要發現
+
+- **官方現行說法**（[permissions](https://code.claude.com/docs/en/permissions)，原文）：Read、Edit 的 deny 規則涵蓋內建工具、Claude Code 辨識得出的 Bash 檔案命令（`cat`、`sed`、`tee` 等）與重導向目標；不涵蓋 `grep -r` 這類沒有點名檔案的命令，也不涵蓋 Python、Node 腳本自行開檔。官方建議搭配沙箱做縱深防禦。
+- **B4 待核對項已解決**：B4 寫的「只擋內建工具」比官方現行說法窄，以官方為準。
+- **B-4 有更明確的成因**（[#87971](https://github.com/anthropics/claude-code/issues/87971)，原文，開放中）：回報者引用 auto 模式注入的指令，要求改檔優先用 sed、heredoc 或短腳本。留言稱這是按會話分組的實驗，子代理會繼承。**本機預設是 auto 模式，可能適用；本機是否被分到這一組未驗證。**
+- **連帶後果**（同上，留言自述）：Bash 寫入不觸發 `Write|Edit` hook，path rules 與巢狀 `CLAUDE.md` 也不載入，`/rewind` 也可能失效。這與本倉庫「path rules 的載入時機」實測方向一致。
+- **`CLAUDE.md` 寫明有幫助，但樣本小**（同上，2026-10-13 留言，2.1.296，Opus，auto 模式，每組 15 次）：
+
+| | 沒有說明 | 明寫只用 Edit/Write | 先讀再做的說明 |
+|---|---|---|---|
+| 規則有載入 | 5/15 | 15/15 | 15/15 |
+| 用 Bash 寫入 | 12/15 | 2/15 | 2/15 |
+
+- **`CLAUDE_CODE_THRIFTY_SONIC=0` 不採用**：未見官方文件記載，是實驗開關；留言另稱 Opus 5.5 起可能失效。
+- **常見的 hook 做法**：留言附了擋 `.md` 的 PreToolUse 範例；[claude-bash-bridge](https://github.com/JasonGDG/claude-bash-bridge) 會在 Bash 前後比對檔案並補跑 hook（未讀倉庫，每次寫入多約 0.4～0.5 秒，均為作者自述）。任何 hook 都攔不住所有寫法，要保留「擋常見寫法、靠 diff 審查兜底」的預期。
+- **其他實測**（原文，作者自述）：[Mervin Praison](https://mer.vin/news/why-blocking-edit-and-write-doesnt-stop-claude-rewriting-files/) 回報 Edit、Write 被禁且 Bash 明列放行時，8/8 用 Python 改檔成功；不列放行清單時 0/6；同樣放行但提示明寫不要用 Bash 寫檔時 0/6；連 Bash 也禁時 0/5。
+
+### 場景組
+
+| 場景 | 常見解法與經驗 | 來源 |
+|---|---|---|
+| prd-design | PRD 保留細節與驗收條件，原型負責溝通；寫 PRD 前先訪談，問題段落沒定不寫方案；不要整份 PRD 丟進去要求全做；確認原型真的在驗證你關心的假設；別把原型當可上線成品 | 摘要：[Chaayush Malik](https://chaayushmalik.medium.com/five-ways-i-use-claude-code-as-a-product-manager-dc8c76419eff)、[AI Spaces](https://aispaces.substack.com/p/product-management-in-the-age-of)、[Vibe Coding Academy](https://www.vibecodingacademy.ai/blog/claude-code-workflows-prd-to-shipped-feature)（賣課）、[Alloy](https://alloy.app/library/claude-for-pms-complete-guide-10x-productivity)（賣工具） |
+| frontend-dev | 先定視覺方向與 token 來源；列「AI 味」禁止清單；有參考圖；走「寫 → 截圖 → 對照 → 修」循環 | 摘要，第一手回顧少：[How-To Geek](https://www.howtogeek.com/i-tested-10-claude-plugins-for-web-design-here-are-the-3-that-are-actually-essential/)、[Mowgli](https://mowgli.ai/blog/claude-code-ui-design-workflow)（廠商） |
+| backend-dev | 遷移用影子庫試跑、可逆性檢查、資料列數比對；空庫測試不足以驗證；不給 agent 生產憑據；移植時用真實資料比對新舊行為，留意孤兒程式碼 | 摘要：[Yureki Lab](https://dev.to/yureki_lab/how-i-let-my-ai-coding-agent-write-database-migrations-without-losing-data-5dc2)、[Winder.ai](https://winder.ai/python-to-go-migration-with-claude-code/)（Go 相關只找到這篇）。另一篇 [AWS Builders](https://dev.to/aws-builders/the-setup-is-the-strategy-how-i-orchestrated-a-product-migration-with-claude-code-b92) 主張直連資料庫，兩者有衝突，要看環境 |
+| dev-ops | 調查唯讀、修復另走審查；用 hook 擋不可逆命令；稽核憑據範圍；用實際回應驗證部署，不只看腳本退出碼 | 摘要：[Matthew Wong](https://www.matthewswong.com/en/blog/claude-code-production-incident-debugging/)。事故原文：[#63644](https://github.com/anthropics/claude-code/issues/63644)（`compose down -v` 清掉資料庫）、[#41357](https://github.com/anthropics/claude-code/issues/41357)（`system prune -af --volumes` 波及其他專案），都已關閉為 not planned |
+
+### 對照現行配置發現的缺口（待第二輪決策）
+
+`settings/settings.user.json` 的 `allow` 有 `Bash(docker compose down *)` 與 `Bash(docker-compose *)`，字面上都涵蓋 `down -v`，`deny` 沒有對應項目。#63644 正是這個命令造成資料遺失。
+
+- dev-ops 模板把 `docker compose down*` 列為需確認；其他場景沒有。
+- `docker-compose down -v` 這個舊寫法在 dev-ops 是否也會詢問、auto 分類器會不會攔，都未實測。
+- 本機 `~/.claude/settings.json` 有同一條放行，未改動。
+
+### 未做
+
+- Reddit、Hacker News 討論串。
+- 上表「摘要」來源未開原文，寫入配置前要回原文核對或自行實測。
+- 前端、後端、Go 的第一手回顧仍少；Go 工具（goose、golang-migrate、Atlas）未單獨搜尋。
+
+## K8s 依賴梳理（2026-11-03）
+
+**方法**：淺克隆 9 個 skill 倉庫，以 `kubernetes|kubectl|k8s|helm|argocd|argo cd|kustomize|eks|gke|aks` 逐 skill 計數，再看命中行與部分前置條件。這是關鍵字快篩，不是逐 skill 通讀；沒命中只代表沒提到這些詞。
+
+**未掃**：C1、C2、C4、C5、C6、C8、C9，以及 B2、B3、B5、B10 等文章。
+
+| 候選 | SKILL 數／命中數 | 依賴 K8s，排除 | K8s 只是選項或局部，可篩用 | 未命中，可進入下一步評估 |
+|---|---|---|---|---|
+| C10 | 25／12 | `k8s-ops`；`sre-agent`（診斷與巡檢需 kubectl，通知含飛書）；`gitlab-ci` 的 ArgoCD 部分 | `prometheus`（有 `kube_*` 查詢範例）、`architect`、`dev-workflow`（CD 步驟指向 ArgoCD，需求步驟可接 `lark-mcp`）、`testing-strategy`（L3-k8s 是選用子層）、`security-compliance-review` | `mock-engine`（Docker Compose）、`grafana`、`story-craftsman`、`voc-analysis` 等 13 個 |
+| B8 | 54／26 | `grafana-app-sdk` 4 個（命中多，未細讀；用途與本倉庫無關） | `alloy`、`opentelemetry`、`beyla`、`tempo`、`mimir`、`loki`；`grafana-cloud/*` 另依賴 Grafana Cloud，與現行自架方案要分開判斷 | `promql`、`alerting-irm`、`grafana-oss`、`dashboarding`（僅 1 處）、k6 系列等 |
+| B1 | 12／1 | 無 | `docker-docs` 只是把 K8s manifests 劃在範圍外 | 其餘 |
+| B6 | 30／2 | 無 | `security-review` 的 SPEC 明寫不涵蓋 K8s；`claude-settings-audit` 只用於偵測專案類型 | 其餘 |
+| B9 | 4／1 | 無 | `postgres` 的 1 處參考文件，未細看 | `mysql` 等 |
+| C7 | 46／9 | 無 | 多為範例或背景；`golang-benchmark` 參考文件有 kubectl 操作範例 | 其餘 37 個 |
+| B7、C3、C11 | 9／0、9／0、15／0 | 無 | — | 全部 |
+
+**被排除工具（同次掃描，只查 C10）**：`sre-agent` 附 `feishu_notify.py` 與飛書模板；`multi-worktree-dev` 的飛書命中 20 次，含 `feishu-switch.sh`；`dev-workflow` 含 `lark-mcp`。`architect`、`testing-strategy` 只是順帶提及。
+
+**結論**：C10 從 dev-ops 主要對標降為只評估 `mock-engine`、`grafana` 與 `prometheus` 的通用部分；B8 優先評估 `promql`、`alerting-irm`、`tempo`、`loki`、`alloy`，只取 Docker 或主機路徑。
 
 ## 過程異常
 
+0. **GitHub code search 的 OR 查詢不可靠**：同一倉庫 `kubernetes OR kubectl ... filename:SKILL.md` 回傳 0 筆，單查 `kubectl` 卻有 9 筆，所以 K8s 梳理改用淺克隆後掃描。之後的倉庫內查詢不要依賴這種組合。
 1. **有兩處偏離讀取要求**：Writ（C1）用 WebFetch 讀 README，未用 GitHub MCP。文章與 issue 也經 WebFetch，取得的是摘要，不是逐字原文。
 2. **部分大型 README 未讀完**：B4、C6、C8、C9 超過單次回傳上限並存檔，只讀了部分內容。
 3. **寫了報告以外的暫存檔**：曾把 3 份 README 文字抽到 scratchpad 的 `r-*.txt` 以便查詢，超出「只寫報告檔」的限制，已刪除。工具也自動把超大回傳存到會話的 `tool-results/`。

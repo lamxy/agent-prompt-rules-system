@@ -1,0 +1,219 @@
+ready after 0
+8.0.46	ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION	1
+=== G1 goose default tx: DDL then failure
+2026/11/02 19:13:01 OK   00001_base.sql (1.63ms)
+2026/11/02 19:13:01 goose run: ERROR 00002_multi.sql: failed to run SQL migration: failed to execute SQL query "INSERT INTO no_such_table VALUES (1);": Error 1146 (42S02): Table 'g1.no_such_table' doesn't exist
+[exit=1]
+--- state g1: tables: audit_x goose_db_version orders 
+orders columns: id,sku,note,a1
+orders rows:
+1	a	n1
+2	b	n2
+3	c	n3
+4	after-first-ddl	NULL
++------------+------------+
+| version_id | is_applied |
++------------+------------+
+|          0 |          1 |
+|          1 |          1 |
++------------+------------+
+2026/11/02 19:13:01     Applied At                  Migration
+2026/11/02 19:13:01     =======================================
+2026/11/02 19:13:01     Mon Nov  2 19:13:01 2026 -- 00001_base.sql
+2026/11/02 19:13:01     Pending                  -- 00002_multi.sql
+[exit=0]
+2026/11/02 19:13:01 goose: version 1
+[exit=0]
+--- G1 rerun up
+2026/11/02 19:13:01 goose run: ERROR 00002_multi.sql: failed to run SQL migration: failed to execute SQL query "ALTER TABLE orders ADD COLUMN a1 INT NULL;": Error 1060 (42S21): Duplicate column name 'a1'
+[exit=1]
+--- state g1: tables: audit_x goose_db_version orders 
+orders columns: id,sku,note,a1
+orders rows:
+1	a	n1
+2	b	n2
+3	c	n3
+4	after-first-ddl	NULL
+--- G1 goose validate (does it catch anything?)
+2026/11/02 19:13:01 goose run: "validate": no such command
+[exit=1]
+=== G2 goose down right after failed migration (separate db)
+2026/11/02 19:13:01 OK   00001_base.sql (589.8µs)
+[exit=0]
+--- state g2: tables: audit_x goose_db_version 
+orders columns: NULL
+orders rows:
+ERROR 1146 (42S02) at line 1: Table 'g2.orders' doesn't exist
++------------+------------+
+| version_id | is_applied |
++------------+------------+
+|          0 |          1 |
++------------+------------+
+=== G3 goose NO TRANSACTION
+2026/11/02 19:13:01 OK   00001_base.sql (989.67µs)
+2026/11/02 19:13:01 goose run: ERROR 00002_multi.sql: failed to run SQL migration: failed to execute SQL query "INSERT INTO no_such_table VALUES (1);": Error 1146 (42S02): Table 'g3.no_such_table' doesn't exist
+[exit=1]
+--- state g3: tables: audit_x goose_db_version orders 
+orders columns: id,sku,note,a1
+orders rows:
+1	a	n1
+2	b	n2
+3	c	n3
+4	after-first-ddl	NULL
++------------+------------+
+| version_id | is_applied |
++------------+------------+
+|          0 |          1 |
+|          1 |          1 |
++------------+------------+
+=== G4 goose DML only failure (tx rollback)
+2026/11/02 19:13:01 OK   00001_base.sql (914.8µs)
+2026/11/02 19:13:01 goose run: ERROR 00002_dml.sql: failed to run SQL migration: failed to execute SQL query "INSERT INTO no_such_table VALUES (1);": Error 1146 (42S02): Table 'g4.no_such_table' doesn't exist
+[exit=1]
+--- state g4: tables: goose_db_version orders 
+orders columns: id,sku,note
+orders rows:
+1	a	n1
+2	b	n2
+3	c	n3
++------------+------------+
+| version_id | is_applied |
++------------+------------+
+|          0 |          1 |
+|          1 |          1 |
++------------+------------+
+=== G5 goose without multiStatements in DSN
+2026/11/02 19:13:01 OK   00001_base.sql (1.11ms)
+2026/11/02 19:13:01 goose run: ERROR 00002_multi.sql: failed to run SQL migration: failed to execute SQL query "INSERT INTO no_such_table VALUES (1);": Error 1146 (42S02): Table 'g5.no_such_table' doesn't exist
+[exit=1]
+--- state g5: tables: audit_x goose_db_version orders 
+orders columns: id,sku,note,a1
+orders rows:
+1	a	n1
+2	b	n2
+3	c	n3
+4	after-first-ddl	NULL
+=== G6 goose recover: manual cleanup + fixed file then up
+2026/11/02 19:13:01 OK   00002_multi.sql (2.71ms)
+2026/11/02 19:13:01 goose: successfully migrated database to version: 2
+[exit=0]
+--- state g6: tables: audit_x goose_db_version orders 
+orders columns: id,sku,note,a1,a2
+orders rows:
+1	a	n1
+2	b	n2
+3	c	n3
+5	after-first-ddl	NULL
+=== M1 migrate: DDL then failure
+1/u base (1.231717ms)
+error: migration failed in line 0: ALTER TABLE orders ADD COLUMN a1 INT NULL;
+INSERT INTO orders (sku) VALUES ("after-first-ddl");
+CREATE TABLE audit_x (id INT PRIMARY KEY);
+INSERT INTO no_such_table VALUES (1);
+ALTER TABLE orders ADD COLUMN a2 INT NULL;
+ (details: Error 1146: Table 'm1.no_such_table' doesn't exist)
+[exit=1]
+--- state m1: tables: audit_x orders schema_migrations 
+orders columns: id,sku,note,a1
+orders rows:
+1	a	n1
+2	b	n2
+3	c	n3
+4	after-first-ddl	NULL
++---------+-------+
+| version | dirty |
++---------+-------+
+|       2 |     1 |
++---------+-------+
+2 (dirty)
+[exit=0]
+--- M1 rerun up
+error: Dirty database version 2. Fix and force version.
+[exit=1]
+--- M1 down while dirty
+error: Dirty database version 2. Fix and force version.
+[exit=1]
+--- M1 force 1 and up again (no cleanup)
+[exit=0]
++---------+-------+
+| version | dirty |
++---------+-------+
+|       1 |     0 |
++---------+-------+
+error: migration failed in line 0: ALTER TABLE orders ADD COLUMN a1 INT NULL;
+INSERT INTO orders (sku) VALUES ("after-first-ddl");
+CREATE TABLE audit_x (id INT PRIMARY KEY);
+INSERT INTO no_such_table VALUES (1);
+ALTER TABLE orders ADD COLUMN a2 INT NULL;
+ (details: Error 1060: Duplicate column name 'a1')
+[exit=1]
+--- state m1: tables: audit_x orders schema_migrations 
+orders columns: id,sku,note,a1
+orders rows:
+1	a	n1
+2	b	n2
+3	c	n3
+4	after-first-ddl	NULL
++---------+-------+
+| version | dirty |
++---------+-------+
+|       2 |     1 |
++---------+-------+
+=== M2 force 2 then down (down file assumes full apply)
+[exit=0]
+error: migration failed in line 0: ALTER TABLE orders DROP COLUMN a2;
+DROP TABLE audit_x;
+ALTER TABLE orders DROP COLUMN a1;
+ (details: Error 1091: Can't DROP 'a2'; check that column/key exists)
+[exit=1]
+--- state m2: tables: audit_x orders schema_migrations 
+orders columns: id,sku,note,a1
+orders rows:
+1	a	n1
+2	b	n2
+3	c	n3
+4	after-first-ddl	NULL
++---------+-------+
+| version | dirty |
++---------+-------+
+|       1 |     1 |
++---------+-------+
+=== M3 migrate DML only, no wrap
+1/u base (1.028508ms)
+error: migration failed in line 0: INSERT INTO orders (sku) VALUES ("dml1");
+UPDATE orders SET note="touched";
+INSERT INTO no_such_table VALUES (1);
+ (details: Error 1146: Table 'm3.no_such_table' doesn't exist)
+[exit=1]
+--- state m3: tables: orders schema_migrations 
+orders columns: id,sku,note
+orders rows:
+1	a	touched
+2	b	touched
+3	c	touched
+4	dml1	touched
++---------+-------+
+| version | dirty |
++---------+-------+
+|       2 |     1 |
++---------+-------+
+=== M4 migrate DML wrapped START TRANSACTION
+1/u base (975.258µs)
+error: migration failed in line 0: START TRANSACTION;
+INSERT INTO orders (sku) VALUES ("dml1");
+UPDATE orders SET note="touched";
+INSERT INTO no_such_table VALUES (1);
+COMMIT;
+ (details: Error 1146: Table 'm4.no_such_table' doesn't exist)
+[exit=1]
+--- state m4: tables: orders schema_migrations 
+orders columns: id,sku,note
+orders rows:
+1	a	n1
+2	b	n2
+3	c	n3
++---------+-------+
+| version | dirty |
++---------+-------+
+|       2 |     1 |
++---------+-------+

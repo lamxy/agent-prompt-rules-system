@@ -71,6 +71,11 @@
 9. **晚到的 rule 能否让复杂约束自我修正**。现象：Write 新建文件时 rule 在写完后才注入；只测过「首行固定注释」这类可机械检查的约束。缺少依据：连接复用、deadline、重试等需要理解代码的约束是否同样会被重写修正，未测。建议验证：在临时项目让模型新建 `module/x/cache/x_cache.go`，rule 要求 `ContextTimeoutEnabled` 与关闭重试，多次运行统计合规率。
 10. **gRPC 客户端用 depguard 限制在 `grpc/` 目录**。缺少依据：只对 go-redis 实测了 depguard；`google.golang.org/grpc` 在 handler（`api/grpc/`）与客户端封装两处都要 import，规则写法未测。建议验证：同样以违规文件实测后，再决定是否写入 `rpc-design`。
 11. **Claude Code 经 OAuth 连接 GlitchTip MCP**：已验证 GlitchTip 6.2.6 开启 MCP 后端点未认证返回 401 并给出 OAuth 元数据（含动态客户端注册），Claude Code 文档说明用 `/mcp` 完成 OAuth；两者实际对接未测（需要交互登录）。原位置：dev-ops `observability.md`、`dot_mcp_jsons/README.md` 的 GlitchTip MCP 说明。建议验证：在临时项目中 `claude mcp add --transport http glitchtip <https 地址>/mcp` 后 `/mcp` 登录，确认能列出 issue；失败时改用 API token。
+12. **数据库迁移的影子库试跑（2026-11-03 暂缓，部分已写入）**：MySQL 小规模实测后，种子数据试跑与 schema、`COUNT(*)`、`CHECKSUM TABLE` 比对已写入 `db-schema-design`（第三轮第 31 条）。仍暂缓：接近线上规模（千万行以上）的脱敏影子库、复制延迟与并发流量下的 DDL、PostgreSQL 与 MongoDB 的同类验证（第 33 条）。建议验证：真实项目需要时，在临时容器用接近线上规模的数据实测耗时与磁盘，再决定是否补充。
+13. **Node.js 配置来源 `mcollina/skills`（2026-11-03 暂缓）**：Matteo Collina 的个人仓库，有 `node`、`typescript-magician` 等 skill。缺少依据：内容未实测，Claude Code 插件安装方式未验证；backend-dev 清单预算吃紧。建议验证：有 Node.js 项目时，先核对安装方式并做有无 skill 对比。
+14. **GitHub Actions 安全审查 `getsentry/skills` 的 `gha-security-review`（2026-11-03 暂缓）**：现行配置未确定使用 GitHub Actions。建议验证：项目采用后，用实际 workflow 试跑再决定是否启用。
+15. **FiberHouse Redis 客户端与 `rules/redis.md` 的 `ContextTimeoutEnabled`（2026-11-03）**：`component/cache/cacheremote/redis_cache.go` 的 `NewClient` 未设此项，`IRedisClient` 也只返回单机 `*redis.Client`。缺少依据：只读源码，ctx deadline 的实际影响与框架是否另有超时处理未测。建议验证：临时容器让 Redis 阻塞后，用带 deadline 的 ctx 实测。
+16. **备份失败告警（2026-11-03）**：第三轮第 36 条要求的「备份失败告警」未写入 `middleware-ops/references/backup-restore.md`。设想是备份脚本成功后请求 Uptime Kuma Push 监控的 URL，超时未收到即告警；缺少依据：只确认 Kuma README 列有 Push，流程未实测。同一文件的离机传输、加密工具（restic 等）也未选定、未实测，文件里只写了原则。建议验证：临时 Compose 项目中建 Push 监控，让脚本成功与失败各跑一次，确认 Telegram 收到告警。
 
 ## 五、参考记录（无需决定）
 
@@ -141,3 +146,12 @@ docker rmi golangci/golangci-lint:v2.5.0
 ```
 
 更早的实测资源（MongoDB / MySQL）：容器 `mgv1`～`mgv3`、`dbverify-tmp`，网络 `mgv-net`。实测代码在会话 scratchpad，随会话清理。
+
+2026-11-03 第三轮实测：MySQL 迁移网络 `mig-probe-net`（0 容器）；备份还原实测的 5 个容器（运行中）、4 个卷、2 个网络（`docker compose down -v` 被拒）：
+
+```sh
+docker network rm mig-probe-net
+docker rm -f bprobe-rA bprobe-rB bprobe-rC bprobe-postgres-1 bprobe-beszel-1
+docker volume rm bprobe-rB bprobe-rC bprobe_pg-data bprobe_beszel-data
+docker network rm bprobe-rnet bprobe_default
+```
