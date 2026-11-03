@@ -76,6 +76,7 @@
 14. **GitHub Actions 安全审查 `getsentry/skills` 的 `gha-security-review`（2026-11-03 暂缓）**：现行配置未确定使用 GitHub Actions。建议验证：项目采用后，用实际 workflow 试跑再决定是否启用。
 15. **FiberHouse Redis 客户端与 `rules/redis.md` 的 `ContextTimeoutEnabled`（2026-11-03）**：`component/cache/cacheremote/redis_cache.go` 的 `NewClient` 未设此项，`IRedisClient` 也只返回单机 `*redis.Client`。缺少依据：只读源码，ctx deadline 的实际影响与框架是否另有超时处理未测。建议验证：临时容器让 Redis 阻塞后，用带 deadline 的 ctx 实测。
 16. **备份失败告警（2026-11-03）**：第三轮第 36 条要求的「备份失败告警」未写入 `middleware-ops/references/backup-restore.md`。设想是备份脚本成功后请求 Uptime Kuma Push 监控的 URL，超时未收到即告警；缺少依据：只确认 Kuma README 列有 Push，流程未实测。同一文件的离机传输、加密工具（restic 等）也未选定、未实测，文件里只写了原则。建议验证：临时 Compose 项目中建 Push 监控，让脚本成功与失败各跑一次，确认 Telegram 收到告警。
+17. **MongoDB 聊天场景的片键（2026-11-03）**：调研（`docs/research/2026-11-mongodb-cases.md`）只有官方通则（基数、频率、单调；`analyzeShardKey`），没有大厂聊天片键依据，未实测，未写入 `case-mongodb.md`。建议验证：需要分片时在三分片集群用 `analyzeShardKey` 比较 `{rid}`、`{rid, ts}`、`{rid: "hashed"}`。
 
 ## 五、参考记录（无需决定）
 
@@ -154,4 +155,10 @@ docker network rm mig-probe-net
 docker rm -f bprobe-rA bprobe-rB bprobe-rC bprobe-postgres-1 bprobe-beszel-1
 docker volume rm bprobe-rB bprobe-rC bprobe_pg-data bprobe_beszel-data
 docker network rm bprobe-rnet bprobe_default
+```
+
+2026-11-03 MongoDB 案例实测：容器 `mcase1`～`mcase3`、网络 `mcase-net`（`docker rm` 被拒）：
+
+```sh
+docker rm -f mcase1 mcase2 mcase3; docker network rm mcase-net
 ```
