@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 5809068
+head: b8b4772
 status: active
 updated: 2026-11-03
 ---
@@ -11,7 +11,7 @@ updated: 2026-11-03
 <!-- section: summary -->
 ## 摘要
 
-- 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交，已推送并发布 v2.0.1（Latest）；已制定「场景配置评估、优化与验证」待办计划，尚未开始执行
+- 进度：仓库转型、四场景配置、安装脚本分工与场景包聚合、Codex 适配改造均已完成并提交，已推送并发布 v2.0.1（Latest）；「场景配置评估、优化与验证」进度见下方各行
 - 停在：2026-10-24 可观测性按起步阶段重写（Uptime Kuma、GlitchTip、Beszel、Dozzle、Telegram 转发，`21a4c0f`）、移除 K8s 改围绕 Docker（`304865c`）、FiberHouse 错误经附加 writer 进入 GlitchTip（`405408c`；FiberHouse 分支 `feature/logger-extra-writers` 已推送，头 `39cba6c`）、sentry / grafana-mcp 插件改为 GlitchTip MCP（`288cda3`）；12 个测试文件全过
 - 2026-10-26：FiberHouse 框架取舍 7 条已由用户在 FiberHouse 仓库实施并发布 `v1.2.0`，backend-dev `fiberhouse.md` 改为引用 v1.2.0，疑问文件第一节清空、前端错误送 GlitchTip 转为待办
 - 2026-10-26（续）：前端错误送 GlitchTip 分析后暂缓；新增请求 id 传递约定；FiberHouse 规则去版本绑定（不再引用 v1.2.0）
@@ -24,7 +24,9 @@ updated: 2026-11-03
 - 2026-10-30（续）：指南已按 E-1～E-11 修订，基线撤回 B-3、补 B-4 直接原因（auto 模式系统提示允许 Bash 改文件）与 skill 清单预算推测，阶段 2 决定登记进计划文件（`d2b129a`）
 - 2026-11-02～03：阶段 2 第一步完成。prd-design skill 清单超预算已证实（39312 > 30000 字符，37 项只有名称）；补测 S1～S3 通过，第三方 skill 可被自然触发，预算不是未调用的主因（基线 P-1、P-2）
 - 2026-11-03：阶段 2 **部分完成**：四场景预算实测、官方来源核对、第一轮决策已确认并实施（`69e10a6`～`4ecf882`，`docs/research/2026-10-best-practices.md`）；大厂、社区与场景对标未做。全局规则来源已修订（`dot_claude/CLAUDE.md`、Codex 模板）
-- 下一步：按方案 B 补做阶段 2；之后阶段 3 重跑全部 16 个任务；B0 放到最后
+- 2026-11-03（续）：方案 B 调研与第二轮决策（第 12～29 条）完成并经用户确认，改动已实施；结论见 `docs/research/2026-10-best-practices.md` 第 4 节
+- 2026-11-03（续）：阶段 2 未做项补做（Reddit 已移除），第三轮决策第 30～39 条经用户确认并实施：MySQL 迁移规则与验证步骤、dev-ops 3 个 agent 去 K8s、`middleware-ops/references/backup-restore.md`（均有实测，见 `docs/research/2026-11-plan-b-reports/`）；未做项见研究文档 5.3
+- 下一步：阶段 3 重跑全部 16 个任务；B0 放到最后
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -39,7 +41,7 @@ updated: 2026-11-03
 | 教学材料沉淀（gRPC、Go、Redis） | 完成，疑问已定稿 | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
 | backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；gRPC 规范 `5098a4e`（来自教学材料，用户企业 RPC 规范若有再补） |
 | 可观测性重写与 FiberHouse 错误追踪 | 完成；框架取舍已决定（FiberHouse `v1.2.0`） | `docs/plans/2026-10-22-learning-distill-questions.md` 第三节「FiberHouse 框架取舍」 |
-| 场景配置评估、优化与验证 | **阶段 1 完成、指南已修订（2026-10-30）**，阶段 2 部分完成（方案 B 补做中，2026-11-03），阶段 3 未开始 | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
+| 场景配置评估、优化与验证 | **阶段 1 完成、指南已修订（2026-10-30）**，阶段 2 完成（2026-11-03，范围按方案 B；未做项见研究文档 4.3），阶段 3 未开始 | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
@@ -63,10 +65,10 @@ updated: 2026-11-03
 
 **阶段 2：外部最佳实践调研**（产出 `docs/research/2026-10-best-practices.md`）
 
-- [ ] （部分：A 官方已核对问题相关内容；B、C 与场景对标未做）按来源分级（A 官方 / B 大厂 / C 社区）调研全局、四个场景、横向主题与 Codex 的问题；每条记录来源、日期、原文核对结论、适用场景、收益与成本；二手转述标「未验证」
-- [ ] （部分：「新增能力」未做）形成「建议 → 阶段 1 问题」映射，无对应问题的列为「新增能力」
-- [ ] （部分：第一轮已确认）输出采纳决策表（采纳 / 暂缓 / 不采纳 + 理由），**提交用户确认**
-- [ ] （部分：第一轮已实施）按确认结果实施，按主题拆分提交，每次提交前跑 `run-all.sh`
+- [x] （2026-11-03，范围按方案 B；Reddit、Hacker News 与个别来源未做，见研究文档 4.3）按来源分级（A 官方 / B 大厂 / C 社区）调研全局、四个场景、横向主题与 Codex 的问题；每条记录来源、日期、原文核对结论、适用场景、收益与成本；二手转述标「未验证」
+- [x] 形成「建议 → 阶段 1 问题」映射，无对应问题的列为「新增能力」
+- [x] （两轮均已确认）输出采纳决策表（采纳 / 暂缓 / 不采纳 + 理由），**提交用户确认**
+- [x] （第二轮改动未提交）按确认结果实施，按主题拆分提交，每次提交前跑 `run-all.sh`
 
 **阶段 3：最终版验证**（产出 `docs/evaluation/2026-10-final.md`）
 
@@ -142,7 +144,7 @@ sh scripts/install-claude-project.sh -g -d
 sh scripts/multi_client_support/codex.sh -d
 ```
 
-最后一次完整验证结果：2026-10-28（`41281a1`），14 个测试文件全部通过（含 `sh -n` 语法检查）。
+最后一次完整验证结果见「变更日志」最新一条。
 
 <!-- section: gotchas -->
 ## 续作时必须知道的事
@@ -205,7 +207,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 用户决定（已写入 `dot_claude_projects/.claude-backend-dev/.claude/rules/database/mysql.md`）：
 
-- 组合索引按 ESR（等值 → 排序 → 范围），取代「按区分度从高到低」；低选择性字段不放最左
+- 组合索引按 ESR（等值 → 排序 → 范围），取代「按区分度从高到低」；低选择性字段不单独建索引，多个等值列优先放高选择性列（2026-11-03 按 B-1 修订：它是等值条件且后接排序或范围列时可放最左）
 - 维持全部 `NOT NULL`，「没有」用约定值（关联 id `0`、未发生时间 `'1970-01-01 00:00:00'`、字符串 `''`）；极少数例外须在 `COMMENT` 与 ADR 写明理由
 - 分表门槛、膨胀系数等经验值标为「默认值，项目可调整」
 - 现行 `datetime`（无毫秒）不改为教材的 `DATETIME(3)`
@@ -288,9 +290,9 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 项目 | 位置 |
 |---|---|
 | 各场景用于试用的真实项目、试用期长度：阶段 3 后由用户试用后决定（建议先 1～2 个场景、按会话次数计） | 计划文件「需要用户决定」 |
-| 教学材料沉淀的已完成项、1 项暂缓（前端 GlitchTip）、11 条待验证与本机 docker 残留清理 | `docs/plans/2026-10-22-learning-distill-questions.md` |
+| 教学材料沉淀的已完成项、1 项暂缓（前端 GlitchTip）、16 条待验证与本机 docker 残留清理（含 2026-11-03 的 `mig-probe-net` 与 `bprobe-*`） | `docs/plans/2026-10-22-learning-distill-questions.md` |
 | 交叉评审：选做，只用于 P-1 模板盲比与阶段 2 决策表复核 | 计划文件「需要用户决定」 |
-| 阶段 2 的采纳决策 | 阶段 2 完成后产出 |
+| 阶段 2 未做项（取不到原文、未读、未实测）与第三轮留下的待验证（疑问清单第 12、16 条） | `docs/research/2026-10-best-practices.md` 5.3、`docs/plans/2026-10-22-learning-distill-questions.md` |
 | myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；会话实测设计 §8 第 3、5～9、11 条与安装后报告；`!` 模式的沙箱与超时 | 设计文件 §8、§11 |
 | `claude plugin eval` 是否适合本仓库场景包 | 计划文件 3.3（待确认后纳入） |
 | **放到最后**（用户 2026-10-30 决定）：单独测 B0「在独立 Go 项目中用 `go get` 引入 FiberHouse 并建第一个模块」，补上基线在框架仓库内测验的局限；任务卡待写、写前先给用户确认 | `docs/evaluation/2026-10-baseline.md` 1.2 |
@@ -333,7 +335,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 下次开工第一步：
 
 1. 本机规则已于 2026-11-03 套用（`~/.claude/CLAUDE.md` 手动合并，备份 `.bak-20261103023211`；`~/.codex/AGENTS.md` 首次写入区块，备份 `.bak.20261103-023237`；已记入测验 `notes.md`）。新会话小测验两个都通过（`/tmp/rule-test`，各 1 次，无旧规则对照；缩范围测验把「仅读摘要」的社区来源标成已做，应标部分）。子代理：旧会话派出的子代理实测仍拿到旧规则；Explore、Plan 不载入 `CLAUDE.md`，派它们要在指令里重申；新会话一般子代理是否载入新规则待按会话记录确认
-2. 方案 B 补做阶段 2，候选清单在 `docs/research/2026-11-plan-b-candidates.md`（21 个，尚未经用户确认，未深入调研）。先把逐项核对表、对标问题与候选交用户确认，要决定：(a) PlanetScale、Trail of Bits、Docker 等是否算大厂；(b) 清单的未做项（Node.js、MongoDB、Redis 未单独搜索；6 个仓库未读）是否补；(c) C10 偏 K8s 且个别 skill 是否依赖被排除工具未查，C4、C5 为 0 星。确认后回原文深入调研（WebFetch 摘要不算已读原文），出第二轮决策表（含「新增能力」与是否写自定义 skill），不用 `docs/recommend_repos/`；核对 B4 与官方文档对 deny 规则的说法是否一致
+2. 方案 B 已完成（2026-11-03），决策与未做项见 `docs/research/2026-10-best-practices.md` 第 4 节
 3. 阶段 3 准备：四个测验项目套用新配置并重打 baseline，另三个项目搬走 `.remember/` 并停用 remember，换新版 `save-run.sh`，重建 `eval-mysql`；先核对 prd-design、backend-dev 不再出现 `Skill listing over budget`，再**重跑全部 16 个任务**，并补测一个前端规划型任务决定 gsd-core 去留
 
 环境注意：专案集 `bin/save-run.sh` 仍是旧版（不检查会话已退出、不清 `.remember/`），阶段 3 前换成指南版本；在此之前存档前须人工确认退出。prd-design 原 `.remember/` 已移到专案集 `remember-prd-design-bak-20261102`。
@@ -409,3 +411,6 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-02～03 | 阶段 2：预算核对与 S1～S3 补测 | prd-design 超预算证实（39312 > 30000 字符）；S1 无模板冲突，S2、S3 自然触发 pm-skills；基线 P-1、P-2 与指南更新，观察在专案集 `notes.md` | 见下一行 |
 | 2026-11-03 | 阶段 2 调研与实施 | 预算实测：backend-dev 也超出（32978），frontend-dev、dev-ops 未超；更正基线把 backend-dev 记成 dev-ops 的错误；D-1、D-2、B-4、F-4、F-1 约定落场景层，frontend-dev 移除 sentry，prd-design、backend-dev 设 `skillListingBudgetFraction: 0.015`；不移除 pm-skills，gsd-core 暂缓；15 个测试文件全过 | 改动效果未验证（阶段 3）；`save-run.sh` 待换新版；调研子代理曾把 `CLAUDE_CODE_MESSAGING_TOKEN` 明文印进其会话记录（值未入库，处理由用户决定）；未推送。当时写「阶段 2 完成」不实，已更正 |
 | 2026-11-03 | 全局规则修订 | 经两轮子代理交叉审核：`dot_claude/CLAUDE.md` 新增「范围与完成」，「资讯来源」补来源与验证边界，「弱网环境」改「网路」；轻量探测移到 `docs/plans/2026-11-03-weak-network-rule-backup.md`；同步 Codex 模板、README、`analyze-github-repo` 第 3 步；`AGENTS.md` 补未验证内容约束；计划与交接勾选更正，方案 B 登记 | 本机已套用；规则行为效果未测；未推送 |
+| 2026-11-03 | 方案 B 与第二轮决策 | 调研见 `docs/research/2026-10-best-practices.md` 第 4 节、`docs/research/2026-11-plan-b-candidates.md`。实施：四个模板 `docker compose down` 列 ask（dev-ops 补 `docker-compose`）；删除类 docker 命令说明、插件冲突以项目为准、事故先取证、部署核对版本、PRD 假设与交接路径；MySQL ESR 规则修订（B-1）；FiberHouse 缓存落点（B-2，源码核对）；deny 范围说明；`test-install-settings` 改用只含插件的来源文件验证无警告 merge；15 个测试文件全过 | 未提交；行为效果待阶段 3；frontend-dev 现在要用 overwrite 才带 `permissions`；全局模板与本机的 `down` 放行未改 |
+| 2026-11-03 | 阶段 2 未做项补做 | Reddit 按用户决定移除；Hacker News、dev-ops 仓库、Go 迁移工具（含 MySQL 实测）完成，报告在 `docs/research/2026-11-plan-b-reports/`；第三轮决策（第 30～39 条）见研究文档第 5 节 | 第三轮待用户确认、未实施；所有改动未提交；`mig-probe-net` 待用户手动删除 |
+| 2026-11-03 | 第三轮决策实施 | 用户确认第 30～39 条照建议。`rules/database/mysql.md` 改第 47 行并加 4 条；`db-schema-design` 加 MySQL 迁移验证步骤、更正 `references/mysql.md` 改类型的 `INSTANT` 说法（两份同步）；dev-ops `incident-response-commander`、`security-engineer`、`devops-automator` 去 K8s，事故范本改 Compose 并先取证（两份同步）；`middleware-ops` 新增 `references/backup-restore.md` 与索引、description 加触发词（两份同步）；计划 3.3 加第 37 条指标；疑问清单第 12 条更新、新增第 16 条。实测：Compose 重建容器会丢日志、`--scale` 限制、`pg_dump` 隔离还原与冷备份卷摘要一致、Beszel 卷含私钥（`2026-11-plan-b-reports/compose-probe/`）；迁移实测脚本入库 `go-migrations-lab/` | 备份失败告警、Kuma 卷还原、离机与加密未实测（疑问清单第 16 条）；`bprobe-*` 与 `mig-probe-net` 清理被拒，待用户手动执行 |
