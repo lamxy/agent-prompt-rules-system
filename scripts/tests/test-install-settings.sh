@@ -128,7 +128,10 @@ test_plugin_only_merge_is_quiet() {
   mkdir -p "$target"
   printf '{}\n' > "$target/settings.json"
 
-  sh "$INSTALLER" -l project -s frontend-dev -m merge -p "$target" > /dev/null 2> "$TMP_DIR/quiet.err"
+  # 场景模板都带有 merge 不处理的字段，这里用只含插件的来源文件
+  printf '{"enabledPlugins":{"demo@market":true}}\n' > "$TMP_DIR/settings.project-quiet.json"
+
+  sh "$INSTALLER" -l project --src "$TMP_DIR/settings.project-quiet.json" -m merge -p "$target" > /dev/null 2> "$TMP_DIR/quiet.err"
   assert_not_contains "$TMP_DIR/quiet.err" "[WARN]"
 
   pass "merging a plugin-only template prints no warning"

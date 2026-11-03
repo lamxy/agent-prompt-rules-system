@@ -66,8 +66,8 @@ usage() {
   # 为项目安装后端场景设定（含数据库破坏性命令的 deny 规则）
   sh ./scripts/install-settings.sh -l project -s backend-dev -m overwrite -p ~/my-project/.claude
 
-  # 已有项目设定时，只追加前端场景的插件
-  sh ./scripts/install-settings.sh -l project -s frontend-dev -m merge -p ~/my-project/.claude
+  # 已有项目设定时，只追加 PRD 场景的插件（merge 不带 permissions、skillListingBudgetFraction 等字段）
+  sh ./scripts/install-settings.sh -l project -s prd-design -m merge -p ~/my-project/.claude
 
   # 安装本地级可选插件（写入 settings.local.json），已存在时询问
   sh ./scripts/install-settings.sh -l local -s dev-ops -m ask -p ~/my-project/.claude
