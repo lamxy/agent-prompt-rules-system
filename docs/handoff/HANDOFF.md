@@ -1,6 +1,6 @@
 ---
 branch: main
-head: b8b4772
+head: 727e43d
 status: active
 updated: 2026-11-03
 ---
@@ -26,6 +26,7 @@ updated: 2026-11-03
 - 2026-11-03：阶段 2 **部分完成**：四场景预算实测、官方来源核对、第一轮决策已确认并实施（`69e10a6`～`4ecf882`，`docs/research/2026-10-best-practices.md`）；大厂、社区与场景对标未做。全局规则来源已修订（`dot_claude/CLAUDE.md`、Codex 模板）
 - 2026-11-03（续）：方案 B 调研与第二轮决策（第 12～29 条）完成并经用户确认，改动已实施；结论见 `docs/research/2026-10-best-practices.md` 第 4 节
 - 2026-11-03（续）：阶段 2 未做项补做（Reddit 已移除），第三轮决策第 30～39 条经用户确认并实施：MySQL 迁移规则与验证步骤、dev-ops 3 个 agent 去 K8s、`middleware-ops/references/backup-restore.md`（均有实测，见 `docs/research/2026-11-plan-b-reports/`）；未做项见研究文档 5.3
+- 2026-11-03（续）：MongoDB 场景案例调研、8.0 副本集实测 T1～T8 与独立交叉审核后写入：新增 `db-schema-design/references/case-mongodb.md`，`mongodb.md` 补属性模式、分桶、分页索引三处，`rules/database/mongodb.md` 分页游标改为 `(排序键, _id)`；结论与不写入项见 `docs/research/2026-11-mongodb-cases.md`
 - 下一步：阶段 3 重跑全部 16 个任务；B0 放到最后
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
@@ -290,7 +291,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 项目 | 位置 |
 |---|---|
 | 各场景用于试用的真实项目、试用期长度：阶段 3 后由用户试用后决定（建议先 1～2 个场景、按会话次数计） | 计划文件「需要用户决定」 |
-| 教学材料沉淀的已完成项、1 项暂缓（前端 GlitchTip）、16 条待验证与本机 docker 残留清理（含 2026-11-03 的 `mig-probe-net` 与 `bprobe-*`） | `docs/plans/2026-10-22-learning-distill-questions.md` |
+| 教学材料沉淀的已完成项、1 项暂缓（前端 GlitchTip）、17 条待验证与本机 docker 残留清理（含 2026-11-03 的 `mcase*`） | `docs/plans/2026-10-22-learning-distill-questions.md` |
 | 交叉评审：选做，只用于 P-1 模板盲比与阶段 2 决策表复核 | 计划文件「需要用户决定」 |
 | 阶段 2 未做项（取不到原文、未读、未实测）与第三轮留下的待验证（疑问清单第 12、16 条） | `docs/research/2026-10-best-practices.md` 5.3、`docs/plans/2026-10-22-learning-distill-questions.md` |
 | myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；会话实测设计 §8 第 3、5～9、11 条与安装后报告；`!` 模式的沙箱与超时 | 设计文件 §8、§11 |
@@ -414,3 +415,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-03 | 方案 B 与第二轮决策 | 调研见 `docs/research/2026-10-best-practices.md` 第 4 节、`docs/research/2026-11-plan-b-candidates.md`。实施：四个模板 `docker compose down` 列 ask（dev-ops 补 `docker-compose`）；删除类 docker 命令说明、插件冲突以项目为准、事故先取证、部署核对版本、PRD 假设与交接路径；MySQL ESR 规则修订（B-1）；FiberHouse 缓存落点（B-2，源码核对）；deny 范围说明；`test-install-settings` 改用只含插件的来源文件验证无警告 merge；15 个测试文件全过 | 未提交；行为效果待阶段 3；frontend-dev 现在要用 overwrite 才带 `permissions`；全局模板与本机的 `down` 放行未改 |
 | 2026-11-03 | 阶段 2 未做项补做 | Reddit 按用户决定移除；Hacker News、dev-ops 仓库、Go 迁移工具（含 MySQL 实测）完成，报告在 `docs/research/2026-11-plan-b-reports/`；第三轮决策（第 30～39 条）见研究文档第 5 节 | 第三轮待用户确认、未实施；所有改动未提交；`mig-probe-net` 待用户手动删除 |
 | 2026-11-03 | 第三轮决策实施 | 用户确认第 30～39 条照建议。`rules/database/mysql.md` 改第 47 行并加 4 条；`db-schema-design` 加 MySQL 迁移验证步骤、更正 `references/mysql.md` 改类型的 `INSTANT` 说法（两份同步）；dev-ops `incident-response-commander`、`security-engineer`、`devops-automator` 去 K8s，事故范本改 Compose 并先取证（两份同步）；`middleware-ops` 新增 `references/backup-restore.md` 与索引、description 加触发词（两份同步）；计划 3.3 加第 37 条指标；疑问清单第 12 条更新、新增第 16 条。实测：Compose 重建容器会丢日志、`--scale` 限制、`pg_dump` 隔离还原与冷备份卷摘要一致、Beszel 卷含私钥（`2026-11-plan-b-reports/compose-probe/`）；迁移实测脚本入库 `go-migrations-lab/` | 备份失败告警、Kuma 卷还原、离机与加密未实测（疑问清单第 16 条）；`bprobe-*` 与 `mig-probe-net` 清理被拒，待用户手动执行 |
+| 2026-11-03 | MongoDB 场景案例 | 子代理调研电商、聊天、替代 MySQL（大厂一手资料只有 Coinbase；X 无可用内容），报告 `docs/research/2026-11-mongodb-cases.md`；MongoDB 8.0.34 副本集实测 T1～T8（脚本 `2026-11-plan-b-reports/mongo-lab/`）；独立子代理交叉审核更正 T2（超卖次数不定）、T5（漏读取决于页大小）并修订草案；用户确认后写入 `case-mongodb.md`、`mongodb.md` 三处、`SKILL.md` 索引（两份同步）与 rules 分页一句；疑问清单新增第 17 条（片键） | 不写入：前缀正则、片键、Discord 反例、SKU 拆分、选型信号；`mcase*` 容器清理被拒，待用户执行 |
