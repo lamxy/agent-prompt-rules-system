@@ -1,6 +1,6 @@
 # 场景配置手动测验指南（阶段 1 基线）
 
-适用：`docs/evaluation/2026-10-baseline.md` 第 2 节的 16 个任务。阶段 3 用优化后的场景包重装后，按同一流程再跑一次。
+适用：`docs/evaluation/2026-10-baseline.md` 第 2 节的 16 个任务。阶段 3 用优化后的场景包在新专案集重装后，按同一流程再跑一次，准备与对照组见第 12 节。
 
 预计耗时：准备 15 分钟；T1 约 15 分钟；每个任务 5～20 分钟，共约 3～4 小时，可以按场景分多天进行。
 
@@ -531,5 +531,107 @@ pm-skills 的插件与市场同样用 `claude plugin uninstall … --scope proje
 ## 11. 重新测验与清理
 
 - 同一任务跑第 2 次：新会话，结束后 `sh ../../bin/save-run.sh <任务ID> 2`。
-- 阶段 3：用优化后的仓库重新执行第 1 节（换一个目录，例如 `scenario-eval-final`，把 1.2 的 `SET` 改成新目录），保留本次结果作对照。第 1 节要完整重跑，包括 codegraph init、关沙箱与停用 remember、新版 `save-run.sh`。
+- 阶段 3：见第 12 节。
 - 不再需要时，先按第 9 节撤销插件与市场，再手动删除整个 `~/workspace/aitools_test/scenario-eval/`。
+
+## 12. 阶段 3：准备与执行
+
+做法（用户 2026-11-03 确认）：16 个任务在新专案集 `scenario-eval-final` 用优化后的配置各跑一次，与阶段 1 的结果比较；B-4 出现过的 B1、D3、F1 另在旧专案集（保留阶段 1 配置）**同期**再跑一次作对照组，因为模型与 Claude Code 版本已变，Bash 写入次数这类量化指标不能只拿过去的结果比。prd-design 阶段 1 没有出现 B-4，不跑对照组。
+
+不变的条件：阶段 3 结束前不安装 myplugins，不改 `~/.claude/settings.json` 与全局插件；指南外的提问照阶段 1 回答（B1「只接 Fiber 核心，Hertz 和 Gin 都不接。需要将 CoreType 改为 Fiber 核心。」；B8「连 127.0.0.1:3306 的 evaldb，是测试库。只清 orders，不用先查行数」；D2「变量冲突按你的判断处理。同意启动」；其余「按你的判断」）。
+
+### 12.1 重建 eval-mysql
+
+阶段 1 的容器在 2026-11-02 被 `docker system prune --volumes` 删除。密码沿用旧专案集的 `mysql-root.env`（`ROOT_PW`）与 `mysql.env`（`MYSQL_*`），不在终端打印。
+
+下面的命令未实测（2026-11-03 会话内试跑被权限拒绝）。末行应报 `ERROR 1142`；`CREATE USER` 报连接错误时，等几秒后只重跑 `docker exec -i … <<SQL` 那一段；把输出贴给 Claude 核对。
+
+```sh
+OLD=~/workspace/aitools_test/scenario-eval
+( . "$OLD/mysql-root.env"; . "$OLD/mysql.env"
+  docker run -d --name eval-mysql -p 127.0.0.1:3306:3306 \
+    -e MYSQL_ROOT_PASSWORD="$ROOT_PW" -e MYSQL_DATABASE=evaldb mysql:8.0
+  # 初始化会先起一个只监听 socket 的临时服务再重启，等正式服务（port: 3306）就绪
+  until docker logs eval-mysql 2>&1 | grep -q 'ready for connections.*port: 3306'; do sleep 2; done
+  docker exec -i -e MYSQL_PWD="$ROOT_PW" eval-mysql mysql -uroot <<SQL
+CREATE USER 'eval_ro'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
+GRANT SELECT ON evaldb.* TO 'eval_ro'@'%';
+SQL
+  # 应报 ERROR 1142（写入被拒），证明是只读账号
+  docker exec -e MYSQL_PWD="$MYSQL_PASSWORD" eval-mysql mysql -ueval_ro evaldb -e 'create table t(i int)' )
+```
+
+### 12.2 建立新专案集
+
+在 12.1 的同一个终端（沿用 `OLD`），照第 1 节执行，只改两处：
+
+1. 1.2 开头改成 `SET=~/workspace/aitools_test/scenario-eval-final`，其余变量照写。
+2. 1.3 的 `git clone -q https://github.com/lamxy/fiberhouse.git …` 换成从旧专案集复制，保持与阶段 1 同一个 FiberHouse 提交：
+
+   ```sh
+   git clone -q "$OLD/repos/fiberhouse" "$SET/repos/fiberhouse"
+   git -C "$SET/repos/fiberhouse" log --oneline -1   # 应为 9aa0b1b
+   ```
+
+接着：
+
+```sh
+cp "$OLD/mysql.env" "$OLD/mysql-root.env" "$SET/" && chmod 600 "$SET"/mysql*.env
+```
+
+然后做第 2 节（`/status`、`/plugin`、`/mcp`、`/sandbox`、remember 未注入）与第 3 节 T1，结果写进 `$SET/notes.md`。
+
+### 12.3 核对 skill 清单预算
+
+prd-design、backend-dev 阶段 2 设了 `skillListingBudgetFraction: 0.015`，要先证实不再超出。分别在两个项目：
+
+```sh
+cd "$P/prd-design" && claude --debug
+```
+
+发一条真实消息（例如「你好」；只执行 `/context` 不会出现警告），退出后：
+
+```sh
+grep -c 'Skill listing over budget' "$(ls -t ~/.claude/debug/*.txt | head -1)"   # 应为 0
+```
+
+不为 0 时停下，把输出贴给 Claude，先处理再跑任务。
+
+### 12.4 补齐旧专案集（对照组）
+
+对照组只改流程、不改配置：换新版 `save-run.sh`，三个项目停用 remember 并移走 `.remember/`（prd-design 已做过）。
+
+```sh
+cp "$SET/bin/save-run.sh" "$OLD/bin/save-run.sh"
+for p in frontend-dev backend-dev dev-ops; do
+  f="$OLD/projects/$p/.claude/settings.local.json"
+  python3 - "$f" <<'PY'
+import json, sys
+f = sys.argv[1]
+d = json.load(open(f))
+d.setdefault("enabledPlugins", {})["remember@claude-plugins-official"] = False
+json.dump(d, open(f, "w"), ensure_ascii=False, indent=2)
+PY
+  [ -d "$OLD/projects/$p/.remember" ] && mv "$OLD/projects/$p/.remember" "$OLD/remember-$p-bak-20261103"
+done
+```
+
+### 12.5 执行
+
+| 顺序 | 目录 | 任务 | 存档 |
+|---|---|---|---|
+| 1 | 新专案集 | 16 个任务，按第 4～8 节 | `sh ../../bin/save-run.sh <任务ID> 1`（新专案集里没有旧 tag，次数从 1 开始） |
+| 2 | 旧专案集 | B1、D3、F1 对照组，与第 1 行同一天、同一 Claude Code 版本 | `sh ../../bin/save-run.sh <任务ID>-ctl 1`，tag 为 `B1-ctl-r1` 等 |
+
+每个任务跑完照第 4 节把最终回复贴回本仓库会话说「保存」。阶段 3 额外记录（由 Claude 从会话记录统计）：Bash 写入文件次数（B-4）、工具调用失败次数、LSP 使用次数、触发的 skill，以及项目规则与 `redis-development`、`mongodb` 插件有无冲突。
+
+还未定的：补测一个前端规划型任务（决定 gsd-core 去留），任务卡写好后先给用户确认；B0 放到最后。
+
+### 12.6 收尾
+
+```sh
+sh "$SET/bin/env-snapshot.sh" > "$SET/env-after.txt"
+diff "$SET/env-before.txt" "$SET/env-after.txt"
+```
+
+差异只应出现在 1.1 列出的范围。结果写进 `docs/evaluation/2026-10-final.md`。
