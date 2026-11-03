@@ -28,7 +28,7 @@ description: 在 Go 后端项目中按分层结构新增一个业务模块（api
 | 2 | `module/<模块>/entity/` | 持久化结构与状态等类型 |
 | 3 | `module/<模块>/model/` | 集合或表的访问代码与索引定义 |
 | 4 | `module/<模块>/repository/` | 存取接口与实现；把驱动错误转换为领域错误 |
-| 5 | `module/<模块>/cache/`（需要 Redis 时） | 本模块全部 key 与 Redis 命令，对外提供有类型的方法；对象整体缓存用通用组件的旁路读取。先读 `/cache-design` 的 `references/layered-examples.md` |
+| 5 | `module/<模块>/cache/`（需要 Redis 时） | 本模块直接 Redis 命令用到的 key 与操作，对外提供有类型的方法；对象整体缓存用通用组件的旁路读取。先读 `/cache-design` 的 `references/layered-examples.md` |
 | 6 | `module/<模块>/dto/` | service 的入参与返回结构（需要隔离存储类型时） |
 | 7 | `module/<模块>/service/` | 业务用例，依赖 repository 接口与本模块 `cache/`；只接收 `context.Context`，不 import `go-redis` |
 | 8 | `module/<模块>/api/` | handler、路由注册、依赖装配；VO 与 DTO 的转换在这里完成 |

@@ -4,7 +4,7 @@
 维护说明（注入上下文前会被移除）：
 - 只写与 Claude Code 默认行为不同的约定；工具由 settings/settings.project-dev-ops.json 启用
   （terraform、semgrep、sonatype-guide）；GlitchTip MCP 见 dot_mcp_jsons。
-- terraform apply、docker compose up/down、docker volume rm 等变更命令已由 permissions.ask 要求确认，不在此重复。
+- terraform apply、docker compose up/down、docker volume rm 等变更命令已由 permissions.ask 要求确认；CLAUDE.md 只补充确认前要说明的内容。
 - 当前阶段部署围绕 Docker / Docker Compose，不涉及 Kubernetes。
 -->
 
@@ -19,6 +19,7 @@
 ## 环境
 
 - 默认只操作开发或预发环境。执行 docker 命令前先显示当前 `docker context` 与 Compose 项目名；目标是生产主机时，必须由用户明确指定。
+- 删除类 docker 命令（`docker compose down -v`、`docker compose rm -v`、`docker volume rm`、`docker volume prune`、`docker system prune` 等）先说明会失去哪些数据并取得确认，`prune` 影响本机所有项目；只需重启时用 `docker compose restart` 或不带 `-v` 的 `down`。
 - 密钥通过 `.env`（不入库）、Docker secrets 或 CI 的 secret 引用注入，不写入仓库、compose 文件或日志。
 
 ## 资源规划
@@ -29,6 +30,11 @@
 
 - 修改流水线配置时，说明影响哪些分支、环境和部署步骤。
 - 每次上线说明回滚方式（上一个镜像 tag 或 Terraform 状态）；镜像用固定 tag，不用 `latest` 上线。
+- 部署后用实际请求核对运行中的版本（如响应里的 build id），不只看部署命令的退出码。
+
+## 事故排查
+
+先取证并说明假设，不先重启、重建或清理（这些操作会毁掉现场）；修复方案确认后再执行。
 
 ## 可观测性
 

@@ -25,7 +25,9 @@
             "Bash(docker system prune*)",
             "Bash(docker image prune*)",
             "Bash(docker network rm *)",
-            "Bash(docker context use *)"
+            "Bash(docker context use *)",
+            "Bash(docker-compose down*)",
+            "Bash(docker-compose * down*)"
         ]
     },
     "extraKnownMarketplaces": {

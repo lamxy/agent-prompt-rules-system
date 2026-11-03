@@ -16,5 +16,13 @@
                 "repo": "anthropics/claude-plugins-official"
             }
         }
+    },
+    "permissions": {
+        "ask": [
+            "Bash(docker compose down*)",
+            "Bash(docker compose * down*)",
+            "Bash(docker-compose down*)",
+            "Bash(docker-compose * down*)"
+        ]
     }
 }

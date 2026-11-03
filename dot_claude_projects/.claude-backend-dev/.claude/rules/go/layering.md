@@ -21,7 +21,7 @@ paths:
 | `service/` | 业务规则、事务边界、编排缓存读写（先更新数据库，再删缓存）、派发任务；入参与返回值用 `dto` / `entity` / 基本类型 | import `apivo`、框架包（fiber、gin、hertz）、`go-redis`，或接收 `*fiber.Ctx`、`*gin.Context`；只接收 `context.Context` |
 | `repository/` | 组合 model 完成存取；把存储错误（如 `mongo.ErrNoDocuments`、`gorm.ErrRecordNotFound`）转换为领域错误（如 `ErrNotFound`） | 引用 service、api；向上暴露驱动专属的错误 |
 | `model/` | 面向单一存储的访问代码（集合、表、索引） | 业务判断 |
-| `cache/` | 本模块全部的 Redis 访问：key 拼装、hash / set / zset 等命令，对外提供有类型的方法 | 业务判断；被 service 以外的层调用 |
+| `cache/` | 本模块直接的 Redis 命令：key 拼装、hash / set / zset 等操作（框架组件的旁路缓存由 service 编排），对外提供有类型的方法 | 业务判断；被 service 以外的层调用 |
 
 ## Redis 访问边界
 

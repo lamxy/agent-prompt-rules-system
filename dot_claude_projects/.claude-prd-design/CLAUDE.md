@@ -16,10 +16,11 @@
 
 - PRD 写到 `docs/prd/<功能名>.md`；需要交付 Word / PPT 时，再用 document-skills 从 Markdown 生成 docx / pptx。
 - 线框图与基础原型做成单文件 HTML，放在 `docs/prototypes/`，可用 playground 生成；原型只用于演示交互，不写生产代码。
+- 前端交接文档写到 `docs/prd/<功能名>-handoff.md`。
 
 ## 写 PRD 之前
 
-需求模糊或只有一句话时，先追问（如 `/grill-me` 或 pm-skills 的 discovery 流程），确认目标用户、核心场景和成功指标后再动笔。
+需求模糊或只有一句话时，先追问（如 `/grill-me` 或 pm-skills 的 discovery 流程），确认目标用户、核心场景和成功指标后再动笔。做原型前写明它要验证的假设。
 
 ## PRD 必含内容
 

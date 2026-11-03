@@ -29,7 +29,7 @@ Go；HTTP 框架为 FiberHouse（可切换 Fiber、Gin、Hertz 内核）或原�
 | `module/<名称>-module/service/` | 业务用例，与传输层和框架无关 |
 | `module/<名称>-module/repository/` | 数据存取，对 service 隐藏存储细节 |
 | `module/<名称>-module/model/` | 对具体存储（MongoDB 集合、GORM 表）的访问模型 |
-| `module/<名称>-module/cache/` | 本模块的 Redis 访问（key 与 hash / set / zset 操作）；`go-redis` 只在这里与通用缓存组件中 import |
+| `module/<名称>-module/cache/` | 本模块直接的 Redis 命令（key 与 hash / set / zset 操作）；`go-redis` 只在这里与通用缓存组件中 import；框架组件的旁路读取由 service 编排，不经此目录 |
 | `module/<名称>-module/entity/` | 持久化的数据结构与类型 |
 | `module/<名称>-module/dto/` | 层间传递的数据，隔离存储类型（如 BSON）与对外 JSON 契约 |
 | `module/<名称>-module/task/`、`transport/` | 异步任务；领域错误到传输层错误的映射 |
@@ -55,6 +55,8 @@ Go；HTTP 框架为 FiberHouse（可切换 Fiber、Gin、Hertz 内核）或原�
 - 设计新表或集合用 `/db-schema-design`，缓存用 `/cache-design`，消息用 `/mq-design`，gRPC 接口用 `/rpc-design`，系统架构图用 `/system-design-doc`。
 - schema 变更只通过 migration 文件并附回滚步骤，不直接在库上执行 DDL。
 - 数据库 MCP 只连开发或测试库，使用只读账号。
+- 删除类 docker 命令（`docker compose down -v`、`docker compose rm -v`、`docker volume rm`、`docker volume prune`、`docker system prune` 等）先说明会失去哪些数据并取得确认，`prune` 影响本机所有项目；只需重启时用 `docker compose restart` 或不带 `-v` 的 `down`。
+- 本项目的 rules、skill 与 `redis-development`、`mongodb` 插件的通用示例冲突时，以本项目为准。
 
 ## 验证
 

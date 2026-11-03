@@ -27,6 +27,12 @@
             "Bash(redis-cli *FLUSHALL*)",
             "Bash(redis-cli *flushdb*)",
             "Bash(redis-cli *FLUSHDB*)"
+        ],
+        "ask": [
+            "Bash(docker compose down*)",
+            "Bash(docker compose * down*)",
+            "Bash(docker-compose down*)",
+            "Bash(docker-compose * down*)"
         ]
     },
     "hooks": {

@@ -5,6 +5,7 @@ paths:
   - "**/module/*_impl.go"
   - "**/providers/**/*.go"
   - "**/module/*/api/**/*.go"
+  - "**/module/*/service/**/*.go"
 ---
 
 # FiberHouse 框架
@@ -18,6 +19,8 @@ paths:
 - 切换或新增内核时，只改传输边缘（请求绑定、响应写出、错误翻译），service 及以下保持不变。接入其他内核（如 Hertz）参照 FiberHouse 的 `example_application/hertzcore/`。
 - 响应统一使用框架的 `{code,msg,data}` 结构，不在 handler 中自定义响应外壳。
 - 跨组件共享的实例（数据库、缓存、codec 等）通过 `GlobalManager` / `Locator` 获取，不另建包级全局变量。
+- 对象整体的旁路缓存在 service 层用 `component/cache` 编排：长期复用 `Coordinator`，每次请求新建 `CacheOption`，读用 `GetOrLoad`，写成功后用 `Cache.Delete` 失效；这条路径不 import go-redis，不需要模块 `cache/`。
+- `Cache` 只提供字符串键值操作。hash / set / zset 等直接命令放模块 `cache/`（本规则的分层约定，框架不要求此目录），客户端从 Redis 实例经 `cache.IRedisClient.GetRedisClient()` 取得，不另建；二级缓存实例未实现该接口。service 不直接调用 `GetRedisClient()`（不 import go-redis 也能调用，depguard 查不到）。
 - 需要关闭的资源实现 `ClosableProvider`，由框架按注册的逆序关闭；不在业务代码中自行管理关闭顺序。
 - 装配期的错误使用返回 error 的入口（如 `RunServerWithError`），不依赖 panic。
 
