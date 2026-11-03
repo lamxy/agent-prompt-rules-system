@@ -38,7 +38,7 @@ paths:
 - 批量写入用 `InsertMany` / `BulkWrite`，不逐条循环写入；互不依赖的批量操作设 `SetOrdered(false)`，单条失败不中断其余。
 - 更新用 `$set`、`$inc` 等更新操作符，不用整文档替换，除非确实要替换（`ReplaceOne`）。
 - 聚合管道的第一个阶段是 `$match`；用 projection 只取需要的字段。
-- 分页用范围条件（`_id` 或排序键大于上一页最后一条），不用大偏移的 `Skip`；不为算总页数对大集合 `CountDocuments`，需要总数时：整个集合用 `EstimatedDocumentCount`（不支持过滤条件），带条件用 `CountDocuments` 并 `SetLimit` 设上限。
+- 分页用范围条件（`_id`，或 `(排序键, _id)` 大于上一页最后一条），不用大偏移的 `Skip`；不为算总页数对大集合 `CountDocuments`，需要总数时：整个集合用 `EstimatedDocumentCount`（不支持过滤条件），带条件用 `CountDocuments` 并 `SetLimit` 设上限。
 - 游标用完 `defer cursor.Close(ctx)`。
 - 不在代码中把写关注降到 `w: 1` 或 `w: 0`；含仲裁节点的部署（PSA）默认写关注是 `w: 1`，连接串要显式设置 `w=majority`；`w: "majority"` 超时返回错误时，写入可能已经生效，按「结果未知」处理（幂等重试或查询确认），不直接当失败。
 - 刚写入的数据要立即读回时读 primary；读 secondary 只用于可接受延迟的场景（报表、统计）。在因果一致性会话中读 secondary，节点落后时读会等待，必须带超时。

@@ -39,7 +39,7 @@ description: 为 Go 后端设计或评审数据库结构：MySQL / PostgreSQL �
 参考资料：
 
 - MySQL：`references/mysql.md`（规则理由、ESR 原理与实测、软删除、反正规化、容量与演进）；`references/sql-pitfalls.md`（会静默出错或拖慢的 SQL 写法）；`references/case-ecommerce.md`（电商订单库的取舍与销售排行索引实测）；`references/case-ai-platform.md`（放弃代理键后的连锁代价，以及 PostgreSQL 设计搬到 MySQL 时的问题）；`references/anti-patterns.md`（评审中反复出现的错误）。
-- MongoDB：`references/mongodb.md`（建模三步、内嵌与引用、设计模式、索引与分页实测、读写关注与事务实测、过时说法）。节点 2 改为按读写工况决定内嵌、引用或冗余；节点 4 列出每个查询的过滤、排序骨架并用 `explain` 核对。
+- MongoDB：`references/mongodb.md`（建模三步、内嵌与引用、设计模式、索引与分页实测、读写关注与事务实测、过时说法）；`references/case-mongodb.md`（电商库存与聊天未读数的取舍与实测）。节点 2 改为按读写工况决定内嵌、引用或冗余；节点 4 列出每个查询的过滤、排序骨架并用 `explain` 核对。
 - 需要缓存时接着使用 `cache-design`；需要异步消息时使用 `mq-design`。
 
 ## 4. 产出
