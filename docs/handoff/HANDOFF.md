@@ -291,7 +291,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 项目 | 位置 |
 |---|---|
 | 各场景用于试用的真实项目、试用期长度：阶段 3 后由用户试用后决定（建议先 1～2 个场景、按会话次数计） | 计划文件「需要用户决定」 |
-| 教学材料沉淀的已完成项、1 项暂缓（前端 GlitchTip）、17 条待验证与本机 docker 残留清理（含 2026-11-03 的 `mcase*`） | `docs/plans/2026-10-22-learning-distill-questions.md` |
+| 教学材料沉淀的已完成项、1 项暂缓（前端 GlitchTip）、17 条待验证与本机 docker 残留清理 | `docs/plans/2026-10-22-learning-distill-questions.md` |
 | 交叉评审：选做，只用于 P-1 模板盲比与阶段 2 决策表复核 | 计划文件「需要用户决定」 |
 | 阶段 2 未做项（取不到原文、未读、未实测）与第三轮留下的待验证（疑问清单第 12、16 条） | `docs/research/2026-10-best-practices.md` 5.3、`docs/plans/2026-10-22-learning-distill-questions.md` |
 | myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；会话实测设计 §8 第 3、5～9、11 条与安装后报告；`!` 模式的沙箱与超时 | 设计文件 §8、§11 |
