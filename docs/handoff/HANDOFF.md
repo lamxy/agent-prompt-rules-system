@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 398d2b5
+head: 21e78c6
 status: active
 updated: 2026-11-04
 ---
@@ -29,7 +29,8 @@ updated: 2026-11-04
 - 2026-11-03（续）：MongoDB 场景案例调研、8.0 副本集实测 T1～T8 与独立交叉审核后写入：新增 `db-schema-design/references/case-mongodb.md`，`mongodb.md` 补属性模式、分桶、分页索引三处，`rules/database/mongodb.md` 分页游标改为 `(排序键, _id)`；结论与不写入项见 `docs/research/2026-11-mongodb-cases.md`
 - 2026-11-03（续）：全局插件分析与独立交叉审核后，新增全局技能 `myplugins`（`dot_claude/skills/myplugins/`，按序号把可选插件启用到当前项目，分本地／共享两层，清单可增删，SessionStart 提示）；测试通过、临时项目实测通过，已提交 `47928a3`（未推送）；本机安装用户决定**延到阶段 3 结束后**（避免改变阶段 1 的全局插件条件）
 - 2026-11-03～04：**阶段 3 行为验证完成**。16 个任务全部通过（6 个附注），B1、D3、F1 同期对照完成；结论 `docs/evaluation/2026-10-final.md`（`44c190a`、`398d2b5`），指南与计划更新 `68e14a8`；均未推送。新问题 B-7～E-13，gsd-core 建议移出 frontend-dev 默认清单
-- 下一步：修 `db-schema-design` 验证步骤（B-7、B-8）→ 重跑 B2 r2 → 用户安装 myplugins → 其余待确认项（见「建议的下一步」）
+- 2026-11-04（续）：B-7、B-8 已修（`f67e416`），B2 r2 通过；B2 r2 发现并复验 B-10（行构造游标用不上索引，`9cb4a30`）；结论回填 `a1a548b`。myplugins 已在本机安装并按用户试用调整（默认写共享设定、`-t` 预演、21 个插件清单、`sync`、`~` 路径的沙箱排除规则，`5b5425d`～`ac254c2`）；myconfig 补 `AGENT_RULES_REPO` 提示（`21e78c6`）。均未推送
+- 下一步：B-9 分层规则调研与讨论 → D-4 → gsd-core 去留 → 全局 deny 改 ask 与否 → 推送 → 3.2／3.4／B0 排期（见「建议的下一步」）
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -44,11 +45,11 @@ updated: 2026-11-04
 | 教学材料沉淀（gRPC、Go、Redis） | 完成，疑问已定稿 | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
 | backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；gRPC 规范 `5098a4e`（来自教学材料，用户企业 RPC 规范若有再补） |
 | 可观测性重写与 FiberHouse 错误追踪 | 完成；框架取舍已决定（FiberHouse `v1.2.0`） | `docs/plans/2026-10-22-learning-distill-questions.md` 第三节「FiberHouse 框架取舍」 |
-| 场景配置评估、优化与验证 | **阶段 1 完成、指南已修订（2026-10-30）**，阶段 2 完成（2026-11-03，范围按方案 B；未做项见研究文档 4.3），**阶段 3 行为验证完成（2026-11-04）**；B2 r2、静态验证、真实项目试用、B0 未做 | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
+| 场景配置评估、优化与验证 | **阶段 1 完成、指南已修订（2026-10-30）**，阶段 2 完成（2026-11-03，范围按方案 B；未做项见研究文档 4.3），**阶段 3 行为验证完成（2026-11-04）**，B2 r2 通过（2026-11-04）；静态验证、真实项目试用、B0 未做 | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
-| 可选插件技能 `myplugins` | 已实现并提交（`47928a3`，未推送）；本机安装在 B2 r2 之后（用户 2026-11-04 决定） | 见「续作时必须知道的事」→「myplugins」；安装步骤在 `dot_claude/README.md`「myplugins 安装」 |
+| 可选插件技能 `myplugins` | 已实现、本机已安装并按用户试用调整（2026-11-04，`5b5425d`～`ac254c2`，未推送） | 见「续作时必须知道的事」→「myplugins」；安装步骤在 `dot_claude/README.md`「myplugins 安装」 |
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
 | 配置安装技能 `myconfig`（列出／安装本仓库配置） | 已实现并发布 v2.4.0（2026-10-29）；用户已在本机安装，`/myconfig` 列表模式正常 | `dot_claude/skills/myconfig/`；设计 `docs/plans/2026-10-28-config-install-skill-design.md` §11。`claude -p` 实测：沙箱禁止会话内写 `.claude/settings.json`、`skills/`、`hooks/`，改为技能只预演、写入交付命令由用户执行；跨项目使用需把仓库路径与 `~/.claude/skills/myconfig` 加进 `sandbox.filesystem.allowRead`；两轮子代理交叉审查意见已全部处理 |
 
@@ -290,14 +291,16 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 - **Claude 在本仓库会话的权限**：用容器 root 改库（`DROP DATABASE`）、`rm -rf` 测验目录都会被拒，交给用户用 `!` 执行；只读查询可以。
 - **测验环境现状**：`eval-mysql` 在跑（只读账号 `eval_ro`，变量在专案集 `mysql.env`）；GlitchTip（`~/workspace/local-infra/glitchtip`）在跑；`fiberhouse-example-dev` 已 stop；local-infra 的 `fiberhouse-dev` 容器已由用户重建（2026-11-04，四个容器 healthy、挂回原三个卷）；其 Redis 已只读检查：只有 asynq 的服务器登记（一条过期登记推断来自 D2 测验 app），无队列、任务与缓存数据，不需清理；旧专案集 `dev-ops/deploy/` 的阶段 1 残留移到了 `scenario-eval/leftover-dev-ops-deploy-bak-20261104/`。
 
-### myplugins（2026-11-03）
+### myplugins（2026-11-03 实现，2026-11-04 安装与调整）
 
-已提交（`47928a3`，未推送）：`dot_claude/skills/myplugins/`（`SKILL.md`、`catalog.default.json` 11 个可选插件、`scripts/myplugins`）、`scripts/tests/test-myplugins.sh`（24 项检查，全部 16 个测试文件通过）、`dot_claude/README.md`（目录表一行 +「myplugins 安装」一节）。
+源码 `dot_claude/skills/myplugins/`（`SKILL.md`、`catalog.default.json`、`scripts/myplugins`），测试 `scripts/tests/test-myplugins.sh`；本机副本 `~/.claude/skills/myplugins/`，清单 `~/.claude/myplugins/catalog.json`（旧版备份 `catalog.json.bak-20261104`）。本机 `~/.claude/settings.json` 已关 8 个插件、加 hint hook 与排除规则（备份 `.bak-20261104131115`、`.bak-20261104200612`），与镜像 `dot_claude/settings.json` 完全一致。
 
-- **沙箱拦写设定**：现象是会话内 `/myplugins 3` 报 `Operation not permitted`；原因是沙箱禁止 Bash 写 `.claude/settings*.json`（本机 `allowUnsandboxedCommands: false`）；正确做法是在 `~/.claude/settings.json` 的 `sandbox.excludedCommands` 加 `python3 /Users/zz/.claude/skills/myplugins/scripts/myplugins *`，命令须原样单独执行（不加引号、不串接、不重导向）才匹配。临时项目用 `--settings` 实测可写入，新会话载入了 `playground`。
-- **为什么延后安装**：阶段 3 要与阶段 1 比较，基线条件是「全局插件 18 个、`~/.claude/settings.json` 无变化」。全局关掉 8 个插件会缩短所有场景的 skill 清单，prd-design、backend-dev「超预算是否消失」就分不清是阶段 2 的 `skillListingBudgetFraction` 还是全局变化所致；P4 当时用的是**全局** chrome-devtools（prd-design 场景未启用）。frontend-dev 自己在项目层启用 `frontend-design`、`chrome-devtools-mcp`，不受影响。
-- **安装方法**：`dot_claude/README.md`「myplugins 安装」三项（复制 skill、`excludedCommands`、SessionStart hook `python3 "$HOME/.claude/skills/myplugins/scripts/myplugins" hint`），再把 8 个插件全局设 `false`：`frontend-design`、`chrome-devtools-mcp`、`claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify`、`ralph-loop`、`session-report`。本会话写的合并脚本在 scratchpad（会话结束可能被清除），不依赖它。装好后在本仓库维护时 `skill-creator`、`claude-md-management` 要先 `/myplugins` 启用。
-- **未验证**：会话内 `/reload-plugins` 是否立即生效（只测了重开会话）；互动终端中提示的显示效果，以及 `systemMessage` 是否进入模型上下文；共享模式多人实机（只有脚本测试）。
+- **沙箱排除规则照字面比对**：现象是 `/myplugins` 写设定报 `Operation not permitted`；原因是沙箱禁止 Bash 写 `.claude/settings*.json`，而 `excludedCommands` 按命令文字比对（2026-11-04 `claude -p` 实测：规则与命令都写 `~` 或都写 `$HOME` 才匹配，一边 `~` 一边绝对路径不行；`allowRead` 不展开 `$VAR`，`~` 可用）；正确做法是 SKILL.md、`settings/settings.user.json`、镜像三处都写 `python3 ~/.claude/skills/myplugins/scripts/myplugins`（测试检查三处一致），命令不展开路径、不加引号、不串接。
+- **行为约定（用户 2026-11-04 定）**：`enable`／`off` 默认写 `.claude/settings.json`（会进版控），`--local` 或 `-c` 写 `settings.local.json`；`--dry-run`／`-t`／`--test` 只预演，skill 先给用户确认再写；启动提示第一行黄色粗体（ANSI 在 `systemMessage` 有效，hook 不能写 `/dev/tty`），用「当前目录」不说「项目」；列表用 ✅／⬜／⚠️，skill 转成表格。
+- **清单**：默认 21 个，顺序通用 → PRD → 前端 → 后端 → 运维（用户指定），跨场景插件归最早出现的场景；需个人账号的本地级插件不收。默认清单更新后本机清单不会自动变，用 `/myplugins sync`（保留用户 add 的、不加回 remove 过的，记在 `removed`）。全局模板把 21 个全部设 `false`（merge 只合并列出的键），并声明 `anthropic-agent-skills` 市场。
+- **`/plugin` 的 User 分组是安装范围**：插件安装记录 `scope: user` 就列在 User 下，与在哪一层启用无关；是否启用以 `/myplugins` 列出的来源层为准（推断，未找到官方原文）。
+- **维护本仓库时**：`skill-creator`、`claude-md-management` 已不是全局插件，要用先 `/myplugins`。
+- **未验证**：会话内 `/reload-plugins` 是否立即生效；skill 是否照 SKILL.md 把列表转成表格、`-t` 时先询问（只测了脚本与一次 `claude -p` 端到端写入）；共享模式多人实机。
 
 ### 其他已知问题
 
@@ -318,9 +321,10 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 阶段 2 未做项（取不到原文、未读、未实测）与第三轮留下的待验证（疑问清单第 12、16 条） | `docs/research/2026-10-best-practices.md` 5.3、`docs/plans/2026-10-22-learning-distill-questions.md` |
 | myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；会话实测设计 §8 第 3、5～9、11 条与安装后报告；`!` 模式的沙箱与超时 | 设计文件 §8、§11 |
 | `claude plugin eval` 是否适合本仓库场景包 | 计划文件 3.3（待确认后纳入） |
-| 阶段 3 发现待确认：B-7/B-8 `db-schema-design` 验证步骤、D-4 `middleware-ops` 同名项目检查、gsd-core 移出 frontend-dev 默认清单、全局 deny `Bash(*mysqldump*)` 是否改 ask、**分层规则是否必须严格（B-9，用户要求先调研大厂与社区实践，处理这批修改时主动提醒）** | `docs/evaluation/2026-10-final.md` 第 4、6 节；计划文件 3.3 与「需要用户决定」 |
+| 阶段 3 发现待确认（B-7、B-8、B-10 已修）：D-4 `middleware-ops` 同名项目检查、gsd-core 移出 frontend-dev 默认清单、全局 deny `Bash(*mysqldump*)` 是否改 ask、**分层规则是否必须严格（B-9，用户要求先调研大厂与社区实践，处理这批修改时主动提醒）** | `docs/evaluation/2026-10-final.md` 第 4、6 节；计划文件 3.3 与「需要用户决定」 |
 | OpenSpec 安装脚本 `pnpm bin -g` 在 Corepack 下等待隐藏的下载确认（阶段 3 准备时卡 11 分钟）；修法 `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` 或 `</dev/null` 待用户决定 | `open_supports/ost_Fission-AI_OpenSpec/scripts_for_install/install.sh` 第 236 行；专案集 `notes.md` 过程问题表 |
-| myplugins：B2 r2 之后本机安装（用户 2026-11-04 决定），之后同步 `dot_claude/settings.json` 镜像与 `settings/README.md`（全局插件表、「本机刻意保留差异」的 frontend 一行会过时）；补测会话内 `/reload-plugins` 与提示显示 | 本文件「myplugins」 |
+| myplugins 未验证项：会话内 `/reload-plugins`、skill 表格呈现与 `-t` 询问流程 | 本文件「myplugins」 |
+| 推送：本机 `main` 领先 `origin/main` 多个提交（阶段 3 起），推送与是否发布 release 待用户指示 | `git log origin/main..main` |
 | **放到最后**（用户 2026-10-30 决定）：单独测 B0「在独立 Go 项目中用 `go get` 引入 FiberHouse 并建第一个模块」，补上基线在框架仓库内测验的局限；任务卡待写、写前先给用户确认 | `docs/evaluation/2026-10-baseline.md` 1.2 |
 
 <!-- section: next -->
@@ -363,12 +367,15 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 1. 本机规则已于 2026-11-03 套用（`~/.claude/CLAUDE.md` 手动合并，备份 `.bak-20261103023211`；`~/.codex/AGENTS.md` 首次写入区块，备份 `.bak.20261103-023237`；已记入测验 `notes.md`）。新会话小测验两个都通过（`/tmp/rule-test`，各 1 次，无旧规则对照；缩范围测验把「仅读摘要」的社区来源标成已做，应标部分）。子代理：旧会话派出的子代理实测仍拿到旧规则；Explore、Plan 不载入 `CLAUDE.md`，派它们要在指令里重申；新会话一般子代理是否载入新规则待按会话记录确认
 2. 方案 B 已完成（2026-11-03），决策与未做项见 `docs/research/2026-10-best-practices.md` 第 4 节
 3. ~~阶段 3 行为验证~~：已完成（2026-11-04），结论 `docs/evaluation/2026-10-final.md`
-4. **修 B-7、B-8**：改 `db-schema-design` 第 4 节验证步骤（`skills/skills-backend-dev/` 与 `dot_claude_projects/.claude-backend-dev/` 两份同步，`test-scenario-skills.sh` 校验）：验证用 `docker run --rm mysql:8.0` 一次性容器、不用共享库；schema 比对改用 `SHOW CREATE TABLE` 或 `information_schema`。先给用户看改法，改后跑 `sh scripts/tests/run-all.sh`
-5. **重跑 B2 r2**：新专案集 backend-dev 要先重装场景包或同步改后的 skill 并重打 baseline（做法写前先给用户确认）；`sh ../../bin/save-run.sh B2 2`；确认验证跑完且无残留
-6. **安装 myplugins**（B2 r2 之后）：按本文件「myplugins」整理命令给用户执行，装后核对并同步镜像与 `settings/README.md`
-7. 其余待确认项（「待处理事项」第一行），分层规则讨论要主动提醒；B0 在 myplugins 之后
+4. ~~修 B-7、B-8~~、~~重跑 B2 r2~~、~~安装 myplugins~~：2026-11-04 完成（另修 B-10）
+5. **B-9 分层规则是否必须严格**：用户要求先调研大厂与社区实践再讨论（FiberHouse 示例 service import apivo，违反 `rules/go/layering.md`）。先列调研来源与问题给用户确认，再调研，产出建议交用户决定
+6. **D-4**：`middleware-ops` 加「启动前按 compose 项目名查已有卷与容器」（`docker volume ls --filter label=com.docker.compose.project=<名>`、`docker ps -a --filter ...`），场景包与 `skills/skills-dev-ops/` 两份同步
+7. **gsd-core 移出 frontend-dev 默认清单**（`docs/evaluation/2026-10-final.md` 4.2，只跑 1 次，属方向依据），改为注释录入
+8. **全局 deny `Bash(*mysqldump*)` 是否改 ask**：改 `~/.claude/` 需用户明确指示；B-8 已不依赖它
+9. **推送与 release**：等用户指示
+10. **排期**：3.2 静态验证、3.4 真实项目试用（用户指定项目）、B0（任务卡先写、给用户确认）；另有 OpenSpec 安装脚本 Corepack 卡住的修法待决定
 
-前置条件：4 无阻塞；5 需 4 完成；6 需 5 完成；local-infra 容器已重建。
+前置条件：5～8 互相独立，均需用户确认方案；5 按用户要求优先提醒。
 
 ---
 
@@ -448,3 +455,5 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-03 | 全局插件拆分与 myplugins | 分析全局插件用途与常驻成本（约 3.9k，拆 8 个省约 1.8k），独立子代理交叉审核；实现 `dot_claude/skills/myplugins/`（序号启用／关闭、本地或 `--shared`、清单增删、SessionStart 提示）与 `test-myplugins.sh`，16 个测试文件全过；临时项目实测提示输出、写入本地设定、新会话载入插件；发现沙箱拦写 `.claude/settings*.json`，以 `sandbox.excludedCommands` 解决 | 已提交 `47928a3`，未推送；本机安装延到阶段 3 结束后（用户决定）；会话内 `/reload-plugins`、提示显示、共享模式实机未验证 |
 | 2026-11-03 | 阶段 3 准备步骤 | 指南新增第 12 节：新专案集重装、FiberHouse 固定阶段 1 提交、`eval-mysql` 重建、预算核对、旧专案集对照组只跑 B1/D3/F1（取代第 37 条「每次同跑基线」），计划文件同步（`871bf85`） | 12.1 命令试跑被权限拒绝、未实测；前端规划型任务卡待写 |
 | 2026-11-04 | 阶段 3 行为验证 | 新专案集 16 个任务 + B1、D3、F1 同期对照（用户手动执行，Claude 按会话记录核对）；新增 F5 规划型任务卡；结论写入 `docs/evaluation/2026-10-final.md`：全部通过（6 个附注），B-4 改善在 B、D 可归因于配置、F1 不算，D-1/D-2/F-1/F-4/P-3/E-8/E-9 已解决，新问题 B-7～E-13，gsd-core 建议移出 | 已提交 `68e14a8`、`44c190a`、`398d2b5`，未推送；B2 r2、myplugins 安装、待确认项未做；local-infra 容器已由用户重建 |
+| 2026-11-04 | B-7、B-8、B-10 与 B2 r2 | `db-schema-design` 验证限定一次性容器、改用 `SHOW CREATE TABLE`（一次性 MySQL 容器 4 情境实测，`f67e416`）；B2 r2 通过（无 deny、无残留）；B-10 行构造游标经 MySQL 8.0.46／8.4.10 复验后改写法（`9cb4a30`）；结论回填（`a1a548b`） | 未推送 |
+| 2026-11-04 | myplugins 安装与调整、myconfig 提示 | 本机安装并同步镜像与模板（`5b5425d`）；按用户试用改默认写共享、`-t` 预演、提示文案与颜色（`f07a347`）、状态符号与表格（`33ec84d`）、清单 21 个与排序（`38ce0b5`、`d164e41`）、`sync`（`f5d3ad4`）、模板 21 个 `false`（`8c9a93a`）、`~` 路径排除规则（`claude -p` 实测，`ac254c2`）；myconfig 说明 `AGENT_RULES_REPO`（`21e78c6`）；本机设定与两个 skill 已同步；16 个测试文件全过 | 未推送；`/reload-plugins`、skill 表格与询问流程未实机验证 |
