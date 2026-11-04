@@ -62,7 +62,7 @@ allowed-tools: Bash(sh "${CLAUDE_SKILL_DIR}/scripts/catalog" || printf 'REPO=UNR
    - 只含配置複製的命令，建議在提示列輸入 `! <命令>`，輸出會回到會話；出現 `Operation not permitted` 就改到一般終端機執行，再貼回輸出。含支援包的命令直接建議到終端機執行（會跑 `npm`、`git clone`，可能要幾分鐘）。
    - 從 `!` 改到終端機重跑時，先前已複製的檔案會顯示 `[MANUAL]`，內容與倉庫相同；回報時說明這是上一次部分寫入的結果。
 7. **回報**（拿到執行輸出後）：
-   - 依 `commands.md`「輸出判讀」計數標籤，分「配置複製」「支援包」兩段寫。
+   - 依 `commands.md`「輸出判讀」計數標籤，分「配置複製」「支援包」兩段寫。數字只引用腳本摘要（如 `copied=`、`manual=`）與標籤行數，不自行按類別（rules、skills 等）計數；要說明內容時只列類別名稱。
    - exit 0 但有 `[MANUAL]` 時，明說未更動的檔案。
    - 列出全部備份路徑。
    - 讀 `<R>/dot_claude_projects/.claude-<FLAG>/README.md` 的 `## 手动安装与恢复`、`## MCP 服务器`（標題為原文；後者只有 backend-dev、dev-ops 有）兩節，列出使用者還要手動做的事：外掛安裝命令、環境變數、`codegraph init` 等。
