@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 07d02ff
+head: da5edc4
 status: active
 updated: 2026-11-05
 ---
@@ -27,13 +27,13 @@ updated: 2026-11-05
 - 2026-11-03（续）：方案 B 调研与第二轮决策（第 12～29 条）完成并经用户确认，改动已实施；结论见 `docs/research/2026-10-best-practices.md` 第 4 节
 - 2026-11-03（续）：阶段 2 未做项补做（Reddit 已移除），第三轮决策第 30～39 条经用户确认并实施：MySQL 迁移规则与验证步骤、dev-ops 3 个 agent 去 K8s、`middleware-ops/references/backup-restore.md`（均有实测，见 `docs/research/2026-11-plan-b-reports/`）；未做项见研究文档 5.3
 - 2026-11-03（续）：MongoDB 场景案例调研、8.0 副本集实测 T1～T8 与独立交叉审核后写入：新增 `db-schema-design/references/case-mongodb.md`，`mongodb.md` 补属性模式、分桶、分页索引三处，`rules/database/mongodb.md` 分页游标改为 `(排序键, _id)`；结论与不写入项见 `docs/research/2026-11-mongodb-cases.md`
-- 2026-11-03（续）：全局插件分析与独立交叉审核后，新增全局技能 `myplugins`（`dot_claude/skills/myplugins/`，按序号把可选插件启用到当前项目，分本地／共享两层，清单可增删，SessionStart 提示）；测试通过、临时项目实测通过，已提交 `47928a3`（未推送）；本机安装用户决定**延到阶段 3 结束后**（避免改变阶段 1 的全局插件条件）
+- 2026-11-03（续）：全局插件分析与独立交叉审核后，新增全局技能 `myplugins`（`dot_claude/skills/myplugins/`，按序号把可选插件启用到当前项目，分本地／共享两层，清单可增删，SessionStart 提示）；测试通过、临时项目实测通过，已提交 `47928a3`（已随 v2.5.0 推送）；本机安装用户决定**延到阶段 3 结束后**（避免改变阶段 1 的全局插件条件）
 - 2026-11-03～04：**阶段 3 行为验证完成**。16 个任务全部通过（6 个附注），B1、D3、F1 同期对照完成；结论 `docs/evaluation/2026-10-final.md`（`44c190a`、`398d2b5`），指南与计划更新 `68e14a8`；均未推送。新问题 B-7～E-13，gsd-core 建议移出 frontend-dev 默认清单
-- 2026-11-04（续）：B-7、B-8 已修（`f67e416`），B2 r2 通过；B2 r2 发现并复验 B-10（行构造游标用不上索引，`9cb4a30`）；结论回填 `a1a548b`。myplugins 已在本机安装并按用户试用调整（默认写共享设定、`-t` 预演、21 个插件清单、`sync`、`~` 路径的沙箱排除规则，`5b5425d`～`ac254c2`）；myconfig 补 `AGENT_RULES_REPO` 提示（`21e78c6`）。均未推送
-- 2026-11-04（续）：myplugins 减 token：`SKILL.md` 拆出 `references/details.md`，列表后只回「已启用」一行与用法，启动提示加第三行只看清单的 `!` 命令（`64ef966`）；本仓库 `.claude/settings.json` 启用 claude-md-management、skill-creator（`2105be7`）；实测 `/myplugins` 每次约 2.9k token，之前看到的一万多来自首轮系统附件与 `/context` 自身输出。均未推送
+- 2026-11-04（续）：B-7、B-8 已修（`f67e416`），B2 r2 通过；B2 r2 发现并复验 B-10（行构造游标用不上索引，`9cb4a30`）；结论回填 `a1a548b`。myplugins 已在本机安装并按用户试用调整（默认写共享设定、`-t` 预演、21 个插件清单、`sync`、`~` 路径的沙箱排除规则，`5b5425d`～`ac254c2`）；myconfig 补 `AGENT_RULES_REPO` 提示（`21e78c6`）。已随 v2.5.0 推送
+- 2026-11-04（续）：myplugins 减 token：`SKILL.md` 拆出 `references/details.md`，列表后只回「已启用」一行与用法，启动提示加第三行只看清单的 `!` 命令（`64ef966`）；本仓库 `.claude/settings.json` 启用 claude-md-management、skill-creator（`2105be7`）；实测 `/myplugins` 每次约 2.9k token，之前看到的一万多来自首轮系统附件与 `/context` 自身输出。已随 v2.5.0 推送
 - 2026-11-04～05：阶段 3 待确认项全部处理：B-9 调研后用户选方案 C（`docs/research/2026-11-layering-strictness.md`，规则与 depguard `078674c`）；D-4（`250f03d`）；gsd-core 移出前端默认、主场景改后端且默认不启用（`8c1da27`）；全局 deny 改前缀 ask（`6416e56`，本机已同步）；OpenSpec 安装脚本 Corepack 卡住修复（`06b7902`）；删除 `docs/recommend_repos/`、`examples/`（`8eb2ef7`）；推送并发布 v2.5.0
 - 2026-11-05：**3.2 静态验证完成**：`scripts/tests/test-scenario-bundles.sh`（四场景真实安装）、`scripts/smoke/claude-config-smoke.sh`（`claude mcp list`）、`scripts/smoke/permissions-smoke.sh`（36 条抽样）；实测发现 RTK hook 使 `Read` deny 在沙箱关闭时失效，已在本机 RTK 加 `exclude_commands`，`Read` deny 扩充 20 条（`.env` 系列、凭据、历史记录，`.env.example` 放行；`76c6d27`、`8f0029c`、`f2561b9`，未推送）
-- 2026-11-05（续）：myplugins、myconfig 未验证项用 `claude -p` 实测通过（见变更日志），3 个小问题已按用户决定处理
+- 2026-11-05（续）：myplugins、myconfig 未验证项用 `claude -p` 与互动模式实测通过，myplugins 预演状态行、myconfig 补档 `cp` 例外与回报计数已修（本机副本已同步）；`claude plugin eval` 纳入计划 3.3 先小型试跑（暂不执行）；交叉评审不做、子 shell 缺口不回报、B0 取消；本机测验残留已清理。`origin/main` 停在 `a569d97`（v2.5.0），之后的提交均未推送（用户决定暂不推送）
 - 下一步：先做 `mysession-eval`（用户 2026-11-05 决定要做、暂不执行），再 3.4 真实项目试用（见「建议的下一步」）；B0 已由用户 2026-11-05 取消
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
@@ -53,7 +53,7 @@ updated: 2026-11-05
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
-| 可选插件技能 `myplugins` | 已实现、本机已安装并按用户试用调整（2026-11-04，`5b5425d`～`ac254c2`、`64ef966`，未推送） | 见「续作时必须知道的事」→「myplugins」；安装步骤在 `dot_claude/README.md`「myplugins 安装」 |
+| 可选插件技能 `myplugins` | 已实现、本机已安装并按用户试用调整（2026-11-04，`5b5425d`～`ac254c2`、`64ef966`，已随 v2.5.0 推送）；2026-11-05 `-t` 与共享模式实测、预演状态行修改（`9bbddda`，未推送） | 见「续作时必须知道的事」→「myplugins」；安装步骤在 `dot_claude/README.md`「myplugins 安装」 |
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
 | 配置安装技能 `myconfig`（列出／安装本仓库配置） | 已实现并发布 v2.4.0（2026-10-29）；用户已在本机安装，`/myconfig` 列表模式正常 | `dot_claude/skills/myconfig/`；设计 `docs/plans/2026-10-28-config-install-skill-design.md` §11。`claude -p` 实测：沙箱禁止会话内写 `.claude/settings.json`、`skills/`、`hooks/`，改为技能只预演、写入交付命令由用户执行；跨项目使用需把仓库路径与 `~/.claude/skills/myconfig` 加进 `sandbox.filesystem.allowRead`；两轮子代理交叉审查意见已全部处理 |
 
@@ -387,7 +387,9 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 前置条件：`mysession-eval` 开工前先确认初步设计；3.4 需用户指定场景与项目。
 
-顺手验证 myplugins（新会话即可）：输入 `/myplugins 1 -t`，看是否先预演并询问、确认后才写入。结果记入本文件「myplugins」的未验证项。
+等用户指示再做：`claude plugin eval` 小型试跑（计划 3.3「插件级评估」，必须加 `--no-publish`）；推送与 release。
+
+仍未验证（需互动会话或另一台机器）：myplugins 共享模式的信任对话框与未安装插件的机器（官方说项目层插件须过信任检查、`-p` 不够，与同机 `-p` 结果不符）；myconfig 超过 130 秒的 `!` 命令。
 
 ---
 
