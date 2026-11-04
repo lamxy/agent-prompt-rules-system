@@ -31,7 +31,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 
 1. 複製技能：`cp -R dot_claude/skills/myplugins ~/.claude/skills/`。
 2. `sandbox.excludedCommands` 加 `python3 ~/.claude/skills/myplugins/scripts/myplugins *`（`settings/settings.user.json` 與本目錄 `settings.json` 已含）：沙箱不允許 Bash 寫 `.claude/settings*.json`（實測 `Operation not permitted`），排除後這條命令仍走權限流程，由技能的 `allowed-tools` 放行。排除規則按命令文字照字面比對（2026-11-04 實測：規則與命令都寫 `~` 或都寫 `$HOME` 才對得上，一邊 `~` 一邊絕對路徑不行），所以技能內的命令寫 `~` 開頭、不加引號、不串接。
-3. `hooks.SessionStart` 加 `python3 "$HOME/.claude/skills/myplugins/scripts/myplugins" hint`（timeout 10）：新會話與恢復會話時在終端顯示兩行提示（`systemMessage`，不進上下文；第一行用 ANSI 黃色粗體，2026-11-04 實測色碼與換行有效，hook 無法直接寫 `/dev/tty`）；`/clear`、壓縮後不顯示。
+3. `hooks.SessionStart` 加 `python3 "$HOME/.claude/skills/myplugins/scripts/myplugins" hint`（timeout 10）：新會話與恢復會話時在終端顯示三行提示（`systemMessage`，不進上下文；第三行是只看清單的 `! python3 ~/.claude/skills/myplugins/scripts/myplugins list`，不載入技能；第一行用 ANSI 黃色粗體，2026-11-04 實測色碼與換行有效，hook 無法直接寫 `/dev/tty`）；`/clear`、壓縮後不顯示。
 
 寫入後要在會話中執行 `/reload-plugins` 或重開 Claude 才生效（官方文件 `plugins/loading`；會話中重載未實測，重開已實測）。插件設定逐鍵合併，優先級：本地 > 共享 > 全局。
 

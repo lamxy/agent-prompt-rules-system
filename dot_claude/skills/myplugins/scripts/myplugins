@@ -347,7 +347,8 @@ def cmd_hint():
     # 第一行黃色粗體（ANSI 色碼在 systemMessage 中有效，2026-11-04 實測），第二行一般顏色
     msg = ("\033[1;33m🔌 myplugins：%d 個可選插件預設關閉，%s\033[0m\n"
            "    含通用（skill 開發、CLAUDE.md 管理等）與 PRD、前端、後端、運維場景插件；"
-           "輸入 /myplugins 看清單，按序號開啟插件（如 /myplugins 1）。") % (n, tail)
+           "輸入 /myplugins 看清單，按序號開啟插件（如 /myplugins 1）。\n"
+           "    只看清單（不載入技能，省 token）：! python3 ~/.claude/skills/myplugins/scripts/myplugins list") % (n, tail)
     if pend:
         msg += "\n    預設清單有 %d 個新插件，輸入 /myplugins sync 加入。" % len(pend)
     print(json.dumps({"systemMessage": msg}, ensure_ascii=False))

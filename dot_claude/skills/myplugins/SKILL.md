@@ -8,62 +8,37 @@ allowed-tools: Bash(python3 ~/.claude/skills/myplugins/scripts/myplugins *)
 
 # 可選插件管理
 
-全局只保留基礎插件，其餘列在可選清單中，由使用者在各專案按需啟用。所有動作都交給腳本執行，不要自己編輯 settings 檔：
+所有動作交給腳本，不自己編輯 settings 檔。命令照字面單獨執行：寫 `~/.claude/...`，不展開成絕對路徑、不加引號、不串接、不重導向（沙箱排除與權限規則按命令文字比對，2026-11-04 實測）：
 
 ```sh
 python3 ~/.claude/skills/myplugins/scripts/myplugins <子命令> [參數]
 ```
 
-命令要照這個寫法單獨執行：路徑照字面寫 `~/.claude/...`，不展開成絕對路徑、不加引號、不串接其他命令、不重導向。沙箱排除規則與權限規則都按命令文字比對（2026-11-04 實測：規則寫 `~` 而命令寫絕對路徑，或反過來，都對不上）。
-
-## 依使用者輸入執行
-
 | 使用者輸入 | 執行 |
 |---|---|
-| 沒有附任何內容，或要求列出 | `list`，按下方「列出時的呈現」轉成表格，並附用法 |
-| 序號、插件名稱或 `all`（例如 `3`、`1 4 6`、`frontend-design`） | `enable <選擇>` |
+| 沒有內容，或要求列出 | `list` |
+| 序號、插件名稱或 `all`（如 `3`、`1 4 6`） | `enable <選擇>` |
 | `off <選擇>` | `off <選擇>` |
-| `add <名稱@市場> [說明]` | `add`；使用者沒給說明時，可從 `claude plugin details <id>` 的 Description 取一句 |
-| `remove <選擇>` | `remove` |
-| `sync`（或腳本提示預設清單有新插件時，使用者同意加入） | `sync`；帶 `-t` 等預演旗標時先預演、確認後再執行 |
+| `add`、`remove`、`sync`，或帶 `--dry-run`／`-t`／`--test` | 先讀 `references/details.md` 再執行 |
 
-用自然語言描述時（例如「這個專案開前端插件」），先執行 `list` 找出對應序號，再告訴使用者要執行的命令並執行；對應不明確時先問。
+- 預設寫共享層 `.claude/settings.json`，直接執行。使用者帶 `--local`／`-c`，或說「只給自己」「本地」「不進版控」時加 `--local`。
+- 自然語言描述（如「這個專案開前端插件」）：先 `list` 找序號，說明要執行的命令再執行；對應不明確先問。
+- 腳本有寫入時，提醒使用者輸入 `/reload-plugins`（或重開 Claude）才生效，你無法代為執行。
+- 腳本輸出「注意：」的行要轉告（如未安裝時的安裝命令），不自行安裝或 `sync`。
+- 腳本報錯（如「無法寫入…sandbox.excludedCommands」），或使用者問 `/plugin` 為何把插件列在 User 分組時，讀 `references/details.md`。
 
-## 寫入範圍與預演
+## 列出後的回覆
 
-- 預設寫 `.claude/settings.json`（共享，會進版控），直接執行，不先預演。
-- 使用者帶 `--local` 或 `-c`，或說「只給自己」「本地」「不進版控」時，加 `--local` 寫 `.claude/settings.local.json`（個人設定）。
-- 使用者帶 `--dry-run`、`-t` 或 `--test` 時，照原參數執行（腳本只預演、不寫入），把輸出給使用者看並詢問是否照此寫入；使用者確認後去掉預演旗標再執行一次，不確認就不寫入。
-- `off` 預設移除共享層的設定，`--local` 移除本地層；只移除該層，讓值回到下一層（本地 → 共享 → 全局），不寫 `false`。
+工具輸出已是完整清單，不要再轉成表格或重抄清單。回覆只含：
 
-## 執行後
-
-- 腳本有寫入時，提醒使用者在會話中輸入 `/reload-plugins`（或重開 Claude）才會生效；這是使用者自己執行的斜線命令，你無法代為執行。
-- 腳本報「無法寫入…sandbox.excludedCommands」時，不要改用其他方式寫檔；告訴使用者在 `~/.claude/settings.json` 的 `sandbox.excludedCommands` 加入 `python3 ~/.claude/skills/myplugins/scripts/myplugins *`（照字面，含 `~`），再重試。
-- 腳本輸出「注意：」的行要轉告使用者，例如插件未安裝時附上的安裝命令；不要自行安裝。
-- 增刪清單或 `sync` 後序號會重排，以腳本重新列出的清單為準。
-- `list` 或啟動提示說「預設清單有新插件」時，告訴使用者可以 `/myplugins sync`；不要自行執行。
-
-## 列出時的呈現
-
-腳本輸出的狀態已帶符號（`✅` 啟用、`⬜` 停用、`⚠️` 未安裝）。回覆時：
-
-- 第一行照抄腳本的「已啟用：」一行。
-- 清單轉成 Markdown 表格，欄位為 `#`、插件（去掉 `@市場`）、狀態（含符號與來源層）、類別、說明；已啟用的整列用粗體。不要改寫狀態或省略項目。
-- 使用者問到 `/plugin` 為什麼把插件列在 User 分組時說明：那是插件的安裝範圍（`installed_plugins.json` 的 `scope`），不代表在哪一層啟用；是否啟用以本清單的來源層為準。
-
-## 列出時的用法說明
+1. 照抄腳本的「已啟用：」一行；有「注意：」的行一併照抄。
+2. 下面的用法：
 
 ```
 /myplugins 3            啟用第 3 個（寫入 .claude/settings.json，會進版控）
-/myplugins 1 4 6        批量啟用
-/myplugins all          全部啟用
-/myplugins 3 --local    只寫入本地個人設定 .claude/settings.local.json（同 -c）
+/myplugins 1 4 6        批量啟用；all 全部啟用
+/myplugins 3 --local    只寫本地個人設定 .claude/settings.local.json（同 -c）
 /myplugins 3 --test     預演，確認後才寫入（同 -t、--dry-run）
 /myplugins off 3        關閉，回到下一層的值
-/myplugins add 名稱@市場 說明    加入清單
-/myplugins remove 3     從清單移除（之後 sync 不會加回）
-/myplugins sync         依預設清單更新本機清單（保留自己加的）
+/myplugins add 名稱@市場 說明 | remove 3 | sync    維護清單
 ```
-
-清單存在 `~/.claude/myplugins/catalog.json`，第一次執行時從本技能的 `catalog.default.json` 複製；之後預設清單更新不會自動套用，要 `sync`。

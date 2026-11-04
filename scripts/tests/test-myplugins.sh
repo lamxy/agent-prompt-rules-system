@@ -126,7 +126,7 @@ printf '{}\n' > "$PROJ/.claude/settings.local.json"
 
 run 1 --local >/dev/null
 h="$(printf '{"source":"startup"}' | run hint)"
-printf '%s\n' "$h" | python3 -c 'import json,sys; m=json.load(sys.stdin)["systemMessage"]; assert "/myplugins 1" in m and "當前目錄已啟用" in m and "frontend-design" in m' \
+printf '%s\n' "$h" | python3 -c 'import json,sys; m=json.load(sys.stdin)["systemMessage"]; assert "/myplugins 1" in m and "當前目錄已啟用" in m and "frontend-design" in m and "! python3 ~/.claude/skills/myplugins/scripts/myplugins list" in m' \
   && pass "hint emits systemMessage with enabled list" || fail "hint: $h"
 [ -z "$(printf '{"source":"compact"}' | run hint)" ] && pass "hint silent on compact" || fail "hint on compact"
 EMPTY="$TMP/empty"; mkdir -p "$EMPTY"
