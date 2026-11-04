@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 2ec64ab
+head: 506eb26
 status: active
 updated: 2026-11-05
 ---
@@ -334,7 +334,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 各场景用于试用的真实项目、试用期长度：阶段 3 后由用户试用后决定（建议先 1～2 个场景、按会话次数计） | 计划文件「需要用户决定」 |
 | 教学材料沉淀的已完成项、1 项暂缓（前端 GlitchTip）、17 条待验证与本机 docker 残留清理 | `docs/plans/2026-10-22-learning-distill-questions.md` |
 | 阶段 2 未做项（取不到原文、未读、未实测）与第三轮留下的待验证（疑问清单第 12、16 条） | `docs/research/2026-10-best-practices.md` 5.3、`docs/plans/2026-10-22-learning-distill-questions.md` |
-| myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；§8 第 3～9、11 条已于 2026-11-05 用 `claude -p` 实测通过（附注与新发现见设计文件 §12）；第 8 条矛盾已按用户决定改 SKILL.md（陷阱条目指明的补档 `cp` 可并入交付命令，技能自己不执行）；第 9 条未用 AskUserQuestion 先观察，待互动模式实测；仍未验证互动模式确认框、`!` 执行的沙箱与超时 | 设计文件 §8、§11、§12 |
+| myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；§8 第 3～9、11 条已于 2026-11-05 用 `claude -p` 实测通过（附注与新发现见设计文件 §12）；第 8 条矛盾已按用户决定改 SKILL.md（陷阱条目指明的补档 `cp` 可并入交付命令，技能自己不执行）；互动模式补测（2026-11-05）通过：第 9 条在互动模式会先问场景（`-p` 所致）、确认框正常、`!` 不受沙箱限制且 130 秒不中断、RTK 对注入无影响；回报分类计数不准待用户决定是否改 SKILL.md | 设计文件 §8、§11、§12 |
 | `claude plugin eval` 小型试跑（myconfig 5 句触发评估；用户 2026-11-05 同意纳入，暂不执行；必须加 `--no-publish`） | 计划文件 3.3「插件级评估」 |
 | myplugins：互动模式信任对话框、另一台机器未验证（本机两个 skill 副本已于 2026-11-05 按用户指示同步，`diff -r` 一致） | 本文件「myplugins」 |
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
@@ -477,3 +477,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | 本机清理 | 盘点：疑问清单第六节所列旧残留（`grpclab-gomod`、`obs-net`、`mcp-gt`、`fegt-*`、`besz-net`、`rcase-*`、`mgv*`、`d4probe_data`、redis／bufbuild 映像）已不存在；按用户确认删除 `fiberhouse-example-dev`（`docker compose -p … down -v`：4 容器、网络、3 卷）、`scenario-eval-final/projects/dev-ops/deploy/.env`、`~/.claude/plans/` 3 个测试计划档；保留 `fiberhouse-dev`、`fh-glitchtip-verify`、`eval-mysql`（3.4 可能用到）、`golangci-lint` 映像 | — |
 | 2026-11-05 | `mysession-eval` 决定 | 用户决定要做，暂不执行；计划 3.4 候选项改为已决定，作为 3.4 前置、取代手填日志模板；交接摘要、待处理、下一步同步 | 开工前确认初步设计 |
 | 2026-11-05 | 取消 B0 | 用户取消「独立 Go 项目 `go get` FiberHouse 建第一个模块」单独测验；基线 1.2 局限说明保留并加注，交接移除待处理项 | 基线在框架仓库内测验的局限不再补测 |
+| 2026-11-05 | myconfig 互动模式补测 | 用户在临时 Go 项目手动操作、按会话记录核对：选场景与确认均弹 AskUserQuestion，`!` 执行不受沙箱限制、写入 51 个文件、Claude 自动回报，`sleep 130` 不中断；RTK 对注入无影响；结果写入设计文件 §12 | 回报分类计数两次不准，是否改 SKILL.md 待用户决定；超过 130 秒未测 |
