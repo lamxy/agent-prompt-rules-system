@@ -213,7 +213,7 @@
 - [ ] 试用期长度——同上；建议以会话次数计（例如每场景 10 个真实会话）
 - [ ] 交叉评审使用的模型组合与预算上限——选做，只用于 P-1 模板盲比与阶段 2 决策表复核（Codex 一轮）
 - [ ] 阶段 2 的采纳决策——实施前用决策表逐条确认
-- [ ] **分层规则是否必须严格**（用户 2026-11-03 提出，待讨论；阶段 3 结束后、处理 3.3「阶段 3 执行中发现」那批修改时提醒用户）。起因：B4 中 Claude 指出 FiberHouse 的 `example-module` 中 `service` 直接 import `apivo`，违反 `rules/go/layering.md` 的「service 不可 import apivo」。要讨论的问题：
+- [x] （2026-11-04 已决定方案 C，见 `docs/research/2026-11-layering-strictness.md`）**分层规则是否必须严格**（用户 2026-11-03 提出，待讨论；阶段 3 结束后、处理 3.3「阶段 3 执行中发现」那批修改时提醒用户）。起因：B4 中 Claude 指出 FiberHouse 的 `example-module` 中 `service` 直接 import `apivo`，违反 `rules/go/layering.md` 的「service 不可 import apivo」。要讨论的问题：
   - 严格分层（service 只用 dto/entity，api 层做全部 VO 转换）与宽松分层（允许 service 直接复用请求/响应结构，减少样板转换）各自的收益和代价
   - 技术大厂与社区的实践：Go 社区（如 Go 项目布局讨论、Clean Architecture / 六边形架构在 Go 中的落地、Uber/Google 等公开风格指南）、Java 系（阿里巴巴 Java 开发手册的分层领域模型规约等）对「DTO/VO 是否跨层」的规定与反思；需读原文，结论标明哪些是规范、哪些是个人经验
   - 规则应写成硬约束（depguard 强制）、默认建议（允许写 ADR 例外），还是按项目规模分级
