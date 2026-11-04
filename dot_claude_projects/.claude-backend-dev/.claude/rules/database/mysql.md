@@ -57,7 +57,7 @@ paths:
 - 在线业务（OLTP）的查询必须有 `WHERE`；关联不超过两张表，关联字段的类型、长度、字符集一致；`LEFT JOIN` 中决定匹配的条件写在 `ON`，写在 `WHERE` 会退化为内连接；少用子查询，相关子查询改写为先聚合再关联或窗口函数。
 - 请求路径中不对大表执行精确 `COUNT(*)`，改用计数器、估算值或「是否还有下一页」。
 - 单条写语句影响不超过 1000 行，批量 `VALUES` 不超过 1000 组；查询结果不超过 5000 行，每秒超过 100 次的高频查询不超过 100 行。
-- 深分页改用游标：`WHERE id > ? ORDER BY id LIMIT ?`，不用大 `OFFSET`；排序键不唯一时加主键作决胜列，`WHERE (created_at, id) > (?, ?) ORDER BY created_at, id`。
+- 深分页改用游标：`WHERE id > ? ORDER BY id LIMIT ?`，不用大 `OFFSET`；排序键不唯一时加主键作决胜列，写成 `WHERE created_at >= ? AND (created_at > ? OR id > ?) ORDER BY created_at, id`（倒序把比较符反过来）。不用行构造 `(created_at, id) > (?, ?)`：MySQL 不会用它定位索引，会从头扫描。
 - 不用 optimizer hint（`FORCE INDEX` 等）、`REPLACE INTO`、跨库事务，单条语句不同时更新多张表；统计类 `SUM` / `COUNT` 走从库或分析库。
 - 计算放在业务代码，不在 SQL 中做数学运算；写操作保证幂等（唯一键或状态条件更新），避免重复扣款、重复下单。
 - 事务隔离级别为 `READ COMMITTED`；应用账号只有 `SELECT`、`INSERT`、`UPDATE`，`DELETE` 按需授权，不授予 DDL 权限。
