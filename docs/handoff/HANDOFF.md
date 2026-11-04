@@ -1,6 +1,6 @@
 ---
 branch: main
-head: f2561b9
+head: fb81fee
 status: active
 updated: 2026-11-05
 ---
@@ -33,6 +33,7 @@ updated: 2026-11-05
 - 2026-11-04（续）：myplugins 减 token：`SKILL.md` 拆出 `references/details.md`，列表后只回「已启用」一行与用法，启动提示加第三行只看清单的 `!` 命令（`64ef966`）；本仓库 `.claude/settings.json` 启用 claude-md-management、skill-creator（`2105be7`）；实测 `/myplugins` 每次约 2.9k token，之前看到的一万多来自首轮系统附件与 `/context` 自身输出。均未推送
 - 2026-11-04～05：阶段 3 待确认项全部处理：B-9 调研后用户选方案 C（`docs/research/2026-11-layering-strictness.md`，规则与 depguard `078674c`）；D-4（`250f03d`）；gsd-core 移出前端默认、主场景改后端且默认不启用（`8c1da27`）；全局 deny 改前缀 ask（`6416e56`，本机已同步）；OpenSpec 安装脚本 Corepack 卡住修复（`06b7902`）；删除 `docs/recommend_repos/`、`examples/`（`8eb2ef7`）；推送并发布 v2.5.0
 - 2026-11-05：**3.2 静态验证完成**：`scripts/tests/test-scenario-bundles.sh`（四场景真实安装）、`scripts/smoke/claude-config-smoke.sh`（`claude mcp list`）、`scripts/smoke/permissions-smoke.sh`（36 条抽样）；实测发现 RTK hook 使 `Read` deny 在沙箱关闭时失效，已在本机 RTK 加 `exclude_commands`，`Read` deny 扩充 20 条（`.env` 系列、凭据、历史记录，`.env.example` 放行；`76c6d27`、`8f0029c`、`f2561b9`，未推送）
+- 2026-11-05（续）：myplugins、myconfig 未验证项用 `claude -p` 实测通过（见变更日志），3 个小问题已按用户决定处理
 - 下一步：3.4 真实项目试用（开始前先提醒用户是否做 `mysession-eval`）、B0 排期（见「建议的下一步」）
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
@@ -313,7 +314,9 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 - **维护本仓库时**：`skill-creator`、`claude-md-management` 已不是全局插件，要用先 `/myplugins`。
 - **token 占用（2026-11-04 按会话记录与 API usage 实测）**：现象是执行 `/myplugins` 后 `/context` 的 Messages 涨一万多；原因是会话第一次正常提问时 Claude Code 一次性附上 skill 清单、沙箱说明、延迟工具与 MCP 说明（约 30k 字符，若首轮是 `!` 命令则延到下一个提问），加上 `/context` 自己的输出会记进对话（每次约 5.5k）；myplugins 本身每次约 2.9k（SKILL.md 约 0.7k、脚本输出约 1.5k）。正确做法是量某操作的成本时看 API usage 或两次 `/context` 差值再扣约 5.5k。`/context` 总数与 API usage 一致，但 Skills 与 Messages 分类会重叠或挪移（推断，未查官方说明），不要逐类相加。
 - **已验证**：会话内 `/reload-plugins` 立即生效（2026-11-04，启用 2、3 后 skill 当场可用）；列表后只回一行与用法（test1 会话）。
-- **未验证**：`-t` 时先询问再写入；共享模式多人实机。
+- **已验证（2026-11-05，`claude -p` + `--resume`，Claude Code 2.1.318）**：`-t` 先读 `details.md`、只跑预演并询问；确认后去掉 `-t` 才写共享层并提醒 `/reload-plugins`；拒绝时不写。共享模式同机模拟：A 启用并推送到 bare repo，B 新克隆启动时 init 事件载入该插件、对照目录没有
+- **未验证**：互动模式的信任对话框；另一台未安装该插件的机器
+- **预演状态行**（用户 2026-11-05 同意修改）：原先预演第二行显示写入前状态（如「⬜ 停用」），易误读；现改为按变更后的该层推算，显示「写入后 → ✅ 启用（共享）」，`off -t` 同理（`test-myplugins.sh` 新增 2 项）
 
 ### 其他已知问题
 
@@ -332,9 +335,10 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 教学材料沉淀的已完成项、1 项暂缓（前端 GlitchTip）、17 条待验证与本机 docker 残留清理 | `docs/plans/2026-10-22-learning-distill-questions.md` |
 | 交叉评审：选做，只用于 P-1 模板盲比与阶段 2 决策表复核 | 计划文件「需要用户决定」 |
 | 阶段 2 未做项（取不到原文、未读、未实测）与第三轮留下的待验证（疑问清单第 12、16 条） | `docs/research/2026-10-best-practices.md` 5.3、`docs/plans/2026-10-22-learning-distill-questions.md` |
-| myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；会话实测设计 §8 第 3、5～9、11 条与安装后报告；`!` 模式的沙箱与超时 | 设计文件 §8、§11 |
+| myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；§8 第 3～9、11 条已于 2026-11-05 用 `claude -p` 实测通过（附注与新发现见设计文件 §12）；第 8 条矛盾已按用户决定改 SKILL.md（陷阱条目指明的补档 `cp` 可并入交付命令，技能自己不执行）；第 9 条未用 AskUserQuestion 先观察，待互动模式实测；仍未验证互动模式确认框、`!` 执行的沙箱与超时 | 设计文件 §8、§11、§12 |
 | `claude plugin eval` 是否适合本仓库场景包 | 计划文件 3.3（待确认后纳入） |
-| myplugins 未验证项：`-t` 询问流程、共享模式多人实机 | 本文件「myplugins」 |
+| myplugins：互动模式信任对话框、另一台机器未验证（本机两个 skill 副本已于 2026-11-05 按用户指示同步，`diff -r` 一致） | 本文件「myplugins」 |
+| 本机：2026-11-05 myconfig 触发评估以 plan 模式执行，在 `~/.claude/plans/` 留下 `frontend-dev-flickering-dream.md`、`npm-splendid-pumpkin.md`、`lodash-eager-penguin.md`，可由用户删除 | — |
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
 | 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除）；2026-11-05 改了 `~/.claude/settings.json`（备份 `.bak-20261105012410`）并新建 RTK `config.toml` | — |
 | Claude Code 缺口「子 shell 加外层重定向不检查 `Read` deny」是否回报上游 | 本文件「续作时必须知道的事」；`settings/README.md` |
@@ -472,3 +476,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-04 | myplugins 减 token | 按会话记录与 API usage 拆解 `/myplugins` 的 token 来源（本身约 2.9k，其余为首轮系统附件与 `/context` 输出）；`SKILL.md` 拆出 `references/details.md`（2,746 → 1,655 字符），列表后只回「已启用」一行与用法，启动提示加 `!` 只看清单命令（`64ef966`）；本机副本已同步（`diff -r` 一致）；本仓库启用 claude-md-management、skill-creator（`2105be7`）；16 个测试文件全过 | 未推送；`-t` 询问流程未实机验证 |
 | 2026-11-04～05 | 阶段 3 待确认项与 v2.5.0 | B-9 调研（12 个来源原文核对，标明中国大陆来源）后用户选方案 C：`layering.md` 契约类型分级、`go-new-module` 与 depguard `apivo-not-in-storage`（`078674c`）；D-4 同名 Compose 项目检查（Compose 5.5.0 实测，`250f03d`）；gsd-core 主场景改后端且默认不启用（`8c1da27`，本机 myconfig 已同步）；deny 改前缀 ask（`claude -p` 实测，`6416e56`，本机已改）；OpenSpec Corepack 修复（`node:22-alpine` 实测，`06b7902`）；删除 `docs/recommend_repos/`、`examples/`（`8eb2ef7`）；用户约束细化中国大陆来源与 Reddit 暂时移除；16 个测试文件全过 | 改本机 settings 前未另备份（与镜像一致，可从 git 还原）；`d4probe_data` 待用户删除 |
 | 2026-11-05 | 3.2 静态验证与敏感读取 | 新增 `test-scenario-bundles.sh`（四场景真实安装、反向验证 6 处故障全部检出，`01a1b0f`）、`claude-config-smoke.sh`（`7b239a3`）、`permissions-smoke.sh`（36 条，`8f0029c`）；对照实验确认 RTK hook 使 `Read` deny 失效（上游源码只读 `Bash(...)` 规则），本机 RTK 加 `exclude_commands`；`Read` deny 扩充 20 条，`.env.example` 放行（逐条列变体，否定字符类与 allow 例外均实测无效），模板、镜像、本机三处同步（`76c6d27`）；记录子 shell 加外层重定向的缺口；17 个测试文件全过 | 未推送；子 shell 缺口是否回报上游待用户决定 |
+| 2026-11-05 | myplugins、myconfig 未验证项实测 | `claude -p` + `--resume` 在 scratchpad 临时项目实测：myplugins `-t` 询问／确认／拒绝三条路径、共享模式同机双克隆载入均通过；myconfig 设计 §8 第 3～9、11 条全部通过（第 4、8、9 条附注，第 7 条为模拟失败），结果与新发现（plan 模式 `!` 注入被拒、技能退路有效）写入设计文件 §12；`mypilot` 改名 `mysession-eval`（`8ec5cbb`） | 用户决定：预演状态行已改、`cp` 矛盾改 SKILL.md、AskUserQuestion 先观察；本机两个 skill 副本已同步；互动模式未验证；未推送 |
