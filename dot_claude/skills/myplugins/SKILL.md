@@ -2,7 +2,7 @@
 name: myplugins
 description: 在當前目錄按序號啟用或關閉全局未啟用的可選插件（如 frontend-design、chrome-devtools-mcp、skill-creator），預設寫入共享設定 .claude/settings.json，也可寫本地個人設定，並增刪可選插件清單。
 when_to_use: 使用者輸入 /myplugins，或說「列出可選插件」「啟用插件 3」「這個專案開 frontend-design」「關掉插件」「把 xxx 加入／移出插件清單」時。安裝場景配置包用 myconfig；修改權限、環境變數等其他設定用 update-config。
-argument-hint: "[序號… | all | off 序號… | add 名稱@市場 說明 | remove 序號] [--local|-c] [--dry-run|-t|--test]"
+argument-hint: "[序號… | all | off 序號… | add 名稱@市場 說明 | remove 序號 | sync] [--local|-c] [--dry-run|-t|--test]"
 allowed-tools: Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/myplugins *)
 ---
 
@@ -25,6 +25,7 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/myplugins <子命令> [參數]
 | `off <選擇>` | `off <選擇>` |
 | `add <名稱@市場> [說明]` | `add`；使用者沒給說明時，可從 `claude plugin details <id>` 的 Description 取一句 |
 | `remove <選擇>` | `remove` |
+| `sync`（或腳本提示預設清單有新插件時，使用者同意加入） | `sync`；帶 `-t` 等預演旗標時先預演、確認後再執行 |
 
 用自然語言描述時（例如「這個專案開前端插件」），先執行 `list` 找出對應序號，再告訴使用者要執行的命令並執行；對應不明確時先問。
 
@@ -40,7 +41,8 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/myplugins <子命令> [參數]
 - 腳本有寫入時，提醒使用者在會話中輸入 `/reload-plugins`（或重開 Claude）才會生效；這是使用者自己執行的斜線命令，你無法代為執行。
 - 腳本報「無法寫入…sandbox.excludedCommands」時，不要改用其他方式寫檔；告訴使用者在 `~/.claude/settings.json` 的 `sandbox.excludedCommands` 加入 `python3 <本技能絕對路徑>/scripts/myplugins *`（路徑見錯誤訊息前的命令），再重試。
 - 腳本輸出「注意：」的行要轉告使用者，例如插件未安裝時附上的安裝命令；不要自行安裝。
-- 增刪清單後序號會重排，以腳本重新列出的清單為準。
+- 增刪清單或 `sync` 後序號會重排，以腳本重新列出的清單為準。
+- `list` 或啟動提示說「預設清單有新插件」時，告訴使用者可以 `/myplugins sync`；不要自行執行。
 
 ## 列出時的呈現
 
@@ -60,7 +62,8 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/myplugins <子命令> [參數]
 /myplugins 3 --test     預演，確認後才寫入（同 -t、--dry-run）
 /myplugins off 3        關閉，回到下一層的值
 /myplugins add 名稱@市場 說明    加入清單
-/myplugins remove 3     從清單移除
+/myplugins remove 3     從清單移除（之後 sync 不會加回）
+/myplugins sync         依預設清單更新本機清單（保留自己加的）
 ```
 
-清單存在 `~/.claude/myplugins/catalog.json`，第一次執行時從本技能的 `catalog.default.json` 複製。
+清單存在 `~/.claude/myplugins/catalog.json`，第一次執行時從本技能的 `catalog.default.json` 複製；之後預設清單更新不會自動套用，要 `sync`。

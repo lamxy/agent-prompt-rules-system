@@ -93,6 +93,31 @@ out="$(run remove andrej-karpathy-skills)"
 [ "$(jget "$TMP/home/catalog.json" 'len(d["plugins"])')" = "21" ] && printf '%s\n' "$out" | grep -q '共享設定仍有' \
   && pass "remove updates catalog and warns about project layer" || fail "remove: $out"
 
+# sync: simulate an older local catalog (one default missing, order changed, own entry, one default removed)
+run add andrej-karpathy-skills@karpathy-skills 自己加的 >/dev/null
+run remove semgrep >/dev/null
+python3 - "$TMP/home/catalog.json" <<'PYEOF'
+import json, sys
+p = sys.argv[1]; d = json.load(open(p))
+d["plugins"] = [x for x in d["plugins"] if not x["id"].startswith("playwright@")][::-1]
+json.dump(d, open(p, "w"), ensure_ascii=False)
+PYEOF
+run status | grep -q '預設清單有 1 個新插件（playwright）' && pass "list reports pending default plugin" || fail "no pending notice"
+printf '{"source":"startup"}' | run hint | grep -q 'myplugins sync' && pass "hint mentions sync when defaults pending" || fail "hint without sync"
+before="$(cat "$TMP/home/catalog.json")"
+run sync -t | grep -q '+ playwright@claude-plugins-official' && [ "$(cat "$TMP/home/catalog.json")" = "$before" ] \
+  && pass "sync -t previews without writing" || fail "sync -t wrote or missed playwright"
+run sync >/dev/null
+[ "$(jget "$TMP/home/catalog.json" '[x["id"].split("@")[0] for x in d["plugins"]][0] + "," + [x["id"].split("@")[0] for x in d["plugins"]][-1]')" = "claude-code-setup,andrej-karpathy-skills" ] \
+  && pass "sync restores default order and keeps own entry last" || fail "sync order"
+[ "$(jget "$TMP/home/catalog.json" 'any(x["id"].startswith("playwright@") for x in d["plugins"]) and not any(x["id"].startswith("semgrep@") for x in d["plugins"])')" = "True" ] \
+  && pass "sync adds missing default, keeps removed one out" || fail "sync membership"
+run sync | grep -q '已與預設清單一致' && pass "sync is idempotent" || fail "sync not idempotent"
+run add semgrep@claude-plugins-official 加回 >/dev/null
+[ "$(jget "$TMP/home/catalog.json" '"semgrep@claude-plugins-official" in d.get("removed", [])')" = "False" ] \
+  && pass "add clears removed mark" || fail "removed mark kept"
+cp "$REPO_ROOT/dot_claude/skills/myplugins/catalog.default.json" "$TMP/home/catalog.json"
+
 printf '{bad json' > "$PROJ/.claude/settings.local.json"
 if run 1 --local >/dev/null 2>&1; then fail "bad json overwritten"; else
   [ "$(cat "$PROJ/.claude/settings.local.json")" = "{bad json" ] && pass "bad json left untouched" || fail "bad json changed"

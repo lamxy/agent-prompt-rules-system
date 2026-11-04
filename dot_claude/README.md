@@ -10,7 +10,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 | `commands/analyze-github-repo.md` | `/analyze-github-repo`：輕量探測優先的單一 GitHub 倉庫分析 |
 | `skills/myhandoff/` | `myhandoff` 技能：讀寫 `docs/handoff/HANDOFF.md` 的進度交接；`settings.json` 的 `Stop`、`StopFailure` hook 依賴其 `scripts/` |
 | `skills/myconfig/` | `myconfig` 技能：列出本倉庫的場景配置，或在會話中預演並給出安裝命令（寫入由使用者執行）；`scripts/catalog` 現場產生清單。設計見 `docs/plans/2026-10-28-config-install-skill-design.md` |
-| `skills/myplugins/` | `myplugins` 技能：按序號在當前目錄啟用或關閉可選插件（預設直接寫 `.claude/settings.json`，`--local`／`-c` 寫 `.claude/settings.local.json`；`--dry-run`／`-t`／`--test` 先預演、確認後寫入），增刪清單（`~/.claude/myplugins/catalog.json`，首次從 `catalog.default.json` 複製）；`scripts/myplugins hint` 供 SessionStart hook 顯示提示。需要的本機設定見下方「myplugins 安裝」 |
+| `skills/myplugins/` | `myplugins` 技能：按序號在當前目錄啟用或關閉可選插件（預設直接寫 `.claude/settings.json`，`--local`／`-c` 寫 `.claude/settings.local.json`；`--dry-run`／`-t`／`--test` 先預演、確認後寫入），增刪清單（`~/.claude/myplugins/catalog.json`，首次從 `catalog.default.json` 複製，預設清單更新後用 `sync` 合併）；`scripts/myplugins hint` 供 SessionStart hook 顯示提示。需要的本機設定見下方「myplugins 安裝」 |
 | `settings.json` | 個人使用者層級設定（權限、沙箱、hooks、外掛），與本機 `~/.claude/settings.json` 同步 |
 | `README.md` | 本說明，不會被載入為指令 |
 

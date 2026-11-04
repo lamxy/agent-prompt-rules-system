@@ -7,6 +7,7 @@
   off <選擇...> [--local|-c] [--dry-run|-t|--test]
   add <名稱@市場> [說明...] [--category 類別]
   remove <選擇...>
+  sync [--dry-run|-t|--test]       依預設清單更新本機清單（保留自己加的、不加回已移除的）
   hint                             SessionStart hook 用，輸出提示 JSON
 
 選擇：序號（1 3 5）、插件 id 或名稱、all。
@@ -78,6 +79,17 @@ def load_catalog():
     cat = load_json(CATALOG, {"plugins": []})
     cat.setdefault("plugins", [])
     return cat
+
+
+def default_catalog():
+    return load_json(DEFAULT_CATALOG, {"plugins": []}).get("plugins", [])
+
+
+def pending_defaults(cat):
+    """預設清單中本機清單沒有、也沒被使用者移除的 id。"""
+    have = {p["id"] for p in cat["plugins"]}
+    removed = set(cat.get("removed", []))
+    return [p["id"] for p in default_catalog() if p["id"] not in have and p["id"] not in removed]
 
 
 def layer_paths():
@@ -155,9 +167,12 @@ def cmd_list(cat):
         if p["id"] not in inst:
             mark += " ⚠️ 未安裝"
         print("%3d. %-48s %-14s [%s] %s" % (i, p["id"], mark, p.get("category", "-"), p.get("description", "")))
+    pend = pending_defaults(cat)
+    if pend:
+        print("\n注意：預設清單有 %d 個新插件（%s），執行 /myplugins sync 加入" % (len(pend), "、".join(x.split("@")[0] for x in pend)))
     print("\n用法：/myplugins 3 | 1 4 6 | all   預設寫入 .claude/settings.json（共享，會進版控）")
     print("      加 --local 或 -c 寫入 .claude/settings.local.json（個人）；加 --dry-run、-t 或 --test 只預演")
-    print("      /myplugins off 3 | off all [--local]；add <名稱@市場> [說明]；remove <序號>")
+    print("      /myplugins off 3 | off all [--local]；add <名稱@市場> [說明]；remove <序號>；sync")
     print("寫入後在會話中執行 /reload-plugins 或重開 Claude 才會生效。")
 
 
@@ -254,6 +269,8 @@ def cmd_add(cat, args):
     if any(p["id"] == pid for p in cat["plugins"]):
         raise Fail("%s 已在清單中" % pid)
     cat["plugins"].append({"id": pid, "category": category, "description": desc})
+    if pid in cat.get("removed", []):
+        cat["removed"] = [x for x in cat["removed"] if x != pid]
     save_json(CATALOG, cat)
     print("已加入 %s（序號 %d）" % (pid, len(cat["plugins"])))
     if pid not in installed_ids():
@@ -265,6 +282,8 @@ def cmd_remove(cat, args):
     ids = resolve(cat, args)
     layers = layer_plugins()
     cat["plugins"] = [p for p in cat["plugins"] if p["id"] not in ids]
+    defaults = {p["id"] for p in default_catalog()}
+    cat["removed"] = sorted(set(cat.get("removed", [])) | (set(ids) & defaults))
     save_json(CATALOG, cat)
     for pid in ids:
         print("已從清單移除 %s" % pid)
@@ -272,6 +291,38 @@ def cmd_remove(cat, args):
             if pid in layers[name]:
                 print("注意：當前目錄%s設定仍有 %s，需要時用 off 處理（先用 add 加回清單）" % (label, pid))
     cmd_list(cat)
+
+
+def cmd_sync(cat, args):
+    dry = any(a in DRY_FLAGS for a in args)
+    removed = set(cat.get("removed", []))
+    defaults = [dict(p) for p in default_catalog() if p["id"] not in removed]
+    default_ids = {p["id"] for p in defaults}
+    own = [p for p in cat["plugins"] if p["id"] not in default_ids and p["id"] not in removed]
+    new = defaults + own
+    old_ids = [p["id"] for p in cat["plugins"]]
+    added = [p["id"] for p in defaults if p["id"] not in old_ids]
+    updated = [p["id"] for p in defaults if p["id"] in old_ids
+               and next(q for q in cat["plugins"] if q["id"] == p["id"]) != p]
+    reordered = [p["id"] for p in new if p["id"] in old_ids] != [i for i in old_ids if i in {p["id"] for p in new}]
+    if not added and not updated and not reordered:
+        print("本機清單已與預設清單一致（自己加的 %d 個、已移除的 %d 個不變）" % (len(own), len(removed)))
+        return
+    print("%s%s：" % ("預演，未寫入 " if dry else "已更新 ", CATALOG))
+    for i in added:
+        print("  + %s" % i)
+    for i in updated:
+        print("  ~ %s（類別或說明）" % i)
+    if reordered:
+        print("  序號按預設清單重排")
+    if own:
+        print("  保留自己加的：%s" % "、".join(p["id"] for p in own))
+    if removed:
+        print("  不加回已移除的：%s" % "、".join(sorted(removed)))
+    if not dry:
+        cat["plugins"] = new
+        save_json(CATALOG, cat)
+        cmd_list(cat)
 
 
 def cmd_hint():
@@ -287,6 +338,7 @@ def cmd_hint():
         on = [p["id"].split("@")[0] for p in cat["plugins"]
               if state(p["id"], layers) in ((True, "本地"), (True, "共享"))]
         n = len(cat["plugins"])
+        pend = pending_defaults(cat)
     except Exception:
         return
     tail = ("當前目錄已啟用 %s" % "、".join(on)) if on else "當前目錄未啟用"
@@ -294,6 +346,8 @@ def cmd_hint():
     msg = ("\033[1;33m🔌 myplugins：%d 個可選插件預設關閉，%s\033[0m\n"
            "    含通用（skill 開發、CLAUDE.md 管理等）與 PRD、前端、後端、運維場景插件；"
            "輸入 /myplugins 看清單，按序號開啟插件（如 /myplugins 1）。") % (n, tail)
+    if pend:
+        msg += "\n    預設清單有 %d 個新插件，輸入 /myplugins sync 加入。" % len(pend)
     print(json.dumps({"systemMessage": msg}, ensure_ascii=False))
 
 
@@ -304,7 +358,7 @@ def main(argv):
         cmd_hint()
         return 0
     cat = load_catalog()
-    known = ("list", "status", "enable", "on", "off", "disable", "add", "remove", "rm")
+    known = ("list", "status", "enable", "on", "off", "disable", "add", "remove", "rm", "sync")
     if cmd not in known and (cmd.isdigit() or cmd == "all" or "," in cmd
                              or any(cmd in (p["id"], p["id"].split("@")[0]) for p in cat["plugins"])):
         cmd, rest = "enable", argv
@@ -318,8 +372,10 @@ def main(argv):
         cmd_add(cat, rest)
     elif cmd in ("remove", "rm"):
         cmd_remove(cat, rest)
+    elif cmd == "sync":
+        cmd_sync(cat, rest)
     else:
-        raise Fail("未知子命令 %s；可用 list、enable、off、add、remove" % cmd)
+        raise Fail("未知子命令 %s；可用 list、enable、off、add、remove、sync" % cmd)
     return 0
 
 
