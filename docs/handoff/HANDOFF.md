@@ -1,6 +1,6 @@
 ---
 branch: main
-head: e87fb00
+head: 2ec64ab
 status: active
 updated: 2026-11-05
 ---
@@ -34,7 +34,7 @@ updated: 2026-11-05
 - 2026-11-04～05：阶段 3 待确认项全部处理：B-9 调研后用户选方案 C（`docs/research/2026-11-layering-strictness.md`，规则与 depguard `078674c`）；D-4（`250f03d`）；gsd-core 移出前端默认、主场景改后端且默认不启用（`8c1da27`）；全局 deny 改前缀 ask（`6416e56`，本机已同步）；OpenSpec 安装脚本 Corepack 卡住修复（`06b7902`）；删除 `docs/recommend_repos/`、`examples/`（`8eb2ef7`）；推送并发布 v2.5.0
 - 2026-11-05：**3.2 静态验证完成**：`scripts/tests/test-scenario-bundles.sh`（四场景真实安装）、`scripts/smoke/claude-config-smoke.sh`（`claude mcp list`）、`scripts/smoke/permissions-smoke.sh`（36 条抽样）；实测发现 RTK hook 使 `Read` deny 在沙箱关闭时失效，已在本机 RTK 加 `exclude_commands`，`Read` deny 扩充 20 条（`.env` 系列、凭据、历史记录，`.env.example` 放行；`76c6d27`、`8f0029c`、`f2561b9`，未推送）
 - 2026-11-05（续）：myplugins、myconfig 未验证项用 `claude -p` 实测通过（见变更日志），3 个小问题已按用户决定处理
-- 下一步：先做 `mysession-eval`（用户 2026-11-05 决定要做、暂不执行），再 3.4 真实项目试用；B0 排在最后（见「建议的下一步」）
+- 下一步：先做 `mysession-eval`（用户 2026-11-05 决定要做、暂不执行），再 3.4 真实项目试用（见「建议的下一步」）；B0 已由用户 2026-11-05 取消
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -49,7 +49,7 @@ updated: 2026-11-05
 | 教学材料沉淀（gRPC、Go、Redis） | 完成，疑问已定稿 | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
 | backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；gRPC 规范 `5098a4e`（来自教学材料，用户企业 RPC 规范若有再补） |
 | 可观测性重写与 FiberHouse 错误追踪 | 完成；框架取舍已决定（FiberHouse `v1.2.0`） | `docs/plans/2026-10-22-learning-distill-questions.md` 第三节「FiberHouse 框架取舍」 |
-| 场景配置评估、优化与验证 | **阶段 1 完成、指南已修订（2026-10-30）**，阶段 2 完成（2026-11-03，范围按方案 B；未做项见研究文档 4.3），**阶段 3 行为验证完成（2026-11-04）**，B2 r2 通过（2026-11-04）；静态验证完成（2026-11-05）；真实项目试用、B0 未做 | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
+| 场景配置评估、优化与验证 | **阶段 1 完成、指南已修订（2026-10-30）**，阶段 2 完成（2026-11-03，范围按方案 B；未做项见研究文档 4.3），**阶段 3 行为验证完成（2026-11-04）**，B2 r2 通过（2026-11-04）；静态验证完成（2026-11-05）；真实项目试用未做；B0 用户 2026-11-05 取消 | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
@@ -340,7 +340,6 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
 | 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除）；2026-11-05 改了 `~/.claude/settings.json`（备份 `.bak-20261105012410`）并新建 RTK `config.toml` | — |
 | **`mysession-eval`**（用户 2026-11-05 决定要做，暂不执行）：全局技能，真实项目中主动调用，自动记录与整理试用数据；开工前先与用户确认计划中的初步设计；它是 3.4 的前置 | 计划文件 3.4「候选：mysession-eval」 |
-| **放到最后**（用户 2026-10-30 决定）：单独测 B0「在独立 Go 项目中用 `go get` 引入 FiberHouse 并建第一个模块」，补上基线在框架仓库内测验的局限；任务卡待写、写前先给用户确认 | `docs/evaluation/2026-10-baseline.md` 1.2 |
 
 <!-- section: next -->
 ## 建议的下一步
@@ -373,7 +372,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 1. ~~按 E-1～E-11 修订指南~~：已完成（`d2b129a`）
 2. 阶段 2（计划文件 2.3）：先在 prd-design 用 `claude --debug` 看 skill 清单是否超出预算（P-2）；补测 2～3 个应触发 skill 的任务，其一用 P2 素材强制 `/create-prd` 与 `CLAUDE.md` 8 项盲比（P-1）；汇总各场景 skill/agent/MCP；再按 3.4 调研，优先 D-1、B-4、F-3/P-2、F-4、P-1，产出采纳决策表交用户确认。已定方向：只改场景层；B-4 先在四个场景 `CLAUDE.md` 各加一行「改代码与配置一律用 Edit/Write」，阶段 3 仍绕过再加 hook；F-2 由 F-1（`.playwright-mcp/` 进 `.gitignore`）消除；B-5 不处理；frontend-dev 移除 sentry
-3. 最后：单独测 B0（独立 Go 项目 `go get` FiberHouse 建第一个模块），任务卡先写、给用户确认（用户 2026-10-30 决定放到最后）
+3. ~~最后：单独测 B0（独立 Go 项目 `go get` FiberHouse 建第一个模块）~~：用户 2026-11-05 取消
 
 前置条件：阶段 1 已完成；收尾的容器与 `.env` 清理由用户决定，不阻塞阶段 2。
 
@@ -384,7 +383,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 3. ~~阶段 3 行为验证~~：已完成（2026-11-04），结论 `docs/evaluation/2026-10-final.md`
 4. ~~修 B-7、B-8~~、~~重跑 B2 r2~~、~~安装 myplugins~~：2026-11-04 完成（另修 B-10）
 5～9. ~~B-9、D-4、gsd-core、deny 改 ask、推送与 release、OpenSpec Corepack~~：2026-11-04～05 全部完成（见摘要与变更日志）
-10. **排期**：~~3.2 静态验证~~（2026-11-05 完成；改了 `permissions`、沙箱、RTK 或升级 Claude Code 后按 `scripts/smoke/README.md` 重跑）、3.4 真实项目试用（前置：先做 `mysession-eval`，用户 2026-11-05 决定要做、暂不执行，见计划 3.4；再由用户指定 1～2 个场景与项目，建议按会话次数计）、B0（任务卡先写、给用户确认）
+10. **排期**：~~3.2 静态验证~~（2026-11-05 完成；改了 `permissions`、沙箱、RTK 或升级 Claude Code 后按 `scripts/smoke/README.md` 重跑）、3.4 真实项目试用（前置：先做 `mysession-eval`，用户 2026-11-05 决定要做、暂不执行，见计划 3.4；再由用户指定 1～2 个场景与项目，建议按会话次数计）；~~B0~~（用户 2026-11-05 取消）
 
 前置条件：`mysession-eval` 开工前先确认初步设计；3.4 需用户指定场景与项目。
 
@@ -477,3 +476,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | 待决定事项处理 | 用户决定：本地提交、暂不推送；子 shell 缺口不回报上游；`claude plugin eval` 纳入计划 3.3 先小型试跑（方案与官方文档要点已写入，暂不执行）；交叉评审不做（计划「需要用户决定」已划掉） | 试跑待用户指示 |
 | 2026-11-05 | 本机清理 | 盘点：疑问清单第六节所列旧残留（`grpclab-gomod`、`obs-net`、`mcp-gt`、`fegt-*`、`besz-net`、`rcase-*`、`mgv*`、`d4probe_data`、redis／bufbuild 映像）已不存在；按用户确认删除 `fiberhouse-example-dev`（`docker compose -p … down -v`：4 容器、网络、3 卷）、`scenario-eval-final/projects/dev-ops/deploy/.env`、`~/.claude/plans/` 3 个测试计划档；保留 `fiberhouse-dev`、`fh-glitchtip-verify`、`eval-mysql`（3.4 可能用到）、`golangci-lint` 映像 | — |
 | 2026-11-05 | `mysession-eval` 决定 | 用户决定要做，暂不执行；计划 3.4 候选项改为已决定，作为 3.4 前置、取代手填日志模板；交接摘要、待处理、下一步同步 | 开工前确认初步设计 |
+| 2026-11-05 | 取消 B0 | 用户取消「独立 Go 项目 `go get` FiberHouse 建第一个模块」单独测验；基线 1.2 局限说明保留并加注，交接移除待处理项 | 基线在框架仓库内测验的局限不再补测 |
