@@ -1,6 +1,8 @@
-# golangci-lint v2 的 depguard 规则：go-redis 只能在 cache/ 目录中 import。
+# golangci-lint v2 的 depguard 规则：go-redis 只能在 cache/ 目录中 import；repository/、model/ 不得 import apivo。
 # 合并进项目 .golangci.yml 的 linters.enable 与 linters.settings；项目已有 depguard 规则时只追加 rules 下的条目。
-# 已用 golangci-lint v2.5.0 实测：repository/ 中 import go-redis 报错，cache/ 与 _test.go 中不报错。
+# 已用 golangci-lint v2.5.0 实测：repository/ 中 import go-redis 报错，cache/ 与 _test.go 中不报错；
+# repository/、model/ 中 import apivo 报错，service/ 与 _test.go 中不报错。
+# deny 的 pkg 按前缀匹配、不支持通配（`*/apivo`、`.../apivo/**` 实测不生效），<module> 必须换成 go.mod 的 module 路径。
 version: "2"
 linters:
   enable:
@@ -16,3 +18,11 @@ linters:
           deny:
             - pkg: github.com/redis/go-redis
               desc: go-redis 只在 component/cache 与 module/<模块>/cache 中使用；其他层调用对应 cache 包的方法
+        apivo-not-in-storage:
+          files:
+            - "**/repository/**"
+            - "**/model/**"
+            - "!$test"
+          deny:
+            - pkg: <module>/apivo
+              desc: repository 与 model 不使用对外契约类型；service 负责与 apivo 交换数据（rules/go/layering.md「契约类型」）

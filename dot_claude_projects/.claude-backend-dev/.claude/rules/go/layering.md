@@ -18,18 +18,20 @@ paths:
 |---|---|---|
 | `api/`（handler） | 绑定与校验 `requestvo`，转换为 service 入参；把结果转换为 `responsevo`；把领域错误映射为 HTTP 状态 | 直接调用 repository 或 model；写业务规则 |
 | `command/` | 解析命令行参数后调用 service | 同 `api/` |
-| `service/` | 业务规则、事务边界、编排缓存读写（先更新数据库，再删缓存）、派发任务；入参与返回值用 `dto` / `entity` / 基本类型 | import `apivo`、框架包（fiber、gin、hertz）、`go-redis`，或接收 `*fiber.Ctx`、`*gin.Context`；只接收 `context.Context` |
-| `repository/` | 组合 model 完成存取；把存储错误（如 `mongo.ErrNoDocuments`、`gorm.ErrRecordNotFound`）转换为领域错误（如 `ErrNotFound`） | 引用 service、api；向上暴露驱动专属的错误 |
-| `model/` | 面向单一存储的访问代码（集合、表、索引） | 业务判断 |
+| `service/` | 业务规则、事务边界、编排缓存读写（先更新数据库，再删缓存）、派发任务；入参与返回值用 `apivo` 契约类型（默认，见「契约类型」）或 `dto` / `entity` / 基本类型 | import 框架包（fiber、gin、hertz）、`go-redis`，或接收 `*fiber.Ctx`、`*gin.Context`；只接收 `context.Context` |
+| `repository/` | 组合 model 完成存取；把存储错误（如 `mongo.ErrNoDocuments`、`gorm.ErrRecordNotFound`）转换为领域错误（如 `ErrNotFound`） | 引用 service、api、`apivo`；向上暴露驱动专属的错误 |
+| `model/` | 面向单一存储的访问代码（集合、表、索引） | 业务判断；引用 `apivo` |
 | `cache/` | 本模块直接的 Redis 命令：key 拼装、hash / set / zset 等操作（框架组件的旁路缓存由 service 编排），对外提供有类型的方法 | 业务判断；被 service 以外的层调用 |
 
 ## Redis 访问边界
 
 `go-redis` 只在 `module/<模块>/cache/` 与通用缓存组件（框架自带或项目的 `component/cache/`）中 import，其他层调用这些包的方法。这样 `rules/redis.md` 能在编辑全部 Redis 代码时加载；项目用 golangci-lint 时按 `go-new-module` skill 的 `references/depguard.yml` 强制检查。
 
-## 类型转换
+## 契约类型
 
-- `requestvo → dto`、`entity/dto → responsevo` 只在 `api/` 层完成；`responsevo` 中不出现 BSON、GORM 等存储类型（如 `bson.ObjectID` 对外转为字符串）。
+- 默认：`service` 可直接接收、返回 `apivo` 的 `requestvo` / `responsevo`。前提是 `apivo` 不 import 框架与存储驱动、不带 `bson`、`gorm` 等存储标签；表现层形状与业务不一致时，在 `api/` 层转换为 `dto` 再调用 service。
+- 升为严格：满足任一条件时，`service` 只用 `dto` / `entity` / 基本类型，`requestvo → dto`、`entity/dto → responsevo` 只在 `api/` 层完成，并写 ADR 记录切换原因：对外 API 同时维护多个版本；不同传输层需要不同的请求或响应形状；对外公开 SDK 或供第三方直接调用。
+- 无论默认还是严格：`repository`、`model` 不 import `apivo`；`responsevo` 中不出现 BSON、GORM 等存储类型（如 `bson.ObjectID` 对外转为字符串）。项目用 golangci-lint 时按 `go-new-module` skill 的 `references/depguard.yml` 检查。
 - 不同传输层（Fiber、Gin、CLI）复用同一个 service，不为每种框架各写一份业务逻辑；只有请求绑定、响应写出、错误翻译随框架变化。
 
 ## 错误映射
