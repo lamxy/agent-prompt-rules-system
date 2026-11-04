@@ -37,12 +37,12 @@ local > project > user
 
 | 插件 | 层级／场景 | 说明 |
 |------|-----------|------|
-| `superpowers`、`andrej-karpathy-skills`、`ralph-loop` | 全局 | 工作流与工程方法 |
+| `superpowers`、`andrej-karpathy-skills` | 全局 | 工作流与工程方法 |
 | `mattpocock-skills` | prd-design、backend-dev、fullstack-dev | 需求追问、规格与任务拆分、领域建模；2026-10-28 移出全局，见下方「工作流框架分层」 |
 | `context7`、`github`、`commit-commands` | 全局 | 文档查询与代码托管 |
 | `security-guidance`、`open-code-review` | 全局 | 质量与安全 |
-| `claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify` | 全局 | Claude Code 自身配置 |
-| `remember`、`session-report` | 全局 | 会话与记忆 |
+| `remember` | 全局 | 会话与记忆 |
+| `claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify`、`ralph-loop`、`session-report` | 可选（全局 `false`，`/myplugins` 按项目启用） | 2026-11-04 移出全局，见下方「可选插件」 |
 | `playground` | prd-design、frontend-dev | 单文件 HTML 原型与交互探索 |
 | `document-skills`（`@anthropic-agent-skills`） | prd-design | docx / pptx / xlsx / pdf 交付 |
 | `typescript-native-lsp`（`@anthropic-plugin-directory`）、`frontend-design`、`playwright`、`chrome-devtools-mcp`、`modern-web-guidance` | frontend-dev | 语言服务、UI 实现、浏览器验证、Web 最佳实践 |
@@ -104,11 +104,12 @@ sh scripts/install-claude-project.sh -g      # 复制全局清单 → 同步 ski
 
 | 类别 | 插件 |
 |------|------|
-| 工作流与工程方法 | `superpowers`、`andrej-karpathy-skills`、`ralph-loop` |
+| 工作流与工程方法 | `superpowers`、`andrej-karpathy-skills` |
 | 文档与代码托管 | `context7`、`github`、`commit-commands` |
 | 质量与安全 | `security-guidance`、`open-code-review` |
-| Claude Code 自身配置 | `claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify` |
-| 会话与记忆 | `remember`、`session-report` |
+| 会话与记忆 | `remember` |
+
+可选插件（2026-11-04）：`claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify`、`ralph-loop`、`session-report` 在模板中设为 `false`，`SessionStart` 加 `myplugins hint` 提示；需要时在项目内用 `/myplugins` 启用（写项目 `.claude/settings.local.json`，`--shared` 写 `.claude/settings.json`）。清单另含 `frontend-design`、`chrome-devtools-mcp` 等，共 11 个，见 `dot_claude/skills/myplugins/catalog.default.json`。采用本模板前先安装 myplugins（`dot_claude/README.md`「myplugins 安装」，其中 `sandbox.excludedCommands` 需写本机绝对路径，模板不含），否则这些插件没有启用入口。原因：全局常驻约 3.9k token，拆出 8 个省约 1.8k（2026-11-03 分析）。
 
 相对本机设定的调整：
 
@@ -120,11 +121,7 @@ sh scripts/install-claude-project.sh -g      # 复制全局清单 → 同步 ski
 | `commit-commands`、`skill-creator`、`claude-md-management`、`security-guidance` 改用 `@claude-plugins-official` | 原来分别来自 `claude-code-plugins` 与内置插件目录；统一到官方市场，换机器也能复现 |
 | 删除 `claude-code-plugins` 市场 | 其插件官方市场都有 |
 
-2026-10-28 本机已对齐上表（插件改用官方市场、删除 `claude-code-plugins` 市场、`skillOverrides` 同步、删除 `kubectl get/describe` 放行、停用 `playground`），`dot_claude/settings.json` 镜像同步更新。本机仍刻意保留的差异：
-
-| 差异 | 原因 |
-|------|------|
-| 全局启用 `frontend-design`、`chrome-devtools-mcp` | 作者常在未套用场景模板的临时项目中使用；仓库模板仍只在前端场景启用，避免后端、DevOps 项目多占上下文 |
+2026-10-28 本机已对齐上表（插件改用官方市场、删除 `claude-code-plugins` 市场、`skillOverrides` 同步、删除 `kubectl get/describe` 放行、停用 `playground`），`dot_claude/settings.json` 镜像同步更新。2026-11-04 安装 myplugins 后，本机全局关闭 8 个可选插件（上表 6 个加 `frontend-design`、`chrome-devtools-mcp`），原先「本机全局启用 `frontend-design`、`chrome-devtools-mcp`」的刻意差异取消，临时项目改用 `/myplugins` 启用；镜像同步，只有 `sandbox.excludedCommands` 的 myplugins 一项因含本机绝对路径不进镜像。
 
 要在其他机器采用全局设定，先与该机器的 `~/.claude/settings.json` 比对差异再决定，不要直接覆盖；确认后执行 `install-settings.sh -l user`（会先备份）。
 
