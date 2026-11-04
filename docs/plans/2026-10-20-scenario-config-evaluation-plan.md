@@ -175,6 +175,13 @@
 - [ ] 试用日志模板（`docs/evaluation/pilot-log-template.md`，2026-11-04 核对：文件尚不存在，需新建）：日期、任务、用到的 skill/agent/MCP、冲突或误触发、人工干预、满意度（1～5）、备注
 - [ ] 每周复盘一次：汇总日志，决定保留、调整或移除的项目，调整后回写仓库
 - [ ] 试用结束后与阶段 1 的基线对比，结论写入 `docs/evaluation/2026-10-final.md`
+- [ ] （候选，用户 2026-11-05 决定暂不做、排在后面；3.4 开始前提醒用户是否要做）全局技能 `mypilot`：在真实项目中由用户主动调用，记录与整理试用数据，取代手填日志。初步设计（未确认）：
+  - 位置与安装：`dot_claude/skills/mypilot/`（`SKILL.md` + Python 脚本），本仓库测试后同步到 `~/.claude/skills/`；脚本命令加进 `sandbox.excludedCommands`（同 myplugins，用 `~` 路径）
+  - `/mypilot`：脚本解析本次会话记录（`~/.claude/projects/<项目>/<会话>.jsonl`）得到客观指标（skill／agent／MCP 调用、权限拒绝、工具错误、token），只输出汇总、不把原文带进上下文；主观数据（满意度 1～5、干预次数、备注）由参数或一次提问取得；每条一行 JSON 写入 `~/.claude/mypilot/`（不进项目与本仓库）；排除 `mypilot` 自身的调用
+  - `/mypilot review [场景]`：汇总日志，对照 3.5 判定表给出初判；结论去识别化后写回本仓库
+  - 成本估计（未实测，参照 myplugins 每次约 2.9k）：常驻 0～150（设 `disable-model-invocation: true` 时是否不占清单，未验证）；每次记录约 3～4k；每次复盘约 6～12k；一次性开发约 80～150k；2 场景 × 10 会话、复盘 2 次合计约 90k，与事后手工分析（约 40～100k）相近，收益主要是用户时间与数据一致性
+  - 待验证：能否取得当前会话 id（否则取项目目录下最新 jsonl）；`disable-model-invocation` 对清单的影响
+  - 不采用：SessionEnd hook 自动记录（会在非试用项目留痕，用户要求主动调用）
 
 ### 3.5 判定与回归
 
