@@ -120,9 +120,9 @@
 
 ### 3.2 第一层：安装与静态验证（自动化）
 
-- [ ] 扩展 `scripts/tests/`：四个场景包安装到临时项目后，检查文件齐全、JSON 合法、清单项目级条目带 `{PROJECT_DIR}`（部分已有）
-- [ ] 新增 smoke：在临时项目执行 `claude mcp list`、`claude plugin` 相关只读命令，确认配置被识别（需本机 Claude Code，不改用户配置）
-- [ ] permissions 实测脚本：对 deny/ask 规则逐条构造命令，确认被拦截或要求确认
+- [x] （2026-11-05，`scripts/tests/test-scenario-bundles.sh`）扩展 `scripts/tests/`：四个场景包安装到临时项目后，检查文件齐全、JSON 合法、清单项目级条目带 `{PROJECT_DIR}`（部分已有）
+- [x] （2026-11-05，`scripts/smoke/claude-config-smoke.sh`；`claude plugin` 只列本机插件、与场景无关，未做）新增 smoke：在临时项目执行 `claude mcp list`、`claude plugin` 相关只读命令，确认配置被识别（需本机 Claude Code，不改用户配置）
+- [x] （2026-11-05，`scripts/smoke/permissions-smoke.sh`，按用户选择抽样 36 条而非逐条）permissions 实测脚本：对 deny/ask 规则逐条构造命令，确认被拦截或要求确认
 
 ### 3.3 第二层：行为验证（AI 交叉验证）
 
