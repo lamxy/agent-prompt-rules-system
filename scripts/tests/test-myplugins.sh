@@ -42,26 +42,26 @@ run() {
 jget() { python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(eval(sys.argv[2]))' "$1" "$2"; }
 
 out="$(run)"
-printf '%s\n' "$out" | grep -q ' 1\. frontend-design@claude-plugins-official .*啟用（全局）' \
+printf '%s\n' "$out" | grep -q ' 7\. frontend-design@claude-plugins-official .*啟用（全局）' \
   && pass "list numbers catalog and shows user layer" || fail "list output: $out"
 [ -f "$TMP/home/catalog.json" ] && pass "catalog seeded" || fail "catalog not seeded"
 printf '%s\n' "$out" | grep -q '未安裝' && pass "list marks not installed" || fail "no 未安裝 mark"
 
-run 2 9 -c >/dev/null
+run 8 4 -c >/dev/null
 [ "$(jget "$PROJ/.claude/settings.local.json" 'sorted(d["enabledPlugins"])')" = "['chrome-devtools-mcp@claude-plugins-official', 'hookify@claude-plugins-official']" ] \
   && pass "enable with -c writes local" || fail "local enabledPlugins wrong"
 [ "$(jget "$PROJ/.claude/settings.local.json" 'd["permissions"]["allow"]')" = "['Bash(ls)']" ] \
   && pass "local keeps other keys" || fail "local lost permissions"
 [ ! -f "$PROJ/.claude/settings.json" ] && pass "shared untouched by local enable" || fail "shared written"
-run status | grep -q ' 9\. hookify.*啟用（本地）' && pass "local overrides user false" || fail "hookify state"
+run status | grep -q ' 4\. hookify.*啟用（本地）' && pass "local overrides user false" || fail "hookify state"
 out="$(run status)"
-printf '%s\n' "$out" | grep -q '^已啟用：.*9 hookify（本地）' && printf '%s\n' "$out" | grep -q ' 9\. hookify.*✅ 啟用' \
+printf '%s\n' "$out" | grep -q '^已啟用：.*4 hookify（本地）' && printf '%s\n' "$out" | grep -q ' 4\. hookify.*✅ 啟用' \
   && printf '%s\n' "$out" | grep -q ' 6\. .*⬜ 停用' && pass "list shows enabled summary and status symbols" || fail "symbols: $out"
 
-run off 9 --local >/dev/null
+run off 4 --local >/dev/null
 [ "$(jget "$PROJ/.claude/settings.local.json" '"hookify@claude-plugins-official" in d["enabledPlugins"]')" = "False" ] \
   && pass "off removes key instead of writing false" || fail "off did not remove"
-run status | grep -q ' 9\. hookify.*停用（全局）' && pass "off falls back to user layer" || fail "fallback state"
+run status | grep -q ' 4\. hookify.*停用（全局）' && pass "off falls back to user layer" || fail "fallback state"
 
 run off all --local >/dev/null
 [ "$(jget "$PROJ/.claude/settings.local.json" '"enabledPlugins" in d')" = "False" ] \
@@ -90,7 +90,7 @@ if run 99 >/dev/null 2>&1; then fail "out of range accepted"; else pass "out of 
 if run nosuch >/dev/null 2>&1; then fail "unknown name accepted"; else pass "unknown name rejected"; fi
 
 out="$(run remove andrej-karpathy-skills)"
-[ "$(jget "$TMP/home/catalog.json" 'len(d["plugins"])')" = "11" ] && printf '%s\n' "$out" | grep -q '共享設定仍有' \
+[ "$(jget "$TMP/home/catalog.json" 'len(d["plugins"])')" = "21" ] && printf '%s\n' "$out" | grep -q '共享設定仍有' \
   && pass "remove updates catalog and warns about project layer" || fail "remove: $out"
 
 printf '{bad json' > "$PROJ/.claude/settings.local.json"
