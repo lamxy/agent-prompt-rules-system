@@ -15,7 +15,7 @@ Package-style assets are grouped by target:
 - `dot_claude_projects/`: full project starter bundles.
 - `settings/`: user, project, and local settings templates.
 - `scripts/`: POSIX shell installers and smoke tests.
-- `docs/`, `examples/`, and `open_supports/`: documentation, examples, and external support materials.
+- `docs/` and `open_supports/`: documentation (handoff, plans, evaluation, research) and external support materials.
 
 ## Build, Test, and Development Commands
 

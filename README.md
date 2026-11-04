@@ -61,7 +61,7 @@
 | 能力包 | `skills/` | 按场景分组的 skill（`skills-<FLAG>/`） | `install-skill-pkg.sh` |
 | 工具接入 | `open_supports/` | 开源库本地化支持包（`ost_{Owner}_{Repo}/`）；可单独或按清单安装 | `install-open-supports.sh` |
 | 多客户端 | `scripts/multi_client_support/` | 把 `dot_claude/CLAUDE.md` 的差异规则写入 Codex 的 `~/.codex/AGENTS.md`（标记区块，保留原有内容） | `codex.sh` |
-| 文档 | `docs/recommend_repos/` | 推荐仓库与详细中文教程 | — |
+| 文档 | `docs/` | 进度交接、计划、评估与调研记录 | — |
 | 平台 | `src/` | 预留给「Agent 技能与工具包标准体系」管理平台（MVP 已在其他仓库实现，后续迁入） | — |
 | 归档 | `dot_claude_legacy/` | 2026-10-19 前的分层规则系统备份 | 不安装 |
 
