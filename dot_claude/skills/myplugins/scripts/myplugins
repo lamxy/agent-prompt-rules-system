@@ -146,11 +146,14 @@ def cmd_list(cat):
     print("可選插件（當前目錄：%s）" % project_dir())
     if not cat["plugins"]:
         print("  清單為空，用 add <名稱@市場> 加入")
+    enabled = ["%d %s（%s）" % (i, p["id"].split("@")[0], state(p["id"], layers)[1])
+               for i, p in enumerate(cat["plugins"], 1) if state(p["id"], layers)[0]]
+    print("已啟用：%s" % ("、".join(enabled) if enabled else "無"))
     for i, p in enumerate(cat["plugins"], 1):
         on, src = state(p["id"], layers)
-        mark = ("啟用（%s）" % src) if on else ("停用（%s）" % src if src != "未設定" else "停用")
+        mark = ("✅ 啟用（%s）" % src) if on else ("⬜ 停用（%s）" % src if src != "未設定" else "⬜ 停用")
         if p["id"] not in inst:
-            mark += "，未安裝"
+            mark += " ⚠️ 未安裝"
         print("%3d. %-48s %-14s [%s] %s" % (i, p["id"], mark, p.get("category", "-"), p.get("description", "")))
     print("\n用法：/myplugins 3 | 1 4 6 | all   預設寫入 .claude/settings.json（共享，會進版控）")
     print("      加 --local 或 -c 寫入 .claude/settings.local.json（個人）；加 --dry-run、-t 或 --test 只預演")
@@ -234,7 +237,7 @@ def cmd_toggle(cat, args, turn_on):
     layers = layer_plugins()
     for pid in ids:
         on, src = state(pid, layers)
-        print("  %s → %s" % (pid, ("啟用（%s）" % src) if on else "停用"))
+        print("  %s → %s" % (pid, ("✅ 啟用（%s）" % src) if on else "⬜ 停用"))
 
 
 def cmd_add(cat, args):

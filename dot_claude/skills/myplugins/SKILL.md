@@ -20,7 +20,7 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/myplugins <子命令> [參數]
 
 | 使用者輸入 | 執行 |
 |---|---|
-| 沒有附任何內容，或要求列出 | `list`，原樣顯示輸出，並說明下方用法 |
+| 沒有附任何內容，或要求列出 | `list`，按下方「列出時的呈現」轉成表格，並附用法 |
 | 序號、插件名稱或 `all`（例如 `3`、`1 4 6`、`frontend-design`） | `enable <選擇>` |
 | `off <選擇>` | `off <選擇>` |
 | `add <名稱@市場> [說明]` | `add`；使用者沒給說明時，可從 `claude plugin details <id>` 的 Description 取一句 |
@@ -41,6 +41,14 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/myplugins <子命令> [參數]
 - 腳本報「無法寫入…sandbox.excludedCommands」時，不要改用其他方式寫檔；告訴使用者在 `~/.claude/settings.json` 的 `sandbox.excludedCommands` 加入 `python3 <本技能絕對路徑>/scripts/myplugins *`（路徑見錯誤訊息前的命令），再重試。
 - 腳本輸出「注意：」的行要轉告使用者，例如插件未安裝時附上的安裝命令；不要自行安裝。
 - 增刪清單後序號會重排，以腳本重新列出的清單為準。
+
+## 列出時的呈現
+
+腳本輸出的狀態已帶符號（`✅` 啟用、`⬜` 停用、`⚠️` 未安裝）。回覆時：
+
+- 第一行照抄腳本的「已啟用：」一行。
+- 清單轉成 Markdown 表格，欄位為 `#`、插件（去掉 `@市場`）、狀態（含符號與來源層）、類別、說明；已啟用的整列用粗體。不要改寫狀態或省略項目。
+- 使用者問到 `/plugin` 為什麼把插件列在 User 分組時說明：那是插件的安裝範圍（`installed_plugins.json` 的 `scope`），不代表在哪一層啟用；是否啟用以本清單的來源層為準。
 
 ## 列出時的用法說明
 

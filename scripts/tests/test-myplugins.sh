@@ -54,6 +54,9 @@ run 2 9 -c >/dev/null
   && pass "local keeps other keys" || fail "local lost permissions"
 [ ! -f "$PROJ/.claude/settings.json" ] && pass "shared untouched by local enable" || fail "shared written"
 run status | grep -q ' 9\. hookify.*啟用（本地）' && pass "local overrides user false" || fail "hookify state"
+out="$(run status)"
+printf '%s\n' "$out" | grep -q '^已啟用：.*9 hookify（本地）' && printf '%s\n' "$out" | grep -q ' 9\. hookify.*✅ 啟用' \
+  && printf '%s\n' "$out" | grep -q ' 6\. .*⬜ 停用' && pass "list shows enabled summary and status symbols" || fail "symbols: $out"
 
 run off 9 --local >/dev/null
 [ "$(jget "$PROJ/.claude/settings.local.json" '"hookify@claude-plugins-official" in d["enabledPlugins"]')" = "False" ] \
