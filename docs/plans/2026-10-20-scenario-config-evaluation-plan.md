@@ -167,7 +167,12 @@
 - 代码类产出：`/code-review`、`open-code-review`、`/security-review` 各跑一遍，比较发现的问题数量与严重度
 - 跨客户端：同一任务在 Codex 下用对应配置执行，对比结果，检验 `codex.sh` 与 `.agents/skills` 的复用效果
 - 自定义 skill：用 `skill-creator` 的评估功能检查触发准确性与产出质量
-- 插件级评估：`claude plugin eval` 是否适合本仓库的场景包（待确认后再纳入）
+- [ ] 插件级评估 `claude plugin eval`（用户 2026-11-05 同意纳入，先小型试跑，暂不执行）：
+  - 试跑对象：myconfig，把 2026-11-05 会话实测第 11 条的 5 句触发评估写成案例（2 句应触发、3 句不应触发），确认 skill 能否作为目标、无插件对照组（Δ）有没有用；有用再决定是否推广到其他 skill 与场景包
+  - 前提（官方 `code.claude.com/docs/en/plugin-evals.md`、`plugins/create.md`，2026-11-05 读原文）：目标须是含 `.claude-plugin/plugin.json` 的插件目录或 skills-directory plugin，普通 skill 不行，需在 scratchpad 建临时插件外壳（`plugin.json` + `skills/myconfig/` 复制），不改仓库；每次运行是隔离的 `claude -p`（临时 HOME，不载入个人设定、其他 skill 与插件），环境变量只传 `EVAL_*`，所以 catalog 可能找不到仓库（不影响触发判定）；Bash 等非只读工具要 `--allow-tools` 授权，skill 的 `allowed-tools` 不能放宽
+  - 案例写法：每案例 `prompt.md`（frontmatter `max_turns`、`allowed_tools`、`tags`）+ `graders/*.md`；应触发用 `type: tool_used`、`tool: Skill`、`input_match: '"skill"\s*:\s*"(?:[\w-]+:)?myconfig"'`；不应触发加 `min: 0`、`max: 0`、`arm: both`
+  - 执行：`claude plugin eval . --runs 1 --no-publish --trust-plugin --max-cost-usd 5`；**默认会把 HTML 报告发布到 claude.ai，必须加 `--no-publish`**；默认每案例 3 次再加对照组，试跑用 `--runs 1`（5 案例 × 2 组 = 10 次运行）
+  - 未验证：场景包（`.claude/` 目录，非插件）能否作为目标
 
 ### 3.4 第三层：真实项目试用
 
@@ -218,7 +223,7 @@
 
 - [ ] 各场景用于试用的真实项目——阶段 3 后、真实试用前由用户决定；建议先 1～2 个常用场景
 - [ ] 试用期长度——同上；建议以会话次数计（例如每场景 10 个真实会话）
-- [ ] 交叉评审使用的模型组合与预算上限——选做，只用于 P-1 模板盲比与阶段 2 决策表复核（Codex 一轮）
+- [x] ~~交叉评审使用的模型组合与预算上限——选做，只用于 P-1 模板盲比与阶段 2 决策表复核（Codex 一轮）~~（用户 2026-11-05 决定不做）
 - [ ] 阶段 2 的采纳决策——实施前用决策表逐条确认
 - [x] （2026-11-04 已决定方案 C，见 `docs/research/2026-11-layering-strictness.md`）**分层规则是否必须严格**（用户 2026-11-03 提出，待讨论；阶段 3 结束后、处理 3.3「阶段 3 执行中发现」那批修改时提醒用户）。起因：B4 中 Claude 指出 FiberHouse 的 `example-module` 中 `service` 直接 import `apivo`，违反 `rules/go/layering.md` 的「service 不可 import apivo」。要讨论的问题：
   - 严格分层（service 只用 dto/entity，api 层做全部 VO 转换）与宽松分层（允许 service 直接复用请求/响应结构，减少样板转换）各自的收益和代价
