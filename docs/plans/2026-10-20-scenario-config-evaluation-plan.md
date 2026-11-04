@@ -1,6 +1,6 @@
 # 场景配置评估、优化与验证：待办计划
 
-创建：2026-10-20　状态：阶段 1 完成；阶段 2 部分完成，正按方案 B 补做（2026-11-03）　关联：`docs/handoff/HANDOFF.md`「待办」
+创建：2026-10-20　状态：阶段 1、2 完成（阶段 2 范围按方案 B）；阶段 3 行为验证完成（2026-11-04），3.2 静态验证、3.4 真实项目试用、3.5 判定未做　关联：`docs/handoff/HANDOFF.md`「待办」
 
 ## 2026-10-27 审计结论（与下文冲突时以此为准）
 
@@ -135,9 +135,9 @@
 - B1：没有限定验证用一次性容器，Claude 用 `docker exec eval-mysql` 和容器内 root 在共享测验库建了临时库，绕过只读账号，结束后临时库还留在库里（用户已手动删除）。
 - B2：步骤要求比对 `mysqldump --no-data`，与全局 deny `Bash(*mysqldump*)` 冲突。Claude 探测工具的复合命令 `which mysql mysqldump docker; docker ps` 整条被拒，之后放弃验证。阶段 1 的 skill 没有这一步，`docker run --rm mysql:8.0` 验证可以正常执行。
 - 用户原则：创建与只读命令放行，清理与删除需要确认或禁止；不应阻止 Claude 发起验证。
-- [ ] 修改 `db-schema-design`（`skills/skills-backend-dev/` 与 `dot_claude_projects/.claude-backend-dev/` 两处）：验证改用 `docker run --rm mysql:8.0` 一次性容器，不用共享库；schema 比对改用 `SHOW CREATE TABLE` 或 `information_schema`，不依赖 `mysqldump`
-- [ ] 改完后重跑 B2（r2），确认验证能完成且不留残留；B1 是否重跑视改动范围决定
-- [ ] D2：compose 项目名与本机 `~/workspace/local-infra/fiberhouse-dev`（`name: fiberhouse-dev`）同名，挂上并改动了该环境的三个卷。评估 `middleware-ops` 是否加「启动前按项目名查已有卷与停止的容器」；测验后在 local-infra 目录 `docker compose up -d` 重建容器，并检查其 Redis 是否混入测验写入
+- [x] （2026-11-04，`f67e416`）修改 `db-schema-design`（`skills/skills-backend-dev/` 与 `dot_claude_projects/.claude-backend-dev/` 两处）：验证改用 `docker run --rm mysql:8.0` 一次性容器，不用共享库；schema 比对改用 `SHOW CREATE TABLE` 或 `information_schema`，不依赖 `mysqldump`
+- [x] （2026-11-04，B2 r2 通过，另修 B-10 `9cb4a30`；B1 未重跑）改完后重跑 B2（r2），确认验证能完成且不留残留；B1 是否重跑视改动范围决定
+- [ ] D2：compose 项目名与本机 `~/workspace/local-infra/fiberhouse-dev`（`name: fiberhouse-dev`）同名，挂上并改动了该环境的三个卷。评估 `middleware-ops` 是否加「启动前按项目名查已有卷与停止的容器」；测验后在 local-infra 目录 `docker compose up -d` 重建容器，并检查其 Redis 是否混入测验写入（2026-11-04：重建与 Redis 检查已完成，无需清理；`middleware-ops` 修改即 D-4，未做）
 - [ ] 全局 deny `Bash(*mysqldump*)` 是否改为 ask，由用户决定（改 `~/.claude/` 需用户明确指示；skill 改完后不再依赖它，非必需）
 
 **标准任务**：每个场景 3～5 个，覆盖该场景核心能力，例如：
@@ -172,7 +172,7 @@
 ### 3.4 第三层：真实项目试用
 
 - [ ] 每个场景选一个用户的真实项目（由用户指定），试用期约 2 周
-- [ ] 试用日志模板（`docs/evaluation/pilot-log-template.md`）：日期、任务、用到的 skill/agent/MCP、冲突或误触发、人工干预、满意度（1～5）、备注
+- [ ] 试用日志模板（`docs/evaluation/pilot-log-template.md`，2026-11-04 核对：文件尚不存在，需新建）：日期、任务、用到的 skill/agent/MCP、冲突或误触发、人工干预、满意度（1～5）、备注
 - [ ] 每周复盘一次：汇总日志，决定保留、调整或移除的项目，调整后回写仓库
 - [ ] 试用结束后与阶段 1 的基线对比，结论写入 `docs/evaluation/2026-10-final.md`
 
