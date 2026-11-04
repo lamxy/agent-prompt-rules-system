@@ -22,7 +22,7 @@
 - 不设 `CLAUDE_CONFIG_DIR`，由用户在本机正常的 Claude Code 中手动执行。因此基线是「**本机实际全局配置 + 场景包**」，不是本仓库 `settings/settings.user.json` 设计的全局层；全局层评估等本机采用新全局设定后再做。
 - 专案集：`~/workspace/aitools_test/scenario-eval/`，每个场景一个项目（`projects/<FLAG>/`），另有空的对照目录 `projects/_control/`。
 - 后端与 DevOps 项目以 FiberHouse 为底：在专案集内从 GitHub 重新克隆到 `repos/fiberhouse/`，再从它复制出两个项目，删除其自带的 `CLAUDE.md`、`.claude/`、`.mcp.json` 后安装场景包；不使用本机开发中的 `~/workspace/github_repos/fiberhouse`。
-  - 局限（2026-10-29 记录）：真实开发是新建独立项目、`go get` 引入 FiberHouse、参照 `example_application` 自建结构；本基线直接在框架仓库内改动，参考代码就在旁边，`go get` 版本约定与 `go-new-module` 在独立项目中的目录落点测不到，框架样例的设定（`example_main` 默认 Hertz、`command-module` 用 AutoMigrate）也会干扰。B 系列仍按本节执行；阶段 1 完成后另测 B0（见交接文件「待处理事项」）。
+  - 局限（2026-10-29 记录）：真实开发是新建独立项目、`go get` 引入 FiberHouse、参照 `example_application` 自建结构；本基线直接在框架仓库内改动，参考代码就在旁边，`go get` 版本约定与 `go-new-module` 在独立项目中的目录落点测不到，框架样例的设定（`example_main` 默认 Hertz、`command-module` 用 AutoMigrate）也会干扰。B 系列仍按本节执行；阶段 1 完成后另测 B0 的计划已于 2026-11-05 由用户取消，此局限不再补测。
 - 权限前提（2026-10-29 B2 发现）：本机全局设定为 `defaultMode: auto`，并 allow `docker run *`、`docker compose up/down *` 等，指南第 0 节「docker 变更命令一律拒绝」所依赖的确认提示在 backend-dev 不会出现（B2 自行起临时 MySQL 容器验证 DDL，未连 eval-mysql、已自清）。dev-ops 场景包有对应 ask 规则，auto 模式下是否仍弹确认未验证，D2 观察。总结时按「实际是否弹出确认」判定 B8、D2、D7，不按指南预设。
 - **与真实使用一致**（2026-10-28 用户决定）：场景包按正式流程安装，含支持包（pm-skills、codegraph）、场景 settings 启用的全部插件（项目范围）与项目 MCP。由此产生的本机影响（插件缓存与市场、codegraph 升级、`npx` 缓存、会话记录）不再禁止，改由指南 1.1 逐项提醒，并在安装前、收尾时各拍一次快照对比。MCP 能否连上取决于用户有没有开发环境，连不上照常测验并记录。
 - 沙箱（2026-10-30 用户决定）：阶段 1、阶段 3 全部场景一律关闭沙箱（项目 `settings.local.json` 的 `sandbox.enabled: false`），理由是今后多数开发在关闭沙箱下进行。实际关闭时间：backend-dev 10-29 18:29（B1 之前）、dev-ops 10-30 00:04（D2 之前）、frontend-dev 10-30 10:58（F1 开始时，会话内 `/sandbox`）；prd-design 须在 P1 前关闭。
