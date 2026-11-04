@@ -9,8 +9,8 @@
 |--------|------|--------|
 | `.claude/` | `open_supports_name_list.txt`：gstack、task-master（用户级） | `~/.claude/` |
 | `.claude-prd-design/` | settings、`CLAUDE.md`、6 个 agent；清单：pm-skills 以 `--scope project` 安装为项目插件 | 项目根目录 |
-| `.claude-frontend-dev/` | settings、`CLAUDE.md`、5 个 agent；清单：gsd-core（项目级）；OpenSpec、codegraph 为第二场景（注释状态） | 项目根目录 |
-| `.claude-backend-dev/` | Go 参考实现：settings（含 gofmt hook）、`CLAUDE.md`、`.mcp.json`（MySQL、PostgreSQL、GlitchTip）、6 个 agent、path rules（Go、框架、存储与中间件）、5 个 skill；清单：codegraph（项目级）、OpenSpec；gsd-core 为第二场景（注释状态） | 项目根目录 |
+| `.claude-frontend-dev/` | settings、`CLAUDE.md`、5 个 agent；清单：gsd-core、OpenSpec、codegraph 均为第二场景（注释状态） | 项目根目录 |
+| `.claude-backend-dev/` | Go 参考实现：settings（含 gofmt hook）、`CLAUDE.md`、`.mcp.json`（MySQL、PostgreSQL、GlitchTip）、6 个 agent、path rules（Go、框架、存储与中间件）、5 个 skill；清单：codegraph（项目级）、OpenSpec；gsd-core 为主场景但默认不启用（注释状态） | 项目根目录 |
 | `.claude-dev-ops/` | settings、`CLAUDE.md`、`.mcp.json`（GlitchTip）、5 个 agent、`middleware-ops` skill；清单：pm-skills 的 `pm-ai-shipping` 为第二场景（注释状态） | 项目根目录 |
 | `.claude-FLAG-NAME_template/` | 命名模板与清单格式说明 | — |
 
@@ -111,9 +111,9 @@ colbymchenry/codegraph --target=claude --location=local {PROJECT_DIR}
 
 完整说明见 `.claude-FLAG-NAME_template/README-open_supports_name-list.md`。
 
-**规格／工作流框架**：OpenSpec（后端主场景）、gsd-core（前端主场景）默认启用（2026-10-28 用户决定，取代此前「不设默认框架」）。两者与全局的 superpowers 一样规定了「规划 → 拆解 → 执行」流程，同一项目只启用其中一套：要换用另一套时，注释主场景那一行、取消注释第二场景那一行。
+**规格／工作流框架**：OpenSpec 在后端默认启用（2026-10-28 用户决定）；gsd-core 主场景为后端但默认不启用、前端为第二场景（2026-11-04 用户决定，依据阶段 3 F5），需要时取消注释安装。frontend-dev 因此默认没有规格框架，规划由全局 superpowers 承担。两者与 superpowers 一样规定了「规划 → 拆解 → 执行」流程，同一项目只启用其中一套：要换用另一套时，注释已启用的那一行、取消注释要用的那一行。
 
-**主场景与第二场景**：一个支持包可能适合多个场景。主场景默认启用；第二场景一律注释录入并写明适用条件。划分与依据见 [`open_supports/INDEX.md`](../open_supports/INDEX.md)「建议场景」。
+**主场景与第二场景**：一个支持包可能适合多个场景。主场景默认启用（例外：gsd-core 默认不启用）；第二场景一律注释录入并写明适用条件。划分与依据见 [`open_supports/INDEX.md`](../open_supports/INDEX.md)「建议场景」。
 
 ## 新增场景
 

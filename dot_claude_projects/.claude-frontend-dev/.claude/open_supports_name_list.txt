@@ -10,14 +10,14 @@
 # 主场景／第二场景的划分见 open_supports/INDEX.md「建议场景」。本场景是某支持包的
 # 第二场景时，条目一律以注释形式录入，并说明适用条件，需要时取消注释再安装。
 
-# 【主场景】规格／工作流框架 gsd-core（默认启用）：除通用的分阶段推进、全新上下文子代理、
-# worktree 隔离外，另有前端专属的 /gsd-ui-phase（UI 设计契约）与 /gsd-ui-review（六维视觉审查，附截图）。
-# 它与全局 superpowers 一样规定「规划 → 拆解 → 执行」流程，与全局 gstack 的 /design-review、/qa、/ship
-# 也有重叠；同一项目只启用一套规格框架，改用 OpenSpec 时注释本行。以 npx 安装到项目级。
-open-gsd/gsd-core --claude --local {PROJECT_DIR}
+# 【第二场景】规格／工作流框架 gsd-core（主场景为 backend-dev，默认不启用；2026-11-04 依阶段 3 F5 移出本场景默认）：
+# 需要跨多个阶段的长程前端开发，或要用前端专属的 /gsd-ui-phase（UI 设计契约）、/gsd-ui-review（六维视觉审查，
+# 附截图）时启用。它与全局 superpowers 一样规定「规划 → 拆解 → 执行」流程，与全局 gstack 的 /design-review、
+# /qa、/ship 也有重叠；同一项目只启用一套规格框架（与下方 OpenSpec 二选一）。以 npx 安装到项目级。
+# open-gsd/gsd-core --claude --local {PROJECT_DIR}
 
 # 【第二场景】OpenSpec（主场景为 backend-dev）：项目以对接后端 API 契约为主、
-# 想把前端行为写成「需求 + 场景（WHEN/THEN）」规格时启用；启用时注释上方 gsd-core（二选一）。
+# 想把前端行为写成「需求 + 场景（WHEN/THEN）」规格时启用；与上方 gsd-core 二选一。
 # Fission-AI/OpenSpec --init-project --tools=claude {PROJECT_DIR}
 
 # 【第二场景】代码知识图谱 codegraph（主场景为 backend-dev）：前端代码量大、

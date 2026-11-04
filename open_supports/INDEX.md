@@ -34,15 +34,15 @@
 | `ost_garrytan_gstack` | [garrytan/gstack](https://github.com/garrytan/gstack) | Think → Plan → Build → Review → Test → Ship 的编码工作流技能包 | D（本地 B） | **全局**（产品、前后端常用） | ✅ |
 | `ost_mattpocock_skills` | [mattpocock/skills](https://github.com/mattpocock/skills) | 小而可组合的工程类 agent skills（如 `/grill-me`） | D（项目分支 B） | prd-design、backend-dev、fullstack-dev（插件，场景 settings 启用） | ✅ |
 | `ost_msitarzewski_agency-agents` | [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents) | 多角色专业 agent 与安装脚本（本仓库 `agents/agents-agency-agent-based-dev/` 的来源） | D（项目分支 B） | 不直接安装，已挑选到 `agents/` | ✅ |
-| `ost_open-gsd_gsd-core` | [open-gsd/gsd-core](https://github.com/open-gsd/gsd-core) | discuss → plan → execute → verify → ship 的 spec-driven 工作流 | D（本地 B） | 主：前端；次：后端 | ✅ |
+| `ost_open-gsd_gsd-core` | [open-gsd/gsd-core](https://github.com/open-gsd/gsd-core) | discuss → plan → execute → verify → ship 的 spec-driven 工作流 | D（本地 B） | 主：后端（默认不启用，按需手动启用）；次：前端 | ✅ |
 | `ost_phuryn_pm-skills` | [phuryn/pm-skills](https://github.com/phuryn/pm-skills) | PM Skills 插件市场：68 个 PM skills、42 个工作流 | D（本地 B） | 主：PRD（项目级插件）；次：DevOps（仅 `pm-ai-shipping`） | ✅ |
 | `ost_topoteretes_cognee` | [topoteretes/cognee](https://github.com/topoteretes/cognee) | Agent 长期记忆平台：知识图谱 + 向量记忆 | D（本地 C） | 暂不启用（记忆类由全局 `remember` 插件承担） | ✅ |
 
 
-「建议场景」中，**主**为该支持包在场景清单中默认启用的场景；**次**为第二场景，在该场景清单中一律以注释录入并写明适用条件，需要时取消注释再安装。依据（2026-10-28 核对上游原文）：
+「建议场景」中，**主**为该支持包在场景清单中默认启用的场景（例外：gsd-core，见下）；**次**为第二场景，在该场景清单中一律以注释录入并写明适用条件，需要时取消注释再安装。依据（2026-10-28 核对上游原文）：
 
 - OpenSpec 规格放在代码仓库的 `openspec/`、`/opsx:apply` 直接实现，属于开发工作流而非 PRD 工具；以「需求 + 场景（WHEN/THEN）」描述行为，与后端「先改契约」一致，故主场景为后端。
-- gsd-core 唯一的场景专属能力是前端的 `/gsd-ui-phase`、`/gsd-ui-review`，故主场景为前端；OpenSpec 与 gsd-core 都是规格／工作流框架，同一项目只启用一套，改用另一套时注释主场景那一行。
+- gsd-core：2026-11-04 用户决定主场景改为后端、默认不启用（主场景默认启用的唯一例外），按需取消注释安装；依据是阶段 3 F5 规划型任务未调用 gsd-*、也交出合格计划，阶段 1 的 F 系列同样未用（`docs/evaluation/2026-10-final.md` 4.2）。前端专属的 `/gsd-ui-phase`、`/gsd-ui-review` 保留为前端第二场景的启用条件；OpenSpec 与 gsd-core 都是规格／工作流框架，同一项目只启用一套，改用另一套时注释主场景那一行。
 - phuryn/pm-skills 的 `pm-ai-shipping`（`/ship-check`、`/security-audit-static`、`/performance-audit-static`）是上线前的静态代码审查与签核材料，列为 DevOps 的次场景；与已有审查工具重叠，默认不启用。
 - deanpeters/Product-Manager-Skills 与 phuryn 功能高度重叠，两者 `marketplace.json` 的 `name` 都是 `pm-skills`，且授权为 CC BY-NC-SA 4.0（非商业）；本仓库支持包目前没有 Claude Code 项目级安装路径。2026-10-28 用户决定忽略：不写入任何场景清单，也不再补项目级安装路径；支持包目录保留供参考。
 

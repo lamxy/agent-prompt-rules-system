@@ -26,7 +26,7 @@ allowed-tools: Bash(sh "${CLAUDE_SKILL_DIR}/scripts/catalog" || printf 'REPO=UNR
 | 場景 | 適用 | 整包內容重點 |
 |---|---|---|
 | `prd-design` | 需求說明書、PRD、線框圖、基礎原型 | PM 類 agents、pm-skills 支援包、playground、document-skills |
-| `frontend-dev` | UI 實作、前端互動、對接後端 API | 前端 agents、瀏覽器驗證外掛、gsd-core 規格框架 |
+| `frontend-dev` | UI 實作、前端互動、對接後端 API | 前端 agents、瀏覽器驗證外掛 |
 | `backend-dev` | 系統與資料庫設計、Go 後端開發 | Go 分層 rules、7 個設計類 skill、資料庫 MCP、codegraph、OpenSpec |
 | `dev-ops` | CI/CD、上線、可觀測性 | 部署 permissions、middleware-ops skill、GlitchTip MCP |
 

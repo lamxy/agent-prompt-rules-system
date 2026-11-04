@@ -20,6 +20,7 @@ colbymchenry/codegraph --target=claude --location=local {PROJECT_DIR}
 # 再在项目中执行 openspec init。
 Fission-AI/OpenSpec --init-project --tools=claude {PROJECT_DIR}
 
-# 【第二场景】gsd-core（主场景为 frontend-dev）：需要跨多个阶段的长程开发、
-# 希望由全新上下文子代理分波执行并按阶段建 PR 时启用；启用时注释上方 OpenSpec（二选一）。
+# 【主场景，默认不启用】gsd-core（2026-11-04 用户决定：主场景改为本场景，按需手动启用）：需要跨多个阶段的
+# 长程开发、希望由全新上下文子代理分波执行并按阶段建 PR 时，取消注释本行再执行
+# install-open-supports.sh -t <project>；启用时注释上方 OpenSpec（二选一）。
 # open-gsd/gsd-core --claude --local {PROJECT_DIR}

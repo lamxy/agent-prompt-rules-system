@@ -27,7 +27,7 @@ local > project > user
 分层原则：
 
 - **用户级只放所有项目都需要的插件**；和语言、框架、业务领域相关的插件放到项目级场景模板。插件在项目的 `.claude/settings.json` 中启用时只对该项目生效。
-- **规格框架按场景启用**：superpowers 在全局；OpenSpec（后端）、gsd-core（前端）在 `dot_claude_projects/` 场景清单中默认启用，同一项目只启用其中一套，见 [`dot_claude_projects/README.md`](../dot_claude_projects/README.md)。
+- **规格框架按场景启用**：superpowers 在全局；OpenSpec 在后端场景清单中默认启用；gsd-core 主场景为后端但默认不启用、前端为第二场景（2026-11-04），按需取消注释；同一项目只启用其中一套，见 [`dot_claude_projects/README.md`](../dot_claude_projects/README.md)。
 - **硬约束写在 `permissions`**：后端模板拒绝破坏性数据库命令，DevOps 模板对基础设施变更命令要求人工确认。
 - **市场统一**：`anthropics/claude-code`（`claude-code-plugins`）中的插件在官方市场 `claude-plugins-official` 都有同名版本，模板不再引用前者。
 
