@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""myplugins：在目前專案按序號啟用或關閉可選插件，並維護可選插件清單。
+"""myplugins：在當前目錄按序號啟用或關閉可選插件，並維護可選插件清單。
 
 子命令：
   list | status                    列出清單與本專案狀態（預設）
-  enable <選擇...> [--shared] [--dry-run]
-  off <選擇...> [--shared] [--dry-run]
+  enable <選擇...> [--local|-c] [--dry-run|-t|--test]
+  off <選擇...> [--local|-c] [--dry-run|-t|--test]
   add <名稱@市場> [說明...] [--category 類別]
   remove <選擇...>
   hint                             SessionStart hook 用，輸出提示 JSON
 
 選擇：序號（1 3 5）、插件 id 或名稱、all。
-寫入：預設 .claude/settings.local.json（個人）；--shared 寫 .claude/settings.json（共享）。
+寫入：預設 .claude/settings.json（共享，會進版控）；--local 或 -c 寫 .claude/settings.local.json（個人）。
+預演：--dry-run、-t 或 --test 只顯示變更，不寫入。
 環境變數：MYPLUGINS_HOME（清單目錄，預設 ~/.claude/myplugins）、
 MYPLUGINS_CLAUDE_DIR（預設 ~/.claude）、MYPLUGINS_PROJECT_DIR（預設 CLAUDE_PROJECT_DIR 或目前目錄）。
 """
@@ -35,6 +36,11 @@ def project_dir():
 
 class Fail(Exception):
     pass
+
+
+LOCAL_FLAGS = ("--local", "-c")
+SHARED_FLAGS = ("--shared",)
+DRY_FLAGS = ("--dry-run", "-t", "--test")
 
 
 def load_json(path, default):
@@ -137,7 +143,7 @@ def resolve(cat, args):
 
 def cmd_list(cat):
     layers, inst = layer_plugins(), installed_ids()
-    print("可選插件（專案：%s）" % project_dir())
+    print("可選插件（當前目錄：%s）" % project_dir())
     if not cat["plugins"]:
         print("  清單為空，用 add <名稱@市場> 加入")
     for i, p in enumerate(cat["plugins"], 1):
@@ -146,8 +152,9 @@ def cmd_list(cat):
         if p["id"] not in inst:
             mark += "，未安裝"
         print("%3d. %-48s %-14s [%s] %s" % (i, p["id"], mark, p.get("category", "-"), p.get("description", "")))
-    print("\n用法：/myplugins 3 | 1 4 6 | all（預設寫入本地個人設定，加 --shared 寫入專案共享設定）")
-    print("      /myplugins off 3 | off all [--shared]；add <名稱@市場> [說明]；remove <序號>")
+    print("\n用法：/myplugins 3 | 1 4 6 | all   預設寫入 .claude/settings.json（共享，會進版控）")
+    print("      加 --local 或 -c 寫入 .claude/settings.local.json（個人）；加 --dry-run、-t 或 --test 只預演")
+    print("      /myplugins off 3 | off all [--local]；add <名稱@市場> [說明]；remove <序號>")
     print("寫入後在會話中執行 /reload-plugins 或重開 Claude 才會生效。")
 
 
@@ -167,9 +174,12 @@ def gitignored(path):
 
 
 def cmd_toggle(cat, args, turn_on):
-    shared = "--shared" in args
-    dry = "--dry-run" in args
-    sel = [a for a in args if a not in ("--shared", "--dry-run")]
+    local = any(a in LOCAL_FLAGS for a in args)
+    if local and any(a in SHARED_FLAGS for a in args):
+        raise Fail("--local／-c 與 --shared 不能同時使用")
+    shared = not local
+    dry = any(a in DRY_FLAGS for a in args)
+    sel = [a for a in args if a not in LOCAL_FLAGS + SHARED_FLAGS + DRY_FLAGS]
     ids = resolve(cat, sel)
     path = layer_paths()["shared" if shared else "local"]
     data = load_json(path, {})
@@ -257,7 +267,7 @@ def cmd_remove(cat, args):
         print("已從清單移除 %s" % pid)
         for name, label in (("local", "本地"), ("shared", "共享")):
             if pid in layers[name]:
-                print("注意：本專案%s設定仍有 %s，需要時用 off 處理（先用 add 加回清單）" % (label, pid))
+                print("注意：當前目錄%s設定仍有 %s，需要時用 off 處理（先用 add 加回清單）" % (label, pid))
     cmd_list(cat)
 
 
@@ -276,8 +286,11 @@ def cmd_hint():
         n = len(cat["plugins"])
     except Exception:
         return
-    tail = ("本專案另啟用：%s" % "、".join(on)) if on else "本專案未另外啟用"
-    msg = "可選插件 %d 個，%s。輸入 /myplugins 查看清單並按序號啟用。" % (n, tail)
+    tail = ("當前目錄已啟用 %s" % "、".join(on)) if on else "當前目錄未啟用"
+    # 第一行黃色粗體（ANSI 色碼在 systemMessage 中有效，2026-11-04 實測），第二行一般顏色
+    msg = ("\033[1;33m🔌 myplugins：%d 個可選插件預設關閉，%s\033[0m\n"
+           "    含前端設計、Chrome 除錯、PR 審查、安全掃描、skill 開發、CLAUDE.md 管理等；"
+           "輸入 /myplugins 看清單，按序號開啟插件（如 /myplugins 1）。") % (n, tail)
     print(json.dumps({"systemMessage": msg}, ensure_ascii=False))
 
 

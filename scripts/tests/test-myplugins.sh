@@ -1,6 +1,6 @@
 #!/bin/sh
 # Tests dot_claude/skills/myplugins/scripts/myplugins in temporary directories:
-# local/shared writes keep other keys, off removes only one layer, marketplace
+# shared (default) / local (--local, -c) writes keep other keys, dry-run flags,, off removes only one layer, marketplace
 # declaration for shared third-party plugins, catalog add/remove, bad input, hint.
 set -eu
 
@@ -47,33 +47,37 @@ printf '%s\n' "$out" | grep -q ' 1\. frontend-design@claude-plugins-official .*�
 [ -f "$TMP/home/catalog.json" ] && pass "catalog seeded" || fail "catalog not seeded"
 printf '%s\n' "$out" | grep -q '未安裝' && pass "list marks not installed" || fail "no 未安裝 mark"
 
-run 2 9 >/dev/null
+run 2 9 -c >/dev/null
 [ "$(jget "$PROJ/.claude/settings.local.json" 'sorted(d["enabledPlugins"])')" = "['chrome-devtools-mcp@claude-plugins-official', 'hookify@claude-plugins-official']" ] \
-  && pass "enable by numbers writes local" || fail "local enabledPlugins wrong"
+  && pass "enable with -c writes local" || fail "local enabledPlugins wrong"
 [ "$(jget "$PROJ/.claude/settings.local.json" 'd["permissions"]["allow"]')" = "['Bash(ls)']" ] \
   && pass "local keeps other keys" || fail "local lost permissions"
 [ ! -f "$PROJ/.claude/settings.json" ] && pass "shared untouched by local enable" || fail "shared written"
 run status | grep -q ' 9\. hookify.*啟用（本地）' && pass "local overrides user false" || fail "hookify state"
 
-run off 9 >/dev/null
+run off 9 --local >/dev/null
 [ "$(jget "$PROJ/.claude/settings.local.json" '"hookify@claude-plugins-official" in d["enabledPlugins"]')" = "False" ] \
   && pass "off removes key instead of writing false" || fail "off did not remove"
 run status | grep -q ' 9\. hookify.*停用（全局）' && pass "off falls back to user layer" || fail "fallback state"
 
-run off all >/dev/null
+run off all --local >/dev/null
 [ "$(jget "$PROJ/.claude/settings.local.json" '"enabledPlugins" in d')" = "False" ] \
   && pass "off all drops empty enabledPlugins" || fail "empty enabledPlugins left"
 
-out="$(run 1 --shared --dry-run)"
-[ ! -f "$PROJ/.claude/settings.json" ] && printf '%s\n' "$out" | grep -q '預演' \
-  && pass "shared dry-run writes nothing" || fail "dry-run wrote: $out"
+for f in --dry-run -t --test; do
+  out="$(run 1 "$f")"
+  [ ! -f "$PROJ/.claude/settings.json" ] && printf '%s\n' "$out" | grep -q '預演' \
+    && pass "$f previews and writes nothing" || fail "$f wrote: $out"
+done
+if run 1 --local --shared >/dev/null 2>&1; then fail "--local with --shared accepted"; else pass "--local with --shared rejected"; fi
 
 run add andrej-karpathy-skills@karpathy-skills 測試 --category 方法 >/dev/null
 n="$(jget "$TMP/home/catalog.json" 'len(d["plugins"])')"
-run "$n" --shared >/dev/null
+run "$n" >/dev/null
+[ -f "$PROJ/.claude/settings.json" ] && pass "default writes shared settings.json" || fail "default did not write shared"
 [ "$(jget "$PROJ/.claude/settings.json" 'd["extraKnownMarketplaces"]["karpathy-skills"]["source"]["repo"]')" = "forrestchang/andrej-karpathy-skills" ] \
   && pass "shared third-party plugin declares marketplace" || fail "marketplace not declared"
-run frontend-design --shared >/dev/null
+run frontend-design >/dev/null
 [ "$(jget "$PROJ/.claude/settings.json" '"claude-plugins-official" in d.get("extraKnownMarketplaces", {})')" = "False" ] \
   && pass "official marketplace not declared" || fail "official declared"
 
@@ -87,16 +91,19 @@ out="$(run remove andrej-karpathy-skills)"
   && pass "remove updates catalog and warns about project layer" || fail "remove: $out"
 
 printf '{bad json' > "$PROJ/.claude/settings.local.json"
-if run 1 >/dev/null 2>&1; then fail "bad json overwritten"; else
+if run 1 --local >/dev/null 2>&1; then fail "bad json overwritten"; else
   [ "$(cat "$PROJ/.claude/settings.local.json")" = "{bad json" ] && pass "bad json left untouched" || fail "bad json changed"
 fi
 printf '{}\n' > "$PROJ/.claude/settings.local.json"
 
-run 1 >/dev/null
+run 1 --local >/dev/null
 h="$(printf '{"source":"startup"}' | run hint)"
-printf '%s\n' "$h" | python3 -c 'import json,sys; m=json.load(sys.stdin)["systemMessage"]; assert "/myplugins" in m and "frontend-design" in m' \
+printf '%s\n' "$h" | python3 -c 'import json,sys; m=json.load(sys.stdin)["systemMessage"]; assert "/myplugins 1" in m and "當前目錄已啟用" in m and "frontend-design" in m' \
   && pass "hint emits systemMessage with enabled list" || fail "hint: $h"
 [ -z "$(printf '{"source":"compact"}' | run hint)" ] && pass "hint silent on compact" || fail "hint on compact"
+EMPTY="$TMP/empty"; mkdir -p "$EMPTY"
+h="$(printf '{"source":"startup"}' | MYPLUGINS_PROJECT_DIR="$EMPTY" MYPLUGINS_CLAUDE_DIR="$CD" MYPLUGINS_HOME="$TMP/home" CLAUDE_PROJECT_DIR= python3 "$TOOL" hint)"
+printf '%s\n' "$h" | grep -q '當前目錄未啟用' && pass "hint says nothing enabled in plain directory" || fail "hint empty dir: $h"
 
 printf '\n%s failure(s)\n' "$FAILS"
 [ "$FAILS" -eq 0 ]

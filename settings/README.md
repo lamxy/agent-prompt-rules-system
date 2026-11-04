@@ -109,7 +109,7 @@ sh scripts/install-claude-project.sh -g      # 复制全局清单 → 同步 ski
 | 质量与安全 | `security-guidance`、`open-code-review` |
 | 会话与记忆 | `remember` |
 
-可选插件（2026-11-04）：`claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify`、`ralph-loop`、`session-report` 在模板中设为 `false`，`SessionStart` 加 `myplugins hint` 提示；需要时在项目内用 `/myplugins` 启用（写项目 `.claude/settings.local.json`，`--shared` 写 `.claude/settings.json`）。清单另含 `frontend-design`、`chrome-devtools-mcp` 等，共 11 个，见 `dot_claude/skills/myplugins/catalog.default.json`。采用本模板前先安装 myplugins（`dot_claude/README.md`「myplugins 安装」，其中 `sandbox.excludedCommands` 需写本机绝对路径，模板不含），否则这些插件没有启用入口。原因：全局常驻约 3.9k token，拆出 8 个省约 1.8k（2026-11-03 分析）。
+可选插件（2026-11-04）：`claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify`、`ralph-loop`、`session-report` 在模板中设为 `false`，`SessionStart` 加 `myplugins hint` 提示；需要时在当前目录用 `/myplugins` 启用（默认写 `.claude/settings.json`，`--local` 或 `-c` 写 `.claude/settings.local.json`）。清单另含 `frontend-design`、`chrome-devtools-mcp` 等，共 11 个，见 `dot_claude/skills/myplugins/catalog.default.json`。采用本模板前先安装 myplugins（`dot_claude/README.md`「myplugins 安装」，其中 `sandbox.excludedCommands` 需写本机绝对路径，模板不含），否则这些插件没有启用入口。原因：全局常驻约 3.9k token，拆出 8 个省约 1.8k（2026-11-03 分析）。
 
 相对本机设定的调整：
 
