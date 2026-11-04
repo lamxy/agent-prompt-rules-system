@@ -484,3 +484,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | myconfig 互动模式补测 | 用户在临时 Go 项目手动操作、按会话记录核对：选场景与确认均弹 AskUserQuestion，`!` 执行不受沙箱限制、写入 51 个文件、Claude 自动回报，`sleep 130` 不中断；RTK 对注入无影响；结果写入设计文件 §12 | 回报分类计数两次不准，是否改 SKILL.md 待用户决定；超过 130 秒未测 |
 | 2026-11-05 | myconfig 回报只引用摘要数字 | SKILL.md 回报步骤加「数字只引用脚本摘要与标签行数，不自行按类别计数」；以 `claude -p --plugin-dir` 载入临时插件验证，回报只列类别名、数字取自摘要 | 本机副本已按用户指示同步（`diff -r` 一致） |
 | 2026-11-05 | 新增 myopensupports 技能 | `list`／`install`（只印方案）／`remove`（`--apply` 才备份删除）／`add`／`sync`，仓库取自 `AGENT_RULES_REPO`；`scripts/tests/test-myopensupports.sh`；README、设计与计划文件 | 本机安装待用户 `cp`；疑问见设计文件「过程记录与疑问」 |
+| 2026-11-05 | myopensupports 交叉审核 | 子代理审查 9 项（中 4、低 5）全部修正：`remove-apply` 独立子命令且不在 `allowed-tools`、搬移式备份、命令 `shlex.quote`、无默认参数不产生命令、`-n` 传 ost_ 名等；生成的 `--dry-run` 命令实跑通过 | `allowed-tools` 列表形式与 `remove *` 不匹配 `remove-apply` 未实测（设计文件 Q5） |
