@@ -332,6 +332,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | myplugins 未验证项：`-t` 询问流程、共享模式多人实机 | 本文件「myplugins」 |
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
 | 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除） | — |
+| **3.4 开始前提醒**（用户 2026-11-05 决定暂不做、排在后面）：是否做全局技能 `mypilot`（真实项目中主动调用，自动记录与整理试用数据；设计草案与 token 估计已写入计划） | 计划文件 3.4「候选：mypilot」 |
 | **放到最后**（用户 2026-10-30 决定）：单独测 B0「在独立 Go 项目中用 `go get` 引入 FiberHouse 并建第一个模块」，补上基线在框架仓库内测验的局限；任务卡待写、写前先给用户确认 | `docs/evaluation/2026-10-baseline.md` 1.2 |
 
 <!-- section: next -->
@@ -376,7 +377,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 3. ~~阶段 3 行为验证~~：已完成（2026-11-04），结论 `docs/evaluation/2026-10-final.md`
 4. ~~修 B-7、B-8~~、~~重跑 B2 r2~~、~~安装 myplugins~~：2026-11-04 完成（另修 B-10）
 5～9. ~~B-9、D-4、gsd-core、deny 改 ask、推送与 release、OpenSpec Corepack~~：2026-11-04～05 全部完成（见摘要与变更日志）
-10. **排期**：3.2 静态验证（扩展 `scripts/tests/`、`claude mcp list` 等只读 smoke、permissions 实测脚本，Claude 可独立做）、3.4 真实项目试用（先新建 `docs/evaluation/pilot-log-template.md`，再由用户指定 1～2 个场景与项目，建议按会话次数计）、B0（任务卡先写、给用户确认）
+10. **排期**：3.2 静态验证（扩展 `scripts/tests/`、`claude mcp list` 等只读 smoke、permissions 实测脚本，Claude 可独立做）、3.4 真实项目试用（**开始前先提醒用户是否做 `mypilot` 技能**，见计划 3.4；不做则新建 `docs/evaluation/pilot-log-template.md`；再由用户指定 1～2 个场景与项目，建议按会话次数计）、B0（任务卡先写、给用户确认）
 
 前置条件：10 中 3.2 无需用户操作；3.4 需用户指定项目。
 
