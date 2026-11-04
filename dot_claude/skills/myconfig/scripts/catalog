@@ -122,20 +122,29 @@ NOTE=""
 main() {
   # NOTE 必須在這裡設定：locate_repo 在命令替換的子 shell 中執行，賦值不會傳回
   if [ -n "${AGENT_RULES_REPO:-}" ] && ! is_repo "$AGENT_RULES_REPO"; then
-    NOTE="注意：AGENT_RULES_REPO=$AGENT_RULES_REPO 不是本倉庫或無法讀取（沙箱限制讀取時，要在 sandbox.filesystem.allowRead 加入此路徑），已改用其他方式定位"
+    NOTE="注意：AGENT_RULES_REPO=$AGENT_RULES_REPO 不是本倉庫或無法讀取（沙箱限制讀取時，要在 sandbox.filesystem.allowRead 寫入此路徑本身，可用 ~ 開頭，不能寫 \$AGENT_RULES_REPO：沙箱不展開環境變數），已改用其他方式定位"
   fi
   repo="$(locate_repo)" || repo=""
   if [ -z "$repo" ]; then
     printf 'REPO=NOT_FOUND\n'
     [ -n "$NOTE" ] && printf '%s\n' "$NOTE"
-    printf '找不到 agent-prompt-rules-system 倉庫。請在 shell rc 設定：\n'
+    printf '找不到 agent-prompt-rules-system 倉庫。\n'
+    printf 'AGENT_RULES_REPO 的作用：告訴 myconfig 本倉庫在哪裡，讓你在任何目錄都能列出與安裝場景配置。\n'
+    printf '請在 shell rc（如 ~/.zshrc）加入下面一行，重開終端後生效：\n'
     printf '  export AGENT_RULES_REPO=<倉庫絕對路徑>\n'
-    printf '已設定仍找不到時，多半是沙箱擋住讀取：在 ~/.claude/settings.json 的 sandbox.filesystem.allowRead 加入倉庫路徑。\n'
+    printf '已設定仍找不到時，多半是沙箱擋住讀取：在 ~/.claude/settings.json 的 sandbox.filesystem.allowRead 寫入倉庫路徑本身（可用 ~ 開頭；沙箱不展開環境變數，不能寫 $AGENT_RULES_REPO）。\n'
     printf '或在該倉庫目錄中重新開啟會話。\n'
     return 0
   fi
   printf 'REPO=%s\n' "$repo"
   [ -n "$NOTE" ] && printf '%s\n' "$NOTE"
+  if [ -z "${AGENT_RULES_REPO:-}" ]; then
+    self_dir="$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd -P)" || self_dir=""
+    self_repo="$(CDPATH= cd -- "$self_dir/../../../.." 2>/dev/null && pwd -P)" || self_repo=""
+    if [ "$self_repo" != "$repo" ]; then
+      printf '提示：未設定 AGENT_RULES_REPO（作用：告訴 myconfig 本倉庫在哪裡）。這次靠目前目錄找到倉庫，換到其他目錄會找不到；建議在 shell rc 加入 export AGENT_RULES_REPO=%s\n' "$repo"
+    fi
+  fi
   print_catalog "$repo" 2>/dev/null || printf '（清單產生失敗，請直接查看倉庫目錄）\n'
 }
 

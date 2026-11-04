@@ -92,7 +92,10 @@ check_ok "env var" "$REPO_ROOT"
 if git -C "$REPO_ROOT" rev-parse --show-toplevel > /dev/null 2>&1; then
   run_catalog "$REPO_ROOT/scripts"
   check_ok "cwd git root" "$REPO_ROOT"
+  grep -q '提示：未設定 AGENT_RULES_REPO（作用' "$TMP_DIR/out" && pass "cwd git root: suggests setting env var" || fail "cwd git root: no env hint"
 fi
+run_catalog "$TMP_DIR" AGENT_RULES_REPO="$REPO_ROOT"
+if grep -q '提示：未設定' "$TMP_DIR/out"; then fail "env var set: hint shown"; else pass "env var set: no hint"; fi
 
 # 4. Nothing matches: REPO=NOT_FOUND, still exit 0.
 run_catalog "$TMP_DIR"
