@@ -1,6 +1,6 @@
 ---
 branch: main
-head: cc4a019
+head: e87fb00
 status: active
 updated: 2026-11-05
 ---
@@ -34,7 +34,7 @@ updated: 2026-11-05
 - 2026-11-04～05：阶段 3 待确认项全部处理：B-9 调研后用户选方案 C（`docs/research/2026-11-layering-strictness.md`，规则与 depguard `078674c`）；D-4（`250f03d`）；gsd-core 移出前端默认、主场景改后端且默认不启用（`8c1da27`）；全局 deny 改前缀 ask（`6416e56`，本机已同步）；OpenSpec 安装脚本 Corepack 卡住修复（`06b7902`）；删除 `docs/recommend_repos/`、`examples/`（`8eb2ef7`）；推送并发布 v2.5.0
 - 2026-11-05：**3.2 静态验证完成**：`scripts/tests/test-scenario-bundles.sh`（四场景真实安装）、`scripts/smoke/claude-config-smoke.sh`（`claude mcp list`）、`scripts/smoke/permissions-smoke.sh`（36 条抽样）；实测发现 RTK hook 使 `Read` deny 在沙箱关闭时失效，已在本机 RTK 加 `exclude_commands`，`Read` deny 扩充 20 条（`.env` 系列、凭据、历史记录，`.env.example` 放行；`76c6d27`、`8f0029c`、`f2561b9`，未推送）
 - 2026-11-05（续）：myplugins、myconfig 未验证项用 `claude -p` 实测通过（见变更日志），3 个小问题已按用户决定处理
-- 下一步：3.4 真实项目试用（开始前先提醒用户是否做 `mysession-eval`）、B0 排期（见「建议的下一步」）
+- 下一步：先做 `mysession-eval`（用户 2026-11-05 决定要做、暂不执行），再 3.4 真实项目试用；B0 排在最后（见「建议的下一步」）
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -83,7 +83,7 @@ updated: 2026-11-05
 
 - [x] （2026-11-05，见 `docs/evaluation/2026-10-final.md` 第 5 节）安装与静态验证：扩展 `scripts/tests/`；临时项目中 `claude mcp list` 等只读 smoke；permissions 实测脚本
 - [x] 行为验证：按审计结论改为交互模式手动执行，16 个任务 + B1、D3、F1 同期对照（2026-11-04 完成，`docs/evaluation/2026-10-final.md`）；交叉评审（盲评、`/code-review`、Codex 对比等）未做，属选做
-- [ ] 真实项目试用：每场景一个用户指定的项目，约 2 周；试用日志模板 `docs/evaluation/pilot-log-template.md`（尚不存在，需新建）；每周复盘并回写
+- [ ] 真实项目试用：每场景一个用户指定的项目，约 2 周；试用记录改由 `mysession-eval` 产生（用户 2026-11-05 决定要做，暂不执行；手填模板 `pilot-log-template.md` 不另建，除非设计确认时改变）；每周复盘并回写
 - [ ] 按「通过 / 调整 / 移除」判定，稳定结论回写本文件、`scripts/tests/`、对应 README
 
 <!-- section: done -->
@@ -339,7 +339,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | myplugins：互动模式信任对话框、另一台机器未验证（本机两个 skill 副本已于 2026-11-05 按用户指示同步，`diff -r` 一致） | 本文件「myplugins」 |
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
 | 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除）；2026-11-05 改了 `~/.claude/settings.json`（备份 `.bak-20261105012410`）并新建 RTK `config.toml` | — |
-| **3.4 开始前提醒**（用户 2026-11-05 决定暂不做、排在后面）：是否做全局技能 `mysession-eval`（真实项目中主动调用，自动记录与整理试用数据；设计草案与 token 估计已写入计划） | 计划文件 3.4「候选：mysession-eval」 |
+| **`mysession-eval`**（用户 2026-11-05 决定要做，暂不执行）：全局技能，真实项目中主动调用，自动记录与整理试用数据；开工前先与用户确认计划中的初步设计；它是 3.4 的前置 | 计划文件 3.4「候选：mysession-eval」 |
 | **放到最后**（用户 2026-10-30 决定）：单独测 B0「在独立 Go 项目中用 `go get` 引入 FiberHouse 并建第一个模块」，补上基线在框架仓库内测验的局限；任务卡待写、写前先给用户确认 | `docs/evaluation/2026-10-baseline.md` 1.2 |
 
 <!-- section: next -->
@@ -384,9 +384,9 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 3. ~~阶段 3 行为验证~~：已完成（2026-11-04），结论 `docs/evaluation/2026-10-final.md`
 4. ~~修 B-7、B-8~~、~~重跑 B2 r2~~、~~安装 myplugins~~：2026-11-04 完成（另修 B-10）
 5～9. ~~B-9、D-4、gsd-core、deny 改 ask、推送与 release、OpenSpec Corepack~~：2026-11-04～05 全部完成（见摘要与变更日志）
-10. **排期**：~~3.2 静态验证~~（2026-11-05 完成；改了 `permissions`、沙箱、RTK 或升级 Claude Code 后按 `scripts/smoke/README.md` 重跑）、3.4 真实项目试用（**开始前先提醒用户是否做 `mysession-eval` 技能**，见计划 3.4；不做则新建 `docs/evaluation/pilot-log-template.md`；再由用户指定 1～2 个场景与项目，建议按会话次数计）、B0（任务卡先写、给用户确认）
+10. **排期**：~~3.2 静态验证~~（2026-11-05 完成；改了 `permissions`、沙箱、RTK 或升级 Claude Code 后按 `scripts/smoke/README.md` 重跑）、3.4 真实项目试用（前置：先做 `mysession-eval`，用户 2026-11-05 决定要做、暂不执行，见计划 3.4；再由用户指定 1～2 个场景与项目，建议按会话次数计）、B0（任务卡先写、给用户确认）
 
-前置条件：3.4 需用户指定项目，开始前先问是否做 `mysession-eval`。
+前置条件：`mysession-eval` 开工前先确认初步设计；3.4 需用户指定场景与项目。
 
 顺手验证 myplugins（新会话即可）：输入 `/myplugins 1 -t`，看是否先预演并询问、确认后才写入。结果记入本文件「myplugins」的未验证项。
 
@@ -476,3 +476,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | myplugins、myconfig 未验证项实测 | `claude -p` + `--resume` 在 scratchpad 临时项目实测：myplugins `-t` 询问／确认／拒绝三条路径、共享模式同机双克隆载入均通过；myconfig 设计 §8 第 3～9、11 条全部通过（第 4、8、9 条附注，第 7 条为模拟失败），结果与新发现（plan 模式 `!` 注入被拒、技能退路有效）写入设计文件 §12；`mypilot` 改名 `mysession-eval`（`8ec5cbb`） | 用户决定：预演状态行已改、`cp` 矛盾改 SKILL.md、AskUserQuestion 先观察；本机两个 skill 副本已同步；互动模式未验证；未推送 |
 | 2026-11-05 | 待决定事项处理 | 用户决定：本地提交、暂不推送；子 shell 缺口不回报上游；`claude plugin eval` 纳入计划 3.3 先小型试跑（方案与官方文档要点已写入，暂不执行）；交叉评审不做（计划「需要用户决定」已划掉） | 试跑待用户指示 |
 | 2026-11-05 | 本机清理 | 盘点：疑问清单第六节所列旧残留（`grpclab-gomod`、`obs-net`、`mcp-gt`、`fegt-*`、`besz-net`、`rcase-*`、`mgv*`、`d4probe_data`、redis／bufbuild 映像）已不存在；按用户确认删除 `fiberhouse-example-dev`（`docker compose -p … down -v`：4 容器、网络、3 卷）、`scenario-eval-final/projects/dev-ops/deploy/.env`、`~/.claude/plans/` 3 个测试计划档；保留 `fiberhouse-dev`、`fh-glitchtip-verify`、`eval-mysql`（3.4 可能用到）、`golangci-lint` 映像 | — |
+| 2026-11-05 | `mysession-eval` 决定 | 用户决定要做，暂不执行；计划 3.4 候选项改为已决定，作为 3.4 前置、取代手填日志模板；交接摘要、待处理、下一步同步 | 开工前确认初步设计 |
