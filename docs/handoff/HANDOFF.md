@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 8eb2ef7
+head: f2561b9
 status: active
 updated: 2026-11-05
 ---
@@ -32,7 +32,8 @@ updated: 2026-11-05
 - 2026-11-04（续）：B-7、B-8 已修（`f67e416`），B2 r2 通过；B2 r2 发现并复验 B-10（行构造游标用不上索引，`9cb4a30`）；结论回填 `a1a548b`。myplugins 已在本机安装并按用户试用调整（默认写共享设定、`-t` 预演、21 个插件清单、`sync`、`~` 路径的沙箱排除规则，`5b5425d`～`ac254c2`）；myconfig 补 `AGENT_RULES_REPO` 提示（`21e78c6`）。均未推送
 - 2026-11-04（续）：myplugins 减 token：`SKILL.md` 拆出 `references/details.md`，列表后只回「已启用」一行与用法，启动提示加第三行只看清单的 `!` 命令（`64ef966`）；本仓库 `.claude/settings.json` 启用 claude-md-management、skill-creator（`2105be7`）；实测 `/myplugins` 每次约 2.9k token，之前看到的一万多来自首轮系统附件与 `/context` 自身输出。均未推送
 - 2026-11-04～05：阶段 3 待确认项全部处理：B-9 调研后用户选方案 C（`docs/research/2026-11-layering-strictness.md`，规则与 depguard `078674c`）；D-4（`250f03d`）；gsd-core 移出前端默认、主场景改后端且默认不启用（`8c1da27`）；全局 deny 改前缀 ask（`6416e56`，本机已同步）；OpenSpec 安装脚本 Corepack 卡住修复（`06b7902`）；删除 `docs/recommend_repos/`、`examples/`（`8eb2ef7`）；推送并发布 v2.5.0
-- 下一步：3.2 静态验证、3.4 真实项目试用（先建试用日志模板，用户指定项目）、B0 排期（见「建议的下一步」）
+- 2026-11-05：**3.2 静态验证完成**：`scripts/tests/test-scenario-bundles.sh`（四场景真实安装）、`scripts/smoke/claude-config-smoke.sh`（`claude mcp list`）、`scripts/smoke/permissions-smoke.sh`（36 条抽样）；实测发现 RTK hook 使 `Read` deny 在沙箱关闭时失效，已在本机 RTK 加 `exclude_commands`，`Read` deny 扩充 20 条（`.env` 系列、凭据、历史记录，`.env.example` 放行；`76c6d27`、`8f0029c`、`f2561b9`，未推送）
+- 下一步：3.4 真实项目试用（开始前先提醒用户是否做 `mypilot`）、B0 排期（见「建议的下一步」）
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -47,7 +48,7 @@ updated: 2026-11-05
 | 教学材料沉淀（gRPC、Go、Redis） | 完成，疑问已定稿 | `5098a4e`、`3c492ef`、`9bddf11`；疑问见 `docs/plans/2026-10-22-learning-distill-questions.md` |
 | backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；gRPC 规范 `5098a4e`（来自教学材料，用户企业 RPC 规范若有再补） |
 | 可观测性重写与 FiberHouse 错误追踪 | 完成；框架取舍已决定（FiberHouse `v1.2.0`） | `docs/plans/2026-10-22-learning-distill-questions.md` 第三节「FiberHouse 框架取舍」 |
-| 场景配置评估、优化与验证 | **阶段 1 完成、指南已修订（2026-10-30）**，阶段 2 完成（2026-11-03，范围按方案 B；未做项见研究文档 4.3），**阶段 3 行为验证完成（2026-11-04）**，B2 r2 通过（2026-11-04）；静态验证、真实项目试用、B0 未做 | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
+| 场景配置评估、优化与验证 | **阶段 1 完成、指南已修订（2026-10-30）**，阶段 2 完成（2026-11-03，范围按方案 B；未做项见研究文档 4.3），**阶段 3 行为验证完成（2026-11-04）**，B2 r2 通过（2026-11-04）；静态验证完成（2026-11-05）；真实项目试用、B0 未做 | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
@@ -79,7 +80,7 @@ updated: 2026-11-05
 
 **阶段 3：最终版验证**（产出 `docs/evaluation/2026-10-final.md`）
 
-- [ ] 安装与静态验证：扩展 `scripts/tests/`；临时项目中 `claude mcp list` 等只读 smoke；permissions 实测脚本
+- [x] （2026-11-05，见 `docs/evaluation/2026-10-final.md` 第 5 节）安装与静态验证：扩展 `scripts/tests/`；临时项目中 `claude mcp list` 等只读 smoke；permissions 实测脚本
 - [x] 行为验证：按审计结论改为交互模式手动执行，16 个任务 + B1、D3、F1 同期对照（2026-11-04 完成，`docs/evaluation/2026-10-final.md`）；交叉评审（盲评、`/code-review`、Codex 对比等）未做，属选做
 - [ ] 真实项目试用：每场景一个用户指定的项目，约 2 周；试用日志模板 `docs/evaluation/pilot-log-template.md`（尚不存在，需新建）；每周复盘并回写
 - [ ] 按「通过 / 调整 / 移除」判定，稳定结论回写本文件、`scripts/tests/`、对应 README
@@ -292,6 +293,10 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 - **全局 deny 按字面拦整条命令**（2026-11-04 已改）：现象是含 `mysqldump` 字样的任何 Bash 命令（包括 `grep`、提交说明）都被拒、不弹确认；原因是 deny `Bash(*mysqldump*)` 整条通配；现已改为 `ask` `Bash(mysqldump *)`（模板、镜像、本机三处），前缀规则拦不到 `$(…)` 与反引号（`claude -p` 实测，见 `settings/README.md`）。其他整条通配的 deny（如 `Bash(*DROP TABLE*)`）仍会这样拦，命令与说明里避开这些词。`Bash(env)` 同理会拦 `env | grep`（推测，未验证）。
 - **depguard 的 `pkg` 只做前缀匹配**：`*/apivo`、`.../apivo/**` 不生效（golangci-lint v2.5.0 实测），规则要写 `<module>/apivo`。
 - **Corepack 代理**：未下载本体的 pnpm／yarn 有终端时等隐藏的下载确认，无终端（`</dev/null`）时自动下载；只查路径用 `COREPACK_ENABLE_NETWORK=0`（立即失败、不下载）。pnpm 12 只在全局 bin 已在 PATH 时才返回路径（原有限制，未处理）。
+- **敏感读取两层防护**（2026-11-05 实测）：现象是 `Read(~/.ssh/*)` 拦不住 Bash `cat ~/.ssh/...`；原因有二：本机全局 `autoAllowBashIfSandboxed: true`，沙箱内的命令跳过权限检查、`Read` deny 改由沙箱在 OS 层执行（`Operation not permitted`）；沙箱关闭时只剩权限层，而 RTK hook 把 `cat`／`head`／`grep`／`ls` 改写并回答 `allow`、只读 `Bash(...)` 规则，`Read` deny 因此失效。正确做法：本机 RTK 已加 `[hooks] exclude_commands`（`~/Library/Application Support/rtk/config.toml`，内容与 `settings/README.md` 一致），新增 `Read` deny 时同步该 regex；验证读取类规则看内容有没有外泄，不看哪一层拦下（`permissions-smoke.sh` 的 `blocked`）。本仓库与测验项目都关了沙箱，属只剩权限层的情况
+- **子 shell 加外层重定向不检查 `Read` deny**：`(cmd < file) 2>/dev/null` 能读到被 deny 的文件，`cmd < file`、`(cmd < file)` 会被拦（Claude Code 2.1.318）；没有配置可补，只能靠沙箱。是否回报上游由用户决定
+- **`.env` 规则只能逐条列变体**：allow 不能在 deny 上开例外，`[!e]`、`[^e]` 也按字面匹配，所以不写 `.env.*`；未列出的变体（如 `.env.e2e`）不受保护
+- **未信任的临时目录**：`claude -p` 在未接受信任对话框的目录里会忽略项目层 `permissions.allow`（deny、ask 照常生效）；实测要放行请用 CLI `--allowedTools`
 - **compose 项目名撞名**：现象是 D2 用 `name: fiberhouse-dev` 挂上了本机 `~/workspace/local-infra/fiberhouse-dev` 的三个卷并替换其容器；原因是 `docker compose ls` 只列运行中项目，没查同名卷；正确做法是起新项目前 `docker volume ls --filter label=com.docker.compose.project=<名>`、`docker ps -a --filter label=com.docker.compose.project=<名>`。测验用的是 `fiberhouse-example-dev`（已 stop，未删）。
 - **回滚不清被忽略的文件**：`save-run.sh` 的 `git clean -fdq` 不删 `.gitignore` 里的文件（如 `deploy/.env`），会留给后续任务；对照组前要人工查 `git status --short --ignored`。
 - **Claude 在本仓库会话的权限**：用容器 root 改库（`DROP DATABASE`）、`rm -rf` 测验目录都会被拒，交给用户用 `!` 执行；只读查询可以。
@@ -331,7 +336,8 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | `claude plugin eval` 是否适合本仓库场景包 | 计划文件 3.3（待确认后纳入） |
 | myplugins 未验证项：`-t` 询问流程、共享模式多人实机 | 本文件「myplugins」 |
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
-| 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除） | — |
+| 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除）；2026-11-05 改了 `~/.claude/settings.json`（备份 `.bak-20261105012410`）并新建 RTK `config.toml` | — |
+| Claude Code 缺口「子 shell 加外层重定向不检查 `Read` deny」是否回报上游 | 本文件「续作时必须知道的事」；`settings/README.md` |
 | **3.4 开始前提醒**（用户 2026-11-05 决定暂不做、排在后面）：是否做全局技能 `mypilot`（真实项目中主动调用，自动记录与整理试用数据；设计草案与 token 估计已写入计划） | 计划文件 3.4「候选：mypilot」 |
 | **放到最后**（用户 2026-10-30 决定）：单独测 B0「在独立 Go 项目中用 `go get` 引入 FiberHouse 并建第一个模块」，补上基线在框架仓库内测验的局限；任务卡待写、写前先给用户确认 | `docs/evaluation/2026-10-baseline.md` 1.2 |
 
@@ -377,9 +383,9 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 3. ~~阶段 3 行为验证~~：已完成（2026-11-04），结论 `docs/evaluation/2026-10-final.md`
 4. ~~修 B-7、B-8~~、~~重跑 B2 r2~~、~~安装 myplugins~~：2026-11-04 完成（另修 B-10）
 5～9. ~~B-9、D-4、gsd-core、deny 改 ask、推送与 release、OpenSpec Corepack~~：2026-11-04～05 全部完成（见摘要与变更日志）
-10. **排期**：3.2 静态验证（扩展 `scripts/tests/`、`claude mcp list` 等只读 smoke、permissions 实测脚本，Claude 可独立做）、3.4 真实项目试用（**开始前先提醒用户是否做 `mypilot` 技能**，见计划 3.4；不做则新建 `docs/evaluation/pilot-log-template.md`；再由用户指定 1～2 个场景与项目，建议按会话次数计）、B0（任务卡先写、给用户确认）
+10. **排期**：~~3.2 静态验证~~（2026-11-05 完成；改了 `permissions`、沙箱、RTK 或升级 Claude Code 后按 `scripts/smoke/README.md` 重跑）、3.4 真实项目试用（**开始前先提醒用户是否做 `mypilot` 技能**，见计划 3.4；不做则新建 `docs/evaluation/pilot-log-template.md`；再由用户指定 1～2 个场景与项目，建议按会话次数计）、B0（任务卡先写、给用户确认）
 
-前置条件：10 中 3.2 无需用户操作；3.4 需用户指定项目。
+前置条件：3.4 需用户指定项目，开始前先问是否做 `mypilot`。
 
 顺手验证 myplugins（新会话即可）：输入 `/myplugins 1 -t`，看是否先预演并询问、确认后才写入。结果记入本文件「myplugins」的未验证项。
 
@@ -465,3 +471,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-04 | myplugins 安装与调整、myconfig 提示 | 本机安装并同步镜像与模板（`5b5425d`）；按用户试用改默认写共享、`-t` 预演、提示文案与颜色（`f07a347`）、状态符号与表格（`33ec84d`）、清单 21 个与排序（`38ce0b5`、`d164e41`）、`sync`（`f5d3ad4`）、模板 21 个 `false`（`8c9a93a`）、`~` 路径排除规则（`claude -p` 实测，`ac254c2`）；myconfig 说明 `AGENT_RULES_REPO`（`21e78c6`）；本机设定与两个 skill 已同步；16 个测试文件全过 | 未推送；`/reload-plugins`、skill 表格与询问流程未实机验证 |
 | 2026-11-04 | myplugins 减 token | 按会话记录与 API usage 拆解 `/myplugins` 的 token 来源（本身约 2.9k，其余为首轮系统附件与 `/context` 输出）；`SKILL.md` 拆出 `references/details.md`（2,746 → 1,655 字符），列表后只回「已启用」一行与用法，启动提示加 `!` 只看清单命令（`64ef966`）；本机副本已同步（`diff -r` 一致）；本仓库启用 claude-md-management、skill-creator（`2105be7`）；16 个测试文件全过 | 未推送；`-t` 询问流程未实机验证 |
 | 2026-11-04～05 | 阶段 3 待确认项与 v2.5.0 | B-9 调研（12 个来源原文核对，标明中国大陆来源）后用户选方案 C：`layering.md` 契约类型分级、`go-new-module` 与 depguard `apivo-not-in-storage`（`078674c`）；D-4 同名 Compose 项目检查（Compose 5.5.0 实测，`250f03d`）；gsd-core 主场景改后端且默认不启用（`8c1da27`，本机 myconfig 已同步）；deny 改前缀 ask（`claude -p` 实测，`6416e56`，本机已改）；OpenSpec Corepack 修复（`node:22-alpine` 实测，`06b7902`）；删除 `docs/recommend_repos/`、`examples/`（`8eb2ef7`）；用户约束细化中国大陆来源与 Reddit 暂时移除；16 个测试文件全过 | 改本机 settings 前未另备份（与镜像一致，可从 git 还原）；`d4probe_data` 待用户删除 |
+| 2026-11-05 | 3.2 静态验证与敏感读取 | 新增 `test-scenario-bundles.sh`（四场景真实安装、反向验证 6 处故障全部检出，`01a1b0f`）、`claude-config-smoke.sh`（`7b239a3`）、`permissions-smoke.sh`（36 条，`8f0029c`）；对照实验确认 RTK hook 使 `Read` deny 失效（上游源码只读 `Bash(...)` 规则），本机 RTK 加 `exclude_commands`；`Read` deny 扩充 20 条，`.env.example` 放行（逐条列变体，否定字符类与 allow 例外均实测无效），模板、镜像、本机三处同步（`76c6d27`）；记录子 shell 加外层重定向的缺口；17 个测试文件全过 | 未推送；子 shell 缺口是否回报上游待用户决定 |
