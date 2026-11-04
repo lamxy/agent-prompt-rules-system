@@ -27,5 +27,6 @@ description: 部署、调优、迁移或检查 Redis、Kafka、RabbitMQ、Elasti
 - 中间件资源（topic、队列、vhost、数据库账号）由运维统一创建，业务方通过工单或合并请求提交申请，申请中写明用量评估及计算方式。
 - 新中间件实例必须先接入监控与告警再交付使用（起步阶段见 `references/observability.md`）。
 - 管理端口与数据端口不暴露到公网，只对集群内部和指定业务开放。
+- 用某个 Compose 项目名首次 `up` 前，先查同名项目已有的卷与容器：`docker volume ls --filter label=com.docker.compose.project=<名>`、`docker ps -a --filter label=com.docker.compose.project=<名>`。`docker compose ls`（含 `-a`）查不到已 `down` 只剩卷的项目，不能代替这两条。有结果时向用户说明：容器的 `com.docker.compose.project.working_dir` 标签指出它属于哪个目录（卷没有这个标签，只能按卷名判断），确认是同一环境再继续，否则换项目名。
 - 验证 Compose 配置用 `docker compose config --quiet`；需要看结构时加 `--no-interpolate --no-env-resolution`，写死在文件内的值仍会显示；不用 `--environment`，它会打印整个 shell 环境。
 - 参考文件中的数值是常见的起点，按实际压测结果与版本文档调整，并在变更说明中写明依据。
