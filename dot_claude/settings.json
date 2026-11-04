@@ -291,7 +291,6 @@
       "Read(~/.aws/*)",
       "Bash(*DROP DATABASE*)",
       "Bash(*DROP TABLE*)",
-      "Bash(*mysqldump*)",
       "Bash(git push --force*)",
       "Bash(git push -f*)",
       "Bash(env)",
@@ -347,6 +346,9 @@
       "Bash(rsync *)",
       "Read(.secrets)",
       "Bash(git reset --hard *)"
+    ],
+    "ask": [
+      "Bash(mysqldump *)"
     ],
     "defaultMode": "auto"
   },
