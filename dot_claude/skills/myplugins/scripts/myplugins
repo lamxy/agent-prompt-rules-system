@@ -252,9 +252,13 @@ def cmd_toggle(cat, args, turn_on):
     if changes and not dry:
         print("在會話中執行 /reload-plugins 或重開 Claude 才會生效。")
     layers = layer_plugins()
+    if dry:
+        # 預演沒寫檔，用變更後的這一層推算寫入後的狀態，避免顯示寫入前的值
+        layers["shared" if shared else "local"] = ep
+    prefix = "寫入後 → " if dry else "→ "
     for pid in ids:
         on, src = state(pid, layers)
-        print("  %s → %s" % (pid, ("✅ 啟用（%s）" % src) if on else "⬜ 停用"))
+        print("  %s %s%s" % (pid, prefix, ("✅ 啟用（%s）" % src) if on else "⬜ 停用"))
 
 
 def cmd_add(cat, args):

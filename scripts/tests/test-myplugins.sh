@@ -72,6 +72,10 @@ for f in --dry-run -t --test; do
   [ ! -f "$PROJ/.claude/settings.json" ] && printf '%s\n' "$out" | grep -q '預演' \
     && pass "$f previews and writes nothing" || fail "$f wrote: $out"
 done
+printf '%s\n' "$(run 1 -t)" | grep -q '寫入後 → ✅ 啟用（共享）' \
+  && pass "dry-run shows state after write" || fail "dry-run state line"
+printf '%s\n' "$(run 1 -t --local)" | grep -q '寫入後 → ✅ 啟用（本地）' \
+  && pass "dry-run local shows local state after write" || fail "dry-run local state line"
 if run 1 --local --shared >/dev/null 2>&1; then fail "--local with --shared accepted"; else pass "--local with --shared rejected"; fi
 
 run add andrej-karpathy-skills@karpathy-skills 測試 --category 方法 >/dev/null
