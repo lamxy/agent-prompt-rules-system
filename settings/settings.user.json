@@ -421,7 +421,22 @@
     "security-guidance@claude-plugins-official": true,
     "session-report@claude-plugins-official": false,
     "skill-creator@claude-plugins-official": false,
-    "superpowers@claude-plugins-official": true
+    "superpowers@claude-plugins-official": true,
+    "document-skills@anthropic-agent-skills": false,
+    "playground@claude-plugins-official": false,
+    "mattpocock-skills@claude-plugins-official": false,
+    "frontend-design@claude-plugins-official": false,
+    "chrome-devtools-mcp@claude-plugins-official": false,
+    "playwright@claude-plugins-official": false,
+    "modern-web-guidance@claude-plugins-official": false,
+    "typescript-native-lsp@anthropic-plugin-directory": false,
+    "pr-review-toolkit@claude-plugins-official": false,
+    "gopls-lsp@claude-plugins-official": false,
+    "mongodb@claude-plugins-official": false,
+    "redis-development@claude-plugins-official": false,
+    "semgrep@claude-plugins-official": false,
+    "terraform@claude-plugins-official": false,
+    "sonatype-guide@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -441,6 +456,12 @@
       "source": {
         "source": "github",
         "repo": "alibaba/open-code-review"
+      }
+    },
+    "anthropic-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills"
       }
     }
   },
