@@ -1,8 +1,8 @@
 ---
 branch: main
-head: 2105be7
+head: 8eb2ef7
 status: active
-updated: 2026-11-04
+updated: 2026-11-05
 ---
 # 进度交接
 
@@ -31,7 +31,8 @@ updated: 2026-11-04
 - 2026-11-03～04：**阶段 3 行为验证完成**。16 个任务全部通过（6 个附注），B1、D3、F1 同期对照完成；结论 `docs/evaluation/2026-10-final.md`（`44c190a`、`398d2b5`），指南与计划更新 `68e14a8`；均未推送。新问题 B-7～E-13，gsd-core 建议移出 frontend-dev 默认清单
 - 2026-11-04（续）：B-7、B-8 已修（`f67e416`），B2 r2 通过；B2 r2 发现并复验 B-10（行构造游标用不上索引，`9cb4a30`）；结论回填 `a1a548b`。myplugins 已在本机安装并按用户试用调整（默认写共享设定、`-t` 预演、21 个插件清单、`sync`、`~` 路径的沙箱排除规则，`5b5425d`～`ac254c2`）；myconfig 补 `AGENT_RULES_REPO` 提示（`21e78c6`）。均未推送
 - 2026-11-04（续）：myplugins 减 token：`SKILL.md` 拆出 `references/details.md`，列表后只回「已启用」一行与用法，启动提示加第三行只看清单的 `!` 命令（`64ef966`）；本仓库 `.claude/settings.json` 启用 claude-md-management、skill-creator（`2105be7`）；实测 `/myplugins` 每次约 2.9k token，之前看到的一万多来自首轮系统附件与 `/context` 自身输出。均未推送
-- 下一步：B-9 分层规则调研与讨论 → D-4 → gsd-core 去留 → 全局 deny 改 ask 与否 → 推送 → 3.2／3.4／B0 排期（见「建议的下一步」）
+- 2026-11-04～05：阶段 3 待确认项全部处理：B-9 调研后用户选方案 C（`docs/research/2026-11-layering-strictness.md`，规则与 depguard `078674c`）；D-4（`250f03d`）；gsd-core 移出前端默认、主场景改后端且默认不启用（`8c1da27`）；全局 deny 改前缀 ask（`6416e56`，本机已同步）；OpenSpec 安装脚本 Corepack 卡住修复（`06b7902`）；删除 `docs/recommend_repos/`、`examples/`（`8eb2ef7`）；推送并发布 v2.5.0
+- 下一步：3.2 静态验证、3.4 真实项目试用（先建试用日志模板，用户指定项目）、B0 排期（见「建议的下一步」）
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -124,7 +125,8 @@ scripts/
 docs/
   handoff/HANDOFF.md        本文件
   plans/                    待办计划
-  recommend_repos/          推荐仓库与中文教程
+  research/                 调研报告
+  evaluation/               阶段 1～3 评估记录与手动测验指南
 ```
 
 各目录的细节以其 `README.md` 为准：`settings/README.md`（插件分层与理由）、`dot_claude_projects/README.md`（场景包与来源对照）、`open_supports/INDEX.md`、`scripts/README.md`、`scripts/multi_client_support/README.md`、`dot_mcp_jsons/README.md`。
@@ -287,7 +289,9 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 专案集：`~/workspace/aitools_test/scenario-eval-final/`（最终配置）与旧专案集 `scenario-eval/`（对照组，tag `<任务>-ctl-r1`）；逐任务证据在 `scenario-eval-final/notes.md`（不入库，含「测验后待办」）。核对方式同阶段 1；会话记录分析脚本在本会话 scratchpad（会被清除），要用时按「阶段 1 手动测验的执行方式」重写。
 
-- **全局 deny 按字面拦整条命令**：现象是含 `mysqldump` 字样的任何 Bash 命令（包括 `which`、`grep`、甚至 `git commit -m` 的说明）都被拒、不弹确认；原因是 `~/.claude/settings.json` deny `Bash(*mysqldump*)`；正确做法是命令与提交说明避开这个词，不要拆字绕过。`Bash(env)` 同理会拦 `env | grep`（推测，未验证）。
+- **全局 deny 按字面拦整条命令**（2026-11-04 已改）：现象是含 `mysqldump` 字样的任何 Bash 命令（包括 `grep`、提交说明）都被拒、不弹确认；原因是 deny `Bash(*mysqldump*)` 整条通配；现已改为 `ask` `Bash(mysqldump *)`（模板、镜像、本机三处），前缀规则拦不到 `$(…)` 与反引号（`claude -p` 实测，见 `settings/README.md`）。其他整条通配的 deny（如 `Bash(*DROP TABLE*)`）仍会这样拦，命令与说明里避开这些词。`Bash(env)` 同理会拦 `env | grep`（推测，未验证）。
+- **depguard 的 `pkg` 只做前缀匹配**：`*/apivo`、`.../apivo/**` 不生效（golangci-lint v2.5.0 实测），规则要写 `<module>/apivo`。
+- **Corepack 代理**：未下载本体的 pnpm／yarn 有终端时等隐藏的下载确认，无终端（`</dev/null`）时自动下载；只查路径用 `COREPACK_ENABLE_NETWORK=0`（立即失败、不下载）。pnpm 12 只在全局 bin 已在 PATH 时才返回路径（原有限制，未处理）。
 - **compose 项目名撞名**：现象是 D2 用 `name: fiberhouse-dev` 挂上了本机 `~/workspace/local-infra/fiberhouse-dev` 的三个卷并替换其容器；原因是 `docker compose ls` 只列运行中项目，没查同名卷；正确做法是起新项目前 `docker volume ls --filter label=com.docker.compose.project=<名>`、`docker ps -a --filter label=com.docker.compose.project=<名>`。测验用的是 `fiberhouse-example-dev`（已 stop，未删）。
 - **回滚不清被忽略的文件**：`save-run.sh` 的 `git clean -fdq` 不删 `.gitignore` 里的文件（如 `deploy/.env`），会留给后续任务；对照组前要人工查 `git status --short --ignored`。
 - **Claude 在本仓库会话的权限**：用容器 root 改库（`DROP DATABASE`）、`rm -rf` 测验目录都会被拒，交给用户用 `!` 执行；只读查询可以。
@@ -325,10 +329,9 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 阶段 2 未做项（取不到原文、未读、未实测）与第三轮留下的待验证（疑问清单第 12、16 条） | `docs/research/2026-10-best-practices.md` 5.3、`docs/plans/2026-10-22-learning-distill-questions.md` |
 | myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；会话实测设计 §8 第 3、5～9、11 条与安装后报告；`!` 模式的沙箱与超时 | 设计文件 §8、§11 |
 | `claude plugin eval` 是否适合本仓库场景包 | 计划文件 3.3（待确认后纳入） |
-| 阶段 3 发现待确认（B-7、B-8、B-10 已修）：D-4 `middleware-ops` 同名项目检查、gsd-core 移出 frontend-dev 默认清单、全局 deny `Bash(*mysqldump*)` 是否改 ask、**分层规则是否必须严格（B-9，用户要求先调研大厂与社区实践，处理这批修改时主动提醒）** | `docs/evaluation/2026-10-final.md` 第 4、6 节；计划文件 3.3 与「需要用户决定」 |
-| OpenSpec 安装脚本 `pnpm bin -g` 在 Corepack 下等待隐藏的下载确认（阶段 3 准备时卡 11 分钟）；修法 `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` 或 `</dev/null` 待用户决定 | `open_supports/ost_Fission-AI_OpenSpec/scripts_for_install/install.sh` 第 236 行；专案集 `notes.md` 过程问题表 |
 | myplugins 未验证项：`-t` 询问流程、共享模式多人实机 | 本文件「myplugins」 |
-| 推送：本机 `main` 领先 `origin/main` 多个提交（阶段 3 起），推送与是否发布 release 待用户指示 | `git log origin/main..main` |
+| FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；何时移除由用户决定 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
+| 本机残留：D-4 实测卷 `d4probe_data`（空）待用户 `docker volume rm`；映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取 | — |
 | **放到最后**（用户 2026-10-30 决定）：单独测 B0「在独立 Go 项目中用 `go get` 引入 FiberHouse 并建第一个模块」，补上基线在框架仓库内测验的局限；任务卡待写、写前先给用户确认 | `docs/evaluation/2026-10-baseline.md` 1.2 |
 
 <!-- section: next -->
@@ -372,23 +375,10 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 2. 方案 B 已完成（2026-11-03），决策与未做项见 `docs/research/2026-10-best-practices.md` 第 4 节
 3. ~~阶段 3 行为验证~~：已完成（2026-11-04），结论 `docs/evaluation/2026-10-final.md`
 4. ~~修 B-7、B-8~~、~~重跑 B2 r2~~、~~安装 myplugins~~：2026-11-04 完成（另修 B-10）
-5. **B-9 分层规则是否必须严格**：用户要求先调研大厂与社区实践再讨论（FiberHouse 示例 service import apivo，违反 `rules/go/layering.md`）。先列调研来源与问题给用户确认，再调研，产出建议交用户决定
-6. **D-4**：`middleware-ops` 加「启动前按 compose 项目名查已有卷与容器」（`docker volume ls --filter label=com.docker.compose.project=<名>`、`docker ps -a --filter ...`），场景包与 `skills/skills-dev-ops/` 两份同步
-7. **gsd-core 移出 frontend-dev 默认清单**（`docs/evaluation/2026-10-final.md` 4.2，只跑 1 次，属方向依据），改为注释录入
-8. **全局 deny `Bash(*mysqldump*)` 是否改 ask**：改 `~/.claude/` 需用户明确指示；B-8 已不依赖它
-9. **推送与 release**：等用户指示
-10. **排期**：3.2 静态验证、3.4 真实项目试用（用户指定项目）、B0（任务卡先写、给用户确认）；另有 OpenSpec 安装脚本 Corepack 卡住的修法待决定
+5～9. ~~B-9、D-4、gsd-core、deny 改 ask、推送与 release、OpenSpec Corepack~~：2026-11-04～05 全部完成（见摘要与变更日志）
+10. **排期**：3.2 静态验证（扩展 `scripts/tests/`、`claude mcp list` 等只读 smoke、permissions 实测脚本，Claude 可独立做）、3.4 真实项目试用（先新建 `docs/evaluation/pilot-log-template.md`，再由用户指定 1～2 个场景与项目，建议按会话次数计）、B0（任务卡先写、给用户确认）
 
-前置条件：5～8 互相独立，均需用户确认方案；5 按用户要求优先提醒。
-
-建议顺序与每项需用户决定的事（2026-11-04 与用户对齐）：
-
-| 顺序 | 事项 | 需用户决定 |
-|---|---|---|
-| 1 | 5 B-9 | 先给调研来源与要回答的问题，确认后再调研；结论交用户决定规则严格度 |
-| 2 | 6 D-4、7 gsd-core（可穿插） | D-4 先给改法；gsd-core 移或不移（依据只有 F5 一次） |
-| 3 | 8 deny、9 推送 | deny 改 ask 需明确指示（它会拦任何含该词的命令，包括 `grep`、提交说明）；推送与是否发 release。`git rev-list --count origin/main..main` 查未推送数（2026-11-04 交接提交后为 70） |
-| 4 | 10 排期 | 3.2、3.4（用户指定试用项目）、B0 的顺序与时程；OpenSpec Corepack 修法 |
+前置条件：10 中 3.2 无需用户操作；3.4 需用户指定项目。
 
 顺手验证 myplugins（新会话即可）：输入 `/myplugins 1 -t`，看是否先预演并询问、确认后才写入。结果记入本文件「myplugins」的未验证项。
 
@@ -473,3 +463,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-04 | B-7、B-8、B-10 与 B2 r2 | `db-schema-design` 验证限定一次性容器、改用 `SHOW CREATE TABLE`（一次性 MySQL 容器 4 情境实测，`f67e416`）；B2 r2 通过（无 deny、无残留）；B-10 行构造游标经 MySQL 8.0.46／8.4.10 复验后改写法（`9cb4a30`）；结论回填（`a1a548b`） | 未推送 |
 | 2026-11-04 | myplugins 安装与调整、myconfig 提示 | 本机安装并同步镜像与模板（`5b5425d`）；按用户试用改默认写共享、`-t` 预演、提示文案与颜色（`f07a347`）、状态符号与表格（`33ec84d`）、清单 21 个与排序（`38ce0b5`、`d164e41`）、`sync`（`f5d3ad4`）、模板 21 个 `false`（`8c9a93a`）、`~` 路径排除规则（`claude -p` 实测，`ac254c2`）；myconfig 说明 `AGENT_RULES_REPO`（`21e78c6`）；本机设定与两个 skill 已同步；16 个测试文件全过 | 未推送；`/reload-plugins`、skill 表格与询问流程未实机验证 |
 | 2026-11-04 | myplugins 减 token | 按会话记录与 API usage 拆解 `/myplugins` 的 token 来源（本身约 2.9k，其余为首轮系统附件与 `/context` 输出）；`SKILL.md` 拆出 `references/details.md`（2,746 → 1,655 字符），列表后只回「已启用」一行与用法，启动提示加 `!` 只看清单命令（`64ef966`）；本机副本已同步（`diff -r` 一致）；本仓库启用 claude-md-management、skill-creator（`2105be7`）；16 个测试文件全过 | 未推送；`-t` 询问流程未实机验证 |
+| 2026-11-04～05 | 阶段 3 待确认项与 v2.5.0 | B-9 调研（12 个来源原文核对，标明中国大陆来源）后用户选方案 C：`layering.md` 契约类型分级、`go-new-module` 与 depguard `apivo-not-in-storage`（`078674c`）；D-4 同名 Compose 项目检查（Compose 5.5.0 实测，`250f03d`）；gsd-core 主场景改后端且默认不启用（`8c1da27`，本机 myconfig 已同步）；deny 改前缀 ask（`claude -p` 实测，`6416e56`，本机已改）；OpenSpec Corepack 修复（`node:22-alpine` 实测，`06b7902`）；删除 `docs/recommend_repos/`、`examples/`（`8eb2ef7`）；用户约束细化中国大陆来源与 Reddit 暂时移除；16 个测试文件全过 | 改本机 settings 前未另备份（与镜像一致，可从 git 还原）；`d4probe_data` 待用户删除 |
