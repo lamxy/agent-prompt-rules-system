@@ -42,12 +42,12 @@ run() {
 jget() { python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(eval(sys.argv[2]))' "$1" "$2"; }
 
 out="$(run)"
-printf '%s\n' "$out" | grep -q ' 7\. frontend-design@claude-plugins-official .*啟用（全局）' \
+printf '%s\n' "$out" | grep -q ' 10\. frontend-design@claude-plugins-official .*啟用（全局）' \
   && pass "list numbers catalog and shows user layer" || fail "list output: $out"
 [ -f "$TMP/home/catalog.json" ] && pass "catalog seeded" || fail "catalog not seeded"
 printf '%s\n' "$out" | grep -q '未安裝' && pass "list marks not installed" || fail "no 未安裝 mark"
 
-run 8 4 -c >/dev/null
+run 11 4 -c >/dev/null
 [ "$(jget "$PROJ/.claude/settings.local.json" 'sorted(d["enabledPlugins"])')" = "['chrome-devtools-mcp@claude-plugins-official', 'hookify@claude-plugins-official']" ] \
   && pass "enable with -c writes local" || fail "local enabledPlugins wrong"
 [ "$(jget "$PROJ/.claude/settings.local.json" 'd["permissions"]["allow"]')" = "['Bash(ls)']" ] \

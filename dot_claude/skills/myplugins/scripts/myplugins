@@ -292,7 +292,7 @@ def cmd_hint():
     tail = ("當前目錄已啟用 %s" % "、".join(on)) if on else "當前目錄未啟用"
     # 第一行黃色粗體（ANSI 色碼在 systemMessage 中有效，2026-11-04 實測），第二行一般顏色
     msg = ("\033[1;33m🔌 myplugins：%d 個可選插件預設關閉，%s\033[0m\n"
-           "    含通用（skill 開發、CLAUDE.md 管理等）與前端、後端、運維、PRD 場景插件；"
+           "    含通用（skill 開發、CLAUDE.md 管理等）與 PRD、前端、後端、運維場景插件；"
            "輸入 /myplugins 看清單，按序號開啟插件（如 /myplugins 1）。") % (n, tail)
     print(json.dumps({"systemMessage": msg}, ensure_ascii=False))
 
