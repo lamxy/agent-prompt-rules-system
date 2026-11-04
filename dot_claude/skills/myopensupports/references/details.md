@@ -8,7 +8,7 @@
 ## sync
 
 - 比對倉庫與本機清單：新增 INDEX 已登記、清單裡沒有的包；移除倉庫目錄已不存在的包；用 INDEX 的內容更新用途、分類與建議場景。
-- 用 `add` 加入、但 INDEX 未登記的包，只要目錄還在就保留。
+- 用 `add` 加入、但 INDEX 未登記的包，只要目錄還在就保留；從 INDEX 移除、但目錄還在的包，改標為未登記（計入「更新」）。
 - 帶 `--dry-run`／`-t`／`--test` 時只預演：把輸出給使用者看，並詢問是否寫入；使用者確認後，去掉預演旗標再執行一次。
 - `list` 出現「倉庫有 N 個新支持包」的 `注意：` 時，先問使用者再 sync，不要自行執行。
 - sync 之後序號會重排，以重新 list 的結果為準。
@@ -26,7 +26,7 @@
 3. 安裝腳本註解的「示例」段：提到 claude 的示例優先。專案級的包取帶路徑的示例，路徑換成 `{PROJECT_DIR}`；全域包取不帶路徑的示例。
 4. 以上都沒有時，顯示「無預設參數」。
 
-要用 `-t`（專案級）還是 `-g`（全域），依最終參數判斷：參數含 `{PROJECT_DIR}`、`--local` 或 `--location=local` 時用 `-t`；屬於只能全域的包且沒有專案級參數時用 `-g`。參數值不能含空格，這是 `install-open-supports.sh` 的限制。
+要用 `-t`（專案級）還是 `-g`（全域），依最終參數判斷：參數含 `{PROJECT_DIR}`、`--local` 或 `--location=local` 時用 `-t`；屬於只能全域的包且沒有專案級參數時用 `-g`。參數值不能含空格，這是 `install-open-supports.sh` 的限制。命令中的路徑與參數都以 shell 引號包好，`-n` 傳 `ost_…` 目錄名。沒有預設參數時不產生命令。專案級命令的參數沒有 `{PROJECT_DIR}` 時會出現 `注意：`，因為安裝腳本是在複製後的支持包目錄中執行，預設路徑不會指向專案。
 
 ## remove 的範圍
 
@@ -35,7 +35,7 @@
 - `<專案>/.claude/open_supports/<ost>/`
 - `<專案>/.claude/skills/<ost>_install/`：只刪帶有生成標記的；標記行被刪掉的，視為手動維護，予以保留。
 
-`--apply` 會先把上述目錄備份到 `<專案>/.claude/open_supports.backup-<時間戳>/`，再刪除。
+`remove` 只印方案。`remove-apply` 把上述目錄搬到 `<專案>/.claude/open_supports.backup-<時間戳>/packages/<ost>` 與 `skills/<ost>_install`（與 `install-open-supports.sh -F` 的備份結構一致；同名時加 `.1` 等後綴），用搬移不用複製，所以符號連結原樣保留。搬回原位即可復原。`remove-apply` 刻意不放進 `allowed-tools`，執行時一定會出現權限提示。
 
 腳本也會轉述支持包 `repo_readme_summary.md` 中記載的官方卸載命令，但不代為執行。專案 `.claude/open_supports_name_list.txt` 裡的設定行不會修改；腳本只用 `注意：` 提醒，依清單重裝時會再裝回來。
 
@@ -45,4 +45,4 @@
 
 - 寫清單時若出現「無法寫入…sandbox.excludedCommands」：請使用者在 `~/.claude/settings.json` 的 `sandbox.excludedCommands` 加入 `python3 ~/.claude/skills/myopensupports/scripts/myopensupports *`（照字面，含 `~`），然後重試。不要改用其他方式寫檔。
 - 讀倉庫出現 `Operation not permitted`：請使用者在 `sandbox.filesystem.allowRead` 加入 `AGENT_RULES_REPO` 的路徑。不要自行修改設定。
-- 安裝與 `remove --apply` 都會寫入專案的 `.claude/skills/`，沙箱會擋下，所以一律交由使用者選擇執行方式（見 SKILL.md）。
+- 安裝與 `remove-apply` 都會寫入專案的 `.claude/skills/`，沙箱會擋下，所以一律交由使用者選擇執行方式（見 SKILL.md）。

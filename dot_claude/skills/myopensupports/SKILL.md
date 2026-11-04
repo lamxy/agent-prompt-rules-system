@@ -3,7 +3,14 @@ name: myopensupports
 description: 按序號列出本倉庫（agent-prompt-rules-system）open_supports/ 的支持包（OpenSpec、codegraph、gstack、pm-skills 等），產生安裝到目前專案的完整命令與安裝示例，移除專案中已安裝的支持包，並與倉庫索引同步清單。依賴環境變數 AGENT_RULES_REPO 指向本倉庫的本機克隆。
 when_to_use: 使用者輸入 /myopensupports，或說「列出支持包」「安裝支持包 3」「這個專案裝 codegraph」「移除支持包」「同步支持包清單」時。整包場景配置用 myconfig；插件開關用 myplugins。
 argument-hint: "[序號 | 序號 -- 參數… | remove 序號 | add Owner/Repo | sync] [--target 目錄]"
-allowed-tools: Bash(python3 ~/.claude/skills/myopensupports/scripts/myopensupports *)
+allowed-tools:
+  - Bash(python3 ~/.claude/skills/myopensupports/scripts/myopensupports list)
+  - Bash(python3 ~/.claude/skills/myopensupports/scripts/myopensupports list *)
+  - Bash(python3 ~/.claude/skills/myopensupports/scripts/myopensupports install *)
+  - Bash(python3 ~/.claude/skills/myopensupports/scripts/myopensupports remove *)
+  - Bash(python3 ~/.claude/skills/myopensupports/scripts/myopensupports add *)
+  - Bash(python3 ~/.claude/skills/myopensupports/scripts/myopensupports sync)
+  - Bash(python3 ~/.claude/skills/myopensupports/scripts/myopensupports sync *)
 ---
 
 # 支持包管理
@@ -19,7 +26,7 @@ python3 ~/.claude/skills/myopensupports/scripts/myopensupports <子命令> [參�
 | 沒有內容，或要求列出 | `list` |
 | 序號或包名（如 `3`、`codegraph` 對應的 `ost_…`） | `install <選擇>` |
 | 序號加 `-- 參數…` | `install <選擇> -- <參數…>` |
-| `remove <選擇>` | `remove <選擇>`（只印方案） |
+| `remove <選擇>` | `remove <選擇>`（只印方案；實際刪除用 `remove-apply`，見下節） |
 | `add`、`sync` | 先讀 `references/details.md` 再執行 |
 
 - 目標專案預設為目前專案；使用者指定其他目錄時加 `--target <目錄>`。
@@ -29,14 +36,14 @@ python3 ~/.claude/skills/myopensupports/scripts/myopensupports <子命令> [參�
 
 ## 安裝與移除：給命令，由使用者決定
 
-`install` 只印方案，不會安裝；`remove` 不帶 `--apply` 只印方案，不會刪除。方案印出後：
+`install` 只印方案，不會安裝；`remove` 只印方案，不會刪除，真正刪除是方案裡給的 `remove-apply` 命令（不在 `allowed-tools` 內，執行時一定有權限提示）。方案印出後：
 
 1. 轉述重點：預設參數及其來源、其他可選參數、完整命令；安裝示例照錄腳本輸出的區塊。
 2. 用一次 AskUserQuestion 問（remove 只問第 2 題）：
-   - **參數**：「用預設參數（推薦）」或「自訂參數」。選自訂時請使用者輸入參數，再用 `install <選擇> -- <參數…>` 重跑腳本，取得新的完整命令。
+   - **參數**：「用預設參數（推薦）」或「自訂參數」。腳本顯示「無預設參數」時沒有命令，這題只給「自訂參數」。選自訂時請使用者輸入參數，再用 `install <選擇> -- <參數…>` 重跑腳本，取得新的完整命令。
    - **執行方式**：「讓 Claude 關閉沙箱執行」或「自己用 `!` 執行」。
 3. 依選擇處理：
-   - **Claude 執行**：用 Bash 加 `dangerouslyDisableSandbox: true` 執行完整命令；使用者仍需在權限提示中核准。安裝建議先跑腳本給的預演命令，確認輸出沒有問題後再跑正式命令。
+   - **Claude 執行**：只有使用者在這一題選了它才執行。用 Bash 加 `dangerouslyDisableSandbox: true` 執行腳本給的完整命令（照抄，不改引號），使用者仍需在權限提示中核准。安裝建議先跑預演命令，確認輸出沒有問題後再跑正式命令。
    - **自己執行**：給出 `! <完整命令>` 讓使用者貼上執行。
 4. 使用者貼回失敗輸出時，原樣引用錯誤行與退出碼；只建議重跑失敗的那一條命令。
 
@@ -55,6 +62,6 @@ AskUserQuestion 不可用時，改用文字提問後停止。
 /myopensupports 3                 顯示第 3 個的安裝方案（預設參數、完整命令、安裝示例），不直接安裝
 /myopensupports 3 -- <參數…>      用自訂參數產生命令；{PROJECT_DIR} 會換成專案路徑
 /myopensupports 3 --target <目錄> 安裝到其他專案
-/myopensupports remove 3          移除專案中本倉庫產生的支持包檔案（先備份）
+/myopensupports remove 3          顯示移除方案；確認後才搬走專案中本倉庫產生的檔案（到備份目錄）
 /myopensupports add Owner/Repo | sync    維護清單（從倉庫查找／與倉庫索引比對）
 ```

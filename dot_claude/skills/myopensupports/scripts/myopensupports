@@ -4,7 +4,8 @@
 子命令：
   list                                   列出本機清單與目標專案的安裝狀態（預設）
   install <選擇> [-- 自訂參數...]        只印安裝方案（預設參數、完整命令、安裝示例），不執行
-  remove <選擇> [--apply]                印移除方案；--apply 才備份並刪除本倉庫安裝產生的檔案
+  remove <選擇>                          只印移除方案，不刪除
+  remove-apply <選擇>                    把本倉庫安裝產生的檔案搬到備份目錄（等於刪除）
   add <Owner/Repo | ost_Owner_Repo>      從倉庫加入本機清單
   sync [--dry-run|-t|--test]             依倉庫支持包更新本機清單
 
@@ -17,6 +18,7 @@ import glob
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -258,12 +260,15 @@ def cmd_sync(repo, cat, rest):
         if p["name"] not in dirs:
             removed.append(p["name"])
             continue
-        if p["name"] in current:
-            if any(p.get(k) != current[p["name"]][k] for k in ("upstream", "purpose", "scope", "scenes", "indexed")):
-                updated.append(p["name"])
-            keep.append(current[p["name"]])
-        else:
+        fresh = current.get(p["name"])
+        if fresh is None and p.get("indexed"):
+            fresh = unindexed_pkg(repo, p["name"])
+        if fresh is None:
             keep.append(p)
+            continue
+        if any(p.get(k) != fresh[k] for k in ("upstream", "purpose", "scope", "scenes", "indexed")):
+            updated.append(p["name"])
+        keep.append(fresh)
     names = {p["name"] for p in keep}
     for n, p in current.items():
         if n not in names:
@@ -396,20 +401,23 @@ def default_args(repo, pkg):
 
 
 def is_project_args(args):
-    return any(tok in args.split() or tok in args for tok in PROJECT_ARGS)
+    toks = args.split()
+    return "{PROJECT_DIR}" in args or any(t in ("--local", "--location=local") for t in toks)
 
 
-def build_command(repo, proj, pkg, args):
+def has_project_path(args):
+    return "{PROJECT_DIR}" in args or any(re.match(r"^--project(-dir)?=", t) for t in args.split())
+
+
+def build_command(repo, proj, pkg, args, dry=False):
+    """回傳 (命令字串, 是否全域)。路徑與參數都以 shlex.quote 引用；-n 傳 ost_ 目錄名。"""
     script = os.path.join(repo, "scripts", "install-open-supports.sh")
-    tail = (" -- " + args) if args else ""
-    if is_global_only(repo, pkg) and not is_project_args(args):
-        return "sh %s -g -n %s%s" % (script, pkg["upstream"], tail), True
-    return "sh %s -t %s -n %s%s" % (script, proj, pkg["upstream"], tail), False
-
-
-def dry_variant(cmd):
-    head, sep, tail = cmd.partition(" -- ")
-    return head + " --dry-run" + sep + tail
+    is_global = is_global_only(repo, pkg) and not is_project_args(args)
+    head = ["sh", script] + (["-g"] if is_global else ["-t", proj]) + ["-n", pkg["name"]]
+    if dry:
+        head.append("--dry-run")
+    tail = (["--"] + args.split()) if args else []
+    return " ".join(shlex.quote(x) for x in head + tail), is_global
 
 
 def cmd_install(repo, cat, proj, sel, custom):
@@ -442,14 +450,20 @@ def cmd_install(repo, cat, proj, sel, custom):
             print("其他可選參數：")
             for a, s in others:
                 print("  - %s　（%s）" % (a or "（無參數）", s))
-        cmd, is_global = build_command(repo, proj, pkg, args)
         print()
-        if is_global:
-            print("此包預設全域安裝，作用於所有專案（不需要專案目錄）。")
-        print("完整命令：")
-        print("  " + cmd)
-        print("預演命令（建議先執行）：")
-        print("  " + dry_variant(cmd))
+        if src:
+            cmd, is_global = build_command(repo, proj, pkg, args)
+            if is_global:
+                print("此包預設全域安裝，作用於所有專案（不需要專案目錄）。")
+            elif not has_project_path(args):
+                note("參數沒有 {PROJECT_DIR}：安裝腳本會在複製後的支持包目錄中執行，預設路徑不會指向專案；"
+                     "專案級安裝請在參數中加上 {PROJECT_DIR}")
+            print("完整命令：")
+            print("  " + cmd)
+            print("預演命令（建議先執行）：")
+            print("  " + build_command(repo, proj, pkg, args, dry=True)[0])
+        else:
+            print("沒有預設參數，不產生命令；請從下方示例選擇參數後，用自訂參數重新產生。")
         help_text = script_help(repo, pkg)
         print()
         if help_text:
@@ -475,10 +489,17 @@ def uninstall_notes(repo, pkg):
         return []
 
 
+def unique_backup_dir(proj):
+    base = os.path.join(proj, ".claude", "open_supports.backup-%s" % time.strftime("%Y%m%d-%H%M%S"))
+    path, n = base, 1
+    while os.path.lexists(path):
+        path, n = "%s.%d" % (base, n), n + 1
+    return path
+
+
 def cmd_remove(repo, cat, proj, sel, apply):
     pkgs = resolve(cat, sel)
-    stamp = time.strftime("%Y%m%d-%H%M%S")
-    backup = os.path.join(proj, ".claude", "open_supports.backup-%s" % stamp)
+    backup = None
     for pkg in pkgs:
         name = pkg["name"]
         vend = os.path.join(proj, ".claude", "open_supports", name)
@@ -486,33 +507,46 @@ def cmd_remove(repo, cat, proj, sel, apply):
         print("=== %s（%s）" % (name, pkg["upstream"]))
         print("目標專案：%s" % proj)
         targets, kept = [], []
-        if os.path.isdir(vend):
-            targets.append(vend)
-        if os.path.isdir(wrap):
-            skill = os.path.join(wrap, "SKILL.md")
+        if os.path.lexists(vend):
+            targets.append((vend, "packages/%s" % name))
+        if os.path.lexists(wrap):
             try:
-                with open(skill, encoding="utf-8") as f:
+                with open(os.path.join(wrap, "SKILL.md"), encoding="utf-8") as f:
                     generated = MARKER in f.read().splitlines()
             except OSError:
                 generated = False
-            (targets if generated else kept).append(wrap)
+            if generated:
+                targets.append((wrap, "skills/%s_install" % name))
+            else:
+                kept.append(wrap)
         if not targets and not kept:
             print("目標專案未安裝此支持包（沒有本倉庫產生的檔案），不需刪除。")
-        else:
-            print("%s：" % ("已刪除（先備份到 %s）" % backup if apply and targets else "將刪除（先備份）"))
-            for t in targets:
-                print("  - %s" % t)
-            for k in kept:
-                print("  - 保留 %s：沒有生成標記，屬手動維護，請自行決定是否刪除" % k)
-            if apply and targets:
-                os.makedirs(backup, exist_ok=True)
-                for t in targets:
-                    shutil.copytree(t, os.path.join(backup, os.path.basename(t)))
-                for t in targets:
-                    shutil.rmtree(t)
-            elif not apply and targets:
-                print("完整命令（執行後才會刪除）：")
-                print("  %s remove %s --apply --target %s" % (SELF_CMD, name, proj))
+        elif not targets:
+            print("沒有可刪除的檔案。")
+        if apply and targets:
+            backup = backup or unique_backup_dir(proj)
+            done = []
+            for path, rel in targets:
+                dest = os.path.join(backup, rel)
+                try:
+                    os.makedirs(os.path.dirname(dest), exist_ok=True)
+                    shutil.move(path, dest)
+                except (OSError, shutil.Error) as e:
+                    for d in done:
+                        print("  已移到備份：%s" % d)
+                    raise Fail("移動 %s 到 %s 失敗（%s）；已移動的項目在備份目錄中，可手動搬回" % (path, dest, e))
+                done.append(path)
+            print("已移到備份目錄 %s（等於從專案刪除）：" % backup)
+            for path, _ in targets:
+                print("  - %s" % path)
+        elif targets:
+            print("將刪除（搬到 <專案>/.claude/open_supports.backup-<時間戳>/，可搬回復原）：")
+            for path, _ in targets:
+                print("  - %s" % path)
+            print("完整命令（執行後才會刪除）：")
+            print("  %s remove-apply %s --target %s" % (SELF_CMD, name, shlex.quote(proj)))
+        for k in kept:
+            print("  - 保留 %s：沒有生成標記，屬手動維護，請自行決定是否刪除" % k)
         notes = uninstall_notes(repo, pkg)
         print("上游工具本身的卸載（本技能不執行）：")
         if notes:
@@ -555,7 +589,7 @@ def main(argv):
     repo = locate_repo()
     cmd = argv[0] if argv else "list"
     rest = argv[1:]
-    known = ("list", "install", "remove", "rm", "add", "sync")
+    known = ("list", "install", "remove", "rm", "remove-apply", "add", "sync")
     if cmd not in known:
         cmd, rest = "install", argv
     rest, target, custom = split_opts(rest)
@@ -566,8 +600,11 @@ def main(argv):
         elif cmd == "install":
             cmd_install(repo, cat, project_dir(target), rest, custom)
         elif cmd in ("remove", "rm"):
-            apply = "--apply" in rest
-            cmd_remove(repo, cat, project_dir(target), [a for a in rest if a != "--apply"], apply)
+            if "--apply" in rest:
+                raise Fail("刪除請用 remove-apply 子命令（需要使用者核准）")
+            cmd_remove(repo, cat, project_dir(target), rest, False)
+        elif cmd == "remove-apply":
+            cmd_remove(repo, cat, project_dir(target), rest, True)
         elif cmd == "add":
             cmd_add(repo, cat, rest)
         elif cmd == "sync":

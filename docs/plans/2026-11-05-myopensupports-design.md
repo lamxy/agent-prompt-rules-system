@@ -51,7 +51,7 @@
 |---|---|---|
 | 空、列出 | `list` | 列出清單 |
 | `3` 或包名 | `install 3 [--target DIR] [-- 自訂參數…]` | 輸出安裝方案，不執行 |
-| `remove 3` | `remove 3 [--target DIR] [--apply]` | 預設輸出移除方案；帶 `--apply` 才刪除 |
+| `remove 3` | `remove 3 [--target DIR]`／`remove-apply 3 [--target DIR]` | `remove` 只印方案；`remove-apply` 才刪除（交叉審核後由 `--apply` 改為獨立子命令） |
 | `add 名稱` | `add <OwnerName/RepoName 或 ost_…>` | 加入本機清單 |
 | `sync` | `sync [--dry-run]` | 比對並更新本機清單 |
 
@@ -92,10 +92,10 @@
 
 ### remove
 
-- 不帶 `--apply`：列出目標專案中將刪除的項目，並附上完整的 `--apply` 命令，執行方式同樣由使用者二選一。
+- `remove`：列出目標專案中將刪除的項目，並附上完整的 `remove-apply` 命令，執行方式同樣由使用者二選一。
   - `<專案>/.claude/open_supports/<ost>/`
   - `<專案>/.claude/skills/<ost>_install/`：只在帶有 `install-open-supports.sh` 生成標記時刪除；標記已被刪掉（表示手動維護）就保留並提示。
-- 帶 `--apply`：先備份到 `<專案>/.claude/open_supports.backup-<時間戳>/`（與 `-F` 的備份位置一致），再刪除。
+- `remove-apply`：把目錄搬到 `<專案>/.claude/open_supports.backup-<時間戳>/packages/<ost>` 與 `skills/<ost>_install`（與 `-F` 的備份結構一致）。
 - 兩種模式都輸出：
   - **官方卸載說明**：擷取該包 `repo_readme_summary.md` 中含「卸载／卸載／uninstall」的行，原樣轉述，不執行。沒有就寫「支持包文件未記載卸載方式」。
   - 專案 `.claude/open_supports_name_list.txt` 仍有這個包時，以 `注意：` 提示：之後依清單重裝會再裝回來。腳本不改這個檔。
@@ -134,5 +134,22 @@
 
 - Q1：agency-agents 從示例取到的預設參數是 `--tool=opencode …`，因為它的示例裡沒有 claude 專案級的寫法。INDEX 標的是「不直接安裝」，所以暫不特別處理。要不要在場景清單或 INDEX 為它補一行 claude 預設參數？
 - Q2：cognee 的示例都不帶專案路徑，所以顯示「無預設參數」。它在 INDEX 是「D（本地 C）」，但標「暂不启用」，暫時維持現狀。
-- Q3：會話內 `dangerouslyDisableSandbox` 執行安裝或 `remove --apply`，未在互動模式實測（需要使用者核准權限提示）；可以留到第一次實際使用時驗證。
+- Q3：會話內 `dangerouslyDisableSandbox` 執行安裝或 `remove-apply`，未在互動模式實測（需要使用者核准權限提示）；可以留到第一次實際使用時驗證。
 - Q4：deanpeters 在 INDEX 是「不启用（2026-10-28 用户决定忽略）」，但仍在清單中，可以產生安裝方案。目前不過濾，只靠清單裡的用途欄提示。是否要在 list 中把「不启用」的包另外標出來？
+- Q5：SKILL.md 的 `allowed-tools` 改用 YAML 列表，逐一列出子命令，不含 `remove-apply`。有兩點未實測：(a) 列表形式是否生效；(b) `remove *` 是否不會匹配到 `remove-apply …`。這兩點依 Claude Code 權限規則推論，要等第一次實際使用時確認。如果 `remove-apply` 沒有跳出權限提示，就改回字串形式，或在說明中補充。
+
+### 交叉審核（2026-11-05，子代理獨立審查提交 4273d9c）
+
+審查共提出 9 項（中 4、低 5），已全部依建議修正，並補上測試：
+
+1. **`remove --apply` 原本用 `copytree` 複製再刪除**：碰到斷掉的符號連結會中途失敗，備份只完成一半，且結果訊息在動作前就先印出。已改為 `shutil.move` 搬移到 `packages/`、`skills/`。目錄同名時加後綴；結果訊息改在完成後印出；失敗時轉成 `錯誤：`。
+2. **生成的命令沒有加引號**：路徑含空格會斷開；`$(…)` 這類自訂參數會被 shell 展開。已改用 `shlex.quote`。
+3. **沒有預設參數時仍印出命令**：已改為只提示使用者自訂參數；SKILL.md 也同步修改，此時只提供「自訂」選項。
+4. **`allowed-tools` 預先放行了 `--apply`**：已拆成獨立子命令 `remove-apply`，不放進 `allowed-tools`。`remove --apply` 現在會報錯。
+5. **專案級參數缺少 `{PROJECT_DIR}`**：已加上 `注意：` 提示。
+6. **`--localhost` 被誤判為專案級**：已改為只比對完整的 token。
+7. **`-n` 參數**：已改傳 `ost_` 目錄名，不再用 INDEX 連結文字。
+8. **sync 不處理「已從 INDEX 移除但目錄還在」的包**：已改為標記為未登記，並計入「更新」。
+9. **只剩保留項時，仍印出「將刪除」標題**：已改為顯示「沒有可刪除的檔案」。
+
+審查者留在 scratchpad 的測試目錄（含 1 份失敗時只完成一半的備份）位於會話暫存區，未影響倉庫或真實專案。
