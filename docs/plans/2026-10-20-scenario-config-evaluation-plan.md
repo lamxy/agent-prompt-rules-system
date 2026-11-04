@@ -137,7 +137,7 @@
 - 用户原则：创建与只读命令放行，清理与删除需要确认或禁止；不应阻止 Claude 发起验证。
 - [x] （2026-11-04，`f67e416`）修改 `db-schema-design`（`skills/skills-backend-dev/` 与 `dot_claude_projects/.claude-backend-dev/` 两处）：验证改用 `docker run --rm mysql:8.0` 一次性容器，不用共享库；schema 比对改用 `SHOW CREATE TABLE` 或 `information_schema`，不依赖 `mysqldump`
 - [x] （2026-11-04，B2 r2 通过，另修 B-10 `9cb4a30`；B1 未重跑）改完后重跑 B2（r2），确认验证能完成且不留残留；B1 是否重跑视改动范围决定
-- [ ] D2：compose 项目名与本机 `~/workspace/local-infra/fiberhouse-dev`（`name: fiberhouse-dev`）同名，挂上并改动了该环境的三个卷。评估 `middleware-ops` 是否加「启动前按项目名查已有卷与停止的容器」；测验后在 local-infra 目录 `docker compose up -d` 重建容器，并检查其 Redis 是否混入测验写入（2026-11-04：重建与 Redis 检查已完成，无需清理；`middleware-ops` 修改即 D-4，未做）
+- [x] （2026-11-04 D-4 已修）D2：compose 项目名与本机 `~/workspace/local-infra/fiberhouse-dev`（`name: fiberhouse-dev`）同名，挂上并改动了该环境的三个卷。评估 `middleware-ops` 是否加「启动前按项目名查已有卷与停止的容器」；测验后在 local-infra 目录 `docker compose up -d` 重建容器，并检查其 Redis 是否混入测验写入（2026-11-04：重建与 Redis 检查已完成，无需清理；`middleware-ops` 修改即 D-4，2026-11-04 已做）
 - [ ] 全局 deny `Bash(*mysqldump*)` 是否改为 ask，由用户决定（改 `~/.claude/` 需用户明确指示；skill 改完后不再依赖它，非必需）
 
 **标准任务**：每个场景 3～5 个，覆盖该场景核心能力，例如：
