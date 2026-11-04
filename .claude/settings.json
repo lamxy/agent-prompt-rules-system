@@ -2,5 +2,9 @@
   "claudeMdExcludes": [
     "**/dot_claude_legacy/**",
     "**/dot_claude_projects/**/CLAUDE.md"
-  ]
+  ],
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true
+  }
 }
