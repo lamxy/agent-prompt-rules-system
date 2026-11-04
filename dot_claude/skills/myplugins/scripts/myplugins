@@ -69,7 +69,9 @@ def save_json(path, data):
             os.unlink(tmp)
         except OSError:
             pass
-        raise Fail("無法寫入 %s（%s）。在沙箱中執行時，需把本腳本加入 sandbox.excludedCommands，見技能說明" % (path, e.strerror))
+        raise Fail("無法寫入 %s（%s）。在沙箱中執行時，需在 ~/.claude/settings.json 的 sandbox.excludedCommands 加入 "
+                   "「python3 ~/.claude/skills/myplugins/scripts/myplugins *」（照字面，含 ~），"
+                   "並用同樣的 ~ 寫法執行本腳本" % (path, e.strerror))
 
 
 def load_catalog():

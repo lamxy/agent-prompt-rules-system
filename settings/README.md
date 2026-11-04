@@ -109,7 +109,7 @@ sh scripts/install-claude-project.sh -g      # 复制全局清单 → 同步 ski
 | 质量与安全 | `security-guidance`、`open-code-review` |
 | 会话与记忆 | `remember` |
 
-可选插件（2026-11-04）：myplugins 清单中的 21 个插件在模板中全部设为 `false`（`install-settings.sh -m merge` 只合并模板列出的键，不列出就关不掉目标机器上已启用的插件；场景包的项目层 `true` 优先，场景仍照常启用），其中 `claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify`、`ralph-loop`、`session-report` 原为全局启用；`document-skills` 来自第三方市场，模板同时声明 `anthropic-agent-skills`（与 prd-design 模板相同，`test-settings-templates.sh` 要求列出的插件都声明市场）；`SessionStart` 加 `myplugins hint` 提示；需要时在当前目录用 `/myplugins` 启用（默认写 `.claude/settings.json`，`--local` 或 `-c` 写 `.claude/settings.local.json`）。清单另收四个场景包默认启用的 15 个插件（`playwright`、`mongodb`、`mattpocock-skills` 等），共 21 个，按通用 → PRD → 前端 → 后端 → 运维排序，见 `dot_claude/skills/myplugins/catalog.default.json`；需要个人账号的本地级可选插件（`figma`、`vercel` 等）不收，需要时 `/myplugins add`。场景包仍按各自模板默认启用，清单与模板分开维护。采用本模板前先安装 myplugins（`dot_claude/README.md`「myplugins 安装」，其中 `sandbox.excludedCommands` 需写本机绝对路径，模板不含），否则这些插件没有启用入口。原因：全局常驻约 3.9k token，拆出 8 个省约 1.8k（2026-11-03 分析）。
+可选插件（2026-11-04）：myplugins 清单中的 21 个插件在模板中全部设为 `false`（`install-settings.sh -m merge` 只合并模板列出的键，不列出就关不掉目标机器上已启用的插件；场景包的项目层 `true` 优先，场景仍照常启用），其中 `claude-code-setup`、`claude-md-management`、`skill-creator`、`hookify`、`ralph-loop`、`session-report` 原为全局启用；`document-skills` 来自第三方市场，模板同时声明 `anthropic-agent-skills`（与 prd-design 模板相同，`test-settings-templates.sh` 要求列出的插件都声明市场）；`SessionStart` 加 `myplugins hint` 提示；需要时在当前目录用 `/myplugins` 启用（默认写 `.claude/settings.json`，`--local` 或 `-c` 写 `.claude/settings.local.json`）。清单另收四个场景包默认启用的 15 个插件（`playwright`、`mongodb`、`mattpocock-skills` 等），共 21 个，按通用 → PRD → 前端 → 后端 → 运维排序，见 `dot_claude/skills/myplugins/catalog.default.json`；需要个人账号的本地级可选插件（`figma`、`vercel` 等）不收，需要时 `/myplugins add`。场景包仍按各自模板默认启用，清单与模板分开维护。采用本模板前先安装 myplugins（`dot_claude/README.md`「myplugins 安装」；模板已含 `sandbox.excludedCommands` 的 `python3 ~/.claude/skills/myplugins/scripts/myplugins *`，规则按命令文字照字面比对，写 `~` 即可跨机器通用，2026-11-04 实测），否则这些插件没有启用入口。原因：全局常驻约 3.9k token，拆出 8 个省约 1.8k（2026-11-03 分析）。
 
 相对本机设定的调整：
 
@@ -121,7 +121,7 @@ sh scripts/install-claude-project.sh -g      # 复制全局清单 → 同步 ski
 | `commit-commands`、`skill-creator`、`claude-md-management`、`security-guidance` 改用 `@claude-plugins-official` | 原来分别来自 `claude-code-plugins` 与内置插件目录；统一到官方市场，换机器也能复现 |
 | 删除 `claude-code-plugins` 市场 | 其插件官方市场都有 |
 
-2026-10-28 本机已对齐上表（插件改用官方市场、删除 `claude-code-plugins` 市场、`skillOverrides` 同步、删除 `kubectl get/describe` 放行、停用 `playground`），`dot_claude/settings.json` 镜像同步更新。2026-11-04 安装 myplugins 后，本机全局关闭 8 个可选插件（上表 6 个加 `frontend-design`、`chrome-devtools-mcp`），原先「本机全局启用 `frontend-design`、`chrome-devtools-mcp`」的刻意差异取消，临时项目改用 `/myplugins` 启用；镜像同步，只有 `sandbox.excludedCommands` 的 myplugins 一项因含本机绝对路径不进镜像。
+2026-10-28 本机已对齐上表（插件改用官方市场、删除 `claude-code-plugins` 市场、`skillOverrides` 同步、删除 `kubectl get/describe` 放行、停用 `playground`），`dot_claude/settings.json` 镜像同步更新。2026-11-04 安装 myplugins 后，本机全局关闭 8 个可选插件（上表 6 个加 `frontend-design`、`chrome-devtools-mcp`），原先「本机全局启用 `frontend-design`、`chrome-devtools-mcp`」的刻意差异取消，临时项目改用 `/myplugins` 启用；镜像同步；`sandbox.excludedCommands` 的 myplugins 一项改为 `~` 写法后进镜像与模板。
 
 要在其他机器采用全局设定，先与该机器的 `~/.claude/settings.json` 比对差异再决定，不要直接覆盖；确认后执行 `install-settings.sh -l user`（会先备份）。
 

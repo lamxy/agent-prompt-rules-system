@@ -133,5 +133,17 @@ EMPTY="$TMP/empty"; mkdir -p "$EMPTY"
 h="$(printf '{"source":"startup"}' | MYPLUGINS_PROJECT_DIR="$EMPTY" MYPLUGINS_CLAUDE_DIR="$CD" MYPLUGINS_HOME="$TMP/home" CLAUDE_PROJECT_DIR= python3 "$TOOL" hint)"
 printf '%s\n' "$h" | grep -q '當前目錄未啟用' && pass "hint says nothing enabled in plain directory" || fail "hint empty dir: $h"
 
+# The sandbox exclusion is matched literally, so SKILL.md, the user template and the mirror must agree.
+python3 - "$REPO_ROOT" <<'PYEOF' && pass "skill command, template and mirror exclusions match literally" || fail "exclusion mismatch"
+import json, re, sys
+root = sys.argv[1]
+skill = open(root + "/dot_claude/skills/myplugins/SKILL.md", encoding="utf-8").read()
+cmd = re.search(r"^allowed-tools: Bash\((.+)\)$", skill, re.M).group(1)
+assert cmd.startswith("python3 ~/"), cmd
+assert cmd[:-2] + " <子命令>" in skill
+for f in ("settings/settings.user.json", "dot_claude/settings.json"):
+    assert cmd in json.load(open(root + "/" + f))["sandbox"]["excludedCommands"], f
+PYEOF
+
 printf '\n%s failure(s)\n' "$FAILS"
 [ "$FAILS" -eq 0 ]

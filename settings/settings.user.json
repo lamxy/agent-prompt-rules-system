@@ -523,7 +523,8 @@
       ]
     },
     "excludedCommands": [
-      "docker *"
+      "docker *",
+      "python3 ~/.claude/skills/myplugins/scripts/myplugins *"
     ]
   },
   "effortLevel": "medium",
