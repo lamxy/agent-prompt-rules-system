@@ -54,6 +54,7 @@ updated: 2026-11-05
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
 | 可选插件技能 `myplugins` | 已实现、本机已安装并按用户试用调整（2026-11-04，`5b5425d`～`ac254c2`、`64ef966`，已随 v2.5.0 推送）；2026-11-05 `-t` 与共享模式实测、预演状态行修改（`9bbddda`，未推送） | 见「续作时必须知道的事」→「myplugins」；安装步骤在 `dot_claude/README.md`「myplugins 安装」 |
+| 支持包技能 `myopensupports` | 已实现、测试通过、交叉审核已处理（2026-11-05）；本机安装待用户执行 `cp`（会话中复制到 `~/.claude/skills/` 被权限分类器以 Self-Modification 拒绝） | `dot_claude/skills/myopensupports/`；设计与过程记录 `docs/plans/2026-11-05-myopensupports-design.md`，计划 `docs/plans/2026-11-05-myopensupports-plan.md` |
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
 | 配置安装技能 `myconfig`（列出／安装本仓库配置） | 已实现并发布 v2.4.0（2026-10-29）；用户已在本机安装，`/myconfig` 列表模式正常 | `dot_claude/skills/myconfig/`；设计 `docs/plans/2026-10-28-config-install-skill-design.md` §11。`claude -p` 实测：沙箱禁止会话内写 `.claude/settings.json`、`skills/`、`hooks/`，改为技能只预演、写入交付命令由用户执行；跨项目使用需把仓库路径与 `~/.claude/skills/myconfig` 加进 `sandbox.filesystem.allowRead`；两轮子代理交叉审查意见已全部处理 |
 
@@ -340,6 +341,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
 | 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除）；2026-11-05 改了 `~/.claude/settings.json`（备份 `.bak-20261105012410`）并新建 RTK `config.toml` | — |
 | **`mysession-eval`**（用户 2026-11-05 决定要做，暂不执行）：全局技能，真实项目中主动调用，自动记录与整理试用数据；开工前先与用户确认计划中的初步设计；它是 3.4 的前置 | 计划文件 3.4「候选：mysession-eval」 |
+| myopensupports 本机安装：`! cp -R dot_claude/skills/myopensupports ~/.claude/skills/`；疑问清单见设计文件「过程记录与疑问」 | `docs/plans/2026-11-05-myopensupports-design.md` |
 
 <!-- section: next -->
 ## 建议的下一步
@@ -481,3 +483,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | 取消 B0 | 用户取消「独立 Go 项目 `go get` FiberHouse 建第一个模块」单独测验；基线 1.2 局限说明保留并加注，交接移除待处理项 | 基线在框架仓库内测验的局限不再补测 |
 | 2026-11-05 | myconfig 互动模式补测 | 用户在临时 Go 项目手动操作、按会话记录核对：选场景与确认均弹 AskUserQuestion，`!` 执行不受沙箱限制、写入 51 个文件、Claude 自动回报，`sleep 130` 不中断；RTK 对注入无影响；结果写入设计文件 §12 | 回报分类计数两次不准，是否改 SKILL.md 待用户决定；超过 130 秒未测 |
 | 2026-11-05 | myconfig 回报只引用摘要数字 | SKILL.md 回报步骤加「数字只引用脚本摘要与标签行数，不自行按类别计数」；以 `claude -p --plugin-dir` 载入临时插件验证，回报只列类别名、数字取自摘要 | 本机副本已按用户指示同步（`diff -r` 一致） |
+| 2026-11-05 | 新增 myopensupports 技能 | `list`／`install`（只印方案）／`remove`（`--apply` 才备份删除）／`add`／`sync`，仓库取自 `AGENT_RULES_REPO`；`scripts/tests/test-myopensupports.sh`；README、设计与计划文件 | 本机安装待用户 `cp`；疑问见设计文件「过程记录与疑问」 |
