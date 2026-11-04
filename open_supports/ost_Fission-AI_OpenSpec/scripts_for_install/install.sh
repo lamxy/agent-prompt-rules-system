@@ -232,13 +232,16 @@ refresh_path() {
     [ -z "$_npm_prefix" ] || add_path_dir "$_npm_prefix/bin"
   fi
 
+  # pnpm / yarn 可能只是 Corepack 代理、本体尚未下载：此时 Corepack 会在终端等待
+  # 下载确认（提示写在被丢弃的 stderr，看起来像卡住），无终端时则自动下载。
+  # 这里只为查全局 bin 目录：禁止 Corepack 联网、不读 stdin，未下载就立即跳过。
   if command -v pnpm >/dev/null 2>&1; then
-    _pnpm_bin="$(pnpm bin -g 2>/dev/null || true)"
+    _pnpm_bin="$(COREPACK_ENABLE_NETWORK=0 pnpm bin -g </dev/null 2>/dev/null || true)"
     [ -z "$_pnpm_bin" ] || add_path_dir "$_pnpm_bin"
   fi
 
   if command -v yarn >/dev/null 2>&1; then
-    _yarn_bin="$(yarn global bin 2>/dev/null || true)"
+    _yarn_bin="$(COREPACK_ENABLE_NETWORK=0 yarn global bin </dev/null 2>/dev/null || true)"
     [ -z "$_yarn_bin" ] || add_path_dir "$_yarn_bin"
   fi
 }
