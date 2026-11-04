@@ -50,8 +50,9 @@ description: 为 Go 后端设计或评审数据库结构：MySQL / PostgreSQL �
 
 MySQL 的迁移文件提交前在临时库验证（以下步骤只在 MySQL 8.0 上实测过，PostgreSQL、MongoDB 未验证）：
 
+- 临时库用一次性容器（`docker run --rm`、不映射端口），不在项目共用或测试用的库里建库，也不借容器内 root 绕过只读账号。
 - 先灌入种子数据再跑；空库通过不算验证，唯一索引、数据转换类 migration 要用含重复或边界值的数据试跑。
-- 比对 up、down 前后的 `mysqldump --no-data` 结果，排除工具的版本表，并去掉 `AUTO_INCREMENT=` 值。
+- 逐表比对 up、down 前后的 `SHOW CREATE TABLE` 结果，排除工具的版本表，并去掉 `AUTO_INCREMENT=` 值（down 之后它不会回到原值）。只查 `information_schema.columns`、`statistics` 会漏掉表注释等表选项。
 - 用 `COUNT(*)` 比对 up 前后每张表的行数，不用 `information_schema.tables.table_rows`（估算值）。
 - schema 与行数都相同，不代表 down 能恢复数据：删列或改写数据的 migration，在 up、down 之后与原值比对 `CHECKSUM TABLE`（schema 变了它本来就会变，不用在 up 前后比）；确认不可恢复时在回滚步骤写明。
 
