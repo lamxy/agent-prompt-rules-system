@@ -80,7 +80,7 @@ updated: 2026-11-04
 
 - [ ] 安装与静态验证：扩展 `scripts/tests/`；临时项目中 `claude mcp list` 等只读 smoke；permissions 实测脚本
 - [x] 行为验证：按审计结论改为交互模式手动执行，16 个任务 + B1、D3、F1 同期对照（2026-11-04 完成，`docs/evaluation/2026-10-final.md`）；交叉评审（盲评、`/code-review`、Codex 对比等）未做，属选做
-- [ ] 真实项目试用：每场景一个用户指定的项目，约 2 周；试用日志模板 `docs/evaluation/pilot-log-template.md`；每周复盘并回写
+- [ ] 真实项目试用：每场景一个用户指定的项目，约 2 周；试用日志模板 `docs/evaluation/pilot-log-template.md`（尚不存在，需新建）；每周复盘并回写
 - [ ] 按「通过 / 调整 / 移除」判定，稳定结论回写本文件、`scripts/tests/`、对应 README
 
 <!-- section: done -->
