@@ -212,3 +212,24 @@ dot_claude/skills/myconfig/
 - 安装后回报步骤（解析执行输出、读 README）未做端到端测试。
 
 第二轮交叉审查（实现审查，原文 `2026-10-28-config-install-skill/review-impl.md`）：1 blocker（单个支持包预演模板把 `--dry-run` 放在 `--` 之后会变成真实安装）、11 should-fix、10 nit，已全部按建议修改；catalog 的 NOTE 子 shell 丢失已修复并加测试。
+
+## 12. 会话实测（2026-11-05，Claude Code 2.1.318）
+
+用 `claude -p` 在 scratchpad 临时 git 项目执行（本机 `~/.claude/skills/myconfig` 与仓库一致），安装命令由测试者在终端执行后把输出贴回会话（`--resume`），等同用户 `!` 执行；为避免全局副作用，交付命令一律加 `-N`。
+
+| §8 | 结果 | 附注 |
+|---|---|---|
+| 3 | 通过：无工具调用，分组清单 + 3 条示例 | — |
+| 4（回报部分） | 通过：配置复制／支持包分段计数、README 两节手动步骤、MCP `execute_sql` 可写陷阱、`.gitignore` 提醒 | rules 计数写 17（实为 16）；称「本会话已能用新 agents／skills」无依据 |
+| 5 | 通过：`manual=51`，另逐文件比对 51 个与模板一致，建议不重装并给出 `-F` | — |
+| 6 | 通过：已存在 1 个（`CLAUDE.md`）预设跳过，选项含 `-F` 与备份、手动合并说明 | — |
+| 7 | 通过（模拟）：用 `-o <空目录>` 制造 `[MISSING]`、exit 1；回报分段、原样引用错误行，只建议补装失败的两个包且先预演；并指出用户命令与交付命令不一致 | 真实 npm／网络失败未测 |
+| 8 | 通过：一份预演、一次确认，顺序 settings → `mkdir -p agents` → agents，指出 `go-fmt.sh` 陷阱 | 推荐命令含 `cp` 补 hook，与 SKILL.md「不自行复制文件」冲突（`commands.md` 陷阱条目写「从 … 复制」，两处说法矛盾）；命令用 `P="$PWD"` 而非绝对路径 |
+| 9 | 通过：依 `go.mod` 推荐 backend-dev | 未用 AskUserQuestion 让用户选场景，直接预演并用文字说可改场景；是否为 `-p` 模式所致未验证 |
+| 11 | 通过：「这个仓库能配什么」「把 frontend-dev 装到这里」触发；「允许 npm 指令」走 update-config；「这专案该用哪些 Claude 功能」「装 lodash」不触发 | 以 `--permission-mode plan` 执行 |
+
+新发现：plan 模式下 `!` 注入被 auto 分类器拒绝（「no verdict」），Skill 调用两次都失败；Claude 随后按 SKILL.md 退路手动执行 `scripts/catalog`，结果正常。一般模式（第 3 条）注入正常。
+
+用户决定（2026-11-05）：第 8 条改 SKILL.md 硬性规则，允许把「跨场景陷阱」指明的补档 `cp` 并入交付命令（技能自己不执行）；第 9 条先观察，待互动模式实测。
+
+仍未验证：互动模式的 AskUserQuestion 确认、用户以 `!` 执行命令时的沙箱与超时、RTK hook 是否作用于注入命令。
