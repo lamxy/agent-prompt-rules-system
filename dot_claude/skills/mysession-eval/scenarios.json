@@ -1,44 +1,22 @@
 {
   "prd-design": {
     "claude_md_heading": "# CLAUDE.md — PRD 与原型设计",
-    "agents": [
-      "feedback-synthesizer",
-      "product-manager",
-      "sprint-prioritizer",
-      "trend-researcher",
-      "ux-architect",
-      "ux-researcher"
-    ]
+    "agents": []
   },
   "frontend-dev": {
     "claude_md_heading": "# CLAUDE.md — 前端开发",
-    "agents": [
-      "accessibility-auditor",
-      "api-tester",
-      "frontend-developer",
-      "performance-benchmarker",
-      "ui-designer"
-    ]
+    "agents": []
   },
   "backend-dev": {
     "claude_md_heading": "# CLAUDE.md — 后端开发（Go）",
     "agents": [
-      "api-tester",
-      "backend-architect",
-      "database-optimizer",
-      "security-engineer",
-      "software-architect",
-      "technical-writer"
+      "go-reviewer"
     ]
   },
   "dev-ops": {
     "claude_md_heading": "# CLAUDE.md — DevOps",
     "agents": [
-      "devops-automator",
-      "git-workflow-master",
-      "incident-response-commander",
-      "security-engineer",
-      "sre"
+      "deploy-reviewer"
     ]
   }
 }

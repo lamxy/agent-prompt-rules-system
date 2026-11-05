@@ -318,7 +318,7 @@ def user_messages(entries, start, end, max_chars=MSG_MAX_CHARS, max_count=MSG_HE
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCENARIOS_FILE = os.path.join(os.path.dirname(HERE), "scenarios.json")
-AGENT_MATCH_MIN = 3
+AGENT_MATCH_MIN = 1  # 场景 agent 为自写、名称各场景唯一（2026-11-05 起每场景 0～1 个）
 
 
 def _hash_bytes(data):

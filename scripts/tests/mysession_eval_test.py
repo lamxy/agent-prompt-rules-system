@@ -335,8 +335,7 @@ class TestInventory(Base):
         self.assertEqual(mse.detect_scenario(self.proj, items, self.scenarios()), "backend-dev")
 
     def test_detect_by_agents(self):
-        for a in ("sre", "devops-automator", "git-workflow-master"):
-            put(self.proj, ".claude/agents/%s.md" % a, "x")
+        put(self.proj, ".claude/agents/deploy-reviewer.md", "x")
         items = mse.inventory(self.proj)
         self.assertEqual(mse.detect_scenario(self.proj, items, self.scenarios()), "dev-ops")
 
@@ -350,7 +349,9 @@ class TestInventory(Base):
             bundle = os.path.join(REPO, "dot_claude_projects", ".claude-" + flag)
             with open(os.path.join(bundle, "CLAUDE.md"), encoding="utf-8") as f:
                 self.assertEqual(spec["claude_md_heading"], f.readline().strip(), flag)
-            agents = sorted(n[:-3] for n in os.listdir(os.path.join(bundle, ".claude", "agents")) if n.endswith(".md"))
+            agents_dir = os.path.join(bundle, ".claude", "agents")
+            names = os.listdir(agents_dir) if os.path.isdir(agents_dir) else []
+            agents = sorted(n[:-3] for n in names if n.endswith(".md"))
             self.assertEqual(sorted(spec["agents"]), agents, flag)
 
     def test_extract_includes_scenario_and_installed(self):

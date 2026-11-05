@@ -38,7 +38,7 @@ usage() {
   sh scripts/install-agent-pkg.sh -f backend-dev -t ~/my-project/.claude/agents -F
 
   # 安装到用户级，所有项目可用
-  sh scripts/install-agent-pkg.sh -f prd-design -t ~/.claude/agents
+  sh scripts/install-agent-pkg.sh -f dev-ops -t ~/.claude/agents
 
   # 从其他 agents 根目录安装
   sh scripts/install-agent-pkg.sh -f my-team -t ~/my-project/.claude/agents -s ~/shared/agents

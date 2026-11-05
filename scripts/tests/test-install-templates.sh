@@ -166,7 +166,10 @@ test_scenario_bundles() {
     assert_file "$list"
     assert_file "$target/.claude/settings.json"
     assert_file "$target/CLAUDE.md"
-    [ -n "$(find "$target/.claude/agents" -name '*.md')" ] || fail "$flag bundle should install agents"
+    case "$flag" in
+      backend-dev|dev-ops)
+        [ -n "$(find "$target/.claude/agents" -name '*.md')" ] || fail "$flag bundle should install agents" ;;
+    esac
 
     # Scripts run inside the vendored package, so project-level lines must name the project.
     if grep -v '^[[:space:]]*#' "$list" | grep -E -e '--local|--location=local' | grep -v -F '{PROJECT_DIR}' > /dev/null; then
