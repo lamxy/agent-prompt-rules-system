@@ -17,6 +17,21 @@
 
 场景化指引优先写成 skill，而不是写进 `CLAUDE-<FLAG>.md` 常驻上下文：skill 只在相关时载入（原因见根目录 README「转型说明」）。
 
+## 编写约定
+
+依据官方《Skill authoring best practices》（platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices，2026-11-06 读原文），加上本仓库的要求：
+
+- **先找缺口再写**：先不用 skill 完成一次真实任务，记下反复补充的上下文或出错点；写至少 3 个评估情境（含应触发与不应触发），量一次没有 skill 时的表现，再写刚好够用的内容
+- **写与测分开**：一个会话起草（可用 `skill-creator`），另开新会话在真实素材上测（如阶段 3 专案的 run tag），观察后回到起草会话修改
+- **description**：第三人称；写清做什么与何时使用（用户会说的话、相关文件或场景）；上限 1024 字符，`name` 只用小写字母、数字、连字号
+- **精简**：只写 Claude 不知道的项目约定；`SKILL.md` 正文控制在 500 行内，超出拆到 `references/`；参考文件只从 `SKILL.md` 往下一层，超过 100 行的参考文件开头放目录
+- **流程与校验**：多步骤任务给编号步骤或检查清单；质量关键的步骤加「校验 → 修正 → 再校验」；确定性操作用脚本，写明是执行还是只读参考
+- **不写会过时的内容**：不绑版本与日期，必要时放「旧做法」段
+- **MCP 工具**写完整名称（如 `mcp__plugin_mongodb_mongodb__find`）
+- **本仓库要求**：结论须有实测或一手来源（根目录 `AGENTS.md`「Unverified Content」）；只引用项目已有规范时注明出处；`skills/skills-<FLAG>/` 与场景包各放一份（`test-scenario-skills.sh` 校验）
+
+候选清单（claude-code-setup 推荐、尚未实现）见 `docs/evaluation/2026-11-claude-code-setup-review.md` 3.6 节。
+
 ## 其他技能包
 
 | 目录 | 内容 |

@@ -42,12 +42,12 @@ run() {
 jget() { python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(eval(sys.argv[2]))' "$1" "$2"; }
 
 out="$(run)"
-printf '%s\n' "$out" | grep -q ' 10\. frontend-design@claude-plugins-official .*啟用（全局）' \
+printf '%s\n' "$out" | grep -q ' 14\. frontend-design@claude-plugins-official .*啟用（全局）' \
   && pass "list numbers catalog and shows user layer" || fail "list output: $out"
 [ -f "$TMP/home/catalog.json" ] && pass "catalog seeded" || fail "catalog not seeded"
 printf '%s\n' "$out" | grep -q '未安裝' && pass "list marks not installed" || fail "no 未安裝 mark"
 
-run 11 4 -c >/dev/null
+run 15 4 -c >/dev/null
 [ "$(jget "$PROJ/.claude/settings.local.json" 'sorted(d["enabledPlugins"])')" = "['chrome-devtools-mcp@claude-plugins-official', 'hookify@claude-plugins-official']" ] \
   && pass "enable with -c writes local" || fail "local enabledPlugins wrong"
 [ "$(jget "$PROJ/.claude/settings.local.json" 'd["permissions"]["allow"]')" = "['Bash(ls)']" ] \
@@ -94,7 +94,7 @@ if run 99 >/dev/null 2>&1; then fail "out of range accepted"; else pass "out of 
 if run nosuch >/dev/null 2>&1; then fail "unknown name accepted"; else pass "unknown name rejected"; fi
 
 out="$(run remove andrej-karpathy-skills)"
-[ "$(jget "$TMP/home/catalog.json" 'len(d["plugins"])')" = "21" ] && printf '%s\n' "$out" | grep -q '共享設定仍有' \
+[ "$(jget "$TMP/home/catalog.json" 'len(d["plugins"])')" = "25" ] && printf '%s\n' "$out" | grep -q '共享設定仍有' \
   && pass "remove updates catalog and warns about project layer" || fail "remove: $out"
 
 # sync: simulate an older local catalog (one default missing, order changed, own entry, one default removed)
