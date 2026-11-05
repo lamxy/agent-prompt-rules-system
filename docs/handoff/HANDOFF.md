@@ -1,8 +1,8 @@
 ---
 branch: main
-head: 7957571
+head: 2207643
 status: active
-updated: 2026-11-05
+updated: 2026-11-06
 ---
 # 进度交接
 
@@ -35,7 +35,8 @@ updated: 2026-11-05
 - 2026-11-05：**3.2 静态验证完成**：`scripts/tests/test-scenario-bundles.sh`（四场景真实安装）、`scripts/smoke/claude-config-smoke.sh`（`claude mcp list`）、`scripts/smoke/permissions-smoke.sh`（36 条抽样）；实测发现 RTK hook 使 `Read` deny 在沙箱关闭时失效，已在本机 RTK 加 `exclude_commands`，`Read` deny 扩充 20 条（`.env` 系列、凭据、历史记录，`.env.example` 放行；`76c6d27`、`8f0029c`、`f2561b9`，未推送）
 - 2026-11-05（续）：myplugins、myconfig 未验证项用 `claude -p` 与互动模式实测通过，myplugins 预演状态行、myconfig 补档 `cp` 例外与回报计数已修（本机副本已同步）；`claude plugin eval` 纳入计划 3.3 先小型试跑（暂不执行）；交叉评审不做、子 shell 缺口不回报、B0 取消；本机测验残留已清理。2026-11-05 用户指示推送，`origin/main` 已更新至 `9d43f5f`（含 myopensupports 与沙箱修正共 40 笔）
 - 2026-11-05（续）：**`mysession-eval` 完成**：待验证项实测（`1186eb1`）→ 设计定稿 `docs/plans/2026-11-05-mysession-eval-design.md`（`25a3621`）→ 实作计划 `docs/plans/2026-11-05-mysession-eval-plan.md`（`ab61619`）→ 7 个任务实作、整体审查 5 项修正、4 项 minor 修正（`bbd5712`～`3844761`，已合并本地 `main`）；本机已安装（`~/.claude/skills/mysession-eval/`，`settings.json` 加 `excludedCommands`，备份 `.bak-20261105-mse`）；端到端实测 2 笔记录，用户决定保留作第一次小型试用（backend-dev 列入 1 笔）
-- 下一步：3.4 真实项目试用（用户指定场景与项目，在项目中做完一件事就 `/mysession-eval`）；2026-11-05 用户指示推送，`origin/main` 已更新至 `68a54b9`（13 笔）
+- 2026-11-05～06：**claude-code-setup 补充调研完成**（四场景各跑一次推荐，汇总与执行结果 `docs/evaluation/2026-11-claude-code-setup-review.md`）。按用户逐项确认：数据库 MCP 写入加第二道防线（`56e94f4`）；移除 21 个通用人设 agent，改为自写只读审查 agent `go-reviewer`、`deploy-reviewer`、`prd-reviewer`（`38dc553`、`68304c0`，均用阶段 3 产出实测）；relay 示例 token 写进日志已修（`43eedcc`）；terraform 移出 dev-ops 默认（`61c157b`）；决策表 5～7 不做；`mysession-eval` 本机副本已同步（`diff -r` 一致）
+- 下一步：3.4 真实项目试用（用户指定场景与项目，在项目中做完一件事就 `/mysession-eval`；改动后可用对应审查 agent 复核）；2026-11-06 用户指示推送本批提交
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -51,7 +52,8 @@ updated: 2026-11-05
 | backend-dev Go 参考实现 | **进行中** | 第一批 `7b7ef74`；存储与中间件规范 `2ac1c49`；gRPC 规范 `5098a4e`（来自教学材料，用户企业 RPC 规范若有再补） |
 | 可观测性重写与 FiberHouse 错误追踪 | 完成；框架取舍已决定（FiberHouse `v1.2.0`） | `docs/plans/2026-10-22-learning-distill-questions.md` 第三节「FiberHouse 框架取舍」 |
 | 场景配置评估、优化与验证 | **阶段 1 完成、指南已修订（2026-10-30）**，阶段 2 完成（2026-11-03，范围按方案 B；未做项见研究文档 4.3），**阶段 3 行为验证完成（2026-11-04）**，B2 r2 通过（2026-11-04）；静态验证完成（2026-11-05）；真实项目试用未做；B0 用户 2026-11-05 取消 | 2026-10-27 审计简化：16 个任务、交互模式手动执行，见 `docs/evaluation/2026-10-baseline.md` 第 1 节与 `docs/evaluation/manual-test-guide.md`；计划文件开头「审计结论」优先于下方原清单 |
-| 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
+| 场景审查 agent | 完成（2026-11-06）：`go-reviewer`、`deploy-reviewer`、`prd-reviewer`，frontend-dev 暂不设 | `agents/README.md`；见「续作时必须知道的事」→「场景 agent」 |
+| 四个场景的自定义 skill | 待开始（claude-code-setup 的新能力候选已并入，见汇总文件 3.6） | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
 | 可选插件技能 `myplugins` | 已实现、本机已安装并按用户试用调整（2026-11-04，`5b5425d`～`ac254c2`、`64ef966`，已随 v2.5.0 推送）；2026-11-05 `-t` 与共享模式实测、预演状态行修改（`9bbddda`，2026-11-05 已推送） | 见「续作时必须知道的事」→「myplugins」；安装步骤在 `dot_claude/README.md`「myplugins 安装」 |
@@ -115,7 +117,7 @@ dot_claude_legacy/          2026-10-19 前的分层规则系统存档，不被�
 settings/                   全局 settings.user.json（15 个全局插件）+ 项目级 5 个场景模板 + 本地级 4 个
 claude_mds/                 CLAUDE-<FLAG>.md，各约 30 行，只写场景约定
 dot_mcp_jsons/              后端 MySQL/PostgreSQL（MCP Toolbox）+ GlitchTip；DevOps GlitchTip；PRD、前端为空
-agents/                     agents-<FLAG>/，各 5～6 个，挑选自 agents-agency-agent-based-dev/
+agents/                     agents-<FLAG>/：自写只读审查 agent（backend、dev-ops、prd 各 1 个）；agents-agency-agent-based-dev/ 为参考库
 skills/                     skills-<FLAG>/ 尚为占位；skills-open-supports/ 为支持包安装 Skill
 dot_claude_projects/
   .claude/                  全局支持包清单（gstack、task-master），install-claude-project.sh -g 安装
@@ -337,6 +339,14 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 - **rule 加载与 Bash 读档（2026-11-05，2.1.318）**：用 Bash `head`／`cat` 读符合 `paths` 的文件不会加载 rule，只有 Read 工具会（2 次观察，可能与 RTK 改写有关，未深究），与下方「path rules 的加载时机」记录的 2.1.308 行为不同。
 - **已知限制**：用户拒绝记录时技能执行 `skip` 作切点；若技能没执行 `skip`（例如中途报错），用户的文字回答会算进下一段。
 
+### 场景 agent 与 MCP 防线（2026-11-06）
+
+- **只放自写只读审查 agent**：现象是通用人设 agent 在 72 个测验会话中调用 0 次、内容与场景冲突；原因是场景约定已在 `CLAUDE.md`、rules、自写 skill 中，子代理的实际收益只在干净上下文的独立审查；做法是新增 agent 照 `agents/README.md` 写法约定（`tools:`、只引用项目已有规范、输出带行号与依据），不把参考库的人设原样放进场景包。
+- **改 agent 要同步三处**：`agents/agents-<FLAG>/`、`dot_claude_projects/.claude-<FLAG>/.claude/agents/`、`dot_claude/skills/mysession-eval/scenarios.json`（`test_scenarios_json_matches_bundles` 会报错）；改了 `mysession-eval` 要请用户 `cp -R` 同步本机副本。
+- **子代理命令要逐条执行**：现象是 `deploy-reviewer` 首次实测串接命令被拒后放弃；做法是 agent 正文写明「每条命令单独执行、不加 `cd`」。子代理读长 `git show` 会被 RTK 截断，`rtk bypass` 需授权。
+- **MCP 写入防线两层并用**：项目 `env`（`MDB_MCP_READ_ONLY`）要等信任文件夹才生效，`deny`／`ask` 立即生效；mongodb 插件工具名为 `mcp__plugin_mongodb_mongodb__<工具>`，插件升级若新增写入工具要补进 deny（详见 `dot_mcp_jsons/README.md`）。
+- **final 专案 tag 比较的陷阱**：backend-dev 的 `baseline` 在 B-7 修正后重打，早于修正的 run tag（如 `B1-r1`）与它比较会显示「删了规则」，属素材误报；用 run tag 当审查素材时先看 `git log` 时间。
+
 ### 其他已知问题
 
 - 第三方市场插件名无法离线校验：`pm-skills`、`anthropic-agent-skills` 未缓存在本机，`test-settings-templates.sh` 跳过其名称检查
@@ -358,6 +368,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | myplugins：互动模式信任对话框、另一台机器未验证（本机两个 skill 副本已于 2026-11-05 按用户指示同步，`diff -r` 一致） | 本文件「myplugins」 |
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
 | 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除）；2026-11-05 改了 `~/.claude/settings.json`（备份 `.bak-20261105012410`）并新建 RTK `config.toml` | — |
+| claude-code-setup 汇总的暂缓项：新 skill／agent／permissions 候选（3.6）、frontend-dev 审查 agent（3.4 出现需求再写）、全局 GitHub MCP `actions` toolset（本机配置，需用户指示） | `docs/evaluation/2026-11-claude-code-setup-review.md` 第 3.6、4、6 节 |
 | 3.4 真实项目试用：用户指定场景与项目；`mysession-eval` 长会话、多记录时的 `extract`／`summarize` 输出量未实测（只测过小会话 2 笔） | 计划文件 3.4；设计文件「token 预算」 |
 
 
@@ -513,3 +524,5 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | mysession-eval 设计 | 待验证项实测（会话 id 取 `CLAUDE_CODE_SESSION_ID`、`disable-model-invocation` 不占清单、`/clear` 换 id、`/compact` 不换、rule 加载记为 `nested_memory`）；与用户逐点确认后定稿并经建构者审阅（`1186eb1`、`25a3621`）；实作计划（`ab61619`） | — |
 | 2026-11-05 | mysession-eval 实作 | 7 个任务（`bbd5712`～`a4ad205`）；整体审查 5 项重要问题修正（`ddad778`）；延后 4 项 minor 处理（`3844761`，第 4 项只能补文件说明）；本机安装与端到端实测（记录约 2.8k／含询问 4.7k、期中复盘约 8.9k）；`run-all.sh` 19 个全过 | 长会话与多记录未实测 |
 | 2026-11-05 | 推送 | 用户指示推送，`fa1c8ef..68a54b9` 共 13 笔推到 `origin/main` | — |
+| 2026-11-06 | claude-code-setup 补充调研与执行 | 四场景推荐汇总与决策表（`8bae224`）；MCP 写入防线（`56e94f4`）；agent 精简与三个审查 agent（`38dc553`、`68304c0`）；relay token 泄漏修正（`43eedcc`）；terraform 移出默认（`61c157b`）；计划勾选（`2207643`）；`run-all.sh` 19 个全过 | 3.4 试用；暂缓项见待处理 |
+| 2026-11-06 | 推送 | 用户指示推送本批提交到 `origin/main` | — |
