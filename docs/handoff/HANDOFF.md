@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 68a54b9
+head: 7957571
 status: active
 updated: 2026-11-05
 ---
@@ -354,7 +354,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 教学材料沉淀的已完成项、1 项暂缓（前端 GlitchTip）、17 条待验证与本机 docker 残留清理 | `docs/plans/2026-10-22-learning-distill-questions.md` |
 | 阶段 2 未做项（取不到原文、未读、未实测）与第三轮留下的待验证（疑问清单第 12、16 条） | `docs/research/2026-10-best-practices.md` 5.3、`docs/plans/2026-10-22-learning-distill-questions.md` |
 | myconfig 上线前：本机安装（`install.sh` 复制或符号链接）、`AGENT_RULES_REPO`、沙箱 `allowRead`（2026-10-29 已加 `~/workspace/github_repos`、`~/.claude/skills/myconfig`，保留 `denyRead ~/`；新会话实测可读仓库）；§8 第 3～9、11 条已于 2026-11-05 用 `claude -p` 实测通过（附注与新发现见设计文件 §12）；第 8 条矛盾已按用户决定改 SKILL.md（陷阱条目指明的补档 `cp` 可并入交付命令，技能自己不执行）；互动模式补测（2026-11-05）通过：第 9 条在互动模式会先问场景（`-p` 所致）、确认框正常、`!` 不受沙箱限制且 130 秒不中断、RTK 对注入无影响；回报分类计数不准已按用户决定改 SKILL.md（只引用脚本摘要数字，`--plugin-dir` 验证有效）；本机副本已同步 | 设计文件 §8、§11、§12 |
-| `claude plugin eval` 小型试跑（myconfig 5 句触发评估；用户 2026-11-05 同意纳入，暂不执行；必须加 `--no-publish`） | 计划文件 3.3「插件级评估」 |
+| 杂项（低优先，用户 2026-11-05 移到最后）：`claude plugin eval` 小型试跑（myconfig 5 句触发评估；必须加 `--no-publish`） | 计划文件 3.3「插件级评估」 |
 | myplugins：互动模式信任对话框、另一台机器未验证（本机两个 skill 副本已于 2026-11-05 按用户指示同步，`diff -r` 一致） | 本文件「myplugins」 |
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
 | 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除）；2026-11-05 改了 `~/.claude/settings.json`（备份 `.bak-20261105012410`）并新建 RTK `config.toml` | — |
@@ -407,7 +407,9 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 前置条件：3.4 需用户指定场景与项目；`mysession-eval` 已就绪。
 
-等用户指示再做：`claude plugin eval` 小型试跑（计划 3.3「插件级评估」，必须加 `--no-publish`）；推送与 release。
+等用户指示再做：推送与 release。
+
+杂项（低优先，用户 2026-11-05 从「等用户指示」移到最后，排在其他长期任务之后）：`claude plugin eval` 小型试跑（计划 3.3「插件级评估」，必须加 `--no-publish`）。
 
 仍未验证（需互动会话或另一台机器）：myplugins 共享模式的信任对话框与未安装插件的机器（官方说项目层插件须过信任检查、`-p` 不够，与同机 `-p` 结果不符）；myconfig 超过 130 秒的 `!` 命令。
 
