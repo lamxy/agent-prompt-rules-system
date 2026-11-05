@@ -1,6 +1,6 @@
 ---
 branch: main
-head: da5edc4
+head: fb1d0fd
 status: active
 updated: 2026-11-05
 ---
@@ -54,7 +54,7 @@ updated: 2026-11-05
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
 | 可选插件技能 `myplugins` | 已实现、本机已安装并按用户试用调整（2026-11-04，`5b5425d`～`ac254c2`、`64ef966`，已随 v2.5.0 推送）；2026-11-05 `-t` 与共享模式实测、预演状态行修改（`9bbddda`，未推送） | 见「续作时必须知道的事」→「myplugins」；安装步骤在 `dot_claude/README.md`「myplugins 安装」 |
-| 支持包技能 `myopensupports` | 已实现、测试通过、交叉审核已处理（2026-11-05）；本机已安装（2026-11-05 用户手动 `cp`，`diff -r` 一致；会话中复制被权限分类器以 Self-Modification 拒绝）；其他项目中若被沙箱挡，加 `sandbox.excludedCommands`（见 `dot_claude/README.md`）；Q3、Q5 待首次实际使用验证 | `dot_claude/skills/myopensupports/`；设计与过程记录 `docs/plans/2026-11-05-myopensupports-design.md`，计划 `docs/plans/2026-11-05-myopensupports-plan.md` |
+| 支持包技能 `myopensupports` | 已实现、测试通过、交叉审核已处理（2026-11-05）；用户手动 `cp` 安装后又改了 SKILL.md、details.md（`fb1d0fd`：去掉「Claude 关闭沙箱执行」，安装与 `remove-apply` 只给 `!` 命令），**本机副本待再 `cp` 同步**；Q5（`allowed-tools` 列表与 `remove *` 不匹配 `remove-apply`）待首次使用验证 | `dot_claude/skills/myopensupports/`；设计与疑问 `docs/plans/2026-11-05-myopensupports-design.md`，计划 `docs/plans/2026-11-05-myopensupports-plan.md` |
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
 | 配置安装技能 `myconfig`（列出／安装本仓库配置） | 已实现并发布 v2.4.0（2026-10-29）；用户已在本机安装，`/myconfig` 列表模式正常 | `dot_claude/skills/myconfig/`；设计 `docs/plans/2026-10-28-config-install-skill-design.md` §11。`claude -p` 实测：沙箱禁止会话内写 `.claude/settings.json`、`skills/`、`hooks/`，改为技能只预演、写入交付命令由用户执行；跨项目使用需把仓库路径与 `~/.claude/skills/myconfig` 加进 `sandbox.filesystem.allowRead`；两轮子代理交叉审查意见已全部处理 |
 
@@ -304,6 +304,11 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 - **Claude 在本仓库会话的权限**：用容器 root 改库（`DROP DATABASE`）、`rm -rf` 测验目录都会被拒，交给用户用 `!` 执行；只读查询可以。
 - **测验环境现状**：`eval-mysql` 在跑（只读账号 `eval_ro`，变量在专案集 `mysql.env`）；GlitchTip（`~/workspace/local-infra/glitchtip`）在跑；`fiberhouse-example-dev`（含 3 个卷、网络）与 dev-ops `deploy/.env` 已于 2026-11-05 按用户确认删除；local-infra 的 `fiberhouse-dev` 容器已由用户重建（2026-11-04，四个容器 healthy、挂回原三个卷）；其 Redis 已只读检查：只有 asynq 的服务器登记（一条过期登记推断来自 D2 测验 app），无队列、任务与缓存数据，不需清理；旧专案集 `dev-ops/deploy/` 的阶段 1 残留移到了 `scenario-eval/leftover-dev-ops-deploy-bak-20261104/`。
 
+### 沙箱 `allowRead` 的 `.`（2026-11-05，test2 会话发现并修复本机设定）
+
+- **现象**：在其他项目执行 `/myopensupports list` 报 `os.getcwd()` `PermissionError`；`myhandoff` 的 `handoff-check` 同理（依代码判断）。**原因**：用户层级沙箱路径的 `.` 解析为 `~/.claude`，不是当前项目，`denyRead: ~/` 把项目也挡了。**做法**：`allowRead` 写 `~/.claude` 与工作根目录（本机 `~/workspace`，另以 `denyRead ~/workspace/documents` 保留不读 documents 的决定），加 `~/.config/git/ignore` 让沙箱内 git 读到全局忽略档。详见 `settings/README.md`「`allowRead` 里的 `.`」；本机设定、镜像与模板已改（`cb63add`）。
+- **`allowUnsandboxedCommands: false`**：`dangerouslyDisableSandbox` 无效，技能不能靠「关闭沙箱」代跑写入命令；要写受保护路径时，只能给用户 `!` 命令或用 `excludedCommands`。`dot_claude_legacy/settings.json` 也有 `.` 问题，属只读归档，按用户决定不改。
+
 ### myplugins（2026-11-03 实现，2026-11-04 安装与调整）
 
 源码 `dot_claude/skills/myplugins/`（`SKILL.md`、`references/details.md`、`catalog.default.json`、`scripts/myplugins`），测试 `scripts/tests/test-myplugins.sh`；本机副本 `~/.claude/skills/myplugins/`，清单 `~/.claude/myplugins/catalog.json`（旧版备份 `catalog.json.bak-20261104`）。本机 `~/.claude/settings.json` 已关 8 个插件、加 hint hook 与排除规则（备份 `.bak-20261104131115`、`.bak-20261104200612`），与镜像 `dot_claude/settings.json` 完全一致。
@@ -341,6 +346,8 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
 | 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除）；2026-11-05 改了 `~/.claude/settings.json`（备份 `.bak-20261105012410`）并新建 RTK `config.toml` | — |
 | **`mysession-eval`**（用户 2026-11-05 决定要做，暂不执行）：全局技能，真实项目中主动调用，自动记录与整理试用数据；开工前先与用户确认计划中的初步设计；它是 3.4 的前置 | 计划文件 3.4「候选：mysession-eval」 |
+| myopensupports 本机副本同步：`! cp -R dot_claude/skills/myopensupports ~/.claude/skills/`（`fb1d0fd` 改了 SKILL.md、details.md） | — |
+
 
 <!-- section: next -->
 ## 建议的下一步
@@ -485,3 +492,5 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | 新增 myopensupports 技能 | `list`／`install`（只印方案）／`remove`（`--apply` 才备份删除）／`add`／`sync`，仓库取自 `AGENT_RULES_REPO`；`scripts/tests/test-myopensupports.sh`；README、设计与计划文件 | 本机安装待用户 `cp`；疑问见设计文件「过程记录与疑问」 |
 | 2026-11-05 | myopensupports 交叉审核 | 子代理审查 9 项（中 4、低 5）全部修正：`remove-apply` 独立子命令且不在 `allowed-tools`、搬移式备份、命令 `shlex.quote`、无默认参数不产生命令、`-n` 传 ost_ 名等；生成的 `--dry-run` 命令实跑通过 | `allowed-tools` 列表形式与 `remove *` 不匹配 `remove-apply` 未实测（设计文件 Q5） |
 | 2026-11-05 | myopensupports 标示与本机安装 | INDEX 建议场景「不启用／暂不启用」标〔不启用〕、「不直接安装」标〔手动挑选〕，install 印注意（`68307d2`）；用户手动 `cp` 安装，会话即时识别技能 | Q3、Q5 待首次使用验证 |
+| 2026-11-05 | 沙箱 `allowRead` 修正（test2 会话） | `.` 改 `~/.claude`，加 `~/workspace`、`~/.config/git/ignore`，`denyRead` 加 `~/workspace/documents`；镜像、模板与 README（`cb63add`） | `dot_claude_legacy/` 不改 |
+| 2026-11-05 | myopensupports 只给 `!` 命令 | 因 `allowUnsandboxedCommands: false`，去掉「Claude 关闭沙箱执行」，Q3 结案（`fb1d0fd`） | 本机副本待再 `cp`；Q5 待首次使用验证 |
