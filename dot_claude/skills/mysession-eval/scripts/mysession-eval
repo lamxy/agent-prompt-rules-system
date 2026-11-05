@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+"""mysession-eval：在真實專案試用場景配置時，記錄一件事的評估資料並供覆盤匯總。
+
+子命令（由技能呼叫，使用者不直接執行）：
+  extract [--session ID]       輸出本會話「上一次記錄之後」區段的客觀指標（JSON）
+  append  [選項...]            重新計算區段指標，與 Claude 的推定合併後追加到日誌
+  summarize [--scenario S]     匯總日誌供覆盤（JSON）
+
+會話 id 取自環境變數 CLAUDE_CODE_SESSION_ID（或 --session）；找不到會話檔時報錯，不退回其他方式。
+環境變數：MSE_CLAUDE_DIR（預設 ~/.claude）、MSE_HOME（日誌目錄，預設 <MSE_CLAUDE_DIR>/mysession-eval）、
+MSE_PROJECT_DIR（預設 CLAUDE_PROJECT_DIR 或目前目錄）。
+"""
+import glob
+import json
+import os
+import sys
+
+SKILL_NAME = "mysession-eval"
+INVOKE_MARK = "<command-name>/%s</command-name>" % SKILL_NAME
+SCRIPT_MARK = "skills/%s/scripts/%s" % (SKILL_NAME, SKILL_NAME)
+
+
+class Fail(Exception):
+    pass
+
+
+def claude_dir():
+    return os.environ.get("MSE_CLAUDE_DIR") or os.path.expanduser("~/.claude")
+
+
+def find_session_file(session_id, cdir):
+    if not session_id or not session_id.strip():
+        raise Fail("取不到會話 id：環境變數 CLAUDE_CODE_SESSION_ID 未設定，也沒有 --session。")
+    hits = glob.glob(os.path.join(cdir, "projects", "*", session_id.strip() + ".jsonl"))
+    if len(hits) != 1:
+        raise Fail("找不到會話記錄檔：%s/projects/*/%s.jsonl（找到 %d 個）"
+                   % (cdir, session_id.strip(), len(hits)))
+    return hits[0]
+
+
+def load_entries(path):
+    out = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(d, dict):
+                out.append(d)
+    return out
+
+
+def _content(entry):
+    msg = entry.get("message")
+    return msg.get("content") if isinstance(msg, dict) else None
+
+
+def is_invocation(entry):
+    if entry.get("type") != "user" or entry.get("isMeta"):
+        return False
+    c = _content(entry)
+    return isinstance(c, str) and INVOKE_MARK in c
+
+
+def _blocks(entry):
+    c = _content(entry)
+    return [b for b in c if isinstance(b, dict)] if isinstance(c, list) else []
+
+
+def is_skill_script_call(entry):
+    if entry.get("type") != "assistant":
+        return set()
+    ids = set()
+    for b in _blocks(entry):
+        if b.get("type") == "tool_use" and b.get("name") == "Bash":
+            cmd = (b.get("input") or {}).get("command") or ""
+            if SCRIPT_MARK in cmd:
+                ids.add(b.get("id"))
+    return ids
+
+
+def _tool_result_ids(entry):
+    if entry.get("type") != "user":
+        return set()
+    return {b.get("tool_use_id") for b in _blocks(entry) if b.get("type") == "tool_result"}
+
+
+def segment_bounds(entries):
+    inv = [i for i, e in enumerate(entries) if is_invocation(e)]
+    end = inv[-1] if inv else len(entries)
+    prev = [i for i in inv if i < end]
+    if not prev:
+        return 0, end
+    p = prev[-1]
+    start = p + 1
+    script_ids = set()
+    for i in range(p + 1, end):
+        script_ids |= is_skill_script_call(entries[i])
+        if _tool_result_ids(entries[i]) & script_ids:
+            start = i + 1
+    return start, end
+
+
+def main(argv):
+    if not argv:
+        raise Fail("缺少子命令：extract、append 或 summarize。")
+    raise Fail("未知子命令：%s" % argv[0])
+
+
+if __name__ == "__main__":
+    try:
+        main(sys.argv[1:])
+    except Fail as e:
+        sys.stderr.write("錯誤：%s\n" % e)
+        sys.exit(2)
