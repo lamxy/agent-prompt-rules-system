@@ -26,7 +26,8 @@
 | MySQL | `MYSQL_HOST`（默认 `127.0.0.1`）、`MYSQL_PORT`（默认 `3306`）、`MYSQL_DATABASE`、`MYSQL_USER`、`MYSQL_PASSWORD` |
 | PostgreSQL | `POSTGRES_HOST`（默认 `127.0.0.1`）、`POSTGRES_PORT`（默认 `5432`）、`POSTGRES_DATABASE`、`POSTGRES_USER`、`POSTGRES_PASSWORD` |
 
-- MCP Toolbox 的 `execute_sql` **可以执行写操作**，工具本身没有只读开关。务必使用只读数据库账号，并只连开发或测试库。
+- MCP Toolbox 的 `execute_sql` **可以执行写操作**，工具本身没有只读开关。务必使用只读数据库账号，并只连开发或测试库。backend-dev、fullstack-dev 的 settings 把 `mcp__mysql__execute_sql`、`mcp__postgres__execute_sql` 列入 `ask`，每次调用需确认（server 名改了要同步）。
+- MongoDB（`mongodb` 插件）：同两份 settings 用 `env.MDB_MCP_READ_ONLY=true` 让 server 不注册写入工具，并在 `deny` 列出 11 个写入工具作第二道防线；项目 `env` 要等信任文件夹后才生效，`deny`、`ask` 立即生效（官方 `settings` 文档），所以两层都要（2026-11-05 实测：`env` 生效后只注册 20 个工具；deny 的工具从工具列表消失）。deny 不能被其他设定层放行，确需写入时修改项目的 `settings.json`。
 - 项目只用其中一种数据库时，删除另一个条目，避免每次会话都启动用不到的 server。
 - 预置工具集仍在 1.0 之前，版本更新可能调整工具名称。
 

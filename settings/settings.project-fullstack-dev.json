@@ -1,5 +1,8 @@
 {
     "$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "env": {
+        "MDB_MCP_READ_ONLY": "true"
+    },
     "enabledPlugins": {
         "typescript-native-lsp@anthropic-plugin-directory": true,
         "frontend-design@claude-plugins-official": true,
@@ -32,9 +35,22 @@
             "Bash(redis-cli *flushall*)",
             "Bash(redis-cli *FLUSHALL*)",
             "Bash(redis-cli *flushdb*)",
-            "Bash(redis-cli *FLUSHDB*)"
+            "Bash(redis-cli *FLUSHDB*)",
+            "mcp__plugin_mongodb_mongodb__atlas-local-create-deployment",
+            "mcp__plugin_mongodb_mongodb__atlas-local-delete-deployment",
+            "mcp__plugin_mongodb_mongodb__create-collection",
+            "mcp__plugin_mongodb_mongodb__create-index",
+            "mcp__plugin_mongodb_mongodb__delete-many",
+            "mcp__plugin_mongodb_mongodb__drop-collection",
+            "mcp__plugin_mongodb_mongodb__drop-database",
+            "mcp__plugin_mongodb_mongodb__drop-index",
+            "mcp__plugin_mongodb_mongodb__insert-many",
+            "mcp__plugin_mongodb_mongodb__rename-collection",
+            "mcp__plugin_mongodb_mongodb__update-many"
         ],
         "ask": [
+            "mcp__mysql__execute_sql",
+            "mcp__postgres__execute_sql",
             "Bash(docker compose down*)",
             "Bash(docker compose * down*)",
             "Bash(docker-compose down*)",
