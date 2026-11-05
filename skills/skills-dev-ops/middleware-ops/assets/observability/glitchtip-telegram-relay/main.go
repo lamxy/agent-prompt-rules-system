@@ -60,7 +60,8 @@ func main() {
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := client.Do(req)
 		if err != nil {
-			slog.Error("send to telegram", "err", err)
+			// net/http 的错误文字含完整 URL，token 在路径里，记录前必须去掉
+			slog.Error("send to telegram", "err", strings.ReplaceAll(err.Error(), token, "<redacted>"))
 			http.Error(w, "upstream error", http.StatusBadGateway)
 			return
 		}
