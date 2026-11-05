@@ -286,5 +286,80 @@ class TestMetrics(Base):
         self.assertIn("CLAUDE_CODE_SESSION_ID", r.stderr)
 
 
+# ---- Task 3 ----
+def put(base, rel, text):
+    path = os.path.join(base, rel)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    return path
+
+
+SCENARIOS_JSON = os.path.join(os.path.dirname(os.path.dirname(TOOL)), "scenarios.json")
+
+
+class TestInventory(Base):
+    def full_project(self):
+        put(self.proj, ".claude/skills/db/SKILL.md", "---\nname: db\n---\n")
+        put(self.proj, ".claude/agents/sre.md", "agent")
+        put(self.proj, ".claude/rules/sub/x.md", "rule")
+        put(self.proj, ".mcp.json", json.dumps({"mcpServers": {"a": {"command": "x"}, "b": {"command": "y"}}}))
+        put(self.proj, ".claude/settings.json", "{}")
+        put(self.proj, "CLAUDE.md", "# CLAUDE.md — 后端开发（Go）\n")
+
+    def test_inventory_kinds_and_hash(self):
+        self.full_project()
+        items = mse.inventory(self.proj)
+        kinds = {}
+        for it in items:
+            kinds[it["kind"]] = kinds.get(it["kind"], 0) + 1
+        self.assertEqual(kinds, {"skill": 1, "agent": 1, "rule": 1, "mcp": 2, "settings": 1, "claude_md": 1})
+        self.assertTrue(all(len(it["hash"]) == 12 for it in items))
+        rule = next(it for it in items if it["kind"] == "rule")
+        self.assertEqual(rule["path"], ".claude/rules/sub/x.md")
+        before = rule["hash"]
+        put(self.proj, ".claude/rules/sub/x.md", "rule v2")
+        after = next(it for it in mse.inventory(self.proj) if it["kind"] == "rule")["hash"]
+        self.assertNotEqual(before, after)
+
+    def test_inventory_empty_project(self):
+        self.assertEqual(mse.inventory(self.proj), [])
+
+    def scenarios(self):
+        with open(SCENARIOS_JSON, encoding="utf-8") as f:
+            return json.load(f)
+
+    def test_detect_by_heading(self):
+        put(self.proj, "CLAUDE.md", "# CLAUDE.md — 后端开发（Go）\n\nbody\n")
+        items = mse.inventory(self.proj)
+        self.assertEqual(mse.detect_scenario(self.proj, items, self.scenarios()), "backend-dev")
+
+    def test_detect_by_agents(self):
+        for a in ("sre", "devops-automator", "git-workflow-master"):
+            put(self.proj, ".claude/agents/%s.md" % a, "x")
+        items = mse.inventory(self.proj)
+        self.assertEqual(mse.detect_scenario(self.proj, items, self.scenarios()), "dev-ops")
+
+    def test_detect_unknown(self):
+        self.assertIsNone(mse.detect_scenario(self.proj, [], self.scenarios()))
+
+    def test_scenarios_json_matches_bundles(self):
+        data = self.scenarios()
+        self.assertEqual(sorted(data), ["backend-dev", "dev-ops", "frontend-dev", "prd-design"])
+        for flag, spec in data.items():
+            bundle = os.path.join(REPO, "dot_claude_projects", ".claude-" + flag)
+            with open(os.path.join(bundle, "CLAUDE.md"), encoding="utf-8") as f:
+                self.assertEqual(spec["claude_md_heading"], f.readline().strip(), flag)
+            agents = sorted(n[:-3] for n in os.listdir(os.path.join(bundle, ".claude", "agents")) if n.endswith(".md"))
+            self.assertEqual(sorted(spec["agents"]), agents, flag)
+
+    def test_extract_includes_scenario_and_installed(self):
+        self.full_project()
+        self.write_session("s1", [user("do"), invoke()])
+        out = json.loads(self.run_cli("extract").stdout)
+        self.assertEqual(out["scenario"], "backend-dev")
+        self.assertEqual(len(out["installed"]), 7)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

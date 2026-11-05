@@ -294,6 +294,78 @@ def user_messages(entries, start, end, max_chars=MSG_MAX_CHARS, max_count=MSG_HE
     return msgs[:MSG_HEAD] + msgs[-tail:], len(msgs) - max_count
 
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+SCENARIOS_FILE = os.path.join(os.path.dirname(HERE), "scenarios.json")
+AGENT_MATCH_MIN = 3
+
+
+def _hash_bytes(data):
+    import hashlib
+    return hashlib.sha256(data).hexdigest()[:12]
+
+
+def _file_item(root, kind, name, path):
+    with open(path, "rb") as f:
+        return {"kind": kind, "name": name, "path": os.path.relpath(path, root), "hash": _hash_bytes(f.read())}
+
+
+def inventory(project):
+    items = []
+    claude = os.path.join(project, ".claude")
+    for p in sorted(glob.glob(os.path.join(claude, "skills", "*", "SKILL.md"))):
+        items.append(_file_item(project, "skill", os.path.basename(os.path.dirname(p)), p))
+    for p in sorted(glob.glob(os.path.join(claude, "agents", "*.md"))):
+        items.append(_file_item(project, "agent", os.path.basename(p)[:-3], p))
+    for p in sorted(glob.glob(os.path.join(claude, "rules", "**", "*.md"), recursive=True)):
+        items.append(_file_item(project, "rule", os.path.relpath(p, os.path.join(claude, "rules")), p))
+    mcp_path = os.path.join(project, ".mcp.json")
+    if os.path.isfile(mcp_path):
+        try:
+            with open(mcp_path, encoding="utf-8") as f:
+                servers = (json.load(f) or {}).get("mcpServers") or {}
+        except (OSError, ValueError):
+            servers = {}
+        for name in sorted(servers):
+            blob = json.dumps(servers[name], sort_keys=True, ensure_ascii=False).encode("utf-8")
+            items.append({"kind": "mcp", "name": name, "path": ".mcp.json", "hash": _hash_bytes(blob)})
+    settings = os.path.join(claude, "settings.json")
+    if os.path.isfile(settings):
+        items.append(_file_item(project, "settings", "settings.json", settings))
+    for rel in ("CLAUDE.md", os.path.join(".claude", "CLAUDE.md")):
+        p = os.path.join(project, rel)
+        if os.path.isfile(p):
+            items.append(_file_item(project, "claude_md", "CLAUDE.md", p))
+            break
+    return items
+
+
+def load_scenarios():
+    try:
+        with open(SCENARIOS_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def detect_scenario(project, items, scenarios):
+    md = next((it for it in items if it["kind"] == "claude_md"), None)
+    if md:
+        try:
+            with open(os.path.join(project, md["path"]), encoding="utf-8") as f:
+                head = f.readline().strip()
+        except OSError:
+            head = ""
+        for flag, spec in scenarios.items():
+            if head and head == spec.get("claude_md_heading"):
+                return flag
+    agents = {it["name"] for it in items if it["kind"] == "agent"}
+    scores = sorted(((len(agents & set(spec.get("agents") or [])), flag) for flag, spec in scenarios.items()),
+                    reverse=True)
+    if scores and scores[0][0] >= AGENT_MATCH_MIN and (len(scores) == 1 or scores[0][0] > scores[1][0]):
+        return scores[0][1]
+    return None
+
+
 def project_dir():
     return os.environ.get("MSE_PROJECT_DIR") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
 
@@ -319,7 +391,10 @@ def _session_segment(args):
 def cmd_extract(args):
     sid, entries, start, end, metrics = _session_segment(args)
     msgs, omitted = user_messages(entries, start, end)
-    out = {"session_id": sid, "project": os.path.basename(os.path.abspath(project_dir())),
+    proj = project_dir()
+    items = inventory(proj)
+    out = {"session_id": sid, "project": os.path.basename(os.path.abspath(proj)),
+           "scenario": detect_scenario(proj, items, load_scenarios()), "installed": items,
            "segment": metrics, "user_messages": msgs, "user_messages_omitted": omitted}
     print(json.dumps(out, ensure_ascii=False))
 
