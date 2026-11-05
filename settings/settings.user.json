@@ -531,9 +531,10 @@
         "~"
       ],
       "allowRead": [
-        ".",
+        "~/.claude",
         "~/.local/bin",
         "~/.gitconfig",
+        "~/.config/git/ignore",
         "~/.npmrc",
         "~/.config/pip",
         "~/.cargo",

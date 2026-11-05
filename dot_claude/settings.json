@@ -576,13 +576,16 @@
         "~/.zprofile",
         "~/.bash_history",
         "~/.zsh_history",
+        "~/workspace/documents",
         "~/",
         "~"
       ],
       "allowRead": [
-        ".",
+        "~/.claude",
+        "~/workspace",
         "~/.local/bin",
         "~/.gitconfig",
+        "~/.config/git/ignore",
         "~/.npmrc",
         "~/.config/pip",
         "~/.cargo",
