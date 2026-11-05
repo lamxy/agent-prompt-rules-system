@@ -1,6 +1,6 @@
 ---
 branch: main
-head: ba3650b
+head: 85b85be
 status: active
 updated: 2026-11-06
 ---
@@ -36,6 +36,7 @@ updated: 2026-11-06
 - 2026-11-05（续）：myplugins、myconfig 未验证项用 `claude -p` 与互动模式实测通过，myplugins 预演状态行、myconfig 补档 `cp` 例外与回报计数已修（本机副本已同步）；`claude plugin eval` 纳入计划 3.3 先小型试跑（暂不执行）；交叉评审不做、子 shell 缺口不回报、B0 取消；本机测验残留已清理。2026-11-05 用户指示推送，`origin/main` 已更新至 `9d43f5f`（含 myopensupports 与沙箱修正共 40 笔）
 - 2026-11-05（续）：**`mysession-eval` 完成**：待验证项实测（`1186eb1`）→ 设计定稿 `docs/plans/2026-11-05-mysession-eval-design.md`（`25a3621`）→ 实作计划 `docs/plans/2026-11-05-mysession-eval-plan.md`（`ab61619`）→ 7 个任务实作、整体审查 5 项修正、4 项 minor 修正（`bbd5712`～`3844761`，已合并本地 `main`）；本机已安装（`~/.claude/skills/mysession-eval/`，`settings.json` 加 `excludedCommands`，备份 `.bak-20261105-mse`）；端到端实测 2 笔记录，用户决定保留作第一次小型试用（backend-dev 列入 1 笔）
 - 2026-11-05～06：**claude-code-setup 补充调研完成**（四场景各跑一次推荐，汇总与执行结果 `docs/evaluation/2026-11-claude-code-setup-review.md`）。按用户逐项确认：数据库 MCP 写入加第二道防线（`56e94f4`）；移除 21 个通用人设 agent，改为自写只读审查 agent `go-reviewer`、`deploy-reviewer`、`prd-reviewer`（`38dc553`、`68304c0`，均用阶段 3 产出实测）；relay 示例 token 写进日志已修（`43eedcc`）；terraform 移出 dev-ops 默认（`61c157b`）；决策表 5～7 不做；`mysession-eval` 本机副本已同步（`diff -r` 一致）
+- 2026-11-06（续）：`skills/README.md` 新增「编写约定」（官方 best practices），写 skill 前主动提醒；myplugins 默认清单 25 个，本机已 `sync`。观察到本机 `~/.claude/settings.json` 中 `gopls-lsp` 为全局 `true`（2026-11-06 00:02 修改，非本会话所改，来源未查，用户知悉）
 - 下一步：3.4 真实项目试用（用户指定场景与项目，在项目中做完一件事就 `/mysession-eval`；改动后可用对应审查 agent 复核）；2026-11-06 用户指示推送本批提交
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
@@ -529,4 +530,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | 推送 | 用户指示推送，`fa1c8ef..68a54b9` 共 13 笔推到 `origin/main` | — |
 | 2026-11-06 | claude-code-setup 补充调研与执行 | 四场景推荐汇总与决策表（`8bae224`）；MCP 写入防线（`56e94f4`）；agent 精简与三个审查 agent（`38dc553`、`68304c0`）；relay token 泄漏修正（`43eedcc`）；terraform 移出默认（`61c157b`）；计划勾选（`2207643`）；`run-all.sh` 19 个全过 | 3.4 试用；暂缓项见待处理 |
 | 2026-11-06 | 推送 | 用户指示推送本批提交到 `origin/main` | — |
-| 2026-11-06 | skill 编写约定与 myplugins 清单 | `skills/README.md` 新增「编写约定」（官方 best practices 原文 + 本仓库要求），交接加提醒；myplugins 默认清单 21 → 25（`plugin-dev`、`mcp-server-dev`、`mcp-apps`、`agent-sdk-dev`，全局模板与镜像各加 `false`）；`run-all.sh` 19 个全过 | 本机需 `cp` myplugins 后 `/myplugins sync`；未推送 |
+| 2026-11-06 | skill 编写约定与 myplugins 清单 | `skills/README.md` 新增「编写约定」（官方 best practices 原文 + 本仓库要求），交接加提醒；myplugins 默认清单 21 → 25（`plugin-dev`、`mcp-server-dev`、`mcp-apps`、`agent-sdk-dev`，全局模板与镜像各加 `false`）；`run-all.sh` 19 个全过 | 本机 myplugins 已 `cp` 并 `sync`（`diff -r` 一致，本机清单 25 个）；2026-11-06 用户指示推送 |
