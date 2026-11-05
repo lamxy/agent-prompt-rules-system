@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 3844761
+head: 68a54b9
 status: active
 updated: 2026-11-05
 ---
@@ -35,7 +35,7 @@ updated: 2026-11-05
 - 2026-11-05：**3.2 静态验证完成**：`scripts/tests/test-scenario-bundles.sh`（四场景真实安装）、`scripts/smoke/claude-config-smoke.sh`（`claude mcp list`）、`scripts/smoke/permissions-smoke.sh`（36 条抽样）；实测发现 RTK hook 使 `Read` deny 在沙箱关闭时失效，已在本机 RTK 加 `exclude_commands`，`Read` deny 扩充 20 条（`.env` 系列、凭据、历史记录，`.env.example` 放行；`76c6d27`、`8f0029c`、`f2561b9`，未推送）
 - 2026-11-05（续）：myplugins、myconfig 未验证项用 `claude -p` 与互动模式实测通过，myplugins 预演状态行、myconfig 补档 `cp` 例外与回报计数已修（本机副本已同步）；`claude plugin eval` 纳入计划 3.3 先小型试跑（暂不执行）；交叉评审不做、子 shell 缺口不回报、B0 取消；本机测验残留已清理。2026-11-05 用户指示推送，`origin/main` 已更新至 `9d43f5f`（含 myopensupports 与沙箱修正共 40 笔）
 - 2026-11-05（续）：**`mysession-eval` 完成**：待验证项实测（`1186eb1`）→ 设计定稿 `docs/plans/2026-11-05-mysession-eval-design.md`（`25a3621`）→ 实作计划 `docs/plans/2026-11-05-mysession-eval-plan.md`（`ab61619`）→ 7 个任务实作、整体审查 5 项修正、4 项 minor 修正（`bbd5712`～`3844761`，已合并本地 `main`）；本机已安装（`~/.claude/skills/mysession-eval/`，`settings.json` 加 `excludedCommands`，备份 `.bak-20261105-mse`）；端到端实测 2 笔记录，用户决定保留作第一次小型试用（backend-dev 列入 1 笔）
-- 下一步：3.4 真实项目试用（用户指定场景与项目，在项目中做完一件事就 `/mysession-eval`）；`main` 有 12 笔提交未推送（见「建议的下一步」）
+- 下一步：3.4 真实项目试用（用户指定场景与项目，在项目中做完一件事就 `/mysession-eval`）；2026-11-05 用户指示推送，`origin/main` 已更新至 `68a54b9`（13 笔）
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -56,7 +56,7 @@ updated: 2026-11-05
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
 | 可选插件技能 `myplugins` | 已实现、本机已安装并按用户试用调整（2026-11-04，`5b5425d`～`ac254c2`、`64ef966`，已随 v2.5.0 推送）；2026-11-05 `-t` 与共享模式实测、预演状态行修改（`9bbddda`，2026-11-05 已推送） | 见「续作时必须知道的事」→「myplugins」；安装步骤在 `dot_claude/README.md`「myplugins 安装」 |
 | 支持包技能 `myopensupports` | 已实现、测试通过、交叉审核已处理（2026-11-05）；用户手动 `cp` 安装后又改了 SKILL.md、details.md（`fb1d0fd`：去掉「Claude 关闭沙箱执行」，安装与 `remove-apply` 只给 `!` 命令），临时项目实测通过（2026-11-05）；Q5 实测：`autoAllowBashIfSandboxed` 下 `remove-apply` 不跳权限提示，文件已改、`remove-apply` 改为先搬 `skills/` 且失败回滚（`bd1518e`），本机副本已同步（`diff -r` 一致）；临时项目 `~/workspace/tmp-mos-test` 已由用户删除 | `dot_claude/skills/myopensupports/`；设计与疑问 `docs/plans/2026-11-05-myopensupports-design.md`，计划 `docs/plans/2026-11-05-myopensupports-plan.md` |
-| 试用评估技能 `mysession-eval` | 完成（2026-11-05）：已实作、测试 65 例、整体审查、本机安装、端到端实测；已合并本地 `main`，未推送 | `dot_claude/skills/mysession-eval/`；设计 `docs/plans/2026-11-05-mysession-eval-design.md`，计划 `docs/plans/2026-11-05-mysession-eval-plan.md`；见「续作时必须知道的事」→「mysession-eval」 |
+| 试用评估技能 `mysession-eval` | 完成（2026-11-05）：已实作、测试 65 例、整体审查、本机安装、端到端实测；已合并并推送 | `dot_claude/skills/mysession-eval/`；设计 `docs/plans/2026-11-05-mysession-eval-design.md`，计划 `docs/plans/2026-11-05-mysession-eval-plan.md`；见「续作时必须知道的事」→「mysession-eval」 |
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
 | 配置安装技能 `myconfig`（列出／安装本仓库配置） | 已实现并发布 v2.4.0（2026-10-29）；用户已在本机安装，`/myconfig` 列表模式正常 | `dot_claude/skills/myconfig/`；设计 `docs/plans/2026-10-28-config-install-skill-design.md` §11。`claude -p` 实测：沙箱禁止会话内写 `.claude/settings.json`、`skills/`、`hooks/`，改为技能只预演、写入交付命令由用户执行；跨项目使用需把仓库路径与 `~/.claude/skills/myconfig` 加进 `sandbox.filesystem.allowRead`；两轮子代理交叉审查意见已全部处理 |
 
@@ -359,7 +359,6 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
 | 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除）；2026-11-05 改了 `~/.claude/settings.json`（备份 `.bak-20261105012410`）并新建 RTK `config.toml` | — |
 | 3.4 真实项目试用：用户指定场景与项目；`mysession-eval` 长会话、多记录时的 `extract`／`summarize` 输出量未实测（只测过小会话 2 笔） | 计划文件 3.4；设计文件「token 预算」 |
-| `main` 领先 `origin/main` 12 笔（`1186eb1`～`3844761`，含本文件之前的提交），推送需用户指示 | — |
 
 
 <!-- section: next -->
@@ -510,4 +509,5 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | myopensupports 实测与回滚修正 | 临时项目走完 list／install 方案／`--skills-only`／remove／`remove-apply`；Q5 实测不跳权限提示（`autoAllowBashIfSandboxed`），文件改正；`remove-apply` 先搬 `skills/`、失败回滚并加测试（`bd1518e`） | 本机副本已同步；临时项目已删除 |
 | 2026-11-05 | 推送 | 用户指示推送，`a569d97..9d43f5f` 共 40 笔推到 `origin/main` | — |
 | 2026-11-05 | mysession-eval 设计 | 待验证项实测（会话 id 取 `CLAUDE_CODE_SESSION_ID`、`disable-model-invocation` 不占清单、`/clear` 换 id、`/compact` 不换、rule 加载记为 `nested_memory`）；与用户逐点确认后定稿并经建构者审阅（`1186eb1`、`25a3621`）；实作计划（`ab61619`） | — |
-| 2026-11-05 | mysession-eval 实作 | 7 个任务（`bbd5712`～`a4ad205`）；整体审查 5 项重要问题修正（`ddad778`）；延后 4 项 minor 处理（`3844761`，第 4 项只能补文件说明）；本机安装与端到端实测（记录约 2.8k／含询问 4.7k、期中复盘约 8.9k）；`run-all.sh` 19 个全过 | 长会话与多记录未实测；未推送 |
+| 2026-11-05 | mysession-eval 实作 | 7 个任务（`bbd5712`～`a4ad205`）；整体审查 5 项重要问题修正（`ddad778`）；延后 4 项 minor 处理（`3844761`，第 4 项只能补文件说明）；本机安装与端到端实测（记录约 2.8k／含询问 4.7k、期中复盘约 8.9k）；`run-all.sh` 19 个全过 | 长会话与多记录未实测 |
+| 2026-11-05 | 推送 | 用户指示推送，`fa1c8ef..68a54b9` 共 13 笔推到 `origin/main` | — |
