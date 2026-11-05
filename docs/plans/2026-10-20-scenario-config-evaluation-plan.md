@@ -180,7 +180,7 @@
 - [ ] 试用日志字段（2026-11-05 起由 `mysession-eval` 记录，手填模板 `pilot-log-template.md` 不另建，除非设计确认时改变）：日期、任务、用到的 skill/agent/MCP、冲突或误触发、人工干预、满意度（1～5）、备注
 - [ ] 每周复盘一次：汇总日志，决定保留、调整或移除的项目，调整后回写仓库
 - [ ] 试用结束后与阶段 1 的基线对比，结论写入 `docs/evaluation/2026-10-final.md`
-- [ ] （用户 2026-11-05 决定**要做**，暂不执行；开工时先确认下方「初步设计（未确认）」各点，再实现；它取代手填日志，所以 3.4 不另建 `pilot-log-template.md`，除非设计确认时改变）全局技能 `mysession-eval`（2026-11-05 由 `mypilot` 改名；`my:session-eval` 不符合 Agent Skills 规范 name 只允许小写字母、数字与连字号，且冒号在 Claude Code 表示插件命名空间）：在真实项目中由用户主动调用，记录与整理试用数据，取代手填日志。初步设计（未确认）：
+- [ ] （用户 2026-11-05 决定**要做**；设计已于 2026-11-05 经用户确认，见 `docs/plans/2026-11-05-mysession-eval-design.md`，**以设计文件为准**，下方「初步设计」仅保留作历史；它取代手填日志，所以 3.4 不另建 `pilot-log-template.md`，除非设计确认时改变）全局技能 `mysession-eval`（2026-11-05 由 `mypilot` 改名；`my:session-eval` 不符合 Agent Skills 规范 name 只允许小写字母、数字与连字号，且冒号在 Claude Code 表示插件命名空间）：在真实项目中由用户主动调用，记录与整理试用数据，取代手填日志。初步设计（已由设计文件取代）：
   - 位置与安装：`dot_claude/skills/mysession-eval/`（`SKILL.md` + Python 脚本），本仓库测试后同步到 `~/.claude/skills/`；脚本命令加进 `sandbox.excludedCommands`（同 myplugins，用 `~` 路径）
   - `/mysession-eval`：脚本解析本次会话记录（`~/.claude/projects/<项目>/<会话>.jsonl`）得到客观指标（skill／agent／MCP 调用、权限拒绝、工具错误、token），只输出汇总、不把原文带进上下文；主观数据（满意度 1～5、干预次数、备注）由参数或一次提问取得；每条一行 JSON 写入 `~/.claude/mysession-eval/`（不进项目与本仓库）；排除 `mysession-eval` 自身的调用
   - `/mysession-eval review [场景]`：汇总日志，对照 3.5 判定表给出初判；结论去识别化后写回本仓库
