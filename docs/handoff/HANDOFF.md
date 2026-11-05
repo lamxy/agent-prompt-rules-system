@@ -1,6 +1,6 @@
 ---
 branch: main
-head: c8d5f7c
+head: 9d43f5f
 status: active
 updated: 2026-11-05
 ---
@@ -33,7 +33,7 @@ updated: 2026-11-05
 - 2026-11-04（续）：myplugins 减 token：`SKILL.md` 拆出 `references/details.md`，列表后只回「已启用」一行与用法，启动提示加第三行只看清单的 `!` 命令（`64ef966`）；本仓库 `.claude/settings.json` 启用 claude-md-management、skill-creator（`2105be7`）；实测 `/myplugins` 每次约 2.9k token，之前看到的一万多来自首轮系统附件与 `/context` 自身输出。已随 v2.5.0 推送
 - 2026-11-04～05：阶段 3 待确认项全部处理：B-9 调研后用户选方案 C（`docs/research/2026-11-layering-strictness.md`，规则与 depguard `078674c`）；D-4（`250f03d`）；gsd-core 移出前端默认、主场景改后端且默认不启用（`8c1da27`）；全局 deny 改前缀 ask（`6416e56`，本机已同步）；OpenSpec 安装脚本 Corepack 卡住修复（`06b7902`）；删除 `docs/recommend_repos/`、`examples/`（`8eb2ef7`）；推送并发布 v2.5.0
 - 2026-11-05：**3.2 静态验证完成**：`scripts/tests/test-scenario-bundles.sh`（四场景真实安装）、`scripts/smoke/claude-config-smoke.sh`（`claude mcp list`）、`scripts/smoke/permissions-smoke.sh`（36 条抽样）；实测发现 RTK hook 使 `Read` deny 在沙箱关闭时失效，已在本机 RTK 加 `exclude_commands`，`Read` deny 扩充 20 条（`.env` 系列、凭据、历史记录，`.env.example` 放行；`76c6d27`、`8f0029c`、`f2561b9`，未推送）
-- 2026-11-05（续）：myplugins、myconfig 未验证项用 `claude -p` 与互动模式实测通过，myplugins 预演状态行、myconfig 补档 `cp` 例外与回报计数已修（本机副本已同步）；`claude plugin eval` 纳入计划 3.3 先小型试跑（暂不执行）；交叉评审不做、子 shell 缺口不回报、B0 取消；本机测验残留已清理。`origin/main` 停在 `a569d97`（v2.5.0），之后的提交均未推送（用户决定暂不推送）
+- 2026-11-05（续）：myplugins、myconfig 未验证项用 `claude -p` 与互动模式实测通过，myplugins 预演状态行、myconfig 补档 `cp` 例外与回报计数已修（本机副本已同步）；`claude plugin eval` 纳入计划 3.3 先小型试跑（暂不执行）；交叉评审不做、子 shell 缺口不回报、B0 取消；本机测验残留已清理。2026-11-05 用户指示推送，`origin/main` 已更新至 `9d43f5f`（含 myopensupports 与沙箱修正共 40 笔）
 - 下一步：先做 `mysession-eval`（用户 2026-11-05 决定要做、暂不执行），再 3.4 真实项目试用（见「建议的下一步」）；B0 已由用户 2026-11-05 取消
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
@@ -494,3 +494,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | 沙箱 `allowRead` 修正（test2 会话） | `.` 改 `~/.claude`，加 `~/workspace`、`~/.config/git/ignore`，`denyRead` 加 `~/workspace/documents`；镜像、模板与 README（`cb63add`） | `dot_claude_legacy/` 不改 |
 | 2026-11-05 | myopensupports 只给 `!` 命令 | 因 `allowUnsandboxedCommands: false`，去掉「Claude 关闭沙箱执行」，Q3 结案（`fb1d0fd`） | 本机副本已同步；Q5 待首次使用验证 |
 | 2026-11-05 | myopensupports 实测与回滚修正 | 临时项目走完 list／install 方案／`--skills-only`／remove／`remove-apply`；Q5 实测不跳权限提示（`autoAllowBashIfSandboxed`），文件改正；`remove-apply` 先搬 `skills/`、失败回滚并加测试（`bd1518e`） | 本机副本已同步；临时项目已删除 |
+| 2026-11-05 | 推送 | 用户指示推送，`a569d97..9d43f5f` 共 40 笔推到 `origin/main` | — |
