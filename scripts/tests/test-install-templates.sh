@@ -167,7 +167,7 @@ test_scenario_bundles() {
     assert_file "$target/.claude/settings.json"
     assert_file "$target/CLAUDE.md"
     case "$flag" in
-      backend-dev|dev-ops)
+      backend-dev|dev-ops|prd-design)
         [ -n "$(find "$target/.claude/agents" -name '*.md')" ] || fail "$flag bundle should install agents" ;;
     esac
 

@@ -1,7 +1,9 @@
 {
   "prd-design": {
     "claude_md_heading": "# CLAUDE.md — PRD 与原型设计",
-    "agents": []
+    "agents": [
+      "prd-reviewer"
+    ]
   },
   "frontend-dev": {
     "claude_md_heading": "# CLAUDE.md — 前端开发",

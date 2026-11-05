@@ -8,7 +8,7 @@
 | 配置包 | 内容 | 安装到 |
 |--------|------|--------|
 | `.claude/` | `open_supports_name_list.txt`：gstack、task-master（用户级） | `~/.claude/` |
-| `.claude-prd-design/` | settings、`CLAUDE.md`；清单：pm-skills 以 `--scope project` 安装为项目插件 | 项目根目录 |
+| `.claude-prd-design/` | settings、`CLAUDE.md`、`prd-reviewer` agent；清单：pm-skills 以 `--scope project` 安装为项目插件 | 项目根目录 |
 | `.claude-frontend-dev/` | settings、`CLAUDE.md`；清单：gsd-core、OpenSpec、codegraph 均为第二场景（注释状态） | 项目根目录 |
 | `.claude-backend-dev/` | Go 参考实现：settings（含 gofmt hook）、`CLAUDE.md`、`.mcp.json`（MySQL、PostgreSQL、GlitchTip）、`go-reviewer` agent、path rules（Go、框架、存储与中间件）、5 个 skill；清单：codegraph（项目级）、OpenSpec；gsd-core 为主场景但默认不启用（注释状态） | 项目根目录 |
 | `.claude-dev-ops/` | settings、`CLAUDE.md`、`.mcp.json`（GlitchTip）、`deploy-reviewer` agent、`middleware-ops` skill；清单：pm-skills 的 `pm-ai-shipping` 为第二场景（注释状态） | 项目根目录 |

@@ -10,7 +10,8 @@
 |------|------|-------------|
 | `backend-dev` | 后端开发 | `go-reviewer`：只读审查 Go 改动（分层、API、存储、并发），依据项目 `CLAUDE.md` 与 `.claude/rules/` |
 | `dev-ops` | DevOps | `deploy-reviewer`：只读审查 compose、Dockerfile、流水线（镜像 tag、密钥、端口、资源、可观测性），依据 `CLAUDE.md` 与 `middleware-ops` |
-| `prd-design`、`frontend-dev` | — | 暂无；试用中出现需求再写 |
+| `prd-design` | PRD 与原型设计 | `prd-reviewer`：只读审查 PRD（8 项必含内容、原始需求逐条追溯、自行定案、开发视角追问），依据 `CLAUDE.md` 与 `inputs/` |
+| `frontend-dev` | — | 暂无；前端验收以主会话浏览器实测为主，真实项目试用中出现需求再写 |
 
 只放**自写、只读、贴合场景**的审查 agent，由用户手动调用（「用 go-reviewer 审查这次改动」）。原因（2026-11-05，见 `docs/evaluation/2026-11-claude-code-setup-review.md`）：
 
@@ -36,6 +37,8 @@ agents/
     go-reviewer.md
   agents-dev-ops/
     deploy-reviewer.md
+  agents-prd-design/
+    prd-reviewer.md
   agents-agency-agent-based-dev/
   agents-FLAG-NAME/      # 命名模板，复制后重命名
 ```

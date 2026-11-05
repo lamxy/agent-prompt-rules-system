@@ -1,6 +1,6 @@
 # claude-code-setup 推荐汇总（阶段 3 补充调研）
 
-创建：2026-11-05　状态：汇总完成，决策表待用户确认　关联：`docs/plans/2026-10-20-scenario-config-evaluation-plan.md` 3.3「补充调研」
+创建：2026-11-05　状态：决策已执行（见第 6 节）　关联：`docs/plans/2026-10-20-scenario-config-evaluation-plan.md` 3.3「补充调研」
 
 用官方插件 `claude-code-setup`（skill `claude-automation-recommender`）在阶段 3 专案集的四个场景项目各跑一次，收集它对场景包的推荐，对照**仓库当前**场景包 `dot_claude_projects/.claude-<FLAG>/` 判读。原始提示与报告在专案集 `~/workspace/aitools_test/scenario-eval-final/test_result_history/claude-code-setup/`（不入库）。
 
@@ -118,3 +118,15 @@ Docker MCP（绕过 `Bash(docker …)` 的 ask）、Sentry MCP（已有 GlitchTi
 - 有价值的部分主要来自**读现有配置找冲突**（3.1～3.3、3.5），不是新推荐；代码信号少的 PRD、前端项目同样有产出
 - 有 3 条事实错误（第 2 节），都是没看实际加载状态、凭文件推断；结论需对照会话 `init` 或实测
 - 每次约 1 美元、3 分钟；适合改动场景包后做一次「一致性体检」，不适合常驻启用
+
+## 6. 执行结果（2026-11-05～06，用户逐项确认）
+
+| # | 结果 | 提交 |
+|---|---|---|
+| 1 | 已做：backend-dev、fullstack-dev 加 `env.MDB_MCP_READ_ONLY=true` + deny 11 个 mongodb 写入工具，`execute_sql` 改 `ask`。临时项目实测：env 生效后只注册 20 个工具，deny 的工具从列表消失，ask 的工具调用时要求授权；项目 `env` 需信任文件夹、deny／ask 立即生效（官方 settings 文档），所以两层并用 | `56e94f4` |
+| 2、3 | 改为：移除四个场景共 21 个通用 agent（72 个测验会话调用 0 次、内容与场景冲突、无 `tools:`），改写自写只读审查 agent：`go-reviewer`、`deploy-reviewer`、`prd-reviewer`；frontend-dev 暂不设（前端验收以浏览器实测为主）。三者各用阶段 3 产出实测（B1-r1、D3-r1、P2-r1），均给出带行号与依据的有效问题；`deploy-reviewer` 首次因串接命令被拒而放弃，加「每条命令单独执行」后通过。依据见 `agents/README.md` | `38dc553`、本次 |
+| 4 | 已做：terraform 插件移出 dev-ops 默认启用（用户确认不用 Terraform），`CLAUDE.md` 正文与 ask 规则保留 | `61c157b` |
+| 5～7 | 不做：MCP 工具为延迟加载，常驻成本小；glitchtip 默认值、前端 docker ask、指定浏览器 MCP 收益约为 0（F4 已自然分工）；compose `:latest` hook 抓不到浮动小版本 tag，由 `deploy-reviewer` 按需覆盖 | — |
+| 新 | `deploy-reviewer` 发现 `middleware-ops` 的 relay 示例把 bot token 写进日志（`*url.Error` 含完整 URL），本机 Go 实测修正前泄漏、修正后为 `<redacted>` | `43eedcc` |
+
+审查 agent 实测附注：`go-reviewer` 第 1 条（B1 放宽 skill 规则）是测试素材造成的误报——final 专案 `baseline` 在 B-7 修正后重打，早于修正的 B1-r1 与之比较像删了规则。子代理读长输出时会被 RTK 截断，`rtk bypass` 在 `dontAsk` 下被拒，三者都改用其他只读方式读全。原始报告在专案集 `test_result_history/reviewer-agents/`（不入库）。
