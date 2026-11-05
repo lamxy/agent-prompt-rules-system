@@ -44,6 +44,12 @@ python3 ~/.claude/skills/mysession-eval/scripts/mysession-eval <子命令> [參�
    不列入時改 `--include no --exclude-reason '<理由>'`；有應觸發未觸發者加 `--missed a,b`；`extract` 的 `scenario` 為 `null` 而使用者告知場景時加 `--scenario <FLAG>`。
 5. 回覆只照抄腳本輸出的摘要行。
 
+使用者表示這段不要記錄時，不執行 `append`，改執行下面這條（不寫日誌，只讓下次記錄從這裡之後開始算，避免使用者的回答被算進下一段），再照抄輸出：
+
+```sh
+python3 ~/.claude/skills/mysession-eval/scripts/mysession-eval skip
+```
+
 ## 規則
 
 - 腳本以結束碼 2 報錯時，轉述錯誤訊息並停止。不自行改用其他方式找會話記錄，不手動編輯日誌。

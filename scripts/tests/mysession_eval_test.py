@@ -652,5 +652,55 @@ class TestReviewFixes(Base):
         self.assertNotIn('"<依據>"', text)
 
 
+# ---- Deferred minors ----
+class TestMinorFixes(Base):
+    def test_declined_answer_not_in_next_segment(self):
+        es = [user("a"), invoke(), script_call("t1"), script_result("t1"),
+              assistant_text("要記嗎？"), user("這次別記了"),
+              script_call("t2", "skip"), script_result("t2"), assistant_text("好，不記"),
+              user("next work"), assistant_text(), invoke()]
+        start, end = mse.segment_bounds(es)
+        self.assertEqual(mse.user_messages(es, start, end)[0], ["next work"])
+
+    def test_skip_cli_writes_nothing(self):
+        self.write_session("s1", [user("do"), invoke()])
+        r = self.run_cli("skip")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("未記錄", r.stdout)
+        self.assertEqual(log_lines(self.home), [])
+
+    def test_skill_md_mentions_skip(self):
+        self.assertIn("mysession-eval skip", read(os.path.join(SKILL_DIR, "SKILL.md")))
+
+    def test_append_after_answer_unchanged(self):
+        es = [user("a"), invoke(), script_call("t1"), script_result("t1"),
+              assistant_text("score?"), user("4"),
+              script_call("t2", "append --task x"), script_result("t2"), assistant_text("recorded"),
+              user("next job"), assistant_text(), invoke()]
+        self.assertEqual(mse.segment_bounds(es), (8, 11))
+
+    def test_summarize_bad_field_types_counted(self):
+        good = rec()
+        bad1 = rec()
+        bad1["corrections"] = "abc"
+        bad2 = rec()
+        bad2["installed"] = "oops"
+        out = mse.summarize([good, bad1, bad2])
+        self.assertEqual(out["bad_lines"], 2)
+        self.assertEqual(out["scenarios"]["backend-dev"]["records_total"], 1)
+
+    def test_append_repairs_missing_trailing_newline(self):
+        put(self.proj, "CLAUDE.md", "# CLAUDE.md — 后端开发（Go）\n")
+        self.write_session("s1", [user("do"), assistant_text(), invoke()])
+        os.makedirs(self.home)
+        with open(os.path.join(self.home, "log.jsonl"), "w") as f:
+            f.write(json.dumps(rec()))
+        self.assertEqual(self.run_cli(*APPEND_OK).returncode, 0)
+        self.assertEqual(len(log_lines(self.home)), 2)
+
+    def test_review_md_sandbox_limit(self):
+        self.assertIn("Operation not permitted", read(os.path.join(SKILL_DIR, "references", "review.md")))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

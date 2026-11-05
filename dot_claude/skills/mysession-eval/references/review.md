@@ -19,6 +19,7 @@ python3 ~/.claude/skills/mysession-eval/scripts/mysession-eval summarize
   - `item_eligible` 為假：歸入「尚不能判斷」，寫出還差幾筆（門檻 `item_threshold`）。
   - 可用訊號：裝了卻從未使用（`records_used` 為 0）、`missed` 次數、`denials_by_tool` 集中在某工具、rule 該載入未載入。注意 Bash 的 `head`／`cat` 讀檔不會載入 rule（2.1.318 實測），rule 未載入不一定代表 rule 有問題。
   - 同一配置有多個 `hash` 時是前後兩版，分開陳述；改動後版本未達門檻時寫「改動後樣本不足，尚不能判斷」，不與舊版合算。
+  - `tool_errors.sandbox` 只計錯誤訊息含 `Operation not permitted` 的情況；其他由沙箱造成的錯誤（例如 Go 快取被擋，訊息只有 `Exit code 1` 或下游報錯）只計入總數。判斷錯誤是否屬環境問題時參考各筆備註，不只看這個計數。
   - `settings`、`claude_md` 沒有使用次數，只做定性：看 `missed` 與匯總中能反映的訊號，不硬給判定。
 - **`used_not_installed`**：多半是全域配置，列出供參考，不判定。
 - **建議門檻**：提出「調整／移除」必須寫出配置檔路徑、具體改法、依據的筆數；說不出改法或證據不足的現象歸入「觀察中」。

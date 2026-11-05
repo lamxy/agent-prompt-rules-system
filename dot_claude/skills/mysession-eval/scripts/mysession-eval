@@ -4,6 +4,7 @@
 子命令（由技能呼叫，使用者不直接執行）：
   extract [--session ID]       輸出本會話「上一次記錄之後」區段的客觀指標（JSON）
   append  [選項...]            重新計算區段指標，與 Claude 的推定合併後追加到日誌
+  skip                         使用者決定這段不記錄時呼叫：不寫日誌，只作為下次記錄的切點
   summarize [--scenario S]     匯總日誌供覆盤（JSON）
 
 會話 id 取自環境變數 CLAUDE_CODE_SESSION_ID（或 --session）；找不到會話檔時報錯，不退回其他方式。
@@ -18,6 +19,8 @@ import sys
 SKILL_NAME = "mysession-eval"
 INVOKE_MARK = "<command-name>/%s</command-name>" % SKILL_NAME
 SCRIPT_MARK = "skills/%s/scripts/%s" % (SKILL_NAME, SKILL_NAME)
+# script runs that close a recording run; the next segment starts after the last of them
+CUT_SUBCOMMANDS = ("extract", "append", "skip")
 
 
 class Fail(Exception):
@@ -111,7 +114,7 @@ def segment_bounds(entries):
     start = p + 1
     script_ids = set()
     for i in range(p + 1, end):
-        script_ids |= is_skill_script_call(entries[i], ("extract", "append"))
+        script_ids |= is_skill_script_call(entries[i], CUT_SUBCOMMANDS)
         if _tool_result_ids(entries[i]) & script_ids:
             start = i + 1
     return start, end
@@ -533,8 +536,15 @@ def cmd_append(args):
     }
     home = home_dir()
     os.makedirs(home, exist_ok=True)
-    with open(log_path(home), "a", encoding="utf-8") as f:
-        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    path = log_path(home)
+    prefix = ""
+    if os.path.exists(path) and os.path.getsize(path) > 0:
+        with open(path, "rb") as f:
+            f.seek(-1, os.SEEK_END)
+            if f.read(1) != b"\n":
+                prefix = "\n"
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(prefix + json.dumps(record, ensure_ascii=False) + "\n")
     included, _ = scenario_counts(home, scenario)
     line = "已記錄：%s（%s，滿意度 %d〔%s〕）。%s 已累積 %d 筆列入判定，場景判定門檻 %d 筆" % (
         task, scenario, sat, "推定" if sat_source == "estimated" else "使用者確認",
@@ -648,9 +658,20 @@ def _scenario_summary(recs):
     return out
 
 
+def _valid_record(r):
+    try:
+        _scenario_summary([dict(r, include=True)])
+        return True
+    except (TypeError, ValueError, AttributeError, KeyError):
+        return False
+
+
 def summarize(records, scenario=None, bad_lines=0):
     groups = {}
     for r in records:
+        if not _valid_record(r):
+            bad_lines += 1
+            continue
         s = r.get("scenario") or "unknown"
         if scenario and s != scenario:
             continue
@@ -666,7 +687,11 @@ def cmd_summarize(args):
     print(json.dumps(summarize(records, _opt(args, "--scenario"), bad), ensure_ascii=False))
 
 
-COMMANDS = {"extract": cmd_extract, "append": cmd_append, "summarize": cmd_summarize}
+def cmd_skip(args):
+    print("未記錄：本段不寫入日誌，下次記錄從此處之後開始。")
+
+
+COMMANDS = {"extract": cmd_extract, "append": cmd_append, "skip": cmd_skip, "summarize": cmd_summarize}
 
 
 def main(argv):
