@@ -547,7 +547,8 @@
     },
     "excludedCommands": [
       "docker *",
-      "python3 ~/.claude/skills/myplugins/scripts/myplugins *"
+      "python3 ~/.claude/skills/myplugins/scripts/myplugins *",
+      "python3 ~/.claude/skills/mysession-eval/scripts/mysession-eval *"
     ]
   },
   "effortLevel": "medium",

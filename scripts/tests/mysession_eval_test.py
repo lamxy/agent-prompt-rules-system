@@ -561,5 +561,44 @@ class TestSummarize(Base):
         self.assertIn("尚無記錄", r.stderr)
 
 
+# ---- Task 6 ----
+SKILL_DIR = os.path.dirname(os.path.dirname(TOOL))
+ALLOWED = "allowed-tools: Bash(python3 ~/.claude/skills/mysession-eval/scripts/mysession-eval *)"
+
+
+def read(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
+class TestSkillDocs(unittest.TestCase):
+    def frontmatter(self):
+        text = read(os.path.join(SKILL_DIR, "SKILL.md"))
+        self.assertTrue(text.startswith("---\n"))
+        return text.split("---\n", 2)[1], text
+
+    def test_skill_frontmatter(self):
+        fm, _ = self.frontmatter()
+        lines = fm.splitlines()
+        self.assertIn("name: mysession-eval", lines)
+        self.assertIn("disable-model-invocation: true", lines)
+        self.assertIn(ALLOWED, lines)
+
+    def test_command_consistent_three_places(self):
+        _, text = self.frontmatter()
+        import re
+        cmds = re.findall(r"python3 \S*mysession-eval/scripts/mysession-eval", text)
+        self.assertTrue(cmds)
+        self.assertEqual(set(cmds), {SCRIPT})
+        for rel in ("settings/settings.user.json", "dot_claude/settings.json"):
+            data = json.loads(read(os.path.join(REPO, rel)))
+            self.assertIn(SCRIPT + " *", data["sandbox"]["excludedCommands"], rel)
+
+    def test_review_reference_exists(self):
+        text = read(os.path.join(SKILL_DIR, "references", "review.md"))
+        for word in ("尚不能判斷", "觀察中", "--final", "summarize"):
+            self.assertIn(word, text)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

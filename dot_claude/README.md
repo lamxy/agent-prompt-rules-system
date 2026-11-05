@@ -12,6 +12,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 | `skills/myconfig/` | `myconfig` 技能：列出本倉庫的場景配置，或在會話中預演並給出安裝命令（寫入由使用者執行）；`scripts/catalog` 現場產生清單。設計見 `docs/plans/2026-10-28-config-install-skill-design.md` |
 | `skills/myplugins/` | `myplugins` 技能：按序號在當前目錄啟用或關閉可選插件（預設直接寫 `.claude/settings.json`，`--local`／`-c` 寫 `.claude/settings.local.json`；`--dry-run`／`-t`／`--test` 先預演、確認後寫入），增刪清單（`~/.claude/myplugins/catalog.json`，首次從 `catalog.default.json` 複製，預設清單更新後用 `sync` 合併）；`scripts/myplugins hint` 供 SessionStart hook 顯示提示。需要的本機設定見下方「myplugins 安裝」 |
 | `skills/myopensupports/` | `myopensupports` 技能：按序號列出本倉庫 `open_supports/` 支持包，產生安裝到目前專案的完整命令（預設參數取自場景清單或安裝腳本示例）與安裝示例，移除專案內本倉庫產生的支持包檔案（先備份），`add`／`sync` 與倉庫 INDEX 比對；必須設定 `AGENT_RULES_REPO`。安裝與移除只給命令，由使用者用 `!` 執行（`allowUnsandboxedCommands: false`，Claude 無法關閉沙箱代跑）。設計見 `docs/plans/2026-11-05-myopensupports-design.md` |
+| `skills/mysession-eval/` | `mysession-eval` 技能：在真實專案試用場景配置時，做完一件事呼叫 `/mysession-eval`，腳本從本會話記錄（`CLAUDE_CODE_SESSION_ID`）擷取上一次記錄之後的客觀指標，Claude 推定滿意度等項目後寫入 `~/.claude/mysession-eval/log.jsonl`；`/mysession-eval review [場景] [--final]` 匯總覆盤。`disable-model-invocation: true`，不佔技能清單。設計見 `docs/plans/2026-11-05-mysession-eval-design.md` |
 | `settings.json` | 個人使用者層級設定（權限、沙箱、hooks、外掛），與本機 `~/.claude/settings.json` 同步 |
 | `README.md` | 本說明，不會被載入為指令 |
 
@@ -31,6 +32,13 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 1. 複製技能：`cp -R dot_claude/skills/myopensupports ~/.claude/skills/`。
 2. 設定 `AGENT_RULES_REPO`（與 myconfig 共用）；未設定時所有子命令只輸出設定提示。
 3. 寫清單（`~/.claude/myopensupports/catalog.json`）若被沙箱擋下，在 `sandbox.excludedCommands` 加 `python3 ~/.claude/skills/myopensupports/scripts/myopensupports *`（照字面，含 `~`，理由同 myplugins）。2026-11-05 在本倉庫會話中直接寫入成功，未遇到阻擋。
+
+## mysession-eval 安裝
+
+1. 複製技能：`cp -R dot_claude/skills/mysession-eval ~/.claude/skills/`。
+2. `sandbox.excludedCommands` 加 `python3 ~/.claude/skills/mysession-eval/scripts/mysession-eval *`（`settings/settings.user.json` 與本目錄 `settings.json` 已含）：腳本要寫 `~/.claude/mysession-eval/log.jsonl`，在專案目錄外；照字面比對的理由同 myplugins。
+
+日誌只在本機，不進專案與本倉庫；寫回本倉庫的只有最終覆盤經使用者確認、去識別化後的結論。
 
 ## myplugins 安裝
 
