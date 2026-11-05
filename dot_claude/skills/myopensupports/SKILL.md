@@ -36,7 +36,7 @@ python3 ~/.claude/skills/myopensupports/scripts/myopensupports <子命令> [參�
 
 ## 安裝與移除：給命令，由使用者執行
 
-`install` 只印方案，不會安裝；`remove` 只印方案，不會刪除，真正刪除是方案裡給的 `remove-apply` 命令（不在 `allowed-tools` 內，執行時一定有權限提示）。方案印出後：
+`install` 只印方案，不會安裝；`remove` 只印方案，不會刪除，真正刪除是方案裡給的 `remove-apply` 命令，只由使用者用 `!` 執行（全局 `autoAllowBashIfSandboxed: true` 讓沙箱內命令不跳權限提示，2026-11-05 實測，所以不能靠權限提示把關）。方案印出後：
 
 1. 轉述重點：預設參數及其來源、其他可選參數、完整命令；安裝示例照錄腳本輸出的區塊。
 2. install 用一次 AskUserQuestion 問參數（remove 不用問）：

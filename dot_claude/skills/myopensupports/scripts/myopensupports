@@ -515,6 +515,25 @@ def unique_backup_dir(proj):
     return path
 
 
+def rollback(done):
+    restored, stuck = [], []
+    for path, dest in reversed(done):
+        try:
+            shutil.move(dest, path)
+            restored.append(path)
+        except (OSError, shutil.Error):
+            stuck.append("%s（在 %s）" % (path, dest))
+    return restored, stuck
+
+
+def prune_empty(top):
+    for root, _, _ in sorted(os.walk(top), key=lambda x: -len(x[0])):
+        try:
+            os.rmdir(root)
+        except OSError:
+            pass
+
+
 def cmd_remove(repo, cat, proj, sel, apply):
     pkgs = resolve(cat, sel)
     backup = None
@@ -543,6 +562,8 @@ def cmd_remove(repo, cat, proj, sel, apply):
             print("沒有可刪除的檔案。")
         if apply and targets:
             backup = backup or unique_backup_dir(proj)
+            # 先搬 .claude/skills/（沙箱最常擋），失敗時把已搬的移回原位，避免只刪一半
+            targets.sort(key=lambda t: not t[1].startswith("skills/"))
             done = []
             for path, rel in targets:
                 dest = os.path.join(backup, rel)
@@ -550,10 +571,15 @@ def cmd_remove(repo, cat, proj, sel, apply):
                     os.makedirs(os.path.dirname(dest), exist_ok=True)
                     shutil.move(path, dest)
                 except (OSError, shutil.Error) as e:
-                    for d in done:
-                        print("  已移到備份：%s" % d)
-                    raise Fail("移動 %s 到 %s 失敗（%s）；已移動的項目在備份目錄中，可手動搬回" % (path, dest, e))
-                done.append(path)
+                    restored, stuck = rollback(done)
+                    prune_empty(backup)
+                    msg = "移動 %s 失敗（%s）" % (path, e)
+                    if restored:
+                        msg += "；已把先搬走的 %s 移回原位" % "、".join(restored)
+                    if stuck:
+                        msg += "；以下項目無法移回，仍在備份目錄：%s" % "、".join(stuck)
+                    raise Fail(msg + "；專案未被修改" if not stuck else msg)
+                done.append((path, dest))
             print("已移到備份目錄 %s（等於從專案刪除）：" % backup)
             for path, _ in targets:
                 print("  - %s" % path)

@@ -37,7 +37,7 @@ INDEX 建議場景以「不启用」或「暂不启用」開頭的包標〔不�
 - `<專案>/.claude/open_supports/<ost>/`
 - `<專案>/.claude/skills/<ost>_install/`：只刪帶有生成標記的；標記行被刪掉的，視為手動維護，予以保留。
 
-`remove` 只印方案。`remove-apply` 把上述目錄搬到 `<專案>/.claude/open_supports.backup-<時間戳>/packages/<ost>` 與 `skills/<ost>_install`（與 `install-open-supports.sh -F` 的備份結構一致；同名時加 `.1` 等後綴），用搬移不用複製，所以符號連結原樣保留。搬回原位即可復原。`remove-apply` 刻意不放進 `allowed-tools`，執行時一定會出現權限提示。
+`remove` 只印方案。`remove-apply` 把上述目錄搬到 `<專案>/.claude/open_supports.backup-<時間戳>/packages/<ost>` 與 `skills/<ost>_install`（與 `install-open-supports.sh -F` 的備份結構一致；同名時加 `.1` 等後綴），用搬移不用複製，所以符號連結原樣保留。搬回原位即可復原。搬移時先搬 `skills/`（沙箱最常擋），任何一步失敗就把已搬走的移回原位並報錯，不會只刪一半。`remove-apply` 雖不在 `allowed-tools`，但全局開了 `autoAllowBashIfSandboxed`，沙箱內執行不會跳權限提示（2026-11-05 實測）；把關靠 SKILL.md 規定只給 `!` 命令，以及沙箱擋寫 `.claude/skills/`。
 
 腳本也會轉述支持包 `repo_readme_summary.md` 中記載的官方卸載命令，但不代為執行。專案 `.claude/open_supports_name_list.txt` 裡的設定行不會修改；腳本只用 `注意：` 提醒，依清單重裝時會再裝回來。
 
