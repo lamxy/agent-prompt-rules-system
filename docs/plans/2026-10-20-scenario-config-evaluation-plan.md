@@ -173,6 +173,11 @@
   - 案例写法：每案例 `prompt.md`（frontmatter `max_turns`、`allowed_tools`、`tags`）+ `graders/*.md`；应触发用 `type: tool_used`、`tool: Skill`、`input_match: '"skill"\s*:\s*"(?:[\w-]+:)?myconfig"'`；不应触发加 `min: 0`、`max: 0`、`arm: both`
   - 执行：`claude plugin eval . --runs 1 --no-publish --trust-plugin --max-cost-usd 5`；**默认会把 HTML 报告发布到 claude.ai，必须加 `--no-publish`**；默认每案例 3 次再加对照组，试跑用 `--runs 1`（5 案例 × 2 组 = 10 次运行）
   - 未验证：场景包（`.claude/` 目录，非插件）能否作为目标
+- [ ] 补充调研：用官方插件 `claude-code-setup`（skill `claude-automation-recommender`，只读、每类推荐 1～2 个 hook／skill／MCP／subagent／plugin）找场景包缺口（用户 2026-11-05 同意）：
+  - 对象：阶段 3 专案集 `~/workspace/aitools_test/scenario-eval-final/projects/`，先 backend-dev、dev-ops（Go 项目信号多），prd-design、frontend-dev 视结果再定；专案停在 `baseline`，不重装
+  - 执行：由 Claude 代跑 `claude -p --plugin-dir <本机插件目录>`，不写项目 settings；只放行只读工具；提示附背景（按「基于 FiberHouse 的业务后端服务」理解、技术栈与部署约束、找缺口不重复已有、不推荐中国大陆闭源工具、附官方来源），背景只写事实与约束、不列现有配置
+  - 判读：对照**仓库当前**场景包 `dot_claude_projects/.claude-<FLAG>/`（专案配置落后于阶段 3 后的修正），分「已有／重复」「冲突」「值得考虑」；值得考虑的列决策表交用户确认，确认前不改配置；写入前按「配置不含未验证内容」实测或核对一手来源
+  - 原始报告存专案集 `test_result_history/`（不入库），结论写入 `docs/evaluation/`
 
 ### 3.4 第三层：真实项目试用
 
