@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 85b85be
+head: 0277471
 status: active
 updated: 2026-11-06
 ---
@@ -37,6 +37,7 @@ updated: 2026-11-06
 - 2026-11-05（续）：**`mysession-eval` 完成**：待验证项实测（`1186eb1`）→ 设计定稿 `docs/plans/2026-11-05-mysession-eval-design.md`（`25a3621`）→ 实作计划 `docs/plans/2026-11-05-mysession-eval-plan.md`（`ab61619`）→ 7 个任务实作、整体审查 5 项修正、4 项 minor 修正（`bbd5712`～`3844761`，已合并本地 `main`）；本机已安装（`~/.claude/skills/mysession-eval/`，`settings.json` 加 `excludedCommands`，备份 `.bak-20261105-mse`）；端到端实测 2 笔记录，用户决定保留作第一次小型试用（backend-dev 列入 1 笔）
 - 2026-11-05～06：**claude-code-setup 补充调研完成**（四场景各跑一次推荐，汇总与执行结果 `docs/evaluation/2026-11-claude-code-setup-review.md`）。按用户逐项确认：数据库 MCP 写入加第二道防线（`56e94f4`）；移除 21 个通用人设 agent，改为自写只读审查 agent `go-reviewer`、`deploy-reviewer`、`prd-reviewer`（`38dc553`、`68304c0`，均用阶段 3 产出实测）；relay 示例 token 写进日志已修（`43eedcc`）；terraform 移出 dev-ops 默认（`61c157b`）；决策表 5～7 不做；`mysession-eval` 本机副本已同步（`diff -r` 一致）
 - 2026-11-06（续）：`skills/README.md` 新增「编写约定」（官方 best practices），写 skill 前主动提醒；myplugins 默认清单 25 个，本机已 `sync`。观察到本机 `~/.claude/settings.json` 中 `gopls-lsp` 为全局 `true`（2026-11-06 00:02 修改，非本会话所改，来源未查，用户知悉）
+- 2026-11-06：按用户指示发布 **v2.6.0**（Latest，tag 指向 `0277471`；自 v2.5.0 起 67 笔：审查 agent、MCP 写入防线、mysession-eval、myopensupports、relay 修正、3.2 静态验证）；release notes 注明移除 21 个 agent 属不兼容变更
 - 下一步：3.4 真实项目试用（用户指定场景与项目，在项目中做完一件事就 `/mysession-eval`；改动后可用对应审查 agent 复核）；2026-11-06 用户指示推送本批提交
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
@@ -97,7 +98,7 @@ updated: 2026-11-06
 
 **仓库定位**：个人 Agent 配置与工具／技能管理仓库（Claude Code 为主，兼顾 Codex），公开供参考。2026-10-19 从「分层提示词规则系统」转型而来，设计原则与原因见根目录 `README.md`。
 
-**版本**：`main` 已于 2026-10-28 推送至 `origin/main`（之后的新提交推送仍需用户指示）；GitHub release v2.0.0（tag `a0783b3`）、v2.0.1（tag `6a31aee`）、v2.1.0（tag `3821dee`）、v2.2.0（tag `e4af50e`）、v2.3.0（tag `beb1ca8`）、v2.4.0（tag `d68370c`）、v2.5.0（Latest，见摘要）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
+**版本**：`main` 已于 2026-10-28 推送至 `origin/main`（之后的新提交推送仍需用户指示）；GitHub release v2.0.0（tag `a0783b3`）、v2.0.1（tag `6a31aee`）、v2.1.0（tag `3821dee`）、v2.2.0（tag `e4af50e`）、v2.3.0（tag `beb1ca8`）、v2.4.0（tag `d68370c`）、v2.5.0、v2.6.0（Latest，2026-11-06，tag 指向 `0277471`）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
 
 **四个场景**（FLAG 在所有维度目录中一致；另有 `fullstack-dev` 只存在于 `settings/`）：
 
@@ -531,3 +532,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-06 | claude-code-setup 补充调研与执行 | 四场景推荐汇总与决策表（`8bae224`）；MCP 写入防线（`56e94f4`）；agent 精简与三个审查 agent（`38dc553`、`68304c0`）；relay token 泄漏修正（`43eedcc`）；terraform 移出默认（`61c157b`）；计划勾选（`2207643`）；`run-all.sh` 19 个全过 | 3.4 试用；暂缓项见待处理 |
 | 2026-11-06 | 推送 | 用户指示推送本批提交到 `origin/main` | — |
 | 2026-11-06 | skill 编写约定与 myplugins 清单 | `skills/README.md` 新增「编写约定」（官方 best practices 原文 + 本仓库要求），交接加提醒；myplugins 默认清单 21 → 25（`plugin-dev`、`mcp-server-dev`、`mcp-apps`、`agent-sdk-dev`，全局模板与镜像各加 `false`）；`run-all.sh` 19 个全过 | 本机 myplugins 已 `cp` 并 `sync`（`diff -r` 一致，本机清单 25 个）；2026-11-06 用户指示推送 |
+| 2026-11-06 | 发布 v2.6.0 | 按 `skills/skills-github-ops/github-release` 流程：annotated tag 推送、release notes 纯 ASCII 校验通过、`gh release create`；`gh release list` 显示 Latest | — |
