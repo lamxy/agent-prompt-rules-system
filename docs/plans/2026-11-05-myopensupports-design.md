@@ -134,7 +134,7 @@
 
 - Q1（2026-11-05 已處理）：agency-agents 從示例取到的預設參數是 `--tool=opencode …`，因為它的示例裡沒有 claude 專案級的寫法。INDEX 標的是「不直接安裝」，所以暫不特別處理。要不要在場景清單或 INDEX 為它補一行 claude 預設參數？→ 使用者決定：它屬於手動挑選，不補參數；list 標〔手動挑選〕，install 印 `注意：`。
 - Q2（2026-11-05 已處理）：cognee 的示例都不帶專案路徑，所以顯示「無預設參數」。它在 INDEX 是「D（本地 C）」，但標「暂不启用」，暫時維持現狀。→ 使用者確認不啟用；list 標〔不啟用〕，install 印 `注意：`。
-- Q3：會話內 `dangerouslyDisableSandbox` 執行安裝或 `remove-apply`，未在互動模式實測（需要使用者核准權限提示）；可以留到第一次實際使用時驗證。
+- Q3（2026-11-05 已處理）：會話內 `dangerouslyDisableSandbox` 執行安裝或 `remove-apply`，未在互動模式實測（需要使用者核准權限提示）；可以留到第一次實際使用時驗證。→ test2 會話發現全局 `allowUnsandboxedCommands: false`，此參數無效；使用者決定移除「讓 Claude 關閉沙箱執行」選項，只給 `!` 命令（推翻「使用者已決定」第 7 點的選項 1）。
 - Q4（2026-11-05 已處理）：deanpeters 在 INDEX 是「不启用（2026-10-28 用户决定忽略）」，但仍在清單中，可以產生安裝方案。目前不過濾，只靠清單裡的用途欄提示。是否要在 list 中把「不启用」的包另外標出來？→ 使用者決定維持不啟用、照樣列出：list 標〔不啟用〕，install 印 `注意：` 並由 SKILL.md 把「取消」列為推薦。它的預設參數 `--client=codex-zip` 會寫入專案的 `.agents/skills/` 與 `AGENTS.md`，這也是需要提醒的主因。
 - Q5：SKILL.md 的 `allowed-tools` 改用 YAML 列表，逐一列出子命令，不含 `remove-apply`。有兩點未實測：(a) 列表形式是否生效；(b) `remove *` 是否不會匹配到 `remove-apply …`。這兩點依 Claude Code 權限規則推論，要等第一次實際使用時確認。如果 `remove-apply` 沒有跳出權限提示，就改回字串形式，或在說明中補充。
 

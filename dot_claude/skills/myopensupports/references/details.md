@@ -47,4 +47,4 @@ INDEX 建議場景以「不启用」或「暂不启用」開頭的包標〔不�
 
 - 寫清單時若出現「無法寫入…sandbox.excludedCommands」：請使用者在 `~/.claude/settings.json` 的 `sandbox.excludedCommands` 加入 `python3 ~/.claude/skills/myopensupports/scripts/myopensupports *`（照字面，含 `~`），然後重試。不要改用其他方式寫檔。
 - 讀倉庫出現 `Operation not permitted`：請使用者在 `sandbox.filesystem.allowRead` 加入 `AGENT_RULES_REPO` 的路徑。不要自行修改設定。
-- 安裝與 `remove-apply` 都會寫入專案的 `.claude/skills/`，沙箱會擋下，所以一律交由使用者選擇執行方式（見 SKILL.md）。
+- 安裝與 `remove-apply` 都會寫入專案的 `.claude/skills/`，沙箱會擋下，且全局設定 `allowUnsandboxedCommands: false` 讓 `dangerouslyDisableSandbox` 無效，所以一律給 `!` 命令由使用者執行（2026-11-05 使用者決定，原本「讓 Claude 關閉沙箱執行」選項已移除）。

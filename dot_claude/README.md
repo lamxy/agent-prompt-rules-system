@@ -11,7 +11,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 | `skills/myhandoff/` | `myhandoff` 技能：讀寫 `docs/handoff/HANDOFF.md` 的進度交接；`settings.json` 的 `Stop`、`StopFailure` hook 依賴其 `scripts/` |
 | `skills/myconfig/` | `myconfig` 技能：列出本倉庫的場景配置，或在會話中預演並給出安裝命令（寫入由使用者執行）；`scripts/catalog` 現場產生清單。設計見 `docs/plans/2026-10-28-config-install-skill-design.md` |
 | `skills/myplugins/` | `myplugins` 技能：按序號在當前目錄啟用或關閉可選插件（預設直接寫 `.claude/settings.json`，`--local`／`-c` 寫 `.claude/settings.local.json`；`--dry-run`／`-t`／`--test` 先預演、確認後寫入），增刪清單（`~/.claude/myplugins/catalog.json`，首次從 `catalog.default.json` 複製，預設清單更新後用 `sync` 合併）；`scripts/myplugins hint` 供 SessionStart hook 顯示提示。需要的本機設定見下方「myplugins 安裝」 |
-| `skills/myopensupports/` | `myopensupports` 技能：按序號列出本倉庫 `open_supports/` 支持包，產生安裝到目前專案的完整命令（預設參數取自場景清單或安裝腳本示例）與安裝示例，移除專案內本倉庫產生的支持包檔案（先備份），`add`／`sync` 與倉庫 INDEX 比對；必須設定 `AGENT_RULES_REPO`。安裝與移除只給命令，由使用者選擇讓 Claude 關閉沙箱執行或自己 `!` 執行。設計見 `docs/plans/2026-11-05-myopensupports-design.md` |
+| `skills/myopensupports/` | `myopensupports` 技能：按序號列出本倉庫 `open_supports/` 支持包，產生安裝到目前專案的完整命令（預設參數取自場景清單或安裝腳本示例）與安裝示例，移除專案內本倉庫產生的支持包檔案（先備份），`add`／`sync` 與倉庫 INDEX 比對；必須設定 `AGENT_RULES_REPO`。安裝與移除只給命令，由使用者用 `!` 執行（`allowUnsandboxedCommands: false`，Claude 無法關閉沙箱代跑）。設計見 `docs/plans/2026-11-05-myopensupports-design.md` |
 | `settings.json` | 個人使用者層級設定（權限、沙箱、hooks、外掛），與本機 `~/.claude/settings.json` 同步 |
 | `README.md` | 本說明，不會被載入為指令 |
 
