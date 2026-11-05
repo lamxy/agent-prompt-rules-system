@@ -520,7 +520,127 @@ def cmd_append(args):
     print(line)
 
 
-COMMANDS = {"extract": cmd_extract, "append": cmd_append}
+def _mcp_server(tool):
+    parts = tool.split("__")
+    return parts[1] if len(parts) >= 3 else tool
+
+
+def _item_uses(item, metrics):
+    kind, name = item.get("kind"), item.get("name")
+    if kind == "skill":
+        return int((metrics.get("skills") or {}).get(name, 0))
+    if kind == "agent":
+        return int((metrics.get("agents") or {}).get(name, 0))
+    if kind == "mcp":
+        return sum(int(n) for t, n in (metrics.get("mcp") or {}).items() if _mcp_server(t) == name)
+    if kind == "rule":
+        rel = item.get("path") or ""
+        return sum(int(n) for p, n in (metrics.get("rules_loaded") or {}).items()
+                   if p == rel or p.endswith("/" + rel))
+    return None
+
+
+def _scenario_summary(recs):
+    recs = sorted(recs, key=lambda r: r.get("recorded_at") or "")
+    inc = [r for r in recs if r.get("include") is True]
+    out = {"records_total": len(recs), "records_included": len(inc),
+           "scenario_threshold": SCENARIO_THRESHOLD,
+           "scenario_eligible": len(inc) >= SCENARIO_THRESHOLD,
+           "scenario_missing": max(0, SCENARIO_THRESHOLD - len(inc))}
+
+    tasks = {}
+    for r in recs:
+        t = tasks.setdefault(r.get("task") or "?", {"name": r.get("task") or "?", "records": 0,
+                                                     "sessions": set(), "last_status": None})
+        t["records"] += 1
+        t["sessions"].add(r.get("session_id"))
+        t["last_status"] = r.get("status")
+    out["tasks"] = [dict(t, sessions=len(t["sessions"])) for t in tasks.values()]
+
+    dist = {str(i): 0 for i in range(1, 6)}
+    by_source = {"estimated": 0, "user": 0}
+    for r in inc:
+        if str(r.get("satisfaction")) in dist:
+            dist[str(r["satisfaction"])] += 1
+        src = r.get("satisfaction_source")
+        if src in by_source:
+            by_source[src] += 1
+    out["satisfaction"] = {"dist": dist, "by_source": by_source}
+
+    corr = [int(r.get("corrections") or 0) for r in inc]
+    trend = {"n": len(corr), "first_half_avg": None, "second_half_avg": None}
+    if len(corr) >= 4:
+        half = len(corr) // 2
+        trend["first_half_avg"] = round(sum(corr[:half]) / half, 2)
+        trend["second_half_avg"] = round(sum(corr[half:]) / (len(corr) - half), 2)
+    out["interventions_trend"] = trend
+
+    items, unused = {}, {}
+    denials, errors = {}, 0
+    tok = {"input": 0, "cache_creation": 0, "cache_read": 0, "output": 0}
+    for r in inc:
+        m = r.get("metrics") or {}
+        installed = r.get("installed") or []
+        names = {(it.get("kind"), it.get("name")) for it in installed}
+        for it in installed:
+            key = (it.get("kind"), it.get("name"), it.get("hash"))
+            e = items.setdefault(key, {"kind": key[0], "name": key[1], "hash": key[2],
+                                       "first_seen": r.get("recorded_at"), "last_seen": None,
+                                       "records_installed": 0, "records_used": 0, "uses": 0, "missed": 0,
+                                       "item_threshold": ITEM_THRESHOLD})
+            e["last_seen"] = r.get("recorded_at")
+            e["records_installed"] += 1
+            uses = _item_uses(it, m)
+            if uses is None:
+                e["uses"] = None
+            elif uses:
+                e["records_used"] += 1
+                e["uses"] += uses
+            if it.get("name") in (r.get("missed") or []):
+                e["missed"] += 1
+        used = [("skill", k, n) for k, n in (m.get("skills") or {}).items()]
+        used += [("agent", k, n) for k, n in (m.get("agents") or {}).items()]
+        mcp = {}
+        for t, n in (m.get("mcp") or {}).items():
+            _inc(mcp, _mcp_server(t), n)
+        used += [("mcp", k, n) for k, n in mcp.items()]
+        for kind, name, n in used:
+            if (kind, name) not in names:
+                _inc(unused, (kind, name), int(n))
+        for t, n in ((m.get("denials") or {}).get("by_tool") or {}).items():
+            _inc(denials, t, int(n))
+        errors += int((m.get("tool_errors") or {}).get("total") or 0)
+        for k in tok:
+            tok[k] += int((m.get("tokens") or {}).get(k) or 0)
+    for e in items.values():
+        e["item_eligible"] = e["records_installed"] >= ITEM_THRESHOLD
+    out["items"] = sorted(items.values(), key=lambda e: (e["kind"], e["name"], e["first_seen"] or ""))
+    out["used_not_installed"] = [{"kind": k, "name": n, "uses": c} for (k, n), c in sorted(unused.items())]
+    out["denials_by_tool"] = denials
+    out["tool_errors_total"] = errors
+    out["tokens_avg"] = {k: (round(v / len(inc)) if inc else 0) for k, v in tok.items()}
+    return out
+
+
+def summarize(records, scenario=None, bad_lines=0):
+    groups = {}
+    for r in records:
+        s = r.get("scenario") or "unknown"
+        if scenario and s != scenario:
+            continue
+        groups.setdefault(s, []).append(r)
+    return {"bad_lines": bad_lines, "scenarios": {s: _scenario_summary(rs) for s, rs in sorted(groups.items())}}
+
+
+def cmd_summarize(args):
+    home = home_dir()
+    if not os.path.exists(log_path(home)):
+        raise Fail("尚無記錄：%s 不存在。" % log_path(home))
+    records, bad = read_log(home)
+    print(json.dumps(summarize(records, _opt(args, "--scenario"), bad), ensure_ascii=False))
+
+
+COMMANDS = {"extract": cmd_extract, "append": cmd_append, "summarize": cmd_summarize}
 
 
 def main(argv):

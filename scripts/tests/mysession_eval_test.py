@@ -459,5 +459,107 @@ class TestAppend(Base):
         self.assertNotIn("foreign", out["recent_tasks"])
 
 
+# ---- Task 5 ----
+_rec_n = [0]
+
+
+def rec(task="t", session="s", sat=4, include=True, installed=None, skills=None, rules=None,
+        missed=None, corrections=0, scenario="backend-dev", source="estimated"):
+    _rec_n[0] += 1
+    n = _rec_n[0]
+    return {"schema": 1, "recorded_at": "2026-11-05T%02d:%02d:%02dZ" % (n // 3600 % 24, n // 60 % 60, n % 60),
+            "session_id": session, "project": "proj", "scenario": scenario,
+            "installed": installed or [], "task": task, "status": "done",
+            "corrections": corrections, "new_requests": 0, "satisfaction": sat,
+            "satisfaction_source": source, "include": include, "missed": missed or [],
+            "metrics": {"skills": skills or {}, "agents": {}, "mcp": {}, "rules_loaded": rules or {},
+                        "denials": {"total": 0, "by_kind": {}, "by_tool": {}},
+                        "tool_errors": {"total": 0, "sandbox": 0},
+                        "tokens": {"input": 0, "cache_creation": 0, "cache_read": 0, "output": 100}}}
+
+
+def skill_item(name, h="aaaaaaaaaaaa"):
+    return {"kind": "skill", "name": name, "path": ".claude/skills/%s/SKILL.md" % name, "hash": h}
+
+
+def find_item(summary, name, h=None, scenario="backend-dev"):
+    return [it for it in summary["scenarios"][scenario]["items"]
+            if it["name"] == name and (h is None or it["hash"] == h)]
+
+
+class TestSummarize(Base):
+    def test_summarize_thresholds(self):
+        db = skill_item("db")
+        recs = [rec(installed=[db], skills={"db": 1} if i < 3 else {}) for i in range(9)]
+        s = mse.summarize(recs)["scenarios"]["backend-dev"]
+        self.assertFalse(s["scenario_eligible"])
+        self.assertEqual(s["scenario_missing"], 1)
+        it = find_item({"scenarios": {"backend-dev": s}}, "db")[0]
+        self.assertEqual((it["records_installed"], it["records_used"], it["uses"]), (9, 3, 3))
+        self.assertTrue(it["item_eligible"])
+
+    def test_config_versions_split(self):
+        a, b = skill_item("db", "aaaaaaaaaaaa"), skill_item("db", "bbbbbbbbbbbb")
+        recs = [rec(installed=[a]), rec(installed=[a]), rec(installed=[b]), rec(installed=[b])]
+        s = mse.summarize(recs)
+        items = find_item(s, "db")
+        self.assertEqual(len(items), 2)
+        self.assertEqual(sorted(it["records_installed"] for it in items), [2, 2])
+        self.assertFalse(any(it["item_eligible"] for it in items))
+
+    def test_summarize_excluded_records(self):
+        recs = [rec(sat=4), rec(sat=1, include=False)]
+        s = mse.summarize(recs)["scenarios"]["backend-dev"]
+        self.assertEqual((s["records_total"], s["records_included"]), (2, 1))
+        self.assertEqual(s["satisfaction"]["dist"]["1"], 0)
+        self.assertEqual(s["satisfaction"]["dist"]["4"], 1)
+
+    def test_summarize_task_merge(self):
+        s = mse.summarize([rec(task="訂單", session="s1"), rec(task="訂單", session="s2")])
+        tasks = s["scenarios"]["backend-dev"]["tasks"]
+        self.assertEqual(len(tasks), 1)
+        self.assertEqual((tasks[0]["records"], tasks[0]["sessions"]), (2, 2))
+
+    def test_summarize_rule_matched_by_path(self):
+        r = {"kind": "rule", "name": "go/style.md", "path": ".claude/rules/go/style.md", "hash": "cccccccccccc"}
+        s = mse.summarize([rec(installed=[r], rules={"/abs/proj/.claude/rules/go/style.md": 2})])
+        self.assertEqual(find_item(s, "go/style.md")[0]["uses"], 2)
+
+    def test_summarize_missed_counted(self):
+        db = skill_item("db-schema-design")
+        s = mse.summarize([rec(installed=[db], missed=["db-schema-design"]) for _ in range(2)])
+        self.assertEqual(find_item(s, "db-schema-design")[0]["missed"], 2)
+
+    def test_summarize_used_not_installed(self):
+        s = mse.summarize([rec(skills={"superpowers:brainstorming": 2})])
+        self.assertIn({"kind": "skill", "name": "superpowers:brainstorming", "uses": 2},
+                      s["scenarios"]["backend-dev"]["used_not_installed"])
+
+    def test_interventions_trend(self):
+        s = mse.summarize([rec(corrections=c) for c in (4, 2, 1, 1)])["scenarios"]["backend-dev"]
+        self.assertEqual(s["interventions_trend"], {"n": 4, "first_half_avg": 3.0, "second_half_avg": 1.0})
+        small = mse.summarize([rec(corrections=1)])["scenarios"]["backend-dev"]["interventions_trend"]
+        self.assertIsNone(small["first_half_avg"])
+
+    def test_summarize_scenario_filter(self):
+        s = mse.summarize([rec(), rec(scenario="dev-ops")], scenario="dev-ops")
+        self.assertEqual(list(s["scenarios"]), ["dev-ops"])
+
+    def test_summarize_skips_bad_lines(self):
+        seed_log(self.home, [rec()])
+        with open(os.path.join(self.home, "log.jsonl"), "a") as f:
+            f.write("{broken\n")
+        r = self.run_cli("summarize")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        out = json.loads(r.stdout)
+        self.assertEqual(out["bad_lines"], 1)
+        self.assertEqual(out["scenarios"]["backend-dev"]["records_total"], 1)
+
+    def test_summarize_no_log(self):
+        r = self.run_cli("summarize")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("尚無記錄", r.stderr)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)
