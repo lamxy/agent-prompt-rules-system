@@ -39,7 +39,7 @@ ROW_A='| `ost_a_one` | [a/one](https://github.com/a/one) | 工具一 | D（本�
 ROW_G='| `ost_g_glob` | [g/glob](https://github.com/g/glob) | 全域工具 | D（本地 B） | **全局** | ✅ |'
 ROW_O='| `ost_o_spec` | [o/spec](https://github.com/o/spec) | 規格 | A（项目初始化 B） | 主：后端 | ✅ |'
 ROW_E='| `ost_e_empty` | [e/empty](https://github.com/e/empty) | 空包 | D | 暂不启用（由全局插件承担） | — |'
-ROW_X='| `ost_x_ex` | [x/ex](https://github.com/x/ex) | 示例包 | D（本地 B） | 主：前端 | ✅ |'
+ROW_X='| `ost_x_ex` | [x/ex](https://github.com/x/ex) | 示例包 | D（本地 B） | 不直接安装，已挑选到 `agents/` | ✅ |'
 write_index "$ROW_A" "$ROW_G" "$ROW_O" "$ROW_E" "$ROW_X" '| 壞格式 |'
 cat > "$OS/ost_a_one/scripts_for_install/install.sh" <<'EOF'
 #!/bin/sh
@@ -113,6 +113,8 @@ has "$OUT" '注意：INDEX' && pass "malformed row noted" || fail "no malformed 
 printf '%s\n' "$OUT" | grep -q 'ost_a_one.*已安裝' && pass "installed project package marked" || fail "installed mark: $OUT"
 printf '%s\n' "$OUT" | grep -q 'ost_g_glob.*全域（未偵測）' && pass "global-only package marked" || fail "global mark: $OUT"
 printf '%s\n' "$OUT" | grep -q 'ost_o_spec.*未安裝' && pass "not installed marked" || fail "not installed: $OUT"
+printf '%s\n' "$OUT" | grep -q 'ost_e_empty.*〔不啟用〕' && printf '%s\n' "$OUT" | grep -q 'ost_x_ex.*〔手動挑選〕' \
+  && ! printf '%s\n' "$OUT" | grep -q 'ost_o_spec.*〔' && pass "list marks 不啟用 / 手動挑選" || fail "advisory marks: $OUT"
 
 # --- install ---
 run_rc install 1
@@ -123,7 +125,9 @@ has "$OUT" '用法' && has "$OUT" './install.sh --location=global' && pass "inst
 has "$OUT" '不卸載' && fail "install help leaked 说明 section" || pass "install help stops before 说明"
 run_rc install x/ex
 has "$OUT" '取自安裝腳本示例' && has "$OUT" "-t $PROJ -n ost_x_ex -- --target=claude '{PROJECT_DIR}'" \
-  && pass "install: default from script example with path replaced" || fail "x/ex: $OUT"
+  && has "$OUT" '注意：ost_x_ex 在 INDEX 標為手動挑選' && pass "install: default from script example with path replaced, 手動挑選 note" || fail "x/ex: $OUT"
+run_rc install e/empty
+has "$OUT" '注意：ost_e_empty 在 INDEX 標為不啟用' && pass "install: 不啟用 note" || fail "e/empty note: $OUT"
 run_rc install ost_o_spec
 has "$OUT" "-t $PROJ -n ost_o_spec -- --init-project '{PROJECT_DIR}'" && has "$OUT" 'backend-dev' \
   && pass "install: class A with project args uses -t from scene list" || fail "o/spec: $OUT"

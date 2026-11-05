@@ -222,6 +222,16 @@ def resolve(cat, sel):
     return out
 
 
+def advisory(pkg):
+    """INDEX 建議場景標明不安裝時，回傳標籤（不啟用／手動挑選）；否則 None。"""
+    scenes = re.sub(r"^[\W_]+", "", pkg.get("scenes", ""))
+    if scenes.startswith(("不直接安装", "不直接安裝")):
+        return "手動挑選"
+    if scenes.startswith(("不启用", "不啟用", "暂不启用", "暫不啟用")):
+        return "不啟用"
+    return None
+
+
 def installed_state(repo, proj, pkg):
     if os.path.isdir(os.path.join(proj, ".claude", "open_supports", pkg["name"])):
         return "已安裝"
@@ -244,7 +254,9 @@ def cmd_list(repo, cat, proj):
     for i, p in enumerate(cat["packages"], 1):
         st = "倉庫已無" if p["name"] not in dirs else installed_state(repo, proj, p)
         mark = "✅" if st == "已安裝" else ("⚠️" if st == "倉庫已無" else "⬜")
-        print("%3d. %-*s %s %-14s [%s] %s" % (i, w, p["name"], mark, st, p.get("scope") or "-", p.get("purpose", "")))
+        adv = advisory(p)
+        print("%3d. %-*s %s %-14s [%s] %s%s" % (i, w, p["name"], mark, st, p.get("scope") or "-",
+                                             "〔%s〕" % adv if adv else "", p.get("purpose", "")))
     if new:
         note("倉庫有 %d 個新支持包（%s），執行 sync 加入" % (len(new), "、".join(new)))
     if any(p["name"] not in dirs for p in cat["packages"]):
@@ -432,6 +444,12 @@ def cmd_install(repo, cat, proj, sel, custom):
         print("分類：%s　建議場景：%s　用途：%s" % (pkg.get("scope") or "-", pkg.get("scenes") or "-",
                                             pkg.get("purpose") or "-"))
         print("目標專案：%s" % proj)
+        adv = advisory(pkg)
+        if adv == "不啟用":
+            note("%s 在 INDEX 標為不啟用（%s）；不建議安裝，預設參數僅供參考" % (pkg["name"], pkg.get("scenes")))
+        elif adv == "手動挑選":
+            note("%s 在 INDEX 標為手動挑選（%s）；不建議直接安裝，需要的內容已挑選進本倉庫，預設參數僅供參考"
+                 % (pkg["name"], pkg.get("scenes")))
         defaults = default_args(repo, pkg)
         if custom is not None:
             args, src = " ".join(custom), "自訂參數"
