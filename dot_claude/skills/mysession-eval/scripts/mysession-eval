@@ -393,13 +393,134 @@ def cmd_extract(args):
     msgs, omitted = user_messages(entries, start, end)
     proj = project_dir()
     items = inventory(proj)
-    out = {"session_id": sid, "project": os.path.basename(os.path.abspath(proj)),
+    name = os.path.basename(os.path.abspath(proj))
+    out = {"session_id": sid, "project": name,
            "scenario": detect_scenario(proj, items, load_scenarios()), "installed": items,
-           "segment": metrics, "user_messages": msgs, "user_messages_omitted": omitted}
+           "segment": metrics, "user_messages": msgs, "user_messages_omitted": omitted,
+           "recent_tasks": recent_tasks(home_dir(), name)}
     print(json.dumps(out, ensure_ascii=False))
 
 
-COMMANDS = {"extract": cmd_extract}
+SCHEMA = 1
+SCENARIO_THRESHOLD = 10
+ITEM_THRESHOLD = 3
+RECENT_TASKS = 10
+
+
+def home_dir():
+    return os.environ.get("MSE_HOME") or os.path.join(claude_dir(), SKILL_NAME)
+
+
+def log_path(home):
+    return os.path.join(home, "log.jsonl")
+
+
+def read_log(home):
+    """Returns (records, bad_line_count)."""
+    path = log_path(home)
+    if not os.path.exists(path):
+        return [], 0
+    records, bad = [], 0
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            try:
+                d = json.loads(line)
+            except ValueError:
+                bad += 1
+                continue
+            if isinstance(d, dict):
+                records.append(d)
+            else:
+                bad += 1
+    return records, bad
+
+
+def recent_tasks(home, project):
+    out = []
+    for r in reversed(read_log(home)[0]):
+        t = r.get("task")
+        if r.get("project") == project and t and t not in out:
+            out.append(t)
+        if len(out) >= RECENT_TASKS:
+            break
+    return out
+
+
+def scenario_counts(home, scenario):
+    recs = [r for r in read_log(home)[0] if r.get("scenario") == scenario]
+    return sum(1 for r in recs if r.get("include") is True), len(recs)
+
+
+def _int_opt(args, name, lo=0, hi=None):
+    raw = _opt(args, name)
+    if raw is None:
+        raise Fail("缺少 %s" % name)
+    try:
+        v = int(raw)
+    except ValueError:
+        raise Fail("%s 必須是整數：%s" % (name, raw))
+    if v < lo or (hi is not None and v > hi):
+        raise Fail("%s 超出範圍：%s" % (name, raw))
+    return v
+
+
+def _choice_opt(args, name, choices):
+    v = _opt(args, name)
+    if v not in choices:
+        raise Fail("%s 必須是 %s 之一" % (name, "／".join(choices)))
+    return v
+
+
+def cmd_append(args):
+    task = (_opt(args, "--task") or "").strip()
+    if not task:
+        raise Fail("缺少 --task")
+    status = _choice_opt(args, "--status", ("done", "partial", "aborted"))
+    corrections = _int_opt(args, "--corrections")
+    new_requests = _int_opt(args, "--new-requests")
+    sat = _int_opt(args, "--satisfaction", 1, 5)
+    sat_source = _choice_opt(args, "--sat-source", ("estimated", "user"))
+    include = _choice_opt(args, "--include", ("yes", "no")) == "yes"
+    reason = (_opt(args, "--exclude-reason") or "").strip()
+    if not include and not reason:
+        raise Fail("--include no 時必須給 --exclude-reason")
+    missed = [x.strip() for x in (_opt(args, "--missed") or "").split(",") if x.strip()]
+
+    sid, entries, start, end, metrics = _session_segment(args)
+    if metrics["empty"]:
+        raise Fail("自上次記錄後沒有新活動，不寫入。")
+    proj = project_dir()
+    items = inventory(proj)
+    scenario = _opt(args, "--scenario") or detect_scenario(proj, items, load_scenarios()) or "unknown"
+    import datetime
+    record = {
+        "schema": SCHEMA,
+        "recorded_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "session_id": sid, "project": os.path.basename(os.path.abspath(proj)), "scenario": scenario,
+        "installed": items, "metrics": metrics, "task": task, "status": status,
+        "corrections": corrections, "new_requests": new_requests,
+        "satisfaction": sat, "satisfaction_source": sat_source,
+        "basis": (_opt(args, "--basis") or "").strip(), "include": include,
+        "exclude_reason": reason, "missed": missed, "note": (_opt(args, "--note") or "").strip(),
+    }
+    home = home_dir()
+    os.makedirs(home, exist_ok=True)
+    with open(log_path(home), "a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    included, _ = scenario_counts(home, scenario)
+    line = "已記錄：%s（%s，滿意度 %d〔%s〕）。%s 已累積 %d 筆列入判定，場景判定門檻 %d 筆" % (
+        task, scenario, sat, "推定" if sat_source == "estimated" else "使用者確認",
+        scenario, included, SCENARIO_THRESHOLD)
+    if included >= SCENARIO_THRESHOLD:
+        line += "，可覆盤"
+    if not include:
+        line += "（本筆不列入判定：%s）" % reason
+    print(line)
+
+
+COMMANDS = {"extract": cmd_extract, "append": cmd_append}
 
 
 def main(argv):

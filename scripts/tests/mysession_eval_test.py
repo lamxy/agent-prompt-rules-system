@@ -361,5 +361,103 @@ class TestInventory(Base):
         self.assertEqual(len(out["installed"]), 7)
 
 
+# ---- Task 4 ----
+APPEND_OK = ["append", "--task", "建立訂單表", "--status", "done", "--corrections", "1", "--new-requests", "0",
+             "--satisfaction", "4", "--sat-source", "estimated", "--basis", "一次糾正後完成", "--include", "yes"]
+
+
+def log_lines(home):
+    path = os.path.join(home, "log.jsonl")
+    if not os.path.exists(path):
+        return []
+    with open(path, encoding="utf-8") as f:
+        return [json.loads(l) for l in f if l.strip()]
+
+
+def seed_log(home, records):
+    os.makedirs(home, exist_ok=True)
+    with open(os.path.join(home, "log.jsonl"), "a", encoding="utf-8") as f:
+        for r in records:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
+class TestAppend(Base):
+    def setUp(self):
+        super().setUp()
+        put(self.proj, "CLAUDE.md", "# CLAUDE.md — 后端开发（Go）\n")
+        self.write_session("s1", [user("do SECRETMARK work"), assistant_text(), invoke()])
+
+    def test_append_writes_one_line(self):
+        self.assertEqual(self.run_cli(*APPEND_OK).returncode, 0)
+        r = self.run_cli(*APPEND_OK)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        lines = log_lines(self.home)
+        self.assertEqual(len(lines), 2)
+        rec = lines[0]
+        self.assertEqual(rec["schema"], 1)
+        self.assertIs(rec["include"], True)
+        self.assertEqual(rec["scenario"], "backend-dev")
+        self.assertEqual(rec["task"], "建立訂單表")
+        self.assertEqual((rec["corrections"], rec["new_requests"], rec["satisfaction"]), (1, 0, 4))
+        self.assertEqual(rec["satisfaction_source"], "estimated")
+        self.assertEqual(rec["metrics"]["turns"], 1)
+        self.assertEqual(rec["session_id"], "s1")
+
+    def test_append_record_has_no_user_text(self):
+        self.run_cli(*APPEND_OK)
+        with open(os.path.join(self.home, "log.jsonl"), encoding="utf-8") as f:
+            self.assertNotIn("SECRETMARK", f.read())
+
+    def test_append_validation(self):
+        bad_sat = list(APPEND_OK)
+        bad_sat[bad_sat.index("--satisfaction") + 1] = "6"
+        r = self.run_cli(*bad_sat)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("超出範圍", r.stderr)
+        no_reason = list(APPEND_OK)
+        no_reason[no_reason.index("--include") + 1] = "no"
+        r = self.run_cli(*no_reason)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("--exclude-reason", r.stderr)
+        self.assertEqual(log_lines(self.home), [])
+
+    def test_append_empty_segment_refused(self):
+        self.write_session("s2", [user("a"), invoke(), script_call("t1"), script_result("t1"), invoke()])
+        r = self.run_cli(*APPEND_OK, sid="s2")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("沒有新活動", r.stderr)
+        self.assertEqual(log_lines(self.home), [])
+
+    def test_append_summary_counter(self):
+        seed_log(self.home, [{"schema": 1, "scenario": "backend-dev", "include": True, "project": "proj",
+                              "task": "t%d" % i} for i in range(8)])
+        out9 = self.run_cli(*APPEND_OK).stdout
+        self.assertIn("已累積 9 筆", out9)
+        self.assertNotIn("可覆盤", out9)
+        out10 = self.run_cli(*APPEND_OK).stdout
+        self.assertIn("已累積 10 筆", out10)
+        self.assertIn("可覆盤", out10)
+
+    def test_append_unknown_scenario(self):
+        os.remove(os.path.join(self.proj, "CLAUDE.md"))
+        self.run_cli(*APPEND_OK)
+        self.assertEqual(log_lines(self.home)[0]["scenario"], "unknown")
+
+    def test_append_missed_list(self):
+        self.run_cli(*(APPEND_OK + ["--missed", "a,b"]))
+        self.run_cli(*APPEND_OK)
+        lines = log_lines(self.home)
+        self.assertEqual(lines[0]["missed"], ["a", "b"])
+        self.assertEqual(lines[1]["missed"], [])
+
+    def test_extract_recent_tasks(self):
+        seed_log(self.home, [{"schema": 1, "project": "proj", "task": "t%02d" % i} for i in range(12)]
+                 + [{"schema": 1, "project": "other", "task": "foreign"}])
+        out = json.loads(self.run_cli("extract").stdout)
+        self.assertEqual(len(out["recent_tasks"]), 10)
+        self.assertEqual(out["recent_tasks"][0], "t11")
+        self.assertNotIn("foreign", out["recent_tasks"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)
