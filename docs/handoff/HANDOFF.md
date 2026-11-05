@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 565b7ec
+head: c8d5f7c
 status: active
 updated: 2026-11-05
 ---
@@ -54,7 +54,7 @@ updated: 2026-11-05
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
 | 可选插件技能 `myplugins` | 已实现、本机已安装并按用户试用调整（2026-11-04，`5b5425d`～`ac254c2`、`64ef966`，已随 v2.5.0 推送）；2026-11-05 `-t` 与共享模式实测、预演状态行修改（`9bbddda`，未推送） | 见「续作时必须知道的事」→「myplugins」；安装步骤在 `dot_claude/README.md`「myplugins 安装」 |
-| 支持包技能 `myopensupports` | 已实现、测试通过、交叉审核已处理（2026-11-05）；用户手动 `cp` 安装后又改了 SKILL.md、details.md（`fb1d0fd`：去掉「Claude 关闭沙箱执行」，安装与 `remove-apply` 只给 `!` 命令），临时项目实测通过（2026-11-05）；Q5 实测：`autoAllowBashIfSandboxed` 下 `remove-apply` 不跳权限提示，文件已改、`remove-apply` 改为先搬 `skills/` 且失败回滚（`bd1518e`），本机副本已同步（`diff -r` 一致）；临时项目 `~/workspace/tmp-mos-test` 待用户决定是否删除 | `dot_claude/skills/myopensupports/`；设计与疑问 `docs/plans/2026-11-05-myopensupports-design.md`，计划 `docs/plans/2026-11-05-myopensupports-plan.md` |
+| 支持包技能 `myopensupports` | 已实现、测试通过、交叉审核已处理（2026-11-05）；用户手动 `cp` 安装后又改了 SKILL.md、details.md（`fb1d0fd`：去掉「Claude 关闭沙箱执行」，安装与 `remove-apply` 只给 `!` 命令），临时项目实测通过（2026-11-05）；Q5 实测：`autoAllowBashIfSandboxed` 下 `remove-apply` 不跳权限提示，文件已改、`remove-apply` 改为先搬 `skills/` 且失败回滚（`bd1518e`），本机副本已同步（`diff -r` 一致）；临时项目 `~/workspace/tmp-mos-test` 已由用户删除 | `dot_claude/skills/myopensupports/`；设计与疑问 `docs/plans/2026-11-05-myopensupports-design.md`，计划 `docs/plans/2026-11-05-myopensupports-plan.md` |
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
 | 配置安装技能 `myconfig`（列出／安装本仓库配置） | 已实现并发布 v2.4.0（2026-10-29）；用户已在本机安装，`/myconfig` 列表模式正常 | `dot_claude/skills/myconfig/`；设计 `docs/plans/2026-10-28-config-install-skill-design.md` §11。`claude -p` 实测：沙箱禁止会话内写 `.claude/settings.json`、`skills/`、`hooks/`，改为技能只预演、写入交付命令由用户执行；跨项目使用需把仓库路径与 `~/.claude/skills/myconfig` 加进 `sandbox.filesystem.allowRead`；两轮子代理交叉审查意见已全部处理 |
 
@@ -493,4 +493,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | myopensupports 标示与本机安装 | INDEX 建议场景「不启用／暂不启用」标〔不启用〕、「不直接安装」标〔手动挑选〕，install 印注意（`68307d2`）；用户手动 `cp` 安装，会话即时识别技能 | Q3、Q5 待首次使用验证 |
 | 2026-11-05 | 沙箱 `allowRead` 修正（test2 会话） | `.` 改 `~/.claude`，加 `~/workspace`、`~/.config/git/ignore`，`denyRead` 加 `~/workspace/documents`；镜像、模板与 README（`cb63add`） | `dot_claude_legacy/` 不改 |
 | 2026-11-05 | myopensupports 只给 `!` 命令 | 因 `allowUnsandboxedCommands: false`，去掉「Claude 关闭沙箱执行」，Q3 结案（`fb1d0fd`） | 本机副本已同步；Q5 待首次使用验证 |
-| 2026-11-05 | myopensupports 实测与回滚修正 | 临时项目走完 list／install 方案／`--skills-only`／remove／`remove-apply`；Q5 实测不跳权限提示（`autoAllowBashIfSandboxed`），文件改正；`remove-apply` 先搬 `skills/`、失败回滚并加测试（`bd1518e`） | 本机副本已同步；`~/workspace/tmp-mos-test` 待清理 |
+| 2026-11-05 | myopensupports 实测与回滚修正 | 临时项目走完 list／install 方案／`--skills-only`／remove／`remove-apply`；Q5 实测不跳权限提示（`autoAllowBashIfSandboxed`），文件改正；`remove-apply` 先搬 `skills/`、失败回滚并加测试（`bd1518e`） | 本机副本已同步；临时项目已删除 |
