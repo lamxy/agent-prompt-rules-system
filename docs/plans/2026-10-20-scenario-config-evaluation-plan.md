@@ -184,8 +184,10 @@
   - 位置与安装：`dot_claude/skills/mysession-eval/`（`SKILL.md` + Python 脚本），本仓库测试后同步到 `~/.claude/skills/`；脚本命令加进 `sandbox.excludedCommands`（同 myplugins，用 `~` 路径）
   - `/mysession-eval`：脚本解析本次会话记录（`~/.claude/projects/<项目>/<会话>.jsonl`）得到客观指标（skill／agent／MCP 调用、权限拒绝、工具错误、token），只输出汇总、不把原文带进上下文；主观数据（满意度 1～5、干预次数、备注）由参数或一次提问取得；每条一行 JSON 写入 `~/.claude/mysession-eval/`（不进项目与本仓库）；排除 `mysession-eval` 自身的调用
   - `/mysession-eval review [场景]`：汇总日志，对照 3.5 判定表给出初判；结论去识别化后写回本仓库
-  - 成本估计（未实测，参照 myplugins 每次约 2.9k）：常驻 0～150（设 `disable-model-invocation: true` 时是否不占清单，未验证）；每次记录约 3～4k；每次复盘约 6～12k；一次性开发约 80～150k；2 场景 × 10 会话、复盘 2 次合计约 90k，与事后手工分析（约 40～100k）相近，收益主要是用户时间与数据一致性
-  - 待验证：能否取得当前会话 id（否则取项目目录下最新 jsonl）；`disable-model-invocation` 对清单的影响
+  - 成本估计（除常驻外未实测，参照 myplugins 每次约 2.9k）：常驻 0（设 `disable-model-invocation: true`，已验证见下）；每次记录约 3～4k；每次复盘约 6～12k；一次性开发约 80～150k；2 场景 × 10 会话、复盘 2 次合计约 90k，与事后手工分析（约 40～100k）相近，收益主要是用户时间与数据一致性
+  - 已验证（2026-11-05，Claude Code 2.1.318，scratchpad 临时项目，`-p` 与互动模式各一次）：
+    - 当前会话 id：Bash 环境变量 `CLAUDE_CODE_SESSION_ID` 与 skill 内 `${CLAUDE_SESSION_ID}` 替换都等于 `~/.claude/projects/<项目>/<id>.jsonl` 的文件名；`--resume` 沿用原 id 与文件，`--fork-session` 换新 id 与新文件（以上为 `-p`；互动模式只核对了环境变量与文件名一致，替换未测）。脚本据此定位会话记录，不用「取最新 jsonl」
+    - `disable-model-invocation: true`：该 skill 不出现在会话记录的 `skill_listing` 附件中（对照组未设的 skill 出现），仍可用 `/<名称>` 手动调用
   - 不采用：SessionEnd hook 自动记录（会在非试用项目留痕，用户要求主动调用）
 
 ### 3.5 判定与回归
