@@ -173,5 +173,118 @@ class TestSessionAndBounds(Base):
         self.assertFalse(mse.is_invocation(meta("<command-name>/mysession-eval</command-name>")))
 
 
+# ---- Task 2 ----
+def nested_rule(path):
+    return {"type": "attachment", "timestamp": _stamp(),
+            "attachment": {"type": "nested_memory", "path": path,
+                           "content": {"path": path, "type": "Project", "content": "rule"}}}
+
+
+def metrics_of(entries, subagent_dir=None):
+    return mse.segment_metrics(entries, 0, len(entries), subagent_dir)
+
+
+class TestMetrics(Base):
+    def test_metrics_skill_slash_and_tool(self):
+        es = [tool_use("Skill", {"skill": "db-schema-design"}, "k1"), tool_result("k1"),
+              slash("myplugins", "3"), meta("Base directory for this skill: /x/myplugins"),
+              slash("clear"), user("hi")]
+        self.assertEqual(metrics_of(es)["skills"], {"db-schema-design": 1, "myplugins": 1})
+
+    def test_metrics_agents_mcp_rules(self):
+        es = [tool_use("Agent", {"prompt": "x"}, "a1"), tool_result("a1"),
+              tool_use("mcp__x__q", {}, "q1"), tool_result("q1"),
+              tool_use("mcp__x__q", {}, "q2"), tool_result("q2"),
+              nested_rule("/p/.claude/rules/go.md")]
+        m = metrics_of(es)
+        self.assertEqual(m["agents"], {"general-purpose": 1})
+        self.assertEqual(m["mcp"], {"mcp__x__q": 2})
+        self.assertEqual(m["rules_loaded"], {"/p/.claude/rules/go.md": 1})
+
+    def test_metrics_denials_and_errors(self):
+        es = [tool_use("Read", {}, "d1"),
+              tool_result("d1", "File is in a directory that is denied by your permission settings.", True),
+              tool_use("Bash", {"command": "rm x"}, "d2"),
+              tool_result("d2", "Permission to use Bash with command rm x has been denied.", True),
+              tool_use("Bash", {"command": "ls"}, "d3"),
+              tool_result("d3", "Claude requested permissions to use Bash, but you haven't granted it yet.", True),
+              tool_use("Bash", {"command": "false"}, "e1"), tool_result("e1", "Exit code 1", True),
+              tool_use("Bash", {"command": "cat .env"}, "e2"),
+              tool_result("e2", "cat: .env: Operation not permitted", True)]
+        m = metrics_of(es)
+        self.assertEqual(m["denials"]["total"], 3)
+        self.assertEqual(m["denials"]["by_kind"], {"deny_rule": 1, "denied": 1, "not_granted": 1})
+        self.assertEqual(m["denials"]["by_tool"], {"Read": 1, "Bash": 2})
+        self.assertEqual(m["tool_errors"], {"total": 2, "sandbox": 1})
+
+    def test_metrics_interrupt_compact(self):
+        es = [user_blocks("[Request interrupted by user for tool use]"),
+              {"type": "system", "subtype": "compact_boundary", "timestamp": _stamp()}]
+        m = metrics_of(es)
+        self.assertEqual(m["interrupts"], 1)
+        self.assertEqual(m["compactions"], 1)
+
+    def test_tokens_dedup_by_message_id(self):
+        u = {"input_tokens": 1, "cache_creation_input_tokens": 2, "cache_read_input_tokens": 3, "output_tokens": 10}
+        es = [assistant_text("a", "same", u), assistant_text("b", "same", u), assistant_text("c", "same", u)]
+        self.assertEqual(metrics_of(es)["tokens"], {"input": 1, "cache_creation": 2, "cache_read": 3, "output": 10})
+
+    def test_metrics_exclude_skill_script(self):
+        es = [script_call("s1"), tool_result("s1", "Exit code 1", True)]
+        self.assertEqual(metrics_of(es)["tool_errors"]["total"], 0)
+
+    def test_subagent_linked_by_tool_use_id(self):
+        sub = os.path.join(self.tmp, "subagents")
+        os.makedirs(sub)
+        with open(os.path.join(sub, "agent-x.meta.json"), "w") as f:
+            json.dump({"toolUseId": "a1"}, f)
+        with open(os.path.join(sub, "agent-x.jsonl"), "w") as f:
+            for e in [tool_use("mcp__y__z", {}, "z1", usage={"output_tokens": 5}), tool_result("z1")]:
+                f.write(json.dumps(e) + "\n")
+        es = [tool_use("Agent", {"subagent_type": "Explore"}, "a1"), tool_result("a1")]
+        m = metrics_of(es, sub)
+        self.assertEqual(m["subagents"]["count"], 1)
+        self.assertEqual(m["subagents"]["mcp"], {"mcp__y__z": 1})
+        self.assertEqual(m["subagents"]["tokens"]["output"], 5)
+        self.assertEqual(metrics_of([tool_use("Agent", {}, "other"), tool_result("other")], sub)["subagents"]["count"], 0)
+
+    def test_turns_and_empty(self):
+        m = metrics_of([user("a"), assistant_text(), user("b")])
+        self.assertEqual(m["turns"], 2)
+        self.assertFalse(m["empty"])
+        self.assertTrue(mse.segment_metrics([user("a")], 1, 1, None)["empty"])
+
+    def test_user_messages_cleaned(self):
+        es = [user("fix it<system-reminder>secret hint</system-reminder>"), slash("foo", "bar"),
+              tool_result("t", "tool output"), meta("meta text"),
+              user("<local-command-stdout>x</local-command-stdout>")]
+        msgs, omitted = mse.user_messages(es, 0, len(es))
+        self.assertEqual(msgs, ["fix it", "/foo bar"])
+        self.assertEqual(omitted, 0)
+
+    def test_user_messages_capped(self):
+        es = [user(("m%03d " % i) + "x" * 1000) for i in range(100)]
+        msgs, omitted = mse.user_messages(es, 0, len(es))
+        self.assertEqual(len(msgs), 30)
+        self.assertTrue(all(len(m) <= 300 for m in msgs))
+        self.assertEqual(omitted, 70)
+        self.assertTrue(msgs[0].startswith("m000") and msgs[9].startswith("m009") and msgs[10].startswith("m080"))
+
+    def test_extract_cli(self):
+        self.write_session("s1", [user("do work"), assistant_text(), invoke()])
+        r = self.run_cli("extract")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        out = json.loads(r.stdout)
+        self.assertEqual(out["session_id"], "s1")
+        self.assertEqual(out["project"], "proj")
+        self.assertEqual(out["segment"]["turns"], 1)
+        self.assertEqual(out["user_messages"], ["do work"])
+
+    def test_extract_cli_no_session_env(self):
+        r = self.run_cli("extract", sid=None)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("CLAUDE_CODE_SESSION_ID", r.stderr)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

@@ -105,10 +105,235 @@ def segment_bounds(entries):
     return start, end
 
 
+SKILL_META_PREFIX = "Base directory for this skill:"
+INTERRUPT_PREFIX = "[Request interrupted by user"
+DENIAL_KINDS = (
+    ("deny_rule", "is in a directory that is denied by your permission settings"),
+    ("denied", "has been denied"),
+    ("not_granted", "but you haven't granted it yet"),
+)
+SANDBOX_MARK = "Operation not permitted"
+MSG_MAX_CHARS = 300
+MSG_HEAD, MSG_TAIL = 10, 20
+
+
+def _text_of(entry):
+    c = _content(entry)
+    if isinstance(c, str):
+        return c
+    return "\n".join(b.get("text", "") for b in _blocks(entry) if b.get("type") == "text")
+
+
+def _result_text(block):
+    c = block.get("content")
+    if isinstance(c, list):
+        return "\n".join(x.get("text", "") for x in c if isinstance(x, dict))
+    return c if isinstance(c, str) else ""
+
+
+def _slash_name(text):
+    if "<command-name>/" not in text:
+        return None
+    return text.split("<command-name>/", 1)[1].split("</command-name>", 1)[0].strip()
+
+
+def _new_counts():
+    return {"skills": {}, "agents": {}, "mcp": {}, "rules_loaded": {},
+            "denials": {"total": 0, "by_kind": {}, "by_tool": {}},
+            "tool_errors": {"total": 0, "sandbox": 0}, "interrupts": 0, "compactions": 0,
+            "tokens": {"input": 0, "cache_creation": 0, "cache_read": 0, "output": 0}}
+
+
+def _inc(d, key, n=1):
+    d[key] = d.get(key, 0) + n
+
+
+def _count(entries, lo, hi):
+    """Count objective signals in entries[lo:hi]; returns (counts, agent tool_use ids)."""
+    c = _new_counts()
+    names, skip, seen_msg, agent_ids = {}, set(), set(), set()
+    for i in range(lo, hi):
+        e = entries[i]
+        t = e.get("type")
+        skip |= is_skill_script_call(e)
+        if t == "assistant":
+            msg = e.get("message") or {}
+            mid = msg.get("id")
+            usage = msg.get("usage")
+            if isinstance(usage, dict) and (mid is None or mid not in seen_msg):
+                if mid is not None:
+                    seen_msg.add(mid)
+                for k, src in (("input", "input_tokens"), ("cache_creation", "cache_creation_input_tokens"),
+                               ("cache_read", "cache_read_input_tokens"), ("output", "output_tokens")):
+                    c["tokens"][k] += int(usage.get(src) or 0)
+            for b in _blocks(e):
+                if b.get("type") != "tool_use" or b.get("id") in skip:
+                    continue
+                name, inp = b.get("name") or "", b.get("input") or {}
+                names[b.get("id")] = name
+                if name == "Skill" and inp.get("skill"):
+                    _inc(c["skills"], inp["skill"])
+                elif name in ("Agent", "Task"):
+                    _inc(c["agents"], inp.get("subagent_type") or "general-purpose")
+                    agent_ids.add(b.get("id"))
+                elif name.startswith("mcp__"):
+                    _inc(c["mcp"], name)
+        elif t == "user":
+            if not e.get("isMeta"):
+                text = _text_of(e)
+                if text.lstrip().startswith(INTERRUPT_PREFIX):
+                    c["interrupts"] += 1
+                sname = _slash_name(text) if isinstance(_content(e), str) else None
+                if sname and sname != SKILL_NAME and i + 1 < len(entries):
+                    nxt = entries[i + 1]
+                    if nxt.get("isMeta") and _text_of(nxt).lstrip().startswith(SKILL_META_PREFIX):
+                        _inc(c["skills"], sname)
+            for b in _blocks(e):
+                if b.get("type") != "tool_result" or not b.get("is_error") or b.get("tool_use_id") in skip:
+                    continue
+                text = _result_text(b)
+                kind = next((k for k, mark in DENIAL_KINDS if mark in text), None)
+                if kind:
+                    c["denials"]["total"] += 1
+                    _inc(c["denials"]["by_kind"], kind)
+                    _inc(c["denials"]["by_tool"], names.get(b.get("tool_use_id"), "?"))
+                else:
+                    c["tool_errors"]["total"] += 1
+                    if SANDBOX_MARK in text:
+                        c["tool_errors"]["sandbox"] += 1
+        elif t == "attachment":
+            a = e.get("attachment") or {}
+            if a.get("type") == "nested_memory":
+                path = a.get("path") or (a.get("content") or {}).get("path")
+                if path:
+                    _inc(c["rules_loaded"], path)
+        elif t == "system" and e.get("subtype") == "compact_boundary":
+            c["compactions"] += 1
+    return c, agent_ids
+
+
+def _is_prompt(entry):
+    if entry.get("type") != "user" or entry.get("isMeta") or entry.get("isCompactSummary"):
+        return False
+    c = _content(entry)
+    if isinstance(c, list) and not any(b.get("type") == "text" for b in _blocks(entry)):
+        return False
+    text = _text_of(entry).strip()
+    if not text or text.startswith(INTERRUPT_PREFIX) or text.startswith("<local-command-"):
+        return False
+    return True
+
+
+def _subagents(subagent_dir, agent_ids):
+    out = {"count": 0, "tokens": {"input": 0, "cache_creation": 0, "cache_read": 0, "output": 0},
+           "mcp": {}, "denials_total": 0, "tool_errors_total": 0}
+    if not subagent_dir or not agent_ids or not os.path.isdir(subagent_dir):
+        return out
+    for meta_path in sorted(glob.glob(os.path.join(subagent_dir, "agent-*.meta.json"))):
+        try:
+            with open(meta_path, encoding="utf-8") as f:
+                meta = json.load(f)
+        except (OSError, ValueError):
+            continue
+        if meta.get("toolUseId") not in agent_ids:
+            continue
+        log = meta_path[: -len(".meta.json")] + ".jsonl"
+        if not os.path.exists(log):
+            continue
+        es = load_entries(log)
+        c, _ = _count(es, 0, len(es))
+        out["count"] += 1
+        for k in out["tokens"]:
+            out["tokens"][k] += c["tokens"][k]
+        for k, n in c["mcp"].items():
+            _inc(out["mcp"], k, n)
+        out["denials_total"] += c["denials"]["total"]
+        out["tool_errors_total"] += c["tool_errors"]["total"]
+    return out
+
+
+def segment_metrics(entries, start, end, subagent_dir):
+    c, agent_ids = _count(entries, start, end)
+    stamps = [e.get("timestamp") for e in entries[start:end] if e.get("timestamp")]
+    c["turns"] = sum(1 for e in entries[start:end] if _is_prompt(e))
+    c["empty"] = start >= end or c["turns"] == 0
+    c["start_ts"] = stamps[0] if stamps else None
+    c["end_ts"] = stamps[-1] if stamps else None
+    c["subagents"] = _subagents(subagent_dir, agent_ids)
+    return c
+
+
+def _clean_message(text):
+    out = []
+    while "<system-reminder>" in text:
+        head, rest = text.split("<system-reminder>", 1)
+        out.append(head)
+        text = rest.split("</system-reminder>", 1)[1] if "</system-reminder>" in rest else ""
+    out.append(text)
+    text = "".join(out).strip()
+    name = _slash_name(text)
+    if name:
+        args = ""
+        if "<command-args>" in text:
+            args = text.split("<command-args>", 1)[1].split("</command-args>", 1)[0].strip()
+        text = ("/%s %s" % (name, args)).strip()
+    return text
+
+
+def user_messages(entries, start, end, max_chars=MSG_MAX_CHARS, max_count=MSG_HEAD + MSG_TAIL):
+    msgs = []
+    for e in entries[start:end]:
+        if not _is_prompt(e):
+            continue
+        text = _clean_message(_text_of(e))
+        if text:
+            msgs.append(text[:max_chars])
+    if len(msgs) <= max_count:
+        return msgs, 0
+    tail = max_count - MSG_HEAD
+    return msgs[:MSG_HEAD] + msgs[-tail:], len(msgs) - max_count
+
+
+def project_dir():
+    return os.environ.get("MSE_PROJECT_DIR") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+
+
+def _opt(args, name, default=None):
+    if name in args:
+        i = args.index(name)
+        if i + 1 >= len(args):
+            raise Fail("%s 缺少值" % name)
+        return args[i + 1]
+    return default
+
+
+def _session_segment(args):
+    sid = _opt(args, "--session") or os.environ.get("CLAUDE_CODE_SESSION_ID", "")
+    path = find_session_file(sid, claude_dir())
+    entries = load_entries(path)
+    start, end = segment_bounds(entries)
+    metrics = segment_metrics(entries, start, end, os.path.join(path[: -len(".jsonl")], "subagents"))
+    return sid.strip(), entries, start, end, metrics
+
+
+def cmd_extract(args):
+    sid, entries, start, end, metrics = _session_segment(args)
+    msgs, omitted = user_messages(entries, start, end)
+    out = {"session_id": sid, "project": os.path.basename(os.path.abspath(project_dir())),
+           "segment": metrics, "user_messages": msgs, "user_messages_omitted": omitted}
+    print(json.dumps(out, ensure_ascii=False))
+
+
+COMMANDS = {"extract": cmd_extract}
+
+
 def main(argv):
     if not argv:
         raise Fail("缺少子命令：extract、append 或 summarize。")
-    raise Fail("未知子命令：%s" % argv[0])
+    fn = COMMANDS.get(argv[0])
+    if not fn:
+        raise Fail("未知子命令：%s" % argv[0])
+    fn(argv[1:])
 
 
 if __name__ == "__main__":
