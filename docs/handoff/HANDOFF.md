@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 9d43f5f
+head: 3844761
 status: active
 updated: 2026-11-05
 ---
@@ -34,7 +34,8 @@ updated: 2026-11-05
 - 2026-11-04～05：阶段 3 待确认项全部处理：B-9 调研后用户选方案 C（`docs/research/2026-11-layering-strictness.md`，规则与 depguard `078674c`）；D-4（`250f03d`）；gsd-core 移出前端默认、主场景改后端且默认不启用（`8c1da27`）；全局 deny 改前缀 ask（`6416e56`，本机已同步）；OpenSpec 安装脚本 Corepack 卡住修复（`06b7902`）；删除 `docs/recommend_repos/`、`examples/`（`8eb2ef7`）；推送并发布 v2.5.0
 - 2026-11-05：**3.2 静态验证完成**：`scripts/tests/test-scenario-bundles.sh`（四场景真实安装）、`scripts/smoke/claude-config-smoke.sh`（`claude mcp list`）、`scripts/smoke/permissions-smoke.sh`（36 条抽样）；实测发现 RTK hook 使 `Read` deny 在沙箱关闭时失效，已在本机 RTK 加 `exclude_commands`，`Read` deny 扩充 20 条（`.env` 系列、凭据、历史记录，`.env.example` 放行；`76c6d27`、`8f0029c`、`f2561b9`，未推送）
 - 2026-11-05（续）：myplugins、myconfig 未验证项用 `claude -p` 与互动模式实测通过，myplugins 预演状态行、myconfig 补档 `cp` 例外与回报计数已修（本机副本已同步）；`claude plugin eval` 纳入计划 3.3 先小型试跑（暂不执行）；交叉评审不做、子 shell 缺口不回报、B0 取消；本机测验残留已清理。2026-11-05 用户指示推送，`origin/main` 已更新至 `9d43f5f`（含 myopensupports 与沙箱修正共 40 笔）
-- 下一步：先做 `mysession-eval`（用户 2026-11-05 决定要做、暂不执行），再 3.4 真实项目试用（见「建议的下一步」）；B0 已由用户 2026-11-05 取消
+- 2026-11-05（续）：**`mysession-eval` 完成**：待验证项实测（`1186eb1`）→ 设计定稿 `docs/plans/2026-11-05-mysession-eval-design.md`（`25a3621`）→ 实作计划 `docs/plans/2026-11-05-mysession-eval-plan.md`（`ab61619`）→ 7 个任务实作、整体审查 5 项修正、4 项 minor 修正（`bbd5712`～`3844761`，已合并本地 `main`）；本机已安装（`~/.claude/skills/mysession-eval/`，`settings.json` 加 `excludedCommands`，备份 `.bak-20261105-mse`）；端到端实测 2 笔记录，用户决定保留作第一次小型试用（backend-dev 列入 1 笔）
+- 下一步：3.4 真实项目试用（用户指定场景与项目，在项目中做完一件事就 `/mysession-eval`）；`main` 有 12 笔提交未推送（见「建议的下一步」）
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
 
@@ -53,8 +54,9 @@ updated: 2026-11-05
 | 四个场景的自定义 skill | 待开始 | `backend-dev` 已有 `go-new-module`；其余 `skills/skills-<FLAG>/` 目前只有占位；例如 PRD 模板、API 契约、上线检查清单。建议在阶段 2 调研后再写 |
 | `dot_claude/commands/analyze-github-repo.md` 转 Codex skill | 待开始 | Codex custom prompts 已于 2026-01 弃用；装到 `~/.agents/skills` |
 | 本机采用新全局设定 | 完成（2026-10-28） | 本机已对齐：插件统一 `@claude-plugins-official`（`--replace` 切换、删除 `claude-code-plugins` 市场）、删除 `kubectl get/describe` 放行、停用 `playground`；刻意保留全局启用 `frontend-design`、`chrome-devtools-mcp`（临时项目用），记录于 `settings/README.md`；`dot_claude/settings.json` 镜像已同步 |
-| 可选插件技能 `myplugins` | 已实现、本机已安装并按用户试用调整（2026-11-04，`5b5425d`～`ac254c2`、`64ef966`，已随 v2.5.0 推送）；2026-11-05 `-t` 与共享模式实测、预演状态行修改（`9bbddda`，未推送） | 见「续作时必须知道的事」→「myplugins」；安装步骤在 `dot_claude/README.md`「myplugins 安装」 |
+| 可选插件技能 `myplugins` | 已实现、本机已安装并按用户试用调整（2026-11-04，`5b5425d`～`ac254c2`、`64ef966`，已随 v2.5.0 推送）；2026-11-05 `-t` 与共享模式实测、预演状态行修改（`9bbddda`，2026-11-05 已推送） | 见「续作时必须知道的事」→「myplugins」；安装步骤在 `dot_claude/README.md`「myplugins 安装」 |
 | 支持包技能 `myopensupports` | 已实现、测试通过、交叉审核已处理（2026-11-05）；用户手动 `cp` 安装后又改了 SKILL.md、details.md（`fb1d0fd`：去掉「Claude 关闭沙箱执行」，安装与 `remove-apply` 只给 `!` 命令），临时项目实测通过（2026-11-05）；Q5 实测：`autoAllowBashIfSandboxed` 下 `remove-apply` 不跳权限提示，文件已改、`remove-apply` 改为先搬 `skills/` 且失败回滚（`bd1518e`），本机副本已同步（`diff -r` 一致）；临时项目 `~/workspace/tmp-mos-test` 已由用户删除 | `dot_claude/skills/myopensupports/`；设计与疑问 `docs/plans/2026-11-05-myopensupports-design.md`，计划 `docs/plans/2026-11-05-myopensupports-plan.md` |
+| 试用评估技能 `mysession-eval` | 完成（2026-11-05）：已实作、测试 65 例、整体审查、本机安装、端到端实测；已合并本地 `main`，未推送 | `dot_claude/skills/mysession-eval/`；设计 `docs/plans/2026-11-05-mysession-eval-design.md`，计划 `docs/plans/2026-11-05-mysession-eval-plan.md`；见「续作时必须知道的事」→「mysession-eval」 |
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
 | 配置安装技能 `myconfig`（列出／安装本仓库配置） | 已实现并发布 v2.4.0（2026-10-29）；用户已在本机安装，`/myconfig` 列表模式正常 | `dot_claude/skills/myconfig/`；设计 `docs/plans/2026-10-28-config-install-skill-design.md` §11。`claude -p` 实测：沙箱禁止会话内写 `.claude/settings.json`、`skills/`、`hooks/`，改为技能只预演、写入交付命令由用户执行；跨项目使用需把仓库路径与 `~/.claude/skills/myconfig` 加进 `sandbox.filesystem.allowRead`；两轮子代理交叉审查意见已全部处理 |
 
@@ -84,7 +86,7 @@ updated: 2026-11-05
 
 - [x] （2026-11-05，见 `docs/evaluation/2026-10-final.md` 第 5 节）安装与静态验证：扩展 `scripts/tests/`；临时项目中 `claude mcp list` 等只读 smoke；permissions 实测脚本
 - [x] 行为验证：按审计结论改为交互模式手动执行，16 个任务 + B1、D3、F1 同期对照（2026-11-04 完成，`docs/evaluation/2026-10-final.md`）；交叉评审（盲评、`/code-review`、Codex 对比等）未做，属选做
-- [ ] 真实项目试用：每场景一个用户指定的项目，约 2 周；试用记录改由 `mysession-eval` 产生（用户 2026-11-05 决定要做，暂不执行；手填模板 `pilot-log-template.md` 不另建，除非设计确认时改变）；每周复盘并回写
+- [ ] 真实项目试用：每场景一个用户指定的项目；试用记录由 `mysession-eval` 产生（2026-11-05 已完成并安装；已有 1 笔 backend-dev 列入判定的小型试用）；复盘时机由用户决定（多次期中 + 一次最终），最终复盘结论写回 `docs/evaluation/2026-10-final.md`
 - [ ] 按「通过 / 调整 / 移除」判定，稳定结论回写本文件、`scripts/tests/`、对应 README
 
 <!-- section: done -->
@@ -92,7 +94,7 @@ updated: 2026-11-05
 
 **仓库定位**：个人 Agent 配置与工具／技能管理仓库（Claude Code 为主，兼顾 Codex），公开供参考。2026-10-19 从「分层提示词规则系统」转型而来，设计原则与原因见根目录 `README.md`。
 
-**版本**：`main` 已于 2026-10-28 推送至 `origin/main`（之后的新提交推送仍需用户指示）；GitHub release v2.0.0（tag `a0783b3`）、v2.0.1（tag `6a31aee`）、v2.1.0（tag `3821dee`）、v2.2.0（tag `e4af50e`）、v2.3.0（tag `beb1ca8`）、v2.4.0（tag `d68370c`，标为 Latest）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
+**版本**：`main` 已于 2026-10-28 推送至 `origin/main`（之后的新提交推送仍需用户指示）；GitHub release v2.0.0（tag `a0783b3`）、v2.0.1（tag `6a31aee`）、v2.1.0（tag `3821dee`）、v2.2.0（tag `e4af50e`）、v2.3.0（tag `beb1ca8`）、v2.4.0（tag `d68370c`）、v2.5.0（Latest，见摘要）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
 
 **四个场景**（FLAG 在所有维度目录中一致；另有 `fullstack-dev` 只存在于 `settings/`）：
 
@@ -324,6 +326,17 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 - **未验证**：互动模式的信任对话框；另一台未安装该插件的机器
 - **预演状态行**（用户 2026-11-05 同意修改）：原先预演第二行显示写入前状态（如「⬜ 停用」），易误读；现改为按变更后的该层推算，显示「写入后 → ✅ 启用（共享）」，`off -t` 同理（`test-myplugins.sh` 新增 2 项）
 
+### mysession-eval（2026-11-05）
+
+源码 `dot_claude/skills/mysession-eval/`（`SKILL.md`、`references/review.md`、`scenarios.json`、`scripts/mysession-eval`），测试 `scripts/tests/test-mysession-eval.sh`（调用 `mysession_eval_test.py`，65 例）；本机副本 `~/.claude/skills/mysession-eval/`（`diff -r` 一致），日志 `~/.claude/mysession-eval/log.jsonl`（不进项目与本仓库）。
+
+- **改技能后要同步本机副本**：现象是本机行为与仓库不一致；原因是安装方式为复制；做法是改完由用户执行 `cp -R dot_claude/skills/mysession-eval ~/.claude/skills/`，再 `diff -r` 核对。
+- **`scenarios.json` 取自场景包**：现象是场景判为 `unknown`；原因是项目 `CLAUDE.md` 首行或 agents 与 `dot_claude_projects/.claude-<FLAG>/` 不符；改场景包的 `CLAUDE.md` 首行或 agents 时要同步 `scenarios.json`（`test_scenarios_json_matches_bundles` 会报错提醒）。
+- **会话记录格式依版本而变**：权限拒绝、中断等靠错误文字比对（设计文件「指标对应的 jsonl 字段」，2.1.318 核对）；升级 Claude Code 后若计数异常，先用真实会话记录重新核对这些文字。
+- **沙箱计数只认 `Operation not permitted`**：Go 快取被挡等错误只计入总数，判断环境问题看备注（`references/review.md` 已写明）。
+- **rule 加载与 Bash 读档（2026-11-05，2.1.318）**：用 Bash `head`／`cat` 读符合 `paths` 的文件不会加载 rule，只有 Read 工具会（2 次观察，可能与 RTK 改写有关，未深究），与下方「path rules 的加载时机」记录的 2.1.308 行为不同。
+- **已知限制**：用户拒绝记录时技能执行 `skip` 作切点；若技能没执行 `skip`（例如中途报错），用户的文字回答会算进下一段。
+
 ### 其他已知问题
 
 - 第三方市场插件名无法离线校验：`pm-skills`、`anthropic-agent-skills` 未缓存在本机，`test-settings-templates.sh` 跳过其名称检查
@@ -345,7 +358,8 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | myplugins：互动模式信任对话框、另一台机器未验证（本机两个 skill 副本已于 2026-11-05 按用户指示同步，`diff -r` 一致） | 本文件「myplugins」 |
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
 | 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除）；2026-11-05 改了 `~/.claude/settings.json`（备份 `.bak-20261105012410`）并新建 RTK `config.toml` | — |
-| **`mysession-eval`**（用户 2026-11-05 决定要做，暂不执行）：全局技能，真实项目中主动调用，自动记录与整理试用数据；开工前先与用户确认计划中的初步设计；它是 3.4 的前置 | 计划文件 3.4「候选：mysession-eval」 |
+| 3.4 真实项目试用：用户指定场景与项目；`mysession-eval` 长会话、多记录时的 `extract`／`summarize` 输出量未实测（只测过小会话 2 笔） | 计划文件 3.4；设计文件「token 预算」 |
+| `main` 领先 `origin/main` 12 笔（`1186eb1`～`3844761`，含本文件之前的提交），推送需用户指示 | — |
 
 
 <!-- section: next -->
@@ -390,9 +404,9 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 3. ~~阶段 3 行为验证~~：已完成（2026-11-04），结论 `docs/evaluation/2026-10-final.md`
 4. ~~修 B-7、B-8~~、~~重跑 B2 r2~~、~~安装 myplugins~~：2026-11-04 完成（另修 B-10）
 5～9. ~~B-9、D-4、gsd-core、deny 改 ask、推送与 release、OpenSpec Corepack~~：2026-11-04～05 全部完成（见摘要与变更日志）
-10. **排期**：~~3.2 静态验证~~（2026-11-05 完成；改了 `permissions`、沙箱、RTK 或升级 Claude Code 后按 `scripts/smoke/README.md` 重跑）、3.4 真实项目试用（前置：先做 `mysession-eval`，用户 2026-11-05 决定要做、暂不执行，见计划 3.4；再由用户指定 1～2 个场景与项目，建议按会话次数计）；~~B0~~（用户 2026-11-05 取消）
+10. **排期**：~~3.2 静态验证~~（2026-11-05 完成；改了 `permissions`、沙箱、RTK 或升级 Claude Code 后按 `scripts/smoke/README.md` 重跑）、~~`mysession-eval`~~（2026-11-05 完成）、**3.4 真实项目试用**（下一个：用户指定 1～2 个场景与项目，在项目中做完一件事就 `/mysession-eval`，`/mysession-eval review` 期中复盘，结束时 `review --final`）；~~B0~~（用户 2026-11-05 取消）
 
-前置条件：`mysession-eval` 开工前先确认初步设计；3.4 需用户指定场景与项目。
+前置条件：3.4 需用户指定场景与项目；`mysession-eval` 已就绪。
 
 等用户指示再做：`claude plugin eval` 小型试跑（计划 3.3「插件级评估」，必须加 `--no-publish`）；推送与 release。
 
@@ -495,3 +509,5 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | myopensupports 只给 `!` 命令 | 因 `allowUnsandboxedCommands: false`，去掉「Claude 关闭沙箱执行」，Q3 结案（`fb1d0fd`） | 本机副本已同步；Q5 待首次使用验证 |
 | 2026-11-05 | myopensupports 实测与回滚修正 | 临时项目走完 list／install 方案／`--skills-only`／remove／`remove-apply`；Q5 实测不跳权限提示（`autoAllowBashIfSandboxed`），文件改正；`remove-apply` 先搬 `skills/`、失败回滚并加测试（`bd1518e`） | 本机副本已同步；临时项目已删除 |
 | 2026-11-05 | 推送 | 用户指示推送，`a569d97..9d43f5f` 共 40 笔推到 `origin/main` | — |
+| 2026-11-05 | mysession-eval 设计 | 待验证项实测（会话 id 取 `CLAUDE_CODE_SESSION_ID`、`disable-model-invocation` 不占清单、`/clear` 换 id、`/compact` 不换、rule 加载记为 `nested_memory`）；与用户逐点确认后定稿并经建构者审阅（`1186eb1`、`25a3621`）；实作计划（`ab61619`） | — |
+| 2026-11-05 | mysession-eval 实作 | 7 个任务（`bbd5712`～`a4ad205`）；整体审查 5 项重要问题修正（`ddad778`）；延后 4 项 minor 处理（`3844761`，第 4 项只能补文件说明）；本机安装与端到端实测（记录约 2.8k／含询问 4.7k、期中复盘约 8.9k）；`run-all.sh` 19 个全过 | 长会话与多记录未实测；未推送 |
