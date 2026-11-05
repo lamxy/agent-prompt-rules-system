@@ -3,7 +3,7 @@
 <!--
 维护说明（注入上下文前会被移除）：
 - 只写与 Claude Code 默认行为不同的约定；工具由 settings/settings.project-dev-ops.json 启用
-  （terraform、semgrep、sonatype-guide）；GlitchTip MCP 见 dot_mcp_jsons。
+  （semgrep、sonatype-guide；terraform 插件 2026-11-06 起默认不启用，需要时用 `/myplugins` 打开）；GlitchTip MCP 见 dot_mcp_jsons。
 - terraform apply、docker compose up/down、docker volume rm 等变更命令已由 permissions.ask 要求确认；CLAUDE.md 只补充确认前要说明的内容。
 - 当前阶段部署围绕 Docker / Docker Compose，不涉及 Kubernetes。
 -->

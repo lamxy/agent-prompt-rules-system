@@ -48,7 +48,7 @@ local > project > user
 | `typescript-native-lsp`（`@anthropic-plugin-directory`）、`frontend-design`、`playwright`、`chrome-devtools-mcp`、`modern-web-guidance` | frontend-dev | 语言服务、UI 实现、浏览器验证、Web 最佳实践 |
 | `gopls-lsp`、`mongodb`、`redis-development` | backend-dev | Go 语言服务、MongoDB、Redis |
 | `semgrep` | backend-dev、dev-ops | 静态安全扫描 |
-| `terraform`、`sonatype-guide` | dev-ops | 基础设施即代码、依赖供应链安全 |
+| `sonatype-guide` | dev-ops | 依赖供应链安全（`terraform` 2026-11-06 移出默认：部署只用 Docker／Compose，用户确认不用 Terraform；可选清单仍有） |
 | `pr-review-toolkit` | frontend-dev、backend-dev、dev-ops | PR 审查代理 |
 | `pyright-lsp`、`typescript-lsp` | 本地级可选（`false`） | 见下方本地级表 |
 | `figma`、`notion`、`miro`、`vercel`、`supabase`、`neon`、`mongodb-atlas`、`datadog`、`pagerduty`、`incident-io`、`cloudflare`、`aws-core` | 本地级可选（`false`） | 需要个人账号或托管服务 |
@@ -146,7 +146,7 @@ sh scripts/install-claude-project.sh -g      # 复制全局清单 → 同步 ski
 | `settings.project-prd-design.json` | `prd-design` | `playground`、`document-skills`（docx/pptx/xlsx/pdf） | 声明 `anthropic-agent-skills` 市场。PM Skills 由 `open_supports/ost_phuryn_pm-skills` 以项目级插件安装，见下方说明 |
 | `settings.project-frontend-dev.json` | `frontend-dev` | `typescript-native-lsp`、`frontend-design`、`playwright`、`chrome-devtools-mcp`、`modern-web-guidance`、`playground`、`pr-review-toolkit` | `permissions.ask`：`docker compose down` 等 |
 | `settings.project-backend-dev.json` | `backend-dev` | `gopls-lsp`、`mongodb`、`redis-development`、`semgrep`、`pr-review-toolkit`、`mattpocock-skills` | `permissions.deny`：MySQL、PostgreSQL、MongoDB（含 `mongosh`）、Redis 的破坏性命令；`PostToolUse` hook 在编辑 `.go` 文件后执行 `.claude/hooks/go-fmt.sh`（脚本只在场景包中提供）；`permissions.ask`：`docker compose down` 等 |
-| `settings.project-dev-ops.json` | `dev-ops` | `terraform`、`semgrep`、`sonatype-guide`、`pr-review-toolkit` | `permissions.ask`：`terraform apply/destroy/import/state`、`docker compose up/down/rm`、`docker rm`、`docker volume rm/prune`、`docker system/image prune`、`docker network rm`、`docker context use` |
+| `settings.project-dev-ops.json` | `dev-ops` | `semgrep`、`sonatype-guide`、`pr-review-toolkit` | `permissions.ask`：`terraform apply/destroy/import/state`、`docker compose up/down/rm`、`docker rm`、`docker volume rm/prune`、`docker system/image prune`、`docker network rm`、`docker context use` |
 | `settings.project-fullstack-dev.json` | `fullstack-dev` | 前端 + 后端去重 | 与后端相同的 `permissions.deny`；`permissions.ask`：`docker compose down` 等 |
 
 - PRD 场景的 PM Skills 来自本仓库收录的 `open_supports/ost_phuryn_pm-skills`，不在 settings 模板中重复启用：`dot_claude_projects/.claude-prd-design/` 的清单以 `--client=claude-code --location=local` 安装，插件以 `--scope project` 写入项目的 `.claude/settings.json`。因此要先安装 settings 模板，再运行 `install-open-supports.sh`；之后若用 `-m overwrite` 重装 settings 模板，PM Skills 的条目会被覆盖（备份中仍有），需重新运行 `install-open-supports.sh` 或改用 `-m merge`。
