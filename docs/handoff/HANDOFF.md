@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 2207643
+head: ba3650b
 status: active
 updated: 2026-11-06
 ---
@@ -319,7 +319,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 - **沙箱排除规则照字面比对**：现象是 `/myplugins` 写设定报 `Operation not permitted`；原因是沙箱禁止 Bash 写 `.claude/settings*.json`，而 `excludedCommands` 按命令文字比对（2026-11-04 `claude -p` 实测：规则与命令都写 `~` 或都写 `$HOME` 才匹配，一边 `~` 一边绝对路径不行；`allowRead` 不展开 `$VAR`，`~` 可用）；正确做法是 SKILL.md、`settings/settings.user.json`、镜像三处都写 `python3 ~/.claude/skills/myplugins/scripts/myplugins`（测试检查三处一致），命令不展开路径、不加引号、不串接。
 - **行为约定（用户 2026-11-04 定）**：`enable`／`off` 默认写 `.claude/settings.json`（会进版控），`--local` 或 `-c` 写 `settings.local.json`；`--dry-run`／`-t`／`--test` 只预演，skill 先给用户确认再写；启动提示第一行黄色粗体（ANSI 在 `systemMessage` 有效，hook 不能写 `/dev/tty`），用「当前目录」不说「项目」，第三行给只看清单的 `! python3 ~/.claude/skills/myplugins/scripts/myplugins list`（不载入 skill）；列表用 ✅／⬜／⚠️，skill 列表后不重排表格，只回「已启用」一行、「注意：」行与用法（用户 2026-11-04 改）。`SKILL.md` 只留常用规则，预演、`off` 分层、`add`／`remove`／`sync`、报错与 User 分组说明放 `references/details.md`，用到才读。
-- **清单**：默认 21 个，顺序通用 → PRD → 前端 → 后端 → 运维（用户指定），跨场景插件归最早出现的场景；需个人账号的本地级插件不收。默认清单更新后本机清单不会自动变，用 `/myplugins sync`（保留用户 add 的、不加回 remove 过的，记在 `removed`）。全局模板把 21 个全部设 `false`（merge 只合并列出的键），并声明 `anthropic-agent-skills` 市场。
+- **清单**：默认 25 个（2026-11-06 在「通用」末尾加 `plugin-dev`、`mcp-server-dev`、`mcp-apps`、`agent-sdk-dev`，前 6 项序号不变），顺序通用 → PRD → 前端 → 后端 → 运维（用户指定），跨场景插件归最早出现的场景；需个人账号的本地级插件不收。默认清单更新后本机清单不会自动变，用 `/myplugins sync`（保留用户 add 的、不加回 remove 过的，记在 `removed`）。全局模板把 21 个全部设 `false`（merge 只合并列出的键），并声明 `anthropic-agent-skills` 市场。
 - **`/plugin` 的 User 分组是安装范围**：插件安装记录 `scope: user` 就列在 User 下，与在哪一层启用无关；是否启用以 `/myplugins` 列出的来源层为准（推断，未找到官方原文）。
 - **维护本仓库时**：`skill-creator`、`claude-md-management` 已不是全局插件，要用先 `/myplugins`。
 - **token 占用（2026-11-04 按会话记录与 API usage 实测）**：现象是执行 `/myplugins` 后 `/context` 的 Messages 涨一万多；原因是会话第一次正常提问时 Claude Code 一次性附上 skill 清单、沙箱说明、延迟工具与 MCP 说明（约 30k 字符，若首轮是 `!` 命令则延到下一个提问），加上 `/context` 自己的输出会记进对话（每次约 5.5k）；myplugins 本身每次约 2.9k（SKILL.md 约 0.7k、脚本输出约 1.5k）。正确做法是量某操作的成本时看 API usage 或两次 `/context` 差值再扣约 5.5k。`/context` 总数与 API usage 一致，但 Skills 与 Messages 分类会重叠或挪移（推断，未查官方说明），不要逐类相加。
@@ -368,6 +368,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | myplugins：互动模式信任对话框、另一台机器未验证（本机两个 skill 副本已于 2026-11-05 按用户指示同步，`diff -r` 一致） | 本文件「myplugins」 |
 | FiberHouse 示例 `repository.CreateExample` 接收 `requestvo`（框架自注临时兼容），会被新 depguard 规则拦；用户 2026-11-05 决定暂不处理 | `docs/research/2026-11-layering-strictness.md` 第 6 节 |
 | 本机：映像 `golangci/golangci-lint:v2.5.0`、`node:22-alpine` 为实测拉取，可保留（D-4 实测卷已由用户删除）；2026-11-05 改了 `~/.claude/settings.json`（备份 `.bak-20261105012410`）并新建 RTK `config.toml` | — |
+| **写场景自定义 skill 前（提醒）**：先按 `skills/README.md`「编写约定」（官方 best practices：先找缺口与写 3 个评估情境再写、写与测分开、description 第三人称、正文 ≤ 500 行、参考文件只往下一层），起草可用 `skill-creator`；开始任何 skill 编写时由 Claude 主动提醒 | `skills/README.md`；官方 platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices |
 | claude-code-setup 汇总的暂缓项：新 skill／agent／permissions 候选（3.6）、frontend-dev 审查 agent（3.4 出现需求再写）、全局 GitHub MCP `actions` toolset（本机配置，需用户指示） | `docs/evaluation/2026-11-claude-code-setup-review.md` 第 3.6、4、6 节 |
 | 3.4 真实项目试用：用户指定场景与项目；`mysession-eval` 长会话、多记录时的 `extract`／`summarize` 输出量未实测（只测过小会话 2 笔） | 计划文件 3.4；设计文件「token 预算」 |
 
@@ -417,6 +418,8 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 10. **排期**：~~3.2 静态验证~~（2026-11-05 完成；改了 `permissions`、沙箱、RTK 或升级 Claude Code 后按 `scripts/smoke/README.md` 重跑）、~~`mysession-eval`~~（2026-11-05 完成）、**3.4 真实项目试用**（下一个：用户指定 1～2 个场景与项目，在项目中做完一件事就 `/mysession-eval`，`/mysession-eval review` 期中复盘，结束时 `review --final`）；~~B0~~（用户 2026-11-05 取消）
 
 前置条件：3.4 需用户指定场景与项目；`mysession-eval` 已就绪。
+
+写场景自定义 skill（11 项候选，汇总文件 3.6）时：先读 `skills/README.md`「编写约定」，按「找缺口 → 3 个评估情境 → 最少内容 → 新会话实测」进行；Claude 在开始前主动提醒用户这条约定。
 
 等用户指示再做：推送与 release。
 
@@ -526,3 +529,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-05 | 推送 | 用户指示推送，`fa1c8ef..68a54b9` 共 13 笔推到 `origin/main` | — |
 | 2026-11-06 | claude-code-setup 补充调研与执行 | 四场景推荐汇总与决策表（`8bae224`）；MCP 写入防线（`56e94f4`）；agent 精简与三个审查 agent（`38dc553`、`68304c0`）；relay token 泄漏修正（`43eedcc`）；terraform 移出默认（`61c157b`）；计划勾选（`2207643`）；`run-all.sh` 19 个全过 | 3.4 试用；暂缓项见待处理 |
 | 2026-11-06 | 推送 | 用户指示推送本批提交到 `origin/main` | — |
+| 2026-11-06 | skill 编写约定与 myplugins 清单 | `skills/README.md` 新增「编写约定」（官方 best practices 原文 + 本仓库要求），交接加提醒；myplugins 默认清单 21 → 25（`plugin-dev`、`mcp-server-dev`、`mcp-apps`、`agent-sdk-dev`，全局模板与镜像各加 `false`）；`run-all.sh` 19 个全过 | 本机需 `cp` myplugins 后 `/myplugins sync`；未推送 |
