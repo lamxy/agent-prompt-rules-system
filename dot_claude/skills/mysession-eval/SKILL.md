@@ -10,7 +10,7 @@ allowed-tools: Bash(python3 ~/.claude/skills/mysession-eval/scripts/mysession-ev
 
 目的是有效評估，不是找改進項。「目前配置不錯」是合法結論。
 
-所有解析與計數交給腳本，命令照字面單獨執行：寫 `~/.claude/...`，不展開路徑、不串接、不用管線或重導向（沙箱排除規則按命令文字比對）。參數值含空白時用引號包住該值。
+所有解析與計數交給腳本，命令照字面單獨執行：寫 `~/.claude/...`，不展開路徑、不串接、不用管線或重導向（沙箱排除規則按命令文字比對）。文字參數值一律用**單引號**包住；值內不得含單引號、反引號、`$`、換行，概述用純文字、不用 Markdown 格式（雙引號內的反引號與 `$` 會被 shell 展開）。
 
 ```sh
 python3 ~/.claude/skills/mysession-eval/scripts/mysession-eval <子命令> [參數]
@@ -38,10 +38,10 @@ python3 ~/.claude/skills/mysession-eval/scripts/mysession-eval <子命令> [參�
 4. 執行 `append`：
 
    ```sh
-   python3 ~/.claude/skills/mysession-eval/scripts/mysession-eval append --task "<名稱>" --status done --corrections 1 --new-requests 0 --satisfaction 4 --sat-source estimated --basis "<依據>" --include yes --note "<備註>"
+   python3 ~/.claude/skills/mysession-eval/scripts/mysession-eval append --task '<名稱>' --status done --corrections 1 --new-requests 0 --satisfaction 4 --sat-source estimated --basis '<依據>' --include yes --note '<備註>'
    ```
 
-   不列入時改 `--include no --exclude-reason "<理由>"`；有應觸發未觸發者加 `--missed a,b`；`extract` 的 `scenario` 為 `null` 而使用者告知場景時加 `--scenario <FLAG>`。
+   不列入時改 `--include no --exclude-reason '<理由>'`；有應觸發未觸發者加 `--missed a,b`；`extract` 的 `scenario` 為 `null` 而使用者告知場景時加 `--scenario <FLAG>`。
 5. 回覆只照抄腳本輸出的摘要行。
 
 ## 規則

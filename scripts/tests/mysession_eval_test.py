@@ -600,5 +600,57 @@ class TestSkillDocs(unittest.TestCase):
             self.assertIn(word, text)
 
 
+# ---- Final review fixes ----
+class TestReviewFixes(Base):
+    def test_review_invocation_is_not_a_cut_point(self):
+        es = [user("a"), invoke(), script_call("t1"), script_result("t1"), assistant_text(),
+              user("work B"), assistant_text(),
+              slash("mysession-eval", "review"), script_call("t2", "summarize"), script_result("t2"),
+              assistant_text("report"), user("work C"), assistant_text(), invoke()]
+        start, end = mse.segment_bounds(es)
+        msgs, _ = mse.user_messages(es, start, end)
+        self.assertEqual(msgs, ["work B", "/mysession-eval review", "work C"])
+
+    def test_system_injected_user_entries_ignored(self):
+        es = [user("<task-notification>\n<task-id>x</task-id>\n</task-notification>"),
+              user("<bash-input>cat secret.env</bash-input>"),
+              user("<bash-stdout>API_KEY=abc123</bash-stdout><bash-stderr></bash-stderr>")]
+        m = mse.segment_metrics(es, 0, len(es), None)
+        self.assertTrue(m["empty"])
+        self.assertEqual(m["turns"], 0)
+        self.assertEqual(mse.user_messages(es, 0, len(es))[0], [])
+
+    def test_user_messages_total_budget(self):
+        es = [user("訊" * 1000) for _ in range(200)]
+        msgs, _ = mse.user_messages(es, 0, len(es))
+        self.assertLessEqual(sum(len(m) for m in msgs), mse.MSG_TOTAL_CHARS)
+
+    def test_extract_installed_is_slim(self):
+        put(self.proj, ".claude/agents/sre.md", "x")
+        self.write_session("s1", [user("do"), invoke()])
+        out = json.loads(self.run_cli("extract").stdout)
+        self.assertEqual(out["installed"], [{"kind": "agent", "name": "sre"}])
+
+    def test_project_dir_from_session_cwd(self):
+        put(self.proj, "CLAUDE.md", "# CLAUDE.md — 后端开发（Go）\n")
+        first = user("do")
+        first["cwd"] = self.proj
+        self.write_session("s1", [first, invoke()])
+        sub = os.path.join(self.proj, "backend")
+        os.makedirs(sub)
+        r = self.run_cli("extract", env_extra={"MSE_PROJECT_DIR": ""})
+        env = dict(os.environ, MSE_CLAUDE_DIR=self.claude, MSE_HOME=self.home, MSE_PROJECT_DIR="",
+                   CLAUDE_PROJECT_DIR="", CLAUDE_CODE_SESSION_ID="s1")
+        r = subprocess.run([sys.executable, "-I", TOOL, "extract"], env=env, cwd=sub,
+                           capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout)["scenario"], "backend-dev")
+
+    def test_skill_md_single_quote_rule(self):
+        text = read(os.path.join(SKILL_DIR, "SKILL.md"))
+        self.assertIn("單引號", text)
+        self.assertNotIn('"<依據>"', text)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

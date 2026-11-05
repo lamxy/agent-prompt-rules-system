@@ -59,11 +59,20 @@ def _content(entry):
     return msg.get("content") if isinstance(msg, dict) else None
 
 
+def _command_args(text):
+    if "<command-args>" not in text:
+        return ""
+    return text.split("<command-args>", 1)[1].split("</command-args>", 1)[0].strip()
+
+
 def is_invocation(entry):
+    """A recording invocation (/mysession-eval without review); review runs are not cut points."""
     if entry.get("type") != "user" or entry.get("isMeta"):
         return False
     c = _content(entry)
-    return isinstance(c, str) and INVOKE_MARK in c
+    if not (isinstance(c, str) and INVOKE_MARK in c):
+        return False
+    return not _command_args(c).split(" ", 1)[0] == "review"
 
 
 def _blocks(entry):
@@ -71,14 +80,17 @@ def _blocks(entry):
     return [b for b in c if isinstance(b, dict)] if isinstance(c, list) else []
 
 
-def is_skill_script_call(entry):
+def is_skill_script_call(entry, subcommands=None):
     if entry.get("type") != "assistant":
         return set()
     ids = set()
     for b in _blocks(entry):
         if b.get("type") == "tool_use" and b.get("name") == "Bash":
             cmd = (b.get("input") or {}).get("command") or ""
-            if SCRIPT_MARK in cmd:
+            if SCRIPT_MARK not in cmd:
+                continue
+            sub = cmd.split(SCRIPT_MARK, 1)[1].split()
+            if subcommands is None or (sub and sub[0] in subcommands):
                 ids.add(b.get("id"))
     return ids
 
@@ -99,7 +111,7 @@ def segment_bounds(entries):
     start = p + 1
     script_ids = set()
     for i in range(p + 1, end):
-        script_ids |= is_skill_script_call(entries[i])
+        script_ids |= is_skill_script_call(entries[i], ("extract", "append"))
         if _tool_result_ids(entries[i]) & script_ids:
             start = i + 1
     return start, end
@@ -114,6 +126,9 @@ DENIAL_KINDS = (
 )
 SANDBOX_MARK = "Operation not permitted"
 MSG_MAX_CHARS = 300
+MSG_TOTAL_CHARS = 3000
+# user entries written by the harness, not typed by the user (task notifications, ! command echo/output)
+INJECTED_PREFIXES = ("<local-command-", "<task-notification", "<bash-input", "<bash-stdout", "<bash-stderr")
 MSG_HEAD, MSG_TAIL = 10, 20
 
 
@@ -219,7 +234,7 @@ def _is_prompt(entry):
     if isinstance(c, list) and not any(b.get("type") == "text" for b in _blocks(entry)):
         return False
     text = _text_of(entry).strip()
-    if not text or text.startswith(INTERRUPT_PREFIX) or text.startswith("<local-command-"):
+    if not text or text.startswith(INTERRUPT_PREFIX) or text.startswith(INJECTED_PREFIXES):
         return False
     return True
 
@@ -288,10 +303,14 @@ def user_messages(entries, start, end, max_chars=MSG_MAX_CHARS, max_count=MSG_HE
         text = _clean_message(_text_of(e))
         if text:
             msgs.append(text[:max_chars])
-    if len(msgs) <= max_count:
-        return msgs, 0
-    tail = max_count - MSG_HEAD
-    return msgs[:MSG_HEAD] + msgs[-tail:], len(msgs) - max_count
+    omitted = 0
+    if len(msgs) > max_count:
+        omitted = len(msgs) - max_count
+        msgs = msgs[:MSG_HEAD] + msgs[-(max_count - MSG_HEAD):]
+    if msgs:
+        per = min(max_chars, MSG_TOTAL_CHARS // len(msgs))
+        msgs = [m[:per] for m in msgs]
+    return msgs, omitted
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -366,8 +385,14 @@ def detect_scenario(project, items, scenarios):
     return None
 
 
-def project_dir():
-    return os.environ.get("MSE_PROJECT_DIR") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+def project_dir(entries=None):
+    """Session start directory: Bash cwd may have drifted into a subdirectory."""
+    if os.environ.get("MSE_PROJECT_DIR"):
+        return os.environ["MSE_PROJECT_DIR"]
+    for e in entries or []:
+        if e.get("cwd"):
+            return e["cwd"]
+    return os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
 
 
 def _opt(args, name, default=None):
@@ -391,11 +416,12 @@ def _session_segment(args):
 def cmd_extract(args):
     sid, entries, start, end, metrics = _session_segment(args)
     msgs, omitted = user_messages(entries, start, end)
-    proj = project_dir()
+    proj = project_dir(entries)
     items = inventory(proj)
     name = os.path.basename(os.path.abspath(proj))
     out = {"session_id": sid, "project": name,
-           "scenario": detect_scenario(proj, items, load_scenarios()), "installed": items,
+           "scenario": detect_scenario(proj, items, load_scenarios()),
+           "installed": [{"kind": it["kind"], "name": it["name"]} for it in items],
            "segment": metrics, "user_messages": msgs, "user_messages_omitted": omitted,
            "recent_tasks": recent_tasks(home_dir(), name)}
     print(json.dumps(out, ensure_ascii=False))
@@ -491,7 +517,7 @@ def cmd_append(args):
     sid, entries, start, end, metrics = _session_segment(args)
     if metrics["empty"]:
         raise Fail("自上次記錄後沒有新活動，不寫入。")
-    proj = project_dir()
+    proj = project_dir(entries)
     items = inventory(proj)
     scenario = _opt(args, "--scenario") or detect_scenario(proj, items, load_scenarios()) or "unknown"
     import datetime
