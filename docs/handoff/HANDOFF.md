@@ -1,6 +1,6 @@
 ---
 branch: main
-head: f3ae9ec
+head: bcff9a7
 status: active
 updated: 2026-11-23
 ---
@@ -38,6 +38,7 @@ updated: 2026-11-23
 - 2026-11-05～06：**claude-code-setup 补充调研完成**（四场景各跑一次推荐，汇总与执行结果 `docs/evaluation/2026-11-claude-code-setup-review.md`）。按用户逐项确认：数据库 MCP 写入加第二道防线（`56e94f4`）；移除 21 个通用人设 agent，改为自写只读审查 agent `go-reviewer`、`deploy-reviewer`、`prd-reviewer`（`38dc553`、`68304c0`，均用阶段 3 产出实测）；relay 示例 token 写进日志已修（`43eedcc`）；terraform 移出 dev-ops 默认（`61c157b`）；决策表 5～7 不做；`mysession-eval` 本机副本已同步（`diff -r` 一致）
 - 2026-11-06（续）：`skills/README.md` 新增「编写约定」（官方 best practices），写 skill 前主动提醒；myplugins 默认清单 25 个，本机已 `sync`。观察到本机 `~/.claude/settings.json` 中 `gopls-lsp` 为全局 `true`（2026-11-06 00:02 修改，非本会话所改，来源未查，用户知悉）
 - 2026-11-06：按用户指示发布 **v2.6.0**（Latest，tag 指向 `0277471`；自 v2.5.0 起 67 笔：审查 agent、MCP 写入防线、mysession-eval、myopensupports、relay 修正、3.2 静态验证）；release notes 注明移除 21 个 agent 属不兼容变更
+- 2026-11-23：全局规则补回「/goal 冲突处理」并同步 Codex 模板（`f3ae9ec`），审计后修正续行与预算耗尽两处措辞（`bcff9a7`），已写入 `~/.codex/AGENTS.md`
 - 下一步：3.4 真实项目试用（用户指定场景与项目，在项目中做完一件事就 `/mysession-eval`；改动后可用对应审查 agent 复核）；2026-11-06 用户指示推送本批提交
 
 接手前必读顺序：`AGENTS.md` → 本文件 → `docs/plans/2026-10-20-scenario-config-evaluation-plan.md`（执行计划时）→ 要改动的目录自己的 `README.md` → 根目录 `README.md`（设计原则与转型说明）。
@@ -201,7 +202,7 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 ### Codex 模板需手动同步
 
-`scripts/multi_client_support/templates/AGENTS.codex-user.md` 是 `dot_claude/CLAUDE.md` 的 Codex 版（加回复语言、去掉 LSP、工具名改通用说法），两份分开维护。修改 `CLAUDE.md` 时同步模板。Codex 只自动读取 `AGENTS.override.md`、`AGENTS.md` 与 `project_doc_fallback_filenames`，其他文件名不会生效。
+`scripts/multi_client_support/templates/AGENTS.codex-user.md` 是 `dot_claude/CLAUDE.md` 的 Codex 版（加回复语言、去掉 LSP、工具名改通用说法、/goal 改用 `update_goal` 的 `blocked`），两份分开维护。修改 `CLAUDE.md` 时同步模板。Codex 只自动读取 `AGENTS.override.md`、`AGENTS.md` 与 `project_doc_fallback_filenames`，其他文件名不会生效。
 
 ### 2026-10-21 技术规范融入的改动范围
 
@@ -533,4 +534,5 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-06 | 推送 | 用户指示推送本批提交到 `origin/main` | — |
 | 2026-11-06 | skill 编写约定与 myplugins 清单 | `skills/README.md` 新增「编写约定」（官方 best practices 原文 + 本仓库要求），交接加提醒；myplugins 默认清单 21 → 25（`plugin-dev`、`mcp-server-dev`、`mcp-apps`、`agent-sdk-dev`，全局模板与镜像各加 `false`）；`run-all.sh` 19 个全过 | 本机 myplugins 已 `cp` 并 `sync`（`diff -r` 一致，本机清单 25 个）；2026-11-06 用户指示推送 |
 | 2026-11-06 | 发布 v2.6.0 | 按 `skills/skills-github-ops/github-release` 流程：annotated tag 推送、release notes 纯 ASCII 校验通过、`gh release create`；`gh release list` 显示 Latest | — |
-| 2026-11-23 | /goal 冲突处理同步到仓库与 Codex | 本机 `~/.claude/CLAUDE.md` 已有、仓库 `dot_claude/CLAUDE.md` 缺的「/goal 冲突处理」补回；Codex 模板加改写版：Codex 无外部检查器，由模型以 `update_goal` 标 `blocked`（同一阻塞连续 3 个 goal 回合），去掉「检查器判定 Impossible」「系统上限结束」（依 openai/codex main 分支 `ext/goal/templates/goals/continuation.md`，未对照本机 0.171.0）；`multi_client_support/README.md` 对照表、`dot_claude/README.md` 同步（`f3ae9ec`）；用户同意后执行 `codex.sh` 写入 `~/.codex/AGENTS.md`（备份 `AGENTS.md.bak.20261123-190639`，diff 只新增该段）；`run-all.sh` 19 个全过 | Codex 的 AGENTS.md 是否展开 `@` 导入未验证（会话记录显示 Codex 自行 `cat` RTK.md）；Codex 启用的 `gopls-lsp` 插件在 Codex 源码找不到 LSP 支持，用户决定保留 |
+| 2026-11-23 | /goal 冲突处理同步到仓库与 Codex | 本机 `~/.claude/CLAUDE.md` 已有、仓库 `dot_claude/CLAUDE.md` 缺的「/goal 冲突处理」补回；Codex 模板加改写版：Codex 无外部检查器，由模型以 `update_goal` 标 `blocked`（同一阻塞连续 3 个 goal 回合），去掉「检查器判定 Impossible」「系统上限结束」（依 openai/codex main 分支 `ext/goal/templates/goals/continuation.md`，已用本机 0.171.0 可执行文件核对一致）；`multi_client_support/README.md` 对照表、`dot_claude/README.md` 同步（`f3ae9ec`）；用户同意后执行 `codex.sh` 写入 `~/.codex/AGENTS.md`（备份 `AGENTS.md.bak.20261123-190639`，diff 只新增该段）；`run-all.sh` 19 个全过 | Codex 的 AGENTS.md 是否展开 `@` 导入未验证（会话记录显示 Codex 自行 `cat` RTK.md）；Codex 启用的 `gopls-lsp` 插件在 Codex 源码找不到 LSP 支持，用户决定保留 |
+| 2026-11-23 | /goal Codex 版审计修正 | 子代理审计后修正：续行回合先确认阻塞是否仍在（避免用户解除禁令后仍只重述）；goal 因预算耗尽（`budget_limited`）停止时不调用 `update_goal`（与 Codex 内置规则一致）；对照表与变更日志改为「已用本机 0.171.0 可执行文件核对一致」；`dot_claude/README.md` 行数改约 60 行、合并清单补两个 `@memory` 导入；测试禁用词加「检查器」「Impossible」并断言模板含 /goal 段（`bcff9a7`）；`codex.sh` 重新写入（备份 `AGENTS.md.bak.20261123-221416`，diff 只改该行）；`run-all.sh` 19 个全过 | 无 |
