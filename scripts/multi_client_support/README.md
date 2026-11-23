@@ -48,7 +48,7 @@ sh scripts/multi_client_support/codex.sh [-d] [-F]
 | 网路 | 保留；「hook 或外挂」改为「工具或外挂」 |
 | 程式码操作（LSP） | 删除：Codex 没有 LSP 工具 |
 | RTK | 保留 |
-| /goal 冲突处理 | 保留第一条；第二条去掉「让检查器判定 Impossible」「让系统上限结束」：Codex 没有外部检查器，由模型以 `update_goal` 标记 `complete`／`blocked`／`paused`，同一阻塞连续 3 个 goal 回合才可标 `blocked`（依 openai/codex main 分支 `codex-rs/ext/goal/templates/goals/continuation.md`，未对照本机 0.171.0） |
+| /goal 冲突处理 | 保留第一条；第二条去掉「让检查器判定 Impossible」「让系统上限结束」：Codex 没有外部检查器，由模型以 `update_goal` 标记 `complete`／`blocked`／`paused`，同一阻塞连续 3 个 goal 回合才可标 `blocked`（依 openai/codex main 分支 `codex-rs/ext/goal/templates/goals/continuation.md`，已用本机 0.171.0 可执行文件核对一致）；续行回合先确认阻塞是否仍在；预算耗尽（`budget_limited`）时不调用 `update_goal` |
 | —— | 新增「回覆语言」：Claude 由 `settings.json` 的 `language` 设定，Codex 没有对应设定 |
 
 两份文件分开维护，修改 `CLAUDE.md` 时需同步模板。模板会被注入 Codex 上下文，维护说明只写在本文件，不写进模板。

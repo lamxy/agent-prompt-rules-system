@@ -6,7 +6,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 
 | 檔案 | 說明 |
 |---|---|
-| `CLAUDE.md` | 約 50 行，只寫與 Claude Code 預設行為不同的約束：範圍與完成、資訊來源驗證、網路、LSP 優先、RTK 原始輸出、/goal 衝突處理 |
+| `CLAUDE.md` | 約 60 行，只寫與 Claude Code 預設行為不同的約束：範圍與完成、資訊來源驗證、網路、LSP 優先、RTK 原始輸出、/goal 衝突處理 |
 | `commands/analyze-github-repo.md` | `/analyze-github-repo`：輕量探測優先的單一 GitHub 倉庫分析 |
 | `skills/myhandoff/` | `myhandoff` 技能：讀寫 `docs/handoff/HANDOFF.md` 的進度交接；`settings.json` 的 `Stop`、`StopFailure` hook 依賴其 `scripts/` |
 | `skills/myconfig/` | `myconfig` 技能：列出本倉庫的場景配置，或在會話中預演並給出安裝命令（寫入由使用者執行）；`scripts/catalog` 現場產生清單。設計見 `docs/plans/2026-10-28-config-install-skill-design.md` |
@@ -25,7 +25,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 - `skills/myconfig/` 需要找到本倉庫：在 shell rc 設定 `export AGENT_RULES_REPO=<倉庫絕對路徑>`（以符號連結安裝時可自動定位）。本機沙箱若以 `denyRead` 擋住家目錄，還要在 `~/.claude/settings.json` 的 `sandbox.filesystem.allowRead` 加入倉庫路徑與 `~/.claude/skills/myconfig`，否則在其他專案中讀不到倉庫與技能腳本（2026-10-29 實測：注入命令同樣受沙箱限制）。本機鏡像的 `settings.json` 開放整個 `~/workspace`（本機工作根目錄，2026-11-05 改），同時以較窄的 `denyRead` 封鎖 `~/workspace/documents`（路徑較窄的規則優先），避免讀到非程式碼資料；`~/workspace/github_repos` 與 `~/.claude/skills/myconfig` 已被涵蓋，保留不影響。注意：使用者設定裡的 `"."` 解析為 `~/.claude`，**不是目前專案**（[官方說明](https://code.claude.com/docs/en/sandboxing)），因此改寫為明確的 `"~/.claude"`；專案必須落在 `allowRead` 列出的目錄下，否則 `os.getcwd()` 等會回 `Operation not permitted`（2026-11-05 實測：myopensupports、myhandoff 的腳本受影響）。只更新技能：`sh ./scripts/install.sh -l user -m overwrite -E commands -e CLAUDE.md -e settings.json`；以符號連結安裝 myconfig 時再加 `-E skills/myconfig`，否則 `cp` 同一檔案會報錯中斷。
 - `skills/myhandoff/` 是本機 `~/.claude/skills/myhandoff/` 的副本（2026-10-20 同步），在本機修改技能後需再複製回本目錄。技能內的 `README.md` 會一併安裝；`-m append` 時 `skills/` 下已存在的檔案一律跳過（`[SKIP-APPEND]`），更新技能請用 `-m overwrite`。
 - 目標若裝過舊版，`install.sh` 會以 `[LEGACY]` 列出殘留檔案；`rules/` 下的舊規則每次啟動都會載入並與本版衝突。加 `-C` 會移至 `<target>/legacy-backup-<時間戳>/`，不會刪除。
-- 以 `-l user` 安裝時，`CLAUDE.md` 會覆蓋現有的 `~/.claude/CLAUDE.md`；若其中有本機專屬規則（例如 Homebrew、curl 重試、`@RTK.md` 匯入），需先手動合併。已存在的 `settings.json` 會被安裝腳本跳過，需手動合併。
+- 以 `-l user` 安裝時，`CLAUDE.md` 會覆蓋現有的 `~/.claude/CLAUDE.md`；若其中有本機專屬規則（例如 Homebrew、curl 重試、`@RTK.md`、`@memory/curl-tls-eof.md`、`@memory/rtk-hook-wrapper.md` 匯入），需先手動合併。已存在的 `settings.json` 會被安裝腳本跳過，需手動合併。
 
 ## myopensupports 安裝
 

@@ -155,12 +155,22 @@ test_rejects_removed_options_and_non_file_target() {
 
 test_template_has_no_claude_only_tools() {
   # Claude-only tool names would mislead Codex; LSP is not available there.
-  for word in get_file_contents WebFetch LSP SendMessage .agent-rules; do
+  for word in get_file_contents WebFetch LSP SendMessage .agent-rules 檢查器 Impossible; do
     if grep -F -- "$word" "$TEMPLATE" > /dev/null; then
       fail "template should not mention $word"
     fi
   done
   pass "the Codex template carries no Claude-only tool references"
+}
+
+test_template_has_codex_goal_section() {
+  # The /goal section must exist and use Codex's update_goal mechanism.
+  for word in "## /goal 衝突處理" update_goal 預算耗盡; do
+    if ! grep -F -- "$word" "$TEMPLATE" > /dev/null; then
+      fail "template should contain $word"
+    fi
+  done
+  pass "the Codex template carries the /goal section with update_goal"
 }
 
 test_creates_block_in_new_file
@@ -170,3 +180,4 @@ test_dry_run_writes_nothing
 test_broken_block_needs_force
 test_rejects_removed_options_and_non_file_target
 test_template_has_no_claude_only_tools
+test_template_has_codex_goal_section
