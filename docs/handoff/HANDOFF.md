@@ -1,8 +1,8 @@
 ---
 branch: main
-head: 0277471
+head: f3ae9ec
 status: active
-updated: 2026-11-06
+updated: 2026-11-23
 ---
 # 进度交接
 
@@ -533,3 +533,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-06 | 推送 | 用户指示推送本批提交到 `origin/main` | — |
 | 2026-11-06 | skill 编写约定与 myplugins 清单 | `skills/README.md` 新增「编写约定」（官方 best practices 原文 + 本仓库要求），交接加提醒；myplugins 默认清单 21 → 25（`plugin-dev`、`mcp-server-dev`、`mcp-apps`、`agent-sdk-dev`，全局模板与镜像各加 `false`）；`run-all.sh` 19 个全过 | 本机 myplugins 已 `cp` 并 `sync`（`diff -r` 一致，本机清单 25 个）；2026-11-06 用户指示推送 |
 | 2026-11-06 | 发布 v2.6.0 | 按 `skills/skills-github-ops/github-release` 流程：annotated tag 推送、release notes 纯 ASCII 校验通过、`gh release create`；`gh release list` 显示 Latest | — |
+| 2026-11-23 | /goal 冲突处理同步到仓库与 Codex | 本机 `~/.claude/CLAUDE.md` 已有、仓库 `dot_claude/CLAUDE.md` 缺的「/goal 冲突处理」补回；Codex 模板加改写版：Codex 无外部检查器，由模型以 `update_goal` 标 `blocked`（同一阻塞连续 3 个 goal 回合），去掉「检查器判定 Impossible」「系统上限结束」（依 openai/codex main 分支 `ext/goal/templates/goals/continuation.md`，未对照本机 0.171.0）；`multi_client_support/README.md` 对照表、`dot_claude/README.md` 同步（`f3ae9ec`）；用户同意后执行 `codex.sh` 写入 `~/.codex/AGENTS.md`（备份 `AGENTS.md.bak.20261123-190639`，diff 只新增该段）；`run-all.sh` 19 个全过 | Codex 的 AGENTS.md 是否展开 `@` 导入未验证（会话记录显示 Codex 自行 `cat` RTK.md）；Codex 启用的 `gopls-lsp` 插件在 Codex 源码找不到 LSP 支持，用户决定保留 |
