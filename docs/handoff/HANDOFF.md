@@ -1,8 +1,8 @@
 ---
 branch: main
-head: 5a0c6d6
+head: e38c6c3
 status: active
-updated: 2026-11-23
+updated: 2026-11-27
 ---
 # 进度交接
 
@@ -537,3 +537,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-23 | /goal 冲突处理同步到仓库与 Codex | 本机 `~/.claude/CLAUDE.md` 已有、仓库 `dot_claude/CLAUDE.md` 缺的「/goal 冲突处理」补回；Codex 模板加改写版：Codex 无外部检查器，由模型以 `update_goal` 标 `blocked`（同一阻塞连续 3 个 goal 回合），去掉「检查器判定 Impossible」「系统上限结束」（依 openai/codex main 分支 `ext/goal/templates/goals/continuation.md`，已用本机 0.171.0 可执行文件核对一致）；`multi_client_support/README.md` 对照表、`dot_claude/README.md` 同步（`f3ae9ec`）；用户同意后执行 `codex.sh` 写入 `~/.codex/AGENTS.md`（备份 `AGENTS.md.bak.20261123-190639`，diff 只新增该段）；`run-all.sh` 19 个全过 | Codex 的 AGENTS.md 是否展开 `@` 导入未验证（会话记录显示 Codex 自行 `cat` RTK.md）；Codex 启用的 `gopls-lsp` 插件在 Codex 源码找不到 LSP 支持，用户决定保留 |
 | 2026-11-23 | /goal Codex 版审计修正 | 子代理审计后修正：续行回合先确认阻塞是否仍在（避免用户解除禁令后仍只重述）；goal 因预算耗尽（`budget_limited`）停止时不调用 `update_goal`（与 Codex 内置规则一致）；对照表与变更日志改为「已用本机 0.171.0 可执行文件核对一致」；`dot_claude/README.md` 行数改约 60 行、合并清单补两个 `@memory` 导入；测试禁用词加「检查器」「Impossible」并断言模板含 /goal 段（`bcff9a7`）；`codex.sh` 重新写入（备份 `AGENTS.md.bak.20261123-221416`，diff 只改该行）；`run-all.sh` 19 个全过 | 无 |
 | 2026-11-23 | 发布 v2.7.0 | 按用户指示推送 `main`（`eb97844..5a0c6d6`）；按 `skills/skills-github-ops/github-release` 流程：annotated tag `v2.7.0` 指向 `5a0c6d6` 并推送、release notes 纯 ASCII 校验通过、`gh release create`；`gh release list` 显示 Latest | — |
+| 2026-11-27 | myhandoff 3.0.0（交接文件瘦身与分层） | 应 kap_llm_wiki 会话请求、经用户确认，实作其方案（`docs/superpowers/specs/2026-11-27-handoff-slimming-design.md`，b97f9e1）第 2–6 节：HANDOFF 必读在前加 `<!-- on-demand -->` 停止标记、gotchas 分核心约束／触发索引／未提交变更、新增 `GOTCHAS.md` 模板；SKILL 拆 `references/save.md`、`interrupt.md`；`handoff-check` 秘密扫描扩到 `docs/handoff/`、pre-commit 任何 `docs/handoff/` 文件触发、索引与 GOTCHAS 不一致 FAIL、大小格式只 WARN、`status` 三种中断判定；新增 `test-handoff-check.sh`（31 项）；`run-all.sh` 20 个全过（`e38c6c3`） | 安装到 `~/.claude/skills/myhandoff/` 与 `sync-codex` 被权限拒绝，待用户执行；本仓库 HANDOFF 仍是旧结构（check 只出 WARN），未迁移 |
