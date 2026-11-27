@@ -256,6 +256,17 @@ p = sys.argv[1]; t = open(p, encoding="utf-8").read()
 open(p, "w", encoding="utf-8").write(t.replace("- 跑測試 → 先清示範資料 → G1\n", "".join(f"- 動作{i} → 做法 → G1\n" for i in range(31))))
 EOF
 expect "WARN only: trigger index too long" 0 "觸發索引 32 行" -- sh -c "cd '$R' && python3 '$TOOL' check"
+# 模板自帶的引導句不是索引條目，不計入行數：30 條（29 條加原有的 G2）加引導句不應警告
+python3 - "$R/docs/handoff/HANDOFF.md" <<'EOF'
+import re, sys
+p = sys.argv[1]; t = open(p, encoding="utf-8").read()
+t = re.sub(r"(### 觸發索引\n\n)(?:- 動作\d+ → 做法 → G1\n)+",
+           lambda m: m.group(1) + "開始任何子任務前，比對這次要做的動作；命中就先讀 `docs/handoff/GOTCHAS.md` 對應條目。\n\n"
+           + "".join(f"- 動作{i} → 做法 → G1\n" for i in range(29)), t)
+open(p, "w", encoding="utf-8").write(t)
+EOF
+refute "intro sentence not counted as trigger line" "觸發索引 31 行" -- sh -c "cd '$R' && python3 '$TOOL' check"
+expect "30 index lines with intro still passes" 0 "OK" -- sh -c "cd '$R' && python3 '$TOOL' check"
 
 # ---------- 6. 舊 2.x 結構只出 WARN ----------
 R="$(new_repo old)"

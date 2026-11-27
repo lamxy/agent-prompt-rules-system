@@ -1,7 +1,7 @@
 ---
 name: myhandoff
 description: "保存或恢復專案進度交接（handoff），讀寫 docs/handoff/HANDOFF.md，讓 Claude Code 與 Codex 互相接手。保存：使用者說「保存進度」「寫交接」「準備 clear／compact」「換到 Codex／Claude 繼續」「今天先到這」「save progress」時。恢復：使用者說「接手」「續作」「繼續上次的工作」「上次做到哪」「pick up where we left off」，或會話開始已提示有交接文件而使用者要繼續工作時。專案已有 docs/handoff/HANDOFF.md 時優先使用本技能；GSD 階段進度查詢與 gstack 的 /context-save、/context-restore 不屬本技能。"
-version: 3.0.1
+version: 3.0.2
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 

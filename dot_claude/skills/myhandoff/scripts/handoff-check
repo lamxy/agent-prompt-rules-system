@@ -360,8 +360,8 @@ def structure_warnings(text, label):
             warnings.append(f"{label}: 摘要 {len(summary.strip())} 字元，超過 {LIMIT_SUMMARY_CHARS}；摘要每次覆寫，不累積")
     triggers = block_text(text, TRIGGERS_BLOCK)
     if triggers is not None:
-        trigger_lines = [line for line in triggers.splitlines()
-                         if line.strip() and not line.lstrip().startswith(("#", "<!--"))]
+        # 只算列表項：模板自帶的引導句不是索引條目。
+        trigger_lines = [line for line in triggers.splitlines() if re.match(r"^\s*[-*] ", line)]
         if len(trigger_lines) > LIMIT_TRIGGER_LINES or len(triggers.strip()) > LIMIT_TRIGGER_CHARS:
             warnings.append(f"{label}: 觸發索引 {len(trigger_lines)} 行、{len(triggers.strip()):,} 字元，"
                             f"上限 {LIMIT_TRIGGER_LINES} 行、{LIMIT_TRIGGER_CHARS:,} 字元")
