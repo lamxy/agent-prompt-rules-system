@@ -42,7 +42,7 @@ Claude Code 設定來源目錄，由 `scripts/install.sh` 同步到 `~/.claude/`
 
 ## myplugins 安裝
 
-全局只留基礎插件（`superpowers`、`andrej-karpathy-skills`、`context7`、`github`、`commit-commands`、`security-guidance`、`remember`、`open-code-review`），其餘在 `catalog.default.json` 中，由使用者在各專案用 `/myplugins` 啟用。需要三項本機設定（2026-11-03 在臨時專案實測）：
+全局只留基礎插件（`superpowers`、`andrej-karpathy-skills`、`context7`、`github`、`commit-commands`、`security-guidance`、`open-code-review`；`remember` 於 2026-11-27 改為可選），其餘在 `catalog.default.json` 中，由使用者在各專案用 `/myplugins` 啟用。需要三項本機設定（2026-11-03 在臨時專案實測）：
 
 1. 複製技能：`cp -R dot_claude/skills/myplugins ~/.claude/skills/`。
 2. `sandbox.excludedCommands` 加 `python3 ~/.claude/skills/myplugins/scripts/myplugins *`（`settings/settings.user.json` 與本目錄 `settings.json` 已含）：沙箱不允許 Bash 寫 `.claude/settings*.json`（實測 `Operation not permitted`），排除後這條命令仍走權限流程，由技能的 `allowed-tools` 放行。排除規則按命令文字照字面比對（2026-11-04 實測：規則與命令都寫 `~` 或都寫 `$HOME` 才對得上，一邊 `~` 一邊絕對路徑不行），所以技能內的命令寫 `~` 開頭、不加引號、不串接。

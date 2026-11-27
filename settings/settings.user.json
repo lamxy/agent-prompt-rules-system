@@ -439,7 +439,7 @@
     "hookify@claude-plugins-official": false,
     "open-code-review@open-code-review": true,
     "ralph-loop@claude-plugins-official": false,
-    "remember@claude-plugins-official": true,
+    "remember@claude-plugins-official": false,
     "security-guidance@claude-plugins-official": true,
     "session-report@claude-plugins-official": false,
     "skill-creator@claude-plugins-official": false,

@@ -10,6 +10,7 @@
     {"id": "mcp-server-dev@claude-plugins-official", "category": "通用", "description": "設計與開發 MCP server：部署模式（遠端 HTTP、MCPB、本機）、工具設計、認證"},
     {"id": "mcp-apps@claude-plugins-official", "category": "通用", "description": "用 MCP Apps SDK 建立 MCP App"},
     {"id": "agent-sdk-dev@claude-plugins-official", "category": "通用", "description": "Claude Agent SDK 開發工具組"},
+    {"id": "remember@claude-plugins-official", "category": "通用", "description": "跨會話記憶：自動摘要會話並在開場注入（花 Haiku 費用；建議 --local；啟用後需重開會話）"},
     {"id": "document-skills@anthropic-agent-skills", "category": "PRD", "description": "Excel、Word、PowerPoint、PDF 文件處理"},
     {"id": "playground@claude-plugins-official", "category": "PRD/前端", "description": "單檔 HTML 原型與互動探索"},
     {"id": "mattpocock-skills@claude-plugins-official", "category": "PRD/後端", "description": "需求追問、規格與任務拆分、TDD、程式碼審查、領域建模"},
