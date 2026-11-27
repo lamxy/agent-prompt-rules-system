@@ -78,9 +78,17 @@ SECRET_PATTERNS = [
     ("Slack token", re.compile(r"\bxox[abprs]-[A-Za-z0-9\-]{10,}\b")),
     ("JWT", re.compile(r"\beyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\b")),
     ("URL with credentials", re.compile(r"[a-z][a-z0-9+.\-]*://[^\s/:@<>]+:[^\s/@<>]+@[^\s]+", re.I)),
+    ("AWS secret access key", re.compile(
+        r"(?i)aws[A-Za-z0-9_\-]*[\"']?\s*[:=]\s*[\"']?[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+=])")),
+    # 關鍵字可帶以 _ 或 - 結尾的前綴（DB_PASSWORD、AWS_SECRET_ACCESS_KEY）：底線是單字字元，
+    # \b 在 _ 與字母之間不成立，3.0.1 前因此漏掉。camelCase（appToken）多半是程式碼，不納入；
+    # 前面是 $ 或 { 的是變數引用（$PWD、${DB_PASSWORD:?}）。關鍵字必須在識別字結尾，避免 max_tokens、TOKEN_URL 誤判。
+    # 值為 <佔位符>、$VAR、${VAR}、process.env、os.environ／os.getenv、YOUR_…（可加引號）時不算。
     ("assigned secret", re.compile(
-        r"(?i)\b(password|passwd|pwd|secret|token|api[_\-]?key|access[_\-]?key)\b\s*[:=]\s*"
-        r"(?![<$\{]|\"?<|'?<)[\"']?[^\s\"'<>]{8,}")),
+        r"(?i)(?<![A-Za-z0-9_\-${])(?:[A-Za-z0-9_\-]*[_\-])?"
+        r"(password|passwd|pwd|secret|token|api[_\-]?key|access[_\-]?key)"
+        r"(?![A-Za-z0-9_])[\"']?\s*[:=]\s*"
+        r"(?![\"']?(?:[<$\{]|process\.env|os\.(?:environ|getenv)|your[_\-]))[\"']?[^\s\"'<>]{8,}")),
 ]
 
 
@@ -190,7 +198,7 @@ def validate_content(text, label):
         if values.get("status") and values["status"] not in VALID_STATUSES:
             problems.append(f"{label}: status 必須是 {' 或 '.join(VALID_STATUSES)}")
     for section in REQUIRED_SECTIONS:
-        if f"<!-- section: {section} -->" not in text:
+        if find_line(text, f"<!-- section: {section} -->") < 0:
             problems.append(f"{label}: 缺少章節錨點 <!-- section: {section} -->")
     if "撰寫提醒，完成後刪除本區塊" in text:
         problems.append(f"{label}: 模板的撰寫提醒區塊尚未刪除")
@@ -200,14 +208,26 @@ def validate_content(text, label):
     return problems
 
 
+def find_line(text, marker, start=0):
+    """marker 單獨成行（可有前後空白）的位置；找不到時回傳 -1。
+    錨點只認獨立一行，避免正文或行內程式碼提到錨點時被誤認。marker 以 "<!-- x" 開頭時，
+    比對該前綴開頭、以 --> 結尾的整行。"""
+    if marker.endswith("-->"):
+        pattern = re.compile(r"^[ \t]*" + re.escape(marker) + r"[ \t]*$", re.M)
+    else:
+        pattern = re.compile(r"^[ \t]*" + re.escape(marker) + r".*-->[ \t]*$", re.M)
+    match = pattern.search(text, start)
+    return match.start() if match else -1
+
+
 def section_text(text, name):
     """回傳某章節錨點到下一個章節錨點或停止標記之間的內容；沒有該錨點時回傳 None。"""
     anchor = f"<!-- section: {name} -->"
-    start = text.find(anchor)
+    start = find_line(text, anchor)
     if start < 0:
         return None
-    start += len(anchor)
-    ends = [i for i in (text.find("<!-- section:", start), text.find(ON_DEMAND_MARKER, start)) if i >= 0]
+    start = text.index(anchor, start) + len(anchor)
+    ends = [i for i in (find_line(text, "<!-- section:", start), find_line(text, ON_DEMAND_MARKER, start)) if i >= 0]
     return text[start:min(ends)] if ends else text[start:]
 
 
@@ -217,11 +237,11 @@ def block_text(text, name):
     if section is None:
         return None
     anchor = f"<!-- block: {name} -->"
-    start = section.find(anchor)
+    start = find_line(section, anchor)
     if start < 0:
         return None
-    start += len(anchor)
-    end = section.find("<!-- block:", start)
+    start = section.index(anchor, start) + len(anchor)
+    end = find_line(section, "<!-- block:", start)
     return section[start:end] if end >= 0 else section[start:]
 
 
@@ -322,12 +342,12 @@ def structure_warnings(text, label):
     warnings = []
     if len(text) > LIMIT_TOTAL_CHARS:
         warnings.append(f"{label}: 全文 {len(text):,} 字元，超過 {LIMIT_TOTAL_CHARS:,}；先收斂再提交")
-    if ON_DEMAND_MARKER not in text:
+    marker = find_line(text, ON_DEMAND_MARKER)
+    if marker < 0:
         warnings.append(f"{label}: 缺少停止標記 {ON_DEMAND_MARKER}（3.0.0 前的結構，依 myhandoff 保存規則遷移）")
     else:
-        marker = text.index(ON_DEMAND_MARKER)
-        misplaced = [s for s in MUST_READ_SECTIONS if 0 <= text.find(f"<!-- section: {s} -->") > marker]
-        misplaced += [s for s in ON_DEMAND_SECTIONS if 0 <= text.find(f"<!-- section: {s} -->") < marker]
+        misplaced = [s for s in MUST_READ_SECTIONS if 0 <= find_line(text, f"<!-- section: {s} -->") > marker]
+        misplaced += [s for s in ON_DEMAND_SECTIONS if 0 <= find_line(text, f"<!-- section: {s} -->") < marker]
         if misplaced:
             warnings.append(f"{label}: 章節順序不符（必讀：{'、'.join(MUST_READ_SECTIONS)} 在停止標記前；"
                             f"按需：{'、'.join(ON_DEMAND_SECTIONS)} 在後），位置不對的：{'、'.join(misplaced)}")

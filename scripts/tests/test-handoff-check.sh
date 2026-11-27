@@ -184,6 +184,31 @@ expect "secret in GOTCHAS.md fails check" 1 "GOTCHAS.md:" -- sh -c "cd '$R' && p
 write_handoff "$R"; (cd "$R" && hc stamp >/dev/null)
 printf 'token = abcdefghijklmnop\n' > "$R/docs/handoff/notes.md"
 expect "secret in other docs/handoff file fails check" 1 "notes.md:1: 疑似 assigned secret" -- sh -c "cd '$R' && python3 '$TOOL' check"
+# 帶前綴的環境變數寫法（3.0.1 前因 \b 在底線處不成立而漏掉）
+AWS_FAKE="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+for case in "AWS_SECRET_ACCESS_KEY=$AWS_FAKE|AWS secret access key" \
+            "secret_access_key: $AWS_FAKE|assigned secret" \
+            "DB_PASSWORD=abcdefghij|assigned secret" \
+            "export GITHUB_API_TOKEN=\"abcdefghijklmnop\"|assigned secret" \
+            "\"db_password\": \"abcdefghij\"|assigned secret"; do
+  line="${case%|*}"; label="${case##*|}"
+  printf '%s\n' "$line" > "$R/docs/handoff/notes.md"
+  expect "prefixed secret caught: ${line%%[=:]*}" 1 "疑似 $label" -- sh -c "cd '$R' && python3 '$TOOL' check"
+done
+cat > "$R/docs/handoff/notes.md" <<'EOF'
+AWS_SECRET_ACCESS_KEY=<從密碼管理器取得>
+DB_PASSWORD=$DB_PASSWORD
+API_TOKEN="${API_TOKEN}"
+export ACCESS_KEY='<填入>'
+max_tokens: 4096000000
+TOKEN_URL=https://example.com/oauth/token
+password_hash 欄位改用 bcrypt
+PGPASS: ${DB_PASSWORD:?required_value}
+appSecret: process.env.APP_SECRET
+apiKey: 'YOUR_SEARCH_API_KEY'
+docker run -v "$PWD":/backup:ro busybox
+EOF
+expect "placeholders and non-secret names not flagged" 0 "OK" -- sh -c "cd '$R' && python3 '$TOOL' check"
 rm "$R/docs/handoff/notes.md"
 
 # ---------- 4. pre-commit 觸發條件 ----------
@@ -249,6 +274,11 @@ open(p, "w", encoding="utf-8").write(t.replace("（相關：G1）", "").replace(
 EOF
 (cd "$R" && hc stamp >/dev/null)
 expect "old structure passes with marker WARN" 0 "缺少停止標記" -- sh -c "cd '$R' && python3 '$TOOL' check"
+printf '\n變更日誌提到 `<!-- on-demand -->` 與 `<!-- section: summary -->` 不算錨點。\n' >> "$R/docs/handoff/HANDOFF.md"
+expect "inline mention of marker is not the marker" 0 "缺少停止標記" -- sh -c "cd '$R' && python3 '$TOOL' check"
+refute "inline mention does not cause order WARN" "章節順序不符" -- sh -c "cd '$R' && python3 '$TOOL' check"
+sed -i.bak 's/^<!-- section: summary -->$/摘要錨點被刪/' "$R/docs/handoff/HANDOFF.md"
+expect "anchor only mentioned inline is missing" 1 "缺少章節錨點 <!-- section: summary -->" -- sh -c "cd '$R' && python3 '$TOOL' check"
 
 # ---------- 7. status 中斷判定 ----------
 R="$(new_repo st)"

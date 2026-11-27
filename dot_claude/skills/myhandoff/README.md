@@ -73,6 +73,16 @@ Stop 每回合執行，為了降低寫入，以 HEAD、`git status --porcelain`�
 
 ## 變更紀錄
 
+### 3.0.1
+
+修正秘密掃描的「assigned secret」樣式漏掉帶前綴的環境變數寫法，例如 `AWS_SECRET_ACCESS_KEY=…`、`DB_PASSWORD=…`、`secret_access_key: …`。原樣式以 `\b` 界定關鍵字開頭，但底線是單字字元，`_` 與字母之間不成立單字邊界。此缺口由 kap_llm_wiki 會話在 3.0.0 遷移後的回歸測試中發現，3.0.0 之前就存在。
+
+- 關鍵字前可接以 `_` 或 `-` 結尾的前綴；JSON 的 `"db_password": "…"` 也納入。
+- 新增「AWS secret access key」樣式：`aws…` 開頭的鍵後接 40 字元的值。
+- 為控制誤報：camelCase（`appToken`）多半是程式碼，不納入；前面是 `$` 或 `{` 的是變數引用（`$PWD`、`${DB_PASSWORD:?}`），不算；值為 `process.env`、`os.environ`、`os.getenv`、`YOUR_…` 時不算。
+- 章節錨點、gotchas 的 block 錨點與 `<!-- on-demand -->` 停止標記改為必須單獨成行才算。原本只做子字串比對，正文或行內程式碼提到 `<!-- on-demand -->` 時會被當成停止標記，產生錯誤的「章節順序不符」警告（本倉庫交接文件的變更日誌即觸發）。
+- 以本倉庫 507 個追蹤檔與 kap_llm_wiki 的交接文件比對新舊樣式：交接文件沒有差異；新增的命中除測試用的假秘密外，是 agents 範例程式碼中的 `app_token: appToken`、`use_auth_token=hf_token` 與一個 `POSTGRES_PASSWORD=probe-$(date +%s)`，少抓的是佔位符 `apiKey: 'YOUR_SEARCH_API_KEY'`。
+
 ### 3.0.0
 
 交接文件瘦身與分層。實測一個專案說「接手」後上下文增加約 28k，主因是保存時只增不刪：HANDOFF.md 從 4,877 字元長到 23,384 字元，摘要累積多條「停在」，狀態表與下一步大多已完成，新舊版本號與測試數並存。設計與互審記錄在 kap_llm_wiki 專案的 `docs/superpowers/specs/2026-11-27-handoff-slimming-design.md` 與 `docs/reviews/2026-11-27-handoff-*.md`。
