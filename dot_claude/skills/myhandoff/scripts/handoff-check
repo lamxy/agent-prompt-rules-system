@@ -28,10 +28,25 @@ import sys
 import tempfile
 from pathlib import Path
 
+HANDOFF_DIR = "docs/handoff"
 HANDOFF_RELATIVE_PATH = "docs/handoff/HANDOFF.md"
+GOTCHAS_RELATIVE_PATH = "docs/handoff/GOTCHAS.md"
 REQUIRED_FRONTMATTER_KEYS = ("branch", "head", "status", "updated")
 VALID_STATUSES = ("active", "closed")
 REQUIRED_SECTIONS = ("summary", "status", "done", "run", "gotchas", "pending", "next")
+# 3.0.0 起的章節順序：必讀在停止標記之前，按需在之後。順序不符只發 WARN。
+MUST_READ_SECTIONS = ("summary", "status", "next", "gotchas")
+ON_DEMAND_SECTIONS = ("pending", "run", "done")
+ON_DEMAND_MARKER = "<!-- on-demand -->"
+TRIGGERS_BLOCK = "triggers"
+# 大小門檻只發 WARN；FAIL 只用在會造成資訊遺失或外洩的情況。
+LIMIT_TOTAL_CHARS = 8000
+LIMIT_SUMMARY_CHARS = 800
+LIMIT_TRIGGER_LINES = 30
+LIMIT_TRIGGER_CHARS = 3000
+LIMIT_DONE_ROWS = 3
+# 中斷判定：檔案修改時間比交接保存時間晚超過此秒數才算，避開檔案系統時間精度誤差。
+MTIME_TOLERANCE_SECONDS = 2
 ENTRY_FILES = ("AGENTS.md", "CLAUDE.md", "GEMINI.md")
 GIT_HOOK_MARKER = "# managed-by: handoff-check"
 HOOK_COMMAND_MARKERS = ("handoff-check", "handoff-hook")
@@ -144,14 +159,22 @@ def scan_secrets(text, label):
                 findings.append(f"{label}:{line_number}: 疑似 {name}")
     if shutil.which("gitleaks"):
         with tempfile.TemporaryDirectory() as tmp:
-            target = Path(tmp) / "HANDOFF.md"
+            target = Path(tmp) / (Path(label).name or "handoff.md")
             target.write_text(text, encoding="utf-8")
             result = subprocess.run(
                 ["gitleaks", "detect", "--no-git", "--no-banner", "--redact", "-s", tmp],
                 capture_output=True, text=True)
             if result.returncode == 1:
-                findings.append(f"{label}: gitleaks 偵測到秘密（執行 gitleaks detect --no-git -s docs/handoff 查看）")
+                findings.append(f"{label}: gitleaks 偵測到秘密（執行 gitleaks detect --no-git -s {HANDOFF_DIR} 查看）")
     return findings
+
+
+def handoff_dir_files(root):
+    """docs/handoff/ 下所有檔案的相對路徑（遞迴）。"""
+    base = root / HANDOFF_DIR
+    if not base.is_dir():
+        return []
+    return sorted(p.relative_to(root).as_posix() for p in base.rglob("*") if p.is_file())
 
 
 def validate_content(text, label):
@@ -175,6 +198,169 @@ def validate_content(text, label):
         problems.append(f"{label}: 仍有未填寫的模板佔位符")
     problems += scan_secrets(text, label)
     return problems
+
+
+def section_text(text, name):
+    """回傳某章節錨點到下一個章節錨點或停止標記之間的內容；沒有該錨點時回傳 None。"""
+    anchor = f"<!-- section: {name} -->"
+    start = text.find(anchor)
+    if start < 0:
+        return None
+    start += len(anchor)
+    ends = [i for i in (text.find("<!-- section:", start), text.find(ON_DEMAND_MARKER, start)) if i >= 0]
+    return text[start:min(ends)] if ends else text[start:]
+
+
+def block_text(text, name):
+    """回傳 gotchas 節內 <!-- block: name --> 到下一個 block 或章節邊界之間的內容；沒有時回傳 None。"""
+    section = section_text(text, "gotchas")
+    if section is None:
+        return None
+    anchor = f"<!-- block: {name} -->"
+    start = section.find(anchor)
+    if start < 0:
+        return None
+    start += len(anchor)
+    end = section.find("<!-- block:", start)
+    return section[start:end] if end >= 0 else section[start:]
+
+
+def gotcha_sort_key(gotcha_id):
+    return int(gotcha_id[1:])
+
+
+def format_ids(ids):
+    return "、".join(sorted(ids, key=gotcha_sort_key))
+
+
+def gotchas_consistency(handoff_text, gotchas_text):
+    """觸發索引與 GOTCHAS.md 的一致性。回傳 (problems, warnings)。
+    對不上會讓條目無從查閱或悄悄遺失，因此是 FAIL。"""
+    problems, warnings = [], []
+    triggers = block_text(handoff_text, TRIGGERS_BLOCK)
+    index_ids = set(re.findall(r"\bG\d+\b", triggers or ""))
+    if gotchas_text is None:
+        if index_ids:
+            problems.append(f"{HANDOFF_RELATIVE_PATH}: 觸發索引引用 {format_ids(index_ids)}，"
+                            f"但 {GOTCHAS_RELATIVE_PATH} 不存在")
+        return problems, warnings
+    headings = re.findall(r"^###\s+(G\d+)\b", gotchas_text, re.M)
+    heading_ids = set(headings)
+    duplicated = {g for g in headings if headings.count(g) > 1}
+    if duplicated:
+        warnings.append(f"{GOTCHAS_RELATIVE_PATH}: 編號重複：{format_ids(duplicated)}")
+    if triggers is None:
+        problems.append(f"{HANDOFF_RELATIVE_PATH}: {GOTCHAS_RELATIVE_PATH} 存在，但 gotchas 節缺少觸發索引錨點 "
+                        f"<!-- block: {TRIGGERS_BLOCK} -->")
+        return problems, warnings
+    missing = heading_ids - index_ids
+    if missing:
+        problems.append(f"{GOTCHAS_RELATIVE_PATH} 的 {format_ids(missing)} 沒有出現在觸發索引；"
+                        "每個條目都要有一行「動作 → 一句話做法 → G<n>」")
+    dangling = index_ids - heading_ids
+    if dangling:
+        problems.append(f"觸發索引引用的 {format_ids(dangling)} 在 {GOTCHAS_RELATIVE_PATH} 沒有對應的 ### G<n> 標題")
+    other_refs = set(re.findall(r"\bG\d+\b", handoff_text)) - heading_ids - index_ids
+    if other_refs:
+        warnings.append(f"{HANDOFF_RELATIVE_PATH}: 引用了不存在的條目 {format_ids(other_refs)}")
+    return problems, warnings
+
+
+def split_table_row(line):
+    """依未跳脫、不在行內程式碼中的 | 切分表格列，回傳欄位數。"""
+    cells, in_code, escaped = 1, False, False
+    body = line.strip()
+    if body.startswith("|"):
+        body = body[1:]
+    if body.endswith("|") and not body.endswith("\\|"):
+        body = body[:-1]
+    for char in body:
+        if escaped:
+            escaped = False
+        elif char == "\\":
+            escaped = True
+        elif char == "`":
+            in_code = not in_code
+        elif char == "|" and not in_code:
+            cells += 1
+    return cells
+
+
+def table_warnings(text, label):
+    """表格列的欄數與表頭不符時回傳警告；略過圍欄程式碼區塊。"""
+    warnings, in_fence, header = [], False, None
+    lines = text.splitlines()
+    for number, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            header = None
+            continue
+        if in_fence or not stripped.startswith("|"):
+            header = None
+            continue
+        if header is None:
+            following = lines[number].strip() if number < len(lines) else ""
+            if re.match(r"^\|?\s*:?-{3,}", following):
+                header = split_table_row(stripped)
+            continue
+        if re.match(r"^\|?\s*:?-{3,}", stripped):
+            continue
+        cells = split_table_row(stripped)
+        if cells != header:
+            warnings.append(f"{label}:{number}: 表格列有 {cells} 欄，表頭是 {header} 欄")
+    return warnings
+
+
+def is_done_cell(cell):
+    value = re.sub(r"[*_`~]", "", cell).strip().lower()
+    return value.startswith(("完成", "已完成", "done", "✅"))
+
+
+def structure_warnings(text, label):
+    """大小、順序與表格格式的提醒，一律只發 WARN。"""
+    warnings = []
+    if len(text) > LIMIT_TOTAL_CHARS:
+        warnings.append(f"{label}: 全文 {len(text):,} 字元，超過 {LIMIT_TOTAL_CHARS:,}；先收斂再提交")
+    if ON_DEMAND_MARKER not in text:
+        warnings.append(f"{label}: 缺少停止標記 {ON_DEMAND_MARKER}（3.0.0 前的結構，依 myhandoff 保存規則遷移）")
+    else:
+        marker = text.index(ON_DEMAND_MARKER)
+        misplaced = [s for s in MUST_READ_SECTIONS if 0 <= text.find(f"<!-- section: {s} -->") > marker]
+        misplaced += [s for s in ON_DEMAND_SECTIONS if 0 <= text.find(f"<!-- section: {s} -->") < marker]
+        if misplaced:
+            warnings.append(f"{label}: 章節順序不符（必讀：{'、'.join(MUST_READ_SECTIONS)} 在停止標記前；"
+                            f"按需：{'、'.join(ON_DEMAND_SECTIONS)} 在後），位置不對的：{'、'.join(misplaced)}")
+    summary = section_text(text, "summary")
+    if summary is not None:
+        bullets = [line for line in summary.splitlines() if re.match(r"^\s*[-*] ", line)]
+        if len(bullets) != 3:
+            warnings.append(f"{label}: 摘要應為三項（進度／停在／第一件事），目前 {len(bullets)} 項")
+        if len(summary.strip()) > LIMIT_SUMMARY_CHARS:
+            warnings.append(f"{label}: 摘要 {len(summary.strip())} 字元，超過 {LIMIT_SUMMARY_CHARS}；摘要每次覆寫，不累積")
+    triggers = block_text(text, TRIGGERS_BLOCK)
+    if triggers is not None:
+        trigger_lines = [line for line in triggers.splitlines()
+                         if line.strip() and not line.lstrip().startswith(("#", "<!--"))]
+        if len(trigger_lines) > LIMIT_TRIGGER_LINES or len(triggers.strip()) > LIMIT_TRIGGER_CHARS:
+            warnings.append(f"{label}: 觸發索引 {len(trigger_lines)} 行、{len(triggers.strip()):,} 字元，"
+                            f"上限 {LIMIT_TRIGGER_LINES} 行、{LIMIT_TRIGGER_CHARS:,} 字元")
+    next_steps = section_text(text, "next")
+    if next_steps is not None and "已完成" in next_steps:
+        warnings.append(f"{label}: 建議的下一步含「已完成」；只列未完成項目")
+    status = section_text(text, "status")
+    if status is not None:
+        done_rows = 0
+        for line in status.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("|") and not re.match(r"^\|?\s*:?-{3,}", stripped):
+                cells = stripped.strip("|").split("|")
+                if any(is_done_cell(cell) for cell in cells[1:]):
+                    done_rows += 1
+        if done_rows > LIMIT_DONE_ROWS:
+            warnings.append(f"{label}: 當前狀態有 {done_rows} 列已完成，最多保留 {LIMIT_DONE_ROWS} 列仍需核對的")
+    warnings += table_warnings(text, label)
+    return warnings
 
 
 # ---------- 子命令 ----------
@@ -208,8 +394,19 @@ def command_check(_args):
     if not path.exists():
         print(f"FAIL 找不到 {HANDOFF_RELATIVE_PATH}")
         return 1
-    problems = validate_content(path.read_text(encoding="utf-8"), HANDOFF_RELATIVE_PATH)
-    warnings = []
+    text = path.read_text(encoding="utf-8")
+    problems = validate_content(text, HANDOFF_RELATIVE_PATH)
+    warnings = structure_warnings(text, HANDOFF_RELATIVE_PATH)
+    for relative in handoff_dir_files(root):
+        if relative != HANDOFF_RELATIVE_PATH:
+            problems += scan_secrets((root / relative).read_text(encoding="utf-8", errors="ignore"), relative)
+    gotchas_path = root / GOTCHAS_RELATIVE_PATH
+    gotchas_text = gotchas_path.read_text(encoding="utf-8") if gotchas_path.exists() else None
+    consistency_problems, consistency_warnings = gotchas_consistency(text, gotchas_text)
+    problems += consistency_problems
+    warnings += consistency_warnings
+    if gotchas_text is not None:
+        warnings += table_warnings(gotchas_text, GOTCHAS_RELATIVE_PATH)
     if is_git:
         if run_git(["check-ignore", "-q", HANDOFF_RELATIVE_PATH], root).returncode == 0:
             problems.append(f"{HANDOFF_RELATIVE_PATH} 被 .gitignore 排除，交接文件必須進版控")
@@ -236,12 +433,19 @@ def command_check(_args):
 
 
 def staleness_lines(root, is_git):
+    lines, _ = staleness_report(root, is_git)
+    return lines
+
+
+def staleness_report(root, is_git):
+    """回傳 (說明行, 交接之後的非交接提交數；無法判斷時為 None)。"""
     path = root / HANDOFF_RELATIVE_PATH
     values, _ = parse_frontmatter(path.read_text(encoding="utf-8"))
     values = values or {}
     lines = [f"交接文件：{HANDOFF_RELATIVE_PATH}（status: {values.get('status', '未知')}，"
              f"branch: {values.get('branch', '未知')}，head: {values.get('head', '未知')}，"
              f"更新：{values.get('updated', '未知')}）"]
+    behind = None
     if is_git and values.get("head"):
         branch, head = current_git_state(root)
         state = f"目前分支 {branch}，HEAD {head}"
@@ -255,7 +459,58 @@ def staleness_lines(root, is_git):
         else:
             state += "；交接之後沒有非交接提交"
         lines.append(state)
-    return lines
+    return lines, behind
+
+
+def handoff_saved_at(root):
+    """交接保存時間。frontmatter 的 updated 只到日期，精度不夠，因此：
+    docs/handoff/ 已提交且乾淨時用 HANDOFF.md 最後一次提交的時間，否則用 HANDOFF.md 的修改時間。"""
+    dirty = run_git(["status", "--porcelain", "--", HANDOFF_DIR], root).stdout.strip()
+    if not dirty:
+        committed = run_git(["log", "-1", "--format=%ct", "--", HANDOFF_RELATIVE_PATH], root).stdout.strip()
+        if committed.isdigit():
+            return int(committed)
+    return (root / HANDOFF_RELATIVE_PATH).stat().st_mtime
+
+
+def changes_after_handoff(root):
+    """交接保存之後才產生的未提交變更（不含 docs/handoff/）。回傳 (晚於交接的檔案, 無法判定時間的已刪除檔案)。"""
+    saved_at = handoff_saved_at(root)
+    raw = run_git(["status", "--porcelain=v1", "-z", "--untracked-files=all"], root).stdout
+    entries = raw.split("\0")
+    late, deleted = [], []
+    index = 0
+    while index < len(entries):
+        entry = entries[index]
+        index += 1
+        if len(entry) < 4:
+            continue
+        code, relative = entry[:2], entry[3:]
+        if "R" in code or "C" in code:
+            index += 1  # -z 格式下，改名與複製的原路徑緊接在後
+        if relative.startswith(HANDOFF_DIR + "/"):
+            continue
+        target = root / relative
+        if not target.exists():
+            deleted.append(relative)
+        elif target.stat().st_mtime > saved_at + MTIME_TOLERANCE_SECONDS:
+            late.append(relative)
+    return late, deleted
+
+
+def interruption_reasons(root, meta, behind):
+    """三種中斷判定，任一成立即視為中斷。"""
+    reasons = []
+    if meta.get("event") == "stop-failure":
+        reasons.append(f"上一個會話在 {meta.get('time', '未知時間')} 因 {meta.get('error') or '未知錯誤'} 中斷"
+                       f"（{meta.get('client', '未知客戶端')}，快照事件 stop-failure）")
+    late, _ = changes_after_handoff(root)
+    if late:
+        shown = "、".join(late[:5]) + ("…" if len(late) > 5 else "")
+        reasons.append(f"有 {len(late)} 個未提交變更的修改時間晚於交接保存時間：{shown}")
+    if behind:
+        reasons.append(f"交接之後有 {behind} 個非交接提交")
+    return reasons
 
 
 def read_status(root):
@@ -288,14 +543,22 @@ def command_status(_args):
     if not (root / HANDOFF_RELATIVE_PATH).exists():
         print(f"找不到 {HANDOFF_RELATIVE_PATH}")
         return 1
-    print("\n".join(staleness_lines(root, is_git)))
+    lines, behind = staleness_report(root, is_git)
+    print("\n".join(lines))
     if is_git:
         snapshot, meta = read_snapshot_meta(root)
         if snapshot:
             print(f"備援快照：{snapshot}（{meta.get('time', '未知時間')}，事件 {meta.get('event', '未知')}）")
-            line = interruption_line(meta)
-            if line:
-                print(line)
+        reasons = interruption_reasons(root, meta, behind)
+        if reasons:
+            print("中斷判定：是。" + "；".join(reasons)
+                  + "。交接文件的「停在」「下一步」不再可信，依 myhandoff 技能的 references/interrupt.md 處理。")
+        else:
+            print("中斷判定：否")
+        _, deleted = changes_after_handoff(root)
+        if deleted:
+            print(f"另有 {len(deleted)} 個已刪除的檔案無法判定刪除時間：" + "、".join(deleted[:5])
+                  + ("…" if len(deleted) > 5 else ""))
     return 0
 
 
@@ -382,7 +645,8 @@ def hook_session_start(payload, cwd):
     is_git = is_git_root(root)
     if read_status(root) == "closed":
         return "closed", "silent"
-    lines = [f"{HOOK_OUTPUT_PREFIX}本專案有進度交接文件。接手既有工作前先讀它；使用者要求續作時依 myhandoff 技能的恢復模式處理。"]
+    lines = [f"{HOOK_OUTPUT_PREFIX}本專案有進度交接文件。接手既有工作前先讀它，讀到停止標記（「以下按需查閱」）為止；"
+             "GOTCHAS.md 依觸發索引查閱，不整份讀。使用者要求續作時依 myhandoff 技能的恢復模式處理。"]
     lines += staleness_lines(root, is_git)
     if is_git:
         snapshot, meta = read_snapshot_meta(root)
@@ -526,17 +790,38 @@ def command_git_pre_commit(_args):
     root, is_git = find_project_root(os.getcwd())
     if not is_git:
         return 0
-    staged = run_git(["diff", "--cached", "--name-only", "--diff-filter=ACMR"], root).stdout.split()
-    if HANDOFF_RELATIVE_PATH not in staged:
+    # 暫存區有任何 docs/handoff/ 下的檔案（含刪除）就觸發；只提交 GOTCHAS.md 也要檢查。
+    staged_all = [f for f in run_git(["diff", "--cached", "--name-only"], root).stdout.splitlines() if f]
+    if not any(f.startswith(HANDOFF_DIR + "/") for f in staged_all):
         return 0
-    problems = []
+    staged = set(run_git(["diff", "--cached", "--name-only", "--diff-filter=ACMR"], root).stdout.splitlines())
+    problems, warnings = [], []
     allowed = extra_allowed_paths(root)
-    mixed = [f for f in staged if not is_handoff_only_path(f, allowed)]
+    mixed = [f for f in staged_all if not is_handoff_only_path(f, allowed)]
     if mixed:
         problems.append("交接提交只能包含 docs/handoff/ 與入口檔，另外夾帶了：" + "、".join(mixed)
                         + "。請把功能變更分開提交；確需例外時用 git config --add handoff.allow <路徑>")
-    staged_text = run_git(["show", f":{HANDOFF_RELATIVE_PATH}"], root).stdout
-    problems += validate_content(staged_text, HANDOFF_RELATIVE_PATH)
+
+    def index_text(relative):
+        result = run_git(["show", f":{relative}"], root)
+        return result.stdout if result.returncode == 0 else None
+
+    handoff_text = index_text(HANDOFF_RELATIVE_PATH)
+    if HANDOFF_RELATIVE_PATH in staged and handoff_text is not None:
+        problems += validate_content(handoff_text, HANDOFF_RELATIVE_PATH)
+        warnings += structure_warnings(handoff_text, HANDOFF_RELATIVE_PATH)
+    for relative in sorted(staged):
+        if relative.startswith(HANDOFF_DIR + "/") and relative != HANDOFF_RELATIVE_PATH:
+            problems += scan_secrets(index_text(relative) or "", relative)
+    if handoff_text is not None:
+        consistency_problems, consistency_warnings = gotchas_consistency(
+            handoff_text, index_text(GOTCHAS_RELATIVE_PATH))
+        problems += consistency_problems
+        warnings += consistency_warnings
+    if warnings:
+        print("handoff pre-commit 警告（不阻擋提交）：", file=sys.stderr)
+        for warning in warnings:
+            print(f"  - {warning}", file=sys.stderr)
     if problems:
         print("handoff pre-commit 檢查未通過：", file=sys.stderr)
         for problem in problems:

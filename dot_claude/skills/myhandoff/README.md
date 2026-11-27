@@ -1,6 +1,6 @@
 # myhandoff 技能維護說明
 
-本檔案面向維護者，不會被模型載入。行為規則一律寫在 `SKILL.md`。
+本檔案面向維護者，不會被模型載入。行為規則寫在 `SKILL.md`；保存流程與中斷恢復拆在 `references/save.md`、`references/interrupt.md`，只在保存或判定為中斷時才讀。
 
 ## 版本規則
 
@@ -23,8 +23,8 @@ Codex 副本與來源唯一的差異是 `SKILL.md` 移除了 Claude Code 專屬�
 
 | 層 | 機制 | 位置 |
 |---|---|---|
-| 1 | `scripts/handoff-check`：frontmatter 錨點、結構、秘密掃描、進版控、入口檔、過期判斷 | 技能目錄，兩個客戶端共用 |
-| 2 | git pre-commit：秘密掃描、交接提交純度、結構 | 各專案 `.git/hooks/pre-commit`，由 `install-git-hook` 安裝，與客戶端無關 |
+| 1 | `scripts/handoff-check`：frontmatter 錨點、結構、`docs/handoff/` 秘密掃描、觸發索引與 GOTCHAS 一致性、進版控、入口檔、過期與中斷判斷；大小與格式只 WARN | 技能目錄，兩個客戶端共用 |
+| 2 | git pre-commit：暫存區有任何 `docs/handoff/` 檔案即觸發；秘密掃描、交接提交純度、結構、索引一致性 | 各專案 `.git/hooks/pre-commit`，由 `install-git-hook` 安裝，與客戶端無關 |
 | 3 | 客戶端 hook：SessionStart 注入索引或提示開錯位置；Stop、PreCompact、StopFailure（僅 Claude Code）寫 `.git/handoff/snapshot.md` | `~/.claude/settings.json` 與 `~/.codex/hooks.json`，定義固定呼叫 `scripts/handoff-hook`，由 `install-hooks` 寫入 |
 
 設計依據：
@@ -72,6 +72,33 @@ Stop 每回合執行，為了降低寫入，以 HEAD、`git status --porcelain`�
 若將來需要跨機器的長期記憶，ai-memory 可與本技能並存：前者負責記憶，本技能負責單次工作的交接。
 
 ## 變更紀錄
+
+### 3.0.0
+
+交接文件瘦身與分層。實測一個專案說「接手」後上下文增加約 28k，主因是保存時只增不刪：HANDOFF.md 從 4,877 字元長到 23,384 字元，摘要累積多條「停在」，狀態表與下一步大多已完成，新舊版本號與測試數並存。設計與互審記錄在 kap_llm_wiki 專案的 `docs/superpowers/specs/2026-11-27-handoff-slimming-design.md` 與 `docs/reviews/2026-11-27-handoff-*.md`。
+
+產出結構改變，因此提升主版本號：
+
+- HANDOFF.md 章節改為必讀在前（摘要、當前狀態、建議的下一步、續作時必須知道的事），之後是 `<!-- on-demand -->` 停止標記，按需的在後（待處理事項、本機執行、已完成內容）。7 個章節錨點名稱不變，舊文件仍能通過 FAIL 檢查，只出現 WARN。
+- 「續作時必須知道的事」分三塊，以 `<!-- block: core|triggers|uncommitted -->` 標記：核心約束（≤ 10 行，附來源）、觸發索引（每行「動作 → 一句話做法 → G<n>」）、未提交的變更。陷阱全文移到新增的 `docs/handoff/GOTCHAS.md`，每條一個 `### G<n>`，按需查閱。
+- 新增 `templates/GOTCHAS.md`。
+
+技能規則：
+
+- SKILL.md 拆出 `references/save.md`（保存流程、章節說明、保存時機）與 `references/interrupt.md`（中斷恢復），SKILL.md 約從 16.9k 字元降到 8.6k。
+- 恢復時讀到停止標記為止；GOTCHAS 不整份讀，依「下一步」標注與觸發索引查閱；回報加一行「本次讀了 G…」。落後時 `git log` 只看最近 10 筆。
+- 保存時摘要每次覆寫；已完成項目先搬再刪、只刪能證明有去處的；含「未驗證」的片段先搬到待處理；沒有其他來源的事實只搬不刪；git 歷史不算另有來源。
+
+`handoff-check`：
+
+- 秘密掃描範圍從 HANDOFF.md 擴大到 `docs/handoff/` 下所有檔案（`check` 掃工作樹，pre-commit 掃暫存區版本）。
+- pre-commit 改為暫存區有任何 `docs/handoff/` 檔案（含刪除）就觸發。原本 HANDOFF.md 不在暫存區時直接放行，只提交 GOTCHAS.md 會跳過所有檢查。
+- 觸發索引與 GOTCHAS.md 對不上時 FAIL：條目沒有索引行、索引引用不存在的條目、GOTCHAS.md 存在但缺少 `triggers` 錨點，以及索引引用了 G 條目而 GOTCHAS.md 不存在。HANDOFF 其他地方引用不存在的 G 條目、編號重複只發 WARN。
+- 只發 WARN：全文 > 8,000 字元；摘要不是三項或 > 800 字元；觸發索引 > 30 行或 > 3,000 字元；下一步含「已完成」；完成列 > 3；表格列欄數與表頭不符；缺少停止標記或章節順序不符。大小一律不設 FAIL，FAIL 只用在會造成資訊遺失或外洩的情況。
+- `status` 補齊三種中斷判定並輸出「中斷判定：是／否」：快照 stop-failure、交接保存後才修改的未提交變更、交接後的非交接提交。frontmatter 的 `updated` 只到日期，精度不夠，保存時間改取 HANDOFF.md 最後一次提交的時間（`docs/handoff/` 有未提交修改時取其修改時間）。
+- SessionStart 注入的措辭改為「讀到停止標記為止；GOTCHAS.md 依觸發索引查閱」。hook 定義不變，Codex 不需重新信任。
+
+不做：`brief` 子命令（HANDOFF 縮短後只能再省約 2k tokens）、`wip` 錨點、封存檔、把核心約束注入 hook。
 
 ### 2.2.0
 
