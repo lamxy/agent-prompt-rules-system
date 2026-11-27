@@ -1,6 +1,6 @@
 ---
 branch: main
-head: ce982b2
+head: 4a767c1
 status: active
 updated: 2026-11-27
 ---
@@ -378,6 +378,13 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 
 <!-- section: next -->
 ## 建议的下一步
+
+**本仓库 HANDOFF 迁移到 myhandoff 3.0.1 结构（下一个会话的第一件事；用户 2026-11-27 已同意）**：在新会话执行，不在做 3.0 实作的会话里做（上下文太重）。
+
+1. 依 `~/.claude/skills/myhandoff/references/save.md` 的覆写与删除规则迁移本文件：摘要覆写成三行；当前状态与下一步只留未完成项；「续作时必须知道的事」21 条分类为核心约束（≤ 10 行附来源）与 `docs/handoff/GOTCHAS.md`（`### G<n>` 加触发索引行）；先搬再删，commit 用 `git cat-file -e`、节号用 grep 核对，「未验证」片段先搬到待处理，无其他来源的只搬不删。结构照 `templates/HANDOFF.md`（`<!-- on-demand -->` 停止标记、`<!-- block: core|triggers|uncommitted -->`）
+2. **用户已决定**：「变更日志」整节原样移到 `docs/handoff/CHANGELOG.md`；`AGENTS.md` 第 5 行改为 change log 追加到 `docs/handoff/CHANGELOG.md`（不再写在 HANDOFF 里）。「如何扩展」一节移到合适的文件（如 `README.md`），记录去处
+3. 写一张去处对照表（旧文件每个条目与任务行各自移到哪里：核心／GOTCHAS／CHANGELOG／其他文件／删除及理由），放在 `docs/handoff/CHANGELOG.md` 本次条目或提交信息中
+4. `handoff-check check` 通过且无大小 WARN（目标 HANDOFF ≤ 8,000 字元），交接相关文件单独提交；`AGENTS.md` 的改动属入口文件，可同一提交。参考先例：kap_llm_wiki 的迁移（`a23cb01`、`5269bba`）与方案第 7 节
 
 **数据库设计强化（优先，按用户节奏逐步推进）**：用户 2026-10-21 要求加入，分批提供材料。
 
