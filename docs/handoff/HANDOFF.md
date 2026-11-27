@@ -1,6 +1,6 @@
 ---
 branch: main
-head: e38c6c3
+head: ce982b2
 status: active
 updated: 2026-11-27
 ---
@@ -538,3 +538,4 @@ MCP Toolbox 的 `execute_sql` 可以执行写操作，工具本身没有只读�
 | 2026-11-23 | /goal Codex 版审计修正 | 子代理审计后修正：续行回合先确认阻塞是否仍在（避免用户解除禁令后仍只重述）；goal 因预算耗尽（`budget_limited`）停止时不调用 `update_goal`（与 Codex 内置规则一致）；对照表与变更日志改为「已用本机 0.171.0 可执行文件核对一致」；`dot_claude/README.md` 行数改约 60 行、合并清单补两个 `@memory` 导入；测试禁用词加「检查器」「Impossible」并断言模板含 /goal 段（`bcff9a7`）；`codex.sh` 重新写入（备份 `AGENTS.md.bak.20261123-221416`，diff 只改该行）；`run-all.sh` 19 个全过 | 无 |
 | 2026-11-23 | 发布 v2.7.0 | 按用户指示推送 `main`（`eb97844..5a0c6d6`）；按 `skills/skills-github-ops/github-release` 流程：annotated tag `v2.7.0` 指向 `5a0c6d6` 并推送、release notes 纯 ASCII 校验通过、`gh release create`；`gh release list` 显示 Latest | — |
 | 2026-11-27 | myhandoff 3.0.0（交接文件瘦身与分层） | 应 kap_llm_wiki 会话请求、经用户确认，实作其方案（`docs/superpowers/specs/2026-11-27-handoff-slimming-design.md`，b97f9e1）第 2–6 节：HANDOFF 必读在前加 `<!-- on-demand -->` 停止标记、gotchas 分核心约束／触发索引／未提交变更、新增 `GOTCHAS.md` 模板；SKILL 拆 `references/save.md`、`interrupt.md`；`handoff-check` 秘密扫描扩到 `docs/handoff/`、pre-commit 任何 `docs/handoff/` 文件触发、索引与 GOTCHAS 不一致 FAIL、大小格式只 WARN、`status` 三种中断判定；新增 `test-handoff-check.sh`（31 项）；`run-all.sh` 20 个全过（`e38c6c3`） | 安装到 `~/.claude/skills/myhandoff/` 与 `sync-codex` 被权限拒绝，待用户执行；本仓库 HANDOFF 仍是旧结构（check 只出 WARN），未迁移 |
+| 2026-11-27 | myhandoff 3.0.1（秘密扫描漏带前缀的环境变量） | kap_llm_wiki 会话回报 `AWS_SECRET_ACCESS_KEY=` 抓不到，用户同意修：assigned secret 样式原以 `\b` 界定开头，`_` 后不成立；改为允许 `_`/`-` 结尾的前缀，新增 AWS secret 样式，排除 camelCase、`$VAR`/`${VAR}`、`process.env`、`YOUR_` 占位符；以仓库 507 个追踪文件比对新旧样式，交接文件无差异，残余误报只在 agents 范例代码；另修锚点与停止标记须单独成行（本文件变更日志里的行内 on-demand 标记曾被误认）；测试 40 项、`run-all.sh` 20 个全过（`ce982b2`）；用户执行安装与 `sync-codex`，两份副本已核对一致 | 残余误报：snake_case 的 token 键后接代码标识符（agents 范例代码，非交接文件） |
