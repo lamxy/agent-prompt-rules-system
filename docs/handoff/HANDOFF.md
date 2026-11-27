@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 926efb5
+head: d6d3fa1
 status: active
 updated: 2026-11-27
 ---
@@ -12,7 +12,7 @@ updated: 2026-11-27
 ## 摘要
 
 - 进度：四场景配置、评估阶段 1～3 与静态验证、myhandoff 3.0.1 均已完成；2026-11-27 本文件迁移到 myhandoff 3.0.1 结构
-- 停在：迁移提交之后；`main` 有未推送提交（推送与 release 等用户指示）
+- 停在：发布 v2.8.0 之后（`main` 已推送到 `d6d3fa1`；之后的推送与 release 仍等用户指示）
 - 第一件事：请用户指定 3.4 真实项目试用的场景与项目
 
 <!-- section: status -->

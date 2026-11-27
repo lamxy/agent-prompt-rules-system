@@ -97,6 +97,7 @@
 | 2026-11-27 | myhandoff 3.0.2（触发索引行数误计） | 迁移时发现模板自带的触发索引引导句被计入 30 行上限，写满 30 条即 WARN；改为只计列表项，测试补「30 条加引导句不警告」；`run-all.sh` 20 个全过；用户 rsync 同步本机与 Codex 副本，`diff -r` 一致 | — |
 | 2026-11-27 | remember 改为可选插件 | 应 kap_llm_wiki 会话请求、经用户确认：`catalog.default.json` 在「通用」末尾加入 `remember`（序号 11），全局模板与镜像设为 `false`，两份 README 同步，`test-myplugins.sh` 序号更新；`run-all.sh` 20 个全过 | — （用户已同步 myplugins 副本并 `sync`，本机清单 remember 为序号 11「通用」；已全局停用，`~/.claude/settings.json` 核对为 `false`） |
 | 2026-11-27 | myplugins 清单按分组上色；add 分组可见化 | `list` 输出到终端时，`@` 前的插件名与 `[分组]` 按分组上色（分组按首次出现顺序取色，10 色不含蓝与灰白，未分组 `-` 不上色；初版按名称 crc32 取色，经用户要求改为按分组），按可见宽度补齐、对齐不变；`NO_COLOR` 关闭，`--color` 或 `FORCE_COLOR` 强制开启。`add --category` 原已支持但未写进用法：补进 SKILL.md、`list` 用法行、`details.md`；有同分组时插到该组末尾。`test-myplugins.sh` 加 8 项；`run-all.sh` 20 个全过 | — （`!` 执行时默认无色码；用户实测 `--color` 在 `!` 下渲染成颜色，故启动提示的 `!` 命令改带 `--color`，`dot_claude/README.md`、`GOTCHAS.md` 同步；本机副本需再 rsync） |
+| 2026-11-27 | 发布 v2.8.0 | 按用户指示推送 `main`（`8ba1147..d6d3fa1`）；annotated tag `v2.8.0` 指向 `d6d3fa1` 并推送；`gh release create`，`gh release list` 显示 Latest。偏差：发布前未先读 `skills/skills-github-ops/github-release`，notes 含 2 个非 ASCII 字（「通用」）就发布了；发现后改为英文、ASCII 校验 0、`gh release edit` 更新，线上 notes 复核 0 个非 ASCII | 下次发版先读该 skill |
 
 ## 2026-11-27 HANDOFF 迁移去处对照
 
@@ -237,7 +238,7 @@
 
 **仓库定位**：个人 Agent 配置与工具／技能管理仓库（Claude Code 为主，兼顾 Codex），公开供参考。2026-10-19 从「分层提示词规则系统」转型而来，设计原则与原因见根目录 `README.md`。
 
-**版本**：`main` 已于 2026-10-28 推送至 `origin/main`（之后的新提交推送仍需用户指示）；GitHub release v2.0.0（tag `a0783b3`）、v2.0.1（tag `6a31aee`）、v2.1.0（tag `3821dee`）、v2.2.0（tag `e4af50e`）、v2.3.0（tag `beb1ca8`）、v2.4.0（tag `d68370c`）、v2.5.0、v2.6.0（2026-11-06，tag 指向 `0277471`）、v2.7.0（Latest，2026-11-23，tag 指向 `5a0c6d6`）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
+**版本**：`main` 已于 2026-10-28 推送至 `origin/main`（之后的新提交推送仍需用户指示）；GitHub release v2.0.0（tag `a0783b3`）、v2.0.1（tag `6a31aee`）、v2.1.0（tag `3821dee`）、v2.2.0（tag `e4af50e`）、v2.3.0（tag `beb1ca8`）、v2.4.0（tag `d68370c`）、v2.5.0、v2.6.0（2026-11-06，tag 指向 `0277471`）、v2.7.0（2026-11-23，tag 指向 `5a0c6d6`）、v2.8.0（Latest，2026-11-27，tag 指向 `d6d3fa1`）。GitHub 仓库描述与 topics 已改为个人开发者工具定位。
 **已确认的技术栈决策**：后端 Go、Node.js / TypeScript；数据库以 MongoDB、Redis、MySQL 为主，兼容 PostgreSQL；部署围绕 Docker / Docker Compose（2026-10-23 去掉 K8s）；可观测性起步阶段用 Uptime Kuma、GlitchTip、Beszel、Dozzle，告警只发 Telegram，升级路径为 Prometheus + Alertmanager；PRD 以 pm-skills、mattpocock-skills、gstack 等技能为主；**规格框架按场景启用**（2026-10-28 改：全局 superpowers；后端清单默认启用 OpenSpec、前端清单默认启用 gsd-core，同一项目只启用一套；支持包按主场景启用、第二场景注释录入，见 `open_supports/INDEX.md`「建议场景」）；全局工具 task-master（只装 CLI，不注册 MCP）、gstack（2026-10-28：gstack 以 `--prefix` 安装，`skillOverrides` 默认只能手动调用、场景按需打开；mattpocock-skills 移出全局，改在 prd-design、backend-dev 场景启用，见 `settings/README.md`「工作流框架分层」）；记忆类只保留 `remember`，cognee 暂不启用。
 
 ### 旧「测验环境现状」（阶段 1 版本，已被阶段 3 版本取代）
