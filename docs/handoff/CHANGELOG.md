@@ -94,6 +94,7 @@
 | 2026-11-27 | myhandoff 3.0.0（交接文件瘦身与分层） | 应 kap_llm_wiki 会话请求、经用户确认，实作其方案（`docs/superpowers/specs/2026-11-27-handoff-slimming-design.md`，b97f9e1）第 2–6 节：HANDOFF 必读在前加 `<!-- on-demand -->` 停止标记、gotchas 分核心约束／触发索引／未提交变更、新增 `GOTCHAS.md` 模板；SKILL 拆 `references/save.md`、`interrupt.md`；`handoff-check` 秘密扫描扩到 `docs/handoff/`、pre-commit 任何 `docs/handoff/` 文件触发、索引与 GOTCHAS 不一致 FAIL、大小格式只 WARN、`status` 三种中断判定；新增 `test-handoff-check.sh`（31 项）；`run-all.sh` 20 个全过（`e38c6c3`） | 安装到 `~/.claude/skills/myhandoff/` 与 `sync-codex` 被权限拒绝，待用户执行；本仓库 HANDOFF 仍是旧结构（check 只出 WARN），未迁移 |
 | 2026-11-27 | myhandoff 3.0.1（秘密扫描漏带前缀的环境变量） | kap_llm_wiki 会话回报 `AWS_SECRET_ACCESS_KEY=` 抓不到，用户同意修：assigned secret 样式原以 `\b` 界定开头，`_` 后不成立；改为允许 `_`/`-` 结尾的前缀，新增 AWS secret 样式，排除 camelCase、`$VAR`/`${VAR}`、`process.env`、`YOUR_` 占位符；以仓库 507 个追踪文件比对新旧样式，交接文件无差异，残余误报只在 agents 范例代码；另修锚点与停止标记须单独成行（本文件变更日志里的行内 on-demand 标记曾被误认）；测试 40 项、`run-all.sh` 20 个全过（`ce982b2`）；用户执行安装与 `sync-codex`，两份副本已核对一致 | 残余误报：snake_case 的 token 键后接代码标识符（agents 范例代码，非交接文件） |
 | 2026-11-27 | 本仓库 HANDOFF 迁移到 myhandoff 3.0.1 结构 | 摘要覆写为三行；当前状态、下一步只留未完成项；「续作时必须知道的事」分为 9 条核心约束与 `docs/handoff/GOTCHAS.md` G1～G30（触发索引 30 行）；变更日志移到本文件，「如何扩展」移到 `CONTRIBUTING.md`；`AGENTS.md` 改指向本文件；无其他去处的旧段落原样存档于下方 | 3.4 试用待用户指定 |
+| 2026-11-27 | myhandoff 3.0.2（触发索引行数误计） | 迁移时发现模板自带的触发索引引导句被计入 30 行上限，写满 30 条即 WARN；改为只计列表项，测试补「30 条加引导句不警告」；`run-all.sh` 20 个全过 | 本机与 Codex 副本待用户同步 |
 
 ## 2026-11-27 HANDOFF 迁移去处对照
 

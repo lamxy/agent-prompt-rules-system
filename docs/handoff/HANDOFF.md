@@ -1,6 +1,6 @@
 ---
 branch: main
-head: 0cd368a
+head: 7dfe067
 status: active
 updated: 2026-11-27
 ---
@@ -28,6 +28,7 @@ updated: 2026-11-27
 | 技能与工具包管理平台 MVP 迁入 `src/` | 待开始 | 根目录 `README.md` Roadmap |
 | 阶段 1 遗留：skill/agent/MCP 汇总；fullstack-dev 场景包 | 延后 | `docs/plans/2026-10-20-scenario-config-evaluation-plan.md` 阶段 1 清单 |
 | HANDOFF 迁移到 3.0.1 结构 | 完成，待用户核对 | 去处对照见 `docs/handoff/CHANGELOG.md` |
+| myhandoff 3.0.2 本机副本 | 待验证 | 仓库已修（触发索引只计列表项）；`~/.claude/skills/myhandoff/` 与 Codex 副本待用户同步后 `diff -r` 核对 |
 
 <!-- section: next -->
 ## 建议的下一步
