@@ -202,7 +202,7 @@
 - SKILL.md、`settings/settings.user.json`、镜像三处都写 `python3 ~/.claude/skills/myplugins/scripts/myplugins`（测试检查三处一致），命令不展开路径、不加引号、不串接。
 - 源码 `dot_claude/skills/myplugins/`，测试 `scripts/tests/test-myplugins.sh`；本机副本 `~/.claude/skills/myplugins/`，清单 `~/.claude/myplugins/catalog.json`。
 - 行为约定（用户 2026-11-04 定）：`enable`／`off` 默认写 `.claude/settings.json`，`--local` 或 `-c` 写 `settings.local.json`；`--dry-run`／`-t`／`--test` 只预演，skill 先给用户确认再写；预演状态行显示写入后状态（2026-11-05）；启动提示第一行黄色粗体（ANSI 在 `systemMessage` 有效，hook 不能写 `/dev/tty`），用「当前目录」不说「项目」，第三行给 `! python3 ~/.claude/skills/myplugins/scripts/myplugins list`；列表用 ✅／⬜／⚠️，列表后不重排表格，只回「已启用」一行、「注意：」行与用法。`SKILL.md` 只留常用规则，其余放 `references/details.md`。
-- 清单：默认 25 个，顺序通用 → PRD → 前端 → 后端 → 运维（用户指定），跨场景插件归最早出现的场景；需个人账号的本地级插件不收。默认清单更新后用 `/myplugins sync`（保留用户 add 的、不加回 remove 过的）。全局模板把列出的插件全部设 `false`，并声明 `anthropic-agent-skills` 市场。
+- 清单：默认 26 个（2026-11-27 `remember` 移出全局、加在「通用」末尾，序号 11 起顺延），顺序通用 → PRD → 前端 → 后端 → 运维（用户指定），跨场景插件归最早出现的场景；需个人账号的本地级插件不收。默认清单更新后用 `/myplugins sync`（保留用户 add 的、不加回 remove 过的）。全局模板把列出的插件全部设 `false`，并声明 `anthropic-agent-skills` 市场。
 - `/plugin` 的 User 分组是安装范围，与在哪一层启用无关（推断，未找到官方原文）。
 - 已验证：会话内 `/reload-plugins` 立即生效；`-t` 预演与确认流程、同机共享模式（`claude -p` + `--resume`，2.1.318）。官方 `plugins/loading.md` 写项目层插件须通过信任检查、`-p` 不够，与同机结果不符，可能因该插件已在用户层安装（未验证）。
 

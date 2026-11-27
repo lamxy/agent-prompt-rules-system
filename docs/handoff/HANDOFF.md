@@ -1,6 +1,6 @@
 ---
 branch: main
-head: b2cd5bf
+head: 9b5b76a
 status: active
 updated: 2026-11-27
 ---
