@@ -1,7 +1,7 @@
 #!/bin/sh
 # Tests dot_claude/skills/myplugins/scripts/myplugins in temporary directories:
 # shared (default) / local (--local, -c) writes keep other keys, dry-run flags,, off removes only one layer, marketplace
-# declaration for shared third-party plugins, catalog add/remove, bad input, hint.
+# declaration for shared third-party plugins, catalog add/remove, bad input, hint, category coloring.
 set -eu
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
@@ -63,6 +63,19 @@ run off 4 --local >/dev/null
   && pass "off removes key instead of writing false" || fail "off did not remove"
 run status | grep -q ' 4\. hookify.*停用（全局）' && pass "off falls back to user layer" || fail "fallback state"
 
+esc="$(printf '\033')"
+run status | grep -q "$esc" && fail "color when not a tty" || pass "no color when stdout is not a tty"
+out="$(run status --color)"
+printf '%s\n' "$out" | grep -q "^ 15\. ${esc}\[[0-9]*mfrontend-design${esc}\[0m@claude-plugins-official .*啟用.* ${esc}\[[0-9]*m\[前端\]${esc}\[0m " \
+  && pass "--color colors the name before @ and the category tag" || fail "--color: $out"
+[ "$(printf '%s\n' "$out" | grep ' 15\. ' | sed "s/${esc}\[[0-9]*m//g")" = "$(run status | grep ' 15\. ')" ] \
+  && pass "colored row keeps plain alignment" || fail "alignment changed"
+code() { printf '%s\n' "$out" | grep "^ *$1\. " | sed "s/^ *$1\. ${esc}\[\([0-9]*\)m.*/\1/"; }
+[ "$(code 1)" = "$(code 11)" ] && [ "$(code 15)" = "$(code 16)" ] && [ "$(code 1)" != "$(code 15)" ] \
+  && pass "same category same color, different category different color" || fail "category colors: $(code 1) $(code 11) $(code 15) $(code 16)"
+FORCE_COLOR=1 run status | grep -q "$esc" && pass "FORCE_COLOR enables color" || fail "FORCE_COLOR ignored"
+NO_COLOR=1 FORCE_COLOR=1 run status | grep -q "$esc" && fail "NO_COLOR ignored" || pass "NO_COLOR wins over FORCE_COLOR"
+
 run off all --local >/dev/null
 [ "$(jget "$PROJ/.claude/settings.local.json" '"enabledPlugins" in d')" = "False" ] \
   && pass "off all drops empty enabledPlugins" || fail "empty enabledPlugins left"
@@ -90,6 +103,13 @@ run frontend-design >/dev/null
 
 if run add andrej-karpathy-skills@karpathy-skills >/dev/null 2>&1; then fail "duplicate add accepted"; else pass "duplicate add rejected"; fi
 if run add noat >/dev/null 2>&1; then fail "id without @ accepted"; else pass "id without @ rejected"; fi
+if run add x@y --category >/dev/null 2>&1; then fail "--category without value accepted"; else pass "--category without value rejected"; fi
+out="$(run add demo@claude-plugins-official 示例 --category 前端)"
+[ "$(jget "$TMP/home/catalog.json" '[p["id"] for p in d["plugins"]][19]')" = "demo@claude-plugins-official" ] \
+  && printf '%s\n' "$out" | grep -q '已加入 demo@claude-plugins-official（分組 前端，序號 20）' \
+  && printf '%s\n' "$out" | grep -q ' 20\. demo@claude-plugins-official .*\[前端\] 示例' \
+  && pass "add with existing category inserts after that group" || fail "add category position: $out"
+run remove demo >/dev/null
 if run 99 >/dev/null 2>&1; then fail "out of range accepted"; else pass "out of range rejected"; fi
 if run nosuch >/dev/null 2>&1; then fail "unknown name accepted"; else pass "unknown name rejected"; fi
 
@@ -130,7 +150,7 @@ printf '{}\n' > "$PROJ/.claude/settings.local.json"
 
 run 1 --local >/dev/null
 h="$(printf '{"source":"startup"}' | run hint)"
-printf '%s\n' "$h" | python3 -c 'import json,sys; m=json.load(sys.stdin)["systemMessage"]; assert "/myplugins 1" in m and "當前目錄已啟用" in m and "frontend-design" in m and "! python3 ~/.claude/skills/myplugins/scripts/myplugins list" in m' \
+printf '%s\n' "$h" | python3 -c 'import json,sys; m=json.load(sys.stdin)["systemMessage"]; assert "/myplugins 1" in m and "當前目錄已啟用" in m and "frontend-design" in m and "! python3 ~/.claude/skills/myplugins/scripts/myplugins list --color" in m' \
   && pass "hint emits systemMessage with enabled list" || fail "hint: $h"
 [ -z "$(printf '{"source":"compact"}' | run hint)" ] && pass "hint silent on compact" || fail "hint on compact"
 EMPTY="$TMP/empty"; mkdir -p "$EMPTY"

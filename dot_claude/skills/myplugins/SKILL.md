@@ -2,7 +2,7 @@
 name: myplugins
 description: 在當前目錄按序號啟用或關閉全局未啟用的可選插件（如 frontend-design、chrome-devtools-mcp、skill-creator），預設寫入共享設定 .claude/settings.json，也可寫本地個人設定，並增刪可選插件清單。
 when_to_use: 使用者輸入 /myplugins，或說「列出可選插件」「啟用插件 3」「這個專案開 frontend-design」「關掉插件」「把 xxx 加入／移出插件清單」時。安裝場景配置包用 myconfig；修改權限、環境變數等其他設定用 update-config。
-argument-hint: "[序號… | all | off 序號… | add 名稱@市場 說明 | remove 序號 | sync] [--local|-c] [--dry-run|-t|--test]"
+argument-hint: "[序號… | all | off 序號… | add 名稱@市場 說明 [--category 分組] | remove 序號 | sync] [--local|-c] [--dry-run|-t|--test]"
 allowed-tools: Bash(python3 ~/.claude/skills/myplugins/scripts/myplugins *)
 ---
 
@@ -40,5 +40,5 @@ python3 ~/.claude/skills/myplugins/scripts/myplugins <子命令> [參數]
 /myplugins 3 --local    只寫本地個人設定 .claude/settings.local.json（同 -c）
 /myplugins 3 --test     預演，確認後才寫入（同 -t、--dry-run）
 /myplugins off 3        關閉，回到下一層的值
-/myplugins add 名稱@市場 說明 | remove 3 | sync    維護清單
+/myplugins add 名稱@市場 說明 --category 前端 | remove 3 | sync    維護清單
 ```
