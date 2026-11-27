@@ -69,6 +69,20 @@
 
 ---
 
+## 如何扩展
+
+2026-11-27 从 `docs/handoff/HANDOFF.md` 移来。
+
+| 需求 | 步骤 |
+|---|---|
+| 新增场景 | 在 `settings/`、`claude_mds/`、`dot_mcp_jsons/`、`agents/`、`skills/` 用相同 FLAG 新建，再复制进 `dot_claude_projects/.claude-<FLAG>/`（对应关系见该目录 README）；更新根目录 `README.md`「四个场景」与 `docs/handoff/HANDOFF.md` |
+| 场景增减插件 | 改 `settings/settings.project-<FLAG>.json`，第三方市场要在 `extraKnownMarketplaces` 声明；同步 `settings/README.md`；跑 `test-settings-templates.sh` |
+| 新增全局插件 | 改 `settings/settings.user.json` 与 `settings/README.md`；确认与已有全局插件无功能重叠或指令冲突 |
+| 新增支持包 | 按 `open_supports/README.md` 或 `ost-support-workflow`；在 `INDEX.md` 两张表登记；项目级写进场景清单并带 `{PROJECT_DIR}`，用户级写进 `dot_claude_projects/.claude/`；跑 `test-open-supports-index.sh` |
+| 新增 MCP | 先确认场景插件没有提供；凭据用 `${VAR}`；更新 `dot_mcp_jsons/README.md` |
+| 新增 agent | 从 `agents-agency-agent-based-dev/` 复制到场景包，去掉文件名前缀，`name` 与文件名一致 |
+| 修改脚本 | 前后都执行 `sh scripts/tests/run-all.sh`；新测试命名为 `scripts/tests/test-<对象>.sh`；脚本顶部写功能说明，`-h` 按必选／条件必选／可选分组并附示例 |
+
 ## 提交风格建议
 
 建议提交信息清晰说明改动意图，例如：
