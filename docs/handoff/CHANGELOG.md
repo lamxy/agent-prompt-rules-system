@@ -96,6 +96,7 @@
 | 2026-11-27 | 本仓库 HANDOFF 迁移到 myhandoff 3.0.1 结构 | 摘要覆写为三行；当前状态、下一步只留未完成项；「续作时必须知道的事」分为 9 条核心约束与 `docs/handoff/GOTCHAS.md` G1～G30（触发索引 30 行）；变更日志移到本文件，「如何扩展」移到 `CONTRIBUTING.md`；`AGENTS.md` 改指向本文件；无其他去处的旧段落原样存档于下方 | 3.4 试用待用户指定 |
 | 2026-11-27 | myhandoff 3.0.2（触发索引行数误计） | 迁移时发现模板自带的触发索引引导句被计入 30 行上限，写满 30 条即 WARN；改为只计列表项，测试补「30 条加引导句不警告」；`run-all.sh` 20 个全过；用户 rsync 同步本机与 Codex 副本，`diff -r` 一致 | — |
 | 2026-11-27 | remember 改为可选插件 | 应 kap_llm_wiki 会话请求、经用户确认：`catalog.default.json` 在「通用」末尾加入 `remember`（序号 11），全局模板与镜像设为 `false`，两份 README 同步，`test-myplugins.sh` 序号更新；`run-all.sh` 20 个全过 | — （用户已同步 myplugins 副本并 `sync`，本机清单 remember 为序号 11「通用」；已全局停用，`~/.claude/settings.json` 核对为 `false`） |
+| 2026-11-27 | myplugins 清单按分组上色；add 分组可见化 | `list` 输出到终端时，`@` 前的插件名与 `[分组]` 按分组上色（分组按首次出现顺序取色，10 色不含蓝与灰白，未分组 `-` 不上色；初版按名称 crc32 取色，经用户要求改为按分组），按可见宽度补齐、对齐不变；`NO_COLOR` 关闭，`--color` 或 `FORCE_COLOR` 强制开启。`add --category` 原已支持但未写进用法：补进 SKILL.md、`list` 用法行、`details.md`；有同分组时插到该组末尾。`test-myplugins.sh` 加 8 项；`run-all.sh` 20 个全过 | — （`!` 执行时默认无色码；用户实测 `--color` 在 `!` 下渲染成颜色，故启动提示的 `!` 命令改带 `--color`，`dot_claude/README.md`、`GOTCHAS.md` 同步；本机副本需再 rsync） |
 
 ## 2026-11-27 HANDOFF 迁移去处对照
 
