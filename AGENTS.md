@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-When picking up existing work, read `docs/handoff/HANDOFF.md` first: it records the current status and todo plan, confirmed decisions, user constraints (never modify the local machine's configuration unless asked), open items, and a change log to append to after each requirement.
+When picking up existing work, read `docs/handoff/HANDOFF.md` first: it records the current status and todo plan, confirmed decisions, user constraints (never modify the local machine's configuration unless asked), and open items. After each requirement, append a change-log row to `docs/handoff/CHANGELOG.md`.
 
 This is a personal agent configuration, skill, and tool management repository (Claude Code first, with a Codex adapter). It was converted from a layered prompt-rule system in 2026-10; see the "转型说明" section of `README.md`. The minimal Claude Code configuration source lives in `dot_claude/` (a short `CLAUDE.md`, `commands/`, `skills/` such as `myhandoff`, and a personal user-level `settings.json`); see `dot_claude/README.md` for why it was slimmed down. `dot_claude_legacy/` is a read-only archive of the previous layered rule system and is not used by any installer.
 
